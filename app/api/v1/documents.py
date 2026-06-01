@@ -6,7 +6,9 @@ from app.api.dependencies import (
     get_document_service, 
     get_storage_service, 
     get_page_service, 
-    get_structure_service
+    get_structure_service,
+    get_hierarchy_builder,
+    get_hierarchy_validator
 )
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
@@ -20,9 +22,13 @@ from app.schemas.document import (
     PageResponse
 )
 from app.schemas.structure import DocumentStructureResponse
+from app.schemas.hierarchy import DocumentHierarchyResponse
 from app.services.document import DocumentService
 from app.services.storage_service import StorageService
 from app.services.page import PageService
+from app.services.structure.service import StructureService
+from app.services.structure.hierarchy import HierarchyBuilder
+from app.services.structure.validator import HierarchyValidator
 from app.services.structure.service import StructureService
 
 router = APIRouter()
@@ -80,6 +86,40 @@ async def get_document_structure(
     return DocumentStructureResponse(
         document_id=document_id,
         structure=structure
+    )
+
+@router.get(
+    "/{document_id}/hierarchy",
+    response_model=DocumentHierarchyResponse,
+    summary="Get document hierarchy tree",
+    description="Transforms parsed document structural outline into a navigable tree structure."
+)
+async def get_document_hierarchy(
+    document_id: uuid.UUID,
+    structure_service: StructureService = Depends(get_structure_service),
+    document_service: DocumentService = Depends(get_document_service),
+    hierarchy_builder: HierarchyBuilder = Depends(get_hierarchy_builder),
+    hierarchy_validator: HierarchyValidator = Depends(get_hierarchy_validator)
+) -> DocumentHierarchyResponse:
+    # 1. Fetch document to get fallback title (raises DocumentNotFoundError if missing)
+    doc = await document_service.get_document_by_id(document_id)
+    
+    # 2. Extract structure elements
+    structure = await structure_service.get_document_structure(document_id)
+    
+    # 3. Build tree
+    root_node = hierarchy_builder.build_hierarchy(document_id, doc.title, structure)
+    
+    # 4. Validate hierarchy tree
+    import logging
+    logger = logging.getLogger(__name__)
+    validation_errors = hierarchy_validator.validate(root_node)
+    if validation_errors:
+        logger.warning(f"Hierarchy validation warnings for {document_id}: {validation_errors}")
+        
+    return DocumentHierarchyResponse(
+        document_id=document_id,
+        root=root_node
     )
 
 @router.get(

@@ -15,6 +15,8 @@ from app.services.metadata.extractor import (
 )
 from app.services.structure.service import StructureService
 from app.services.structure.rule_based import RuleBasedStructureExtractor
+from app.services.structure.hierarchy import HierarchyBuilder
+from app.services.structure.validator import HierarchyValidator
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -65,3 +67,11 @@ async def get_structure_service(
 ) -> StructureService:
     """Dependency injection provider for StructureService."""
     return StructureService(page_service, RuleBasedStructureExtractor())
+
+def get_hierarchy_builder() -> HierarchyBuilder:
+    """Dependency injection provider for HierarchyBuilder."""
+    return HierarchyBuilder()
+
+def get_hierarchy_validator() -> HierarchyValidator:
+    """Dependency injection provider for HierarchyValidator."""
+    return HierarchyValidator()
