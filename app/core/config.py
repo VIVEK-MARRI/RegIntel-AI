@@ -16,6 +16,12 @@ class Settings(BaseSettings):
         description="Sync PostgreSQL Database URL for migrations"
     )
 
+    # Storage
+    STORAGE_ROOT: str = Field(
+        default="storage",
+        description="Local storage base directory path"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

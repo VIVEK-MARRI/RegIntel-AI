@@ -176,3 +176,86 @@ async def test_update_metadata(client: AsyncClient):
     
     # Ensure other fields did not change
     assert updated_doc["file_name"] == "meta.pdf"
+
+@pytest.mark.asyncio
+async def test_upload_document_api(client: AsyncClient):
+    import io
+    import hashlib
+    from unittest.mock import patch, AsyncMock
+    
+    file_content = b"PDF API upload content SEBI regulation"
+    file_bytes = io.BytesIO(file_content)
+    
+    # 1. Successful upload
+    response = await client.post(
+        "/api/v1/documents/upload",
+        data={
+            "source": "SEBI",
+            "title": "SEBI Insider Trading Regulation",
+            "document_type": "Regulation",
+            "publication_date": "2026-05-20",
+            "page_count": 42
+        },
+        files={
+            "file": ("sebi_insider.pdf", file_bytes, "application/pdf")
+        }
+    )
+    
+    assert response.status_code == 201
+    res_data = response.json()
+    assert "document_id" in res_data
+    assert res_data["status"] == "uploaded"
+    
+    doc_id = res_data["document_id"]
+    
+    # Verify we can fetch the document from DB registry
+    get_res = await client.get(f"/api/v1/documents/{doc_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["title"] == "SEBI Insider Trading Regulation"
+
+    # 2. Try duplicate upload (same content)
+    file_bytes_dup = io.BytesIO(file_content)
+    dup_response = await client.post(
+        "/api/v1/documents/upload",
+        data={
+            "source": "SEBI",
+            "title": "Duplicate Upload",
+            "document_type": "Regulation"
+        },
+        files={
+            "file": ("sebi_insider_dup.pdf", file_bytes_dup, "application/pdf")
+        }
+    )
+    assert dup_response.status_code == 409
+    assert dup_response.json()["error_code"] == "DUPLICATE_DOCUMENT"
+
+    # 3. Invalid file type (Only PDF allowed)
+    bad_file = io.BytesIO(b"some text data")
+    type_response = await client.post(
+        "/api/v1/documents/upload",
+        data={
+            "source": "SEBI",
+            "title": "Text File Upload"
+        },
+        files={
+            "file": ("sebi_text.txt", bad_file, "text/plain")
+        }
+    )
+    assert type_response.status_code == 400
+    assert "Only PDF files are allowed" in type_response.json()["detail"]
+
+    # 4. File size limit exceeded (> 50 MB)
+    large_file = io.BytesIO(b"dummy pdf content")
+    with patch("tempfile.SpooledTemporaryFile.tell", return_value=51 * 1024 * 1024):
+        size_response = await client.post(
+            "/api/v1/documents/upload",
+            data={
+                "source": "SEBI",
+                "title": "Large File Upload"
+            },
+            files={
+                "file": ("large_doc.pdf", large_file, "application/pdf")
+            }
+        )
+    assert size_response.status_code == 400
+    assert "File size exceeds the maximum limit of 50 MB" in size_response.json()["detail"]

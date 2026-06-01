@@ -1,15 +1,18 @@
 import uuid
 from typing import Optional, Sequence
-from fastapi import APIRouter, Depends, Query, status
-from app.api.dependencies import get_document_service
+from datetime import datetime, date
+from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
+from app.api.dependencies import get_document_service, get_storage_service
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
     DocumentCreate, 
     DocumentResponse, 
     DocumentStatusUpdate, 
-    DocumentUpdate
+    DocumentUpdate,
+    DocumentUploadResponse
 )
 from app.services.document import DocumentService
+from app.services.storage_service import StorageService
 
 router = APIRouter()
 
@@ -78,3 +81,72 @@ async def update_document_metadata(
     service: DocumentService = Depends(get_document_service)
 ) -> DocumentResponse:
     return await service.update_document_metadata(document_id, metadata_update)
+
+@router.post(
+    "/upload",
+    response_model=DocumentUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload and register a document",
+    description="Uploads a regulatory PDF file, stores it locally under source subdirectories, and registers metadata in the database."
+)
+async def upload_document(
+    source: SourceEnum = Form(..., description="The regulatory agency (RBI or SEBI)"),
+    title: str = Form(..., max_length=255, description="Document title"),
+    document_type: Optional[str] = Form(None, max_length=100, description="E.g. Circular, Regulation"),
+    publication_date: Optional[str] = Form(None, description="Date formatted as YYYY-MM-DD"),
+    page_count: Optional[int] = Form(None, ge=0),
+    file: UploadFile = File(..., description="The PDF document file to store"),
+    document_service: DocumentService = Depends(get_document_service),
+    storage_service: StorageService = Depends(get_storage_service)
+) -> DocumentUploadResponse:
+    # 1. Validate file extension (Only PDF allowed)
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF files are allowed"
+        )
+        
+    # 2. Validate file size (Max 50 MB)
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > 50 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds the maximum limit of 50 MB"
+        )
+
+    pub_date: Optional[date] = None
+    if publication_date:
+        try:
+            pub_date = datetime.strptime(publication_date, "%Y-%m-%d").date()
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="publication_date must be in YYYY-MM-DD format"
+            ) from e
+
+    # Save file via StorageService (handles checksum & deduplication check)
+    file_path, checksum = await storage_service.save_file(
+        file_data=file.file,
+        original_filename=file.filename,
+        source=source.value
+    )
+
+    doc_create = DocumentCreate(
+        title=title,
+        source=source,
+        file_name=file.filename,
+        file_path=file_path,
+        document_type=document_type,
+        publication_date=pub_date,
+        checksum=checksum,
+        page_count=page_count
+    )
+
+    doc = await document_service.register_document(doc_create)
+    return DocumentUploadResponse(
+        document_id=doc.id,
+        status="uploaded"
+    )
