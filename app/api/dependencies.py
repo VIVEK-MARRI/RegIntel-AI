@@ -20,6 +20,7 @@ from app.services.structure.validator import HierarchyValidator
 from app.core.token_utils import SimpleTokenizer
 from app.services.structure.chunker import HierarchicalChunker, HierarchicalChunkerService
 from app.services.structure.enricher import MetadataEnricher, MetadataValidator
+from app.services.chunk_registry import ChunkRegistryService
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -92,3 +93,10 @@ async def get_hierarchical_chunker_service(
     tokenizer = SimpleTokenizer()
     chunker = HierarchicalChunker(tokenizer)
     return HierarchicalChunkerService(doc_service, page_service, chunker, enricher)
+
+async def get_chunk_registry_service(
+    db_session: AsyncSession = Depends(get_db_session),
+    doc_service: DocumentService = Depends(get_document_service)
+) -> ChunkRegistryService:
+    """Dependency injection provider for ChunkRegistryService."""
+    return ChunkRegistryService(db_session, doc_service)

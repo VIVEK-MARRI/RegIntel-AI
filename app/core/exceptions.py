@@ -29,6 +29,12 @@ class InvalidStateTransitionError(DocumentRegistryError):
         self.from_state = from_state
         self.to_state = to_state
 
+class ChunkNotFoundError(DocumentRegistryError):
+    """Exception raised when a chunk is not found."""
+    def __init__(self, chunk_id: str):
+        super().__init__(f"Chunk with ID '{chunk_id}' was not found.")
+        self.chunk_id = chunk_id
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Registers exception handlers for custom domain exceptions."""
     @app.exception_handler(DocumentNotFoundError)
@@ -53,6 +59,14 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"detail": exc.message, "error_code": "INVALID_STATE_TRANSITION"}
+        )
+
+    @app.exception_handler(ChunkNotFoundError)
+    async def chunk_not_found_handler(request: Request, exc: ChunkNotFoundError):
+        logger.warning(f"ChunkNotFoundError: {exc.message}")
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": exc.message, "error_code": "CHUNK_NOT_FOUND"}
         )
 
     @app.exception_handler(DocumentRegistryError)

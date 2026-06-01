@@ -9,6 +9,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from app.models.page import DocumentPage
+    from app.models.chunk import DocumentChunk
 
 class Base(DeclarativeBase):
     pass
@@ -63,6 +64,11 @@ class Document(Base):
     # Relationships
     pages: Mapped[list["DocumentPage"]] = relationship(
         "DocumentPage", 
+        back_populates="document", 
+        cascade="all, delete-orphan"
+    )
+    chunks: Mapped[list["DocumentChunk"]] = relationship(
+        "DocumentChunk", 
         back_populates="document", 
         cascade="all, delete-orphan"
     )
