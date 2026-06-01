@@ -17,6 +17,8 @@ from app.services.structure.service import StructureService
 from app.services.structure.rule_based import RuleBasedStructureExtractor
 from app.services.structure.hierarchy import HierarchyBuilder
 from app.services.structure.validator import HierarchyValidator
+from app.core.token_utils import SimpleTokenizer
+from app.services.structure.chunker import HierarchicalChunker, HierarchicalChunkerService
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -75,3 +77,12 @@ def get_hierarchy_builder() -> HierarchyBuilder:
 def get_hierarchy_validator() -> HierarchyValidator:
     """Dependency injection provider for HierarchyValidator."""
     return HierarchyValidator()
+
+async def get_hierarchical_chunker_service(
+    doc_service: DocumentService = Depends(get_document_service),
+    page_service: PageService = Depends(get_page_service)
+) -> HierarchicalChunkerService:
+    """Dependency injection provider for HierarchicalChunkerService."""
+    tokenizer = SimpleTokenizer()
+    chunker = HierarchicalChunker(tokenizer)
+    return HierarchicalChunkerService(doc_service, page_service, chunker)

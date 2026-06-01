@@ -8,7 +8,8 @@ from app.api.dependencies import (
     get_page_service, 
     get_structure_service,
     get_hierarchy_builder,
-    get_hierarchy_validator
+    get_hierarchy_validator,
+    get_hierarchical_chunker_service
 )
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
@@ -23,13 +24,14 @@ from app.schemas.document import (
 )
 from app.schemas.structure import DocumentStructureResponse
 from app.schemas.hierarchy import DocumentHierarchyResponse
+from app.schemas.chunk import DocumentChunkingResponse
 from app.services.document import DocumentService
 from app.services.storage_service import StorageService
 from app.services.page import PageService
 from app.services.structure.service import StructureService
 from app.services.structure.hierarchy import HierarchyBuilder
 from app.services.structure.validator import HierarchyValidator
-from app.services.structure.service import StructureService
+from app.services.structure.chunker import HierarchicalChunkerService
 
 router = APIRouter()
 
@@ -120,6 +122,22 @@ async def get_document_hierarchy(
     return DocumentHierarchyResponse(
         document_id=document_id,
         root=root_node
+    )
+
+@router.get(
+    "/{document_id}/chunks",
+    response_model=DocumentChunkingResponse,
+    summary="Get document hierarchical chunks",
+    description="Segments document pages text into structure-aware, token-bounded chunks for downstream vector database ingest."
+)
+async def get_document_chunks(
+    document_id: uuid.UUID,
+    chunker_service: HierarchicalChunkerService = Depends(get_hierarchical_chunker_service)
+) -> DocumentChunkingResponse:
+    chunks = await chunker_service.chunk_document_by_id(document_id)
+    return DocumentChunkingResponse(
+        document_id=document_id,
+        chunks=chunks
     )
 
 @router.get(
