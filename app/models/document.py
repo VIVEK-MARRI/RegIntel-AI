@@ -1,10 +1,14 @@
 import uuid
 from datetime import date, datetime, timezone
 from enum import Enum as PyEnum
+from typing import TYPE_CHECKING
 from sqlalchemy import String, Date, Integer, DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from app.models.page import DocumentPage
 
 class Base(DeclarativeBase):
     pass
@@ -54,4 +58,11 @@ class Document(Base):
         default=lambda: datetime.now(timezone.utc), 
         onupdate=lambda: datetime.now(timezone.utc), 
         nullable=False
+    )
+
+    # Relationships
+    pages: Mapped[list["DocumentPage"]] = relationship(
+        "DocumentPage", 
+        back_populates="document", 
+        cascade="all, delete-orphan"
     )

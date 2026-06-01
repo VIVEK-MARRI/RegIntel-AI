@@ -27,16 +27,26 @@ class DocumentRepository(BaseRepository[Document]):
         self, 
         source: Optional[SourceEnum] = None, 
         status: Optional[StatusEnum] = None, 
+        sort_by: str = "uploaded_at",
+        sort_order: str = "desc",
         skip: int = 0, 
         limit: int = 100
     ) -> Sequence[Document]:
-        """Lists Document entries with optional filters."""
+        """Lists Document entries with optional filters and dynamic sorting."""
         query = select(self.model)
         if source:
             query = query.where(self.model.source == source)
         if status:
             query = query.where(self.model.status == status)
-        query = query.order_by(self.model.uploaded_at.desc()).offset(skip).limit(limit)
+            
+        # Apply sorting dynamically
+        sort_col = getattr(self.model, sort_by, self.model.uploaded_at)
+        if sort_order == "desc":
+            query = query.order_by(sort_col.desc())
+        else:
+            query = query.order_by(sort_col.asc())
+            
+        query = query.offset(skip).limit(limit)
         result = await self.db_session.execute(query)
         return result.scalars().all()
 

@@ -5,6 +5,14 @@ from app.core.database import get_db_session
 from app.services.document import DocumentService
 from app.services.storage_provider import StorageProvider, LocalStorageProvider
 from app.services.storage_service import StorageService
+from app.services.parser_service import ParserService
+from app.services.page import PageService
+from app.services.metadata.service import MetadataService
+from app.services.metadata.extractor import (
+    FileMetadataExtractor,
+    PDFStructureExtractor,
+    RegulatorMetadataExtractor
+)
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -25,3 +33,27 @@ async def get_storage_service(
 ) -> StorageService:
     """Dependency injection provider for StorageService."""
     return StorageService(provider, db_session)
+
+async def get_parser_service(
+    doc_service: DocumentService = Depends(get_document_service)
+) -> ParserService:
+    """Dependency injection provider for ParserService."""
+    return ParserService(doc_service, settings.STORAGE_ROOT)
+
+async def get_page_service(
+    db_session: AsyncSession = Depends(get_db_session),
+    doc_service: DocumentService = Depends(get_document_service)
+) -> PageService:
+    """Dependency injection provider for PageService."""
+    return PageService(db_session, doc_service)
+
+# Global MetadataService instance configured with standard extractors
+_metadata_service = MetadataService([
+    FileMetadataExtractor(),
+    PDFStructureExtractor(),
+    RegulatorMetadataExtractor()
+])
+
+def get_metadata_service() -> MetadataService:
+    """Dependency injection provider for MetadataService."""
+    return _metadata_service

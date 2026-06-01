@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from enum import Enum
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
@@ -37,3 +38,21 @@ class DocumentResponse(DocumentBase):
 class DocumentUploadResponse(BaseModel):
     document_id: UUID
     status: str
+
+class SortByEnum(str, Enum):
+    uploaded_at = "uploaded_at"
+    publication_date = "publication_date"
+    title = "title"
+
+class SortOrderEnum(str, Enum):
+    asc = "asc"
+    desc = "desc"
+
+class PageResponse(BaseModel):
+    id: UUID
+    document_id: UUID
+    page_number: int
+    content: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

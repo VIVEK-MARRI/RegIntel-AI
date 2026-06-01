@@ -2,17 +2,21 @@ import uuid
 from typing import Optional, Sequence
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
-from app.api.dependencies import get_document_service, get_storage_service
+from app.api.dependencies import get_document_service, get_storage_service, get_page_service
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
     DocumentCreate, 
     DocumentResponse, 
     DocumentStatusUpdate, 
     DocumentUpdate,
-    DocumentUploadResponse
+    DocumentUploadResponse,
+    SortByEnum,
+    SortOrderEnum,
+    PageResponse
 )
 from app.services.document import DocumentService
 from app.services.storage_service import StorageService
+from app.services.page import PageService
 
 router = APIRouter()
 
@@ -42,6 +46,20 @@ async def get_document(
     return await service.get_document_by_id(document_id)
 
 @router.get(
+    "/{document_id}/pages",
+    response_model=Sequence[PageResponse],
+    summary="Get document pages",
+    description="Retrieves paginated text content pages for a specific document, sorted by page number ascending."
+)
+async def get_document_pages(
+    document_id: uuid.UUID,
+    skip: int = Query(0, ge=0, description="Number of pages to skip"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of pages to return"),
+    page_service: PageService = Depends(get_page_service)
+) -> Sequence[PageResponse]:
+    return await page_service.get_document_pages(document_id, skip=skip, limit=limit)
+
+@router.get(
     "", 
     response_model=Sequence[DocumentResponse],
     summary="List and filter documents",
@@ -50,11 +68,20 @@ async def get_document(
 async def list_documents(
     source: Optional[SourceEnum] = Query(None, description="Filter by document source (RBI/SEBI)"),
     status: Optional[StatusEnum] = Query(None, description="Filter by lifecycle status"),
+    sort_by: SortByEnum = Query(SortByEnum.uploaded_at, description="Field to sort by"),
+    sort_order: SortOrderEnum = Query(SortOrderEnum.desc, description="Order of sorting (asc or desc)"),
     skip: int = Query(0, ge=0, description="Number of documents to skip"),
     limit: int = Query(100, ge=1, le=100, description="Max number of documents to return"),
     service: DocumentService = Depends(get_document_service)
 ) -> Sequence[DocumentResponse]:
-    return await service.list_documents(source=source, status=status, skip=skip, limit=limit)
+    return await service.list_documents(
+        source=source,
+        status=status,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        skip=skip,
+        limit=limit
+    )
 
 @router.patch(
     "/{document_id}/status", 

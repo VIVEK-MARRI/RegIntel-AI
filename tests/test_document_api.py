@@ -259,3 +259,125 @@ async def test_upload_document_api(client: AsyncClient):
         )
     assert size_response.status_code == 400
     assert "File size exceeds the maximum limit of 50 MB" in size_response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_list_documents_sorting(client: AsyncClient, db_session):
+    from app.models.document import Document, SourceEnum, StatusEnum
+    import datetime
+    from sqlalchemy import delete
+    
+    # Clean slate for sorting assertions
+    await db_session.execute(delete(Document))
+    await db_session.commit()
+
+    # Create 3 documents with specific titles and publication dates
+    doc1 = Document(
+        title="AAA Document",
+        source=SourceEnum.RBI,
+        file_name="aaa.pdf",
+        file_path="/path/aaa.pdf",
+        checksum="1" * 63 + "a",
+        publication_date=datetime.date(2026, 5, 1),
+        status=StatusEnum.UPLOADED
+    )
+    doc2 = Document(
+        title="CCC Document",
+        source=SourceEnum.SEBI,
+        file_name="ccc.pdf",
+        file_path="/path/ccc.pdf",
+        checksum="2" * 63 + "b",
+        publication_date=datetime.date(2026, 5, 3),
+        status=StatusEnum.UPLOADED
+    )
+    doc3 = Document(
+        title="BBB Document",
+        source=SourceEnum.RBI,
+        file_name="bbb.pdf",
+        file_path="/path/bbb.pdf",
+        checksum="3" * 63 + "c",
+        publication_date=datetime.date(2026, 5, 2),
+        status=StatusEnum.UPLOADED
+    )
+    
+    db_session.add_all([doc1, doc2, doc3])
+    await db_session.commit()
+    
+    # 1. Sort by title asc
+    res_title_asc = await client.get("/api/v1/documents?sort_by=title&sort_order=asc")
+    assert res_title_asc.status_code == 200
+    titles_asc = [d["title"] for d in res_title_asc.json()]
+    assert titles_asc == ["AAA Document", "BBB Document", "CCC Document"]
+    
+    # 2. Sort by title desc
+    res_title_desc = await client.get("/api/v1/documents?sort_by=title&sort_order=desc")
+    assert res_title_desc.status_code == 200
+    titles_desc = [d["title"] for d in res_title_desc.json()]
+    assert titles_desc == ["CCC Document", "BBB Document", "AAA Document"]
+    
+    # 3. Sort by publication_date asc
+    res_pub_asc = await client.get("/api/v1/documents?sort_by=publication_date&sort_order=asc")
+    assert res_pub_asc.status_code == 200
+    pub_asc = [d["publication_date"] for d in res_pub_asc.json()]
+    assert pub_asc == ["2026-05-01", "2026-05-02", "2026-05-03"]
+    
+    # 4. Sort by publication_date desc
+    res_pub_desc = await client.get("/api/v1/documents?sort_by=publication_date&sort_order=desc")
+    assert res_pub_desc.status_code == 200
+    pub_desc = [d["publication_date"] for d in res_pub_desc.json()]
+    assert pub_desc == ["2026-05-03", "2026-05-02", "2026-05-01"]
+
+@pytest.mark.asyncio
+async def test_get_document_pages_api(client: AsyncClient, db_session):
+    from app.models.document import Document, SourceEnum, StatusEnum
+    from app.models.page import DocumentPage
+    
+    # Register document
+    doc = Document(
+        title="Pages Test Document",
+        source=SourceEnum.RBI,
+        file_name="pages_test.pdf",
+        file_path="/path/pages_test.pdf",
+        checksum="9" * 64,
+        status=StatusEnum.UPLOADED
+    )
+    db_session.add(doc)
+    await db_session.commit()
+    
+    # Insert pages
+    page1 = DocumentPage(document_id=doc.id, page_number=1, content="This is page 1 content.")
+    page2 = DocumentPage(document_id=doc.id, page_number=2, content="This is page 2 content.")
+    page3 = DocumentPage(document_id=doc.id, page_number=3, content="This is page 3 content.")
+    db_session.add_all([page1, page2, page3])
+    await db_session.commit()
+    
+    # 1. Fetch pages without skip/limit (returns all pages sorted by page_number)
+    res_all = await client.get(f"/api/v1/documents/{doc.id}/pages")
+    assert res_all.status_code == 200
+    pages_all = res_all.json()
+    assert len(pages_all) == 3
+    assert pages_all[0]["page_number"] == 1
+    assert pages_all[0]["content"] == "This is page 1 content."
+    assert pages_all[1]["page_number"] == 2
+    assert pages_all[2]["page_number"] == 3
+    
+    # Validate structure (PageResponse fields check)
+    p_data = pages_all[0]
+    assert "id" in p_data
+    assert "document_id" in p_data
+    assert "page_number" in p_data
+    assert "content" in p_data
+    assert "created_at" in p_data
+    
+    # 2. Fetch with pagination skip/limit
+    res_paginated = await client.get(f"/api/v1/documents/{doc.id}/pages?skip=1&limit=1")
+    assert res_paginated.status_code == 200
+    pages_paginated = res_paginated.json()
+    assert len(pages_paginated) == 1
+    assert pages_paginated[0]["page_number"] == 2
+    assert pages_paginated[0]["content"] == "This is page 2 content."
+    
+    # 3. Fetching pages of a non-existent document returns 404
+    non_existent_id = "00000000-0000-0000-0000-000000000000"
+    res_404 = await client.get(f"/api/v1/documents/{non_existent_id}/pages")
+    assert res_404.status_code == 404
+    assert res_404.json()["error_code"] == "DOCUMENT_NOT_FOUND"

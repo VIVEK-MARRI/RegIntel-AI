@@ -56,11 +56,20 @@ class DocumentService:
         self,
         source: Optional[SourceEnum] = None,
         status: Optional[StatusEnum] = None,
+        sort_by: str = "uploaded_at",
+        sort_order: str = "desc",
         skip: int = 0,
         limit: int = 100
     ) -> Sequence[Document]:
-        """Lists documents using repository layer filters."""
-        return await self.repository.list_documents(source, status, skip, limit)
+        """Lists documents using repository layer filters and sorting."""
+        return await self.repository.list_documents(
+            source=source,
+            status=status,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            skip=skip,
+            limit=limit
+        )
 
     async def update_document_status(self, document_id: uuid.UUID, new_status: StatusEnum) -> Document:
         """Updates document status after validating state transition rules."""
