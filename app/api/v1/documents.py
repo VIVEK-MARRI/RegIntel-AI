@@ -2,7 +2,12 @@ import uuid
 from typing import Optional, Sequence
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
-from app.api.dependencies import get_document_service, get_storage_service, get_page_service
+from app.api.dependencies import (
+    get_document_service, 
+    get_storage_service, 
+    get_page_service, 
+    get_structure_service
+)
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
     DocumentCreate, 
@@ -14,9 +19,11 @@ from app.schemas.document import (
     SortOrderEnum,
     PageResponse
 )
+from app.schemas.structure import DocumentStructureResponse
 from app.services.document import DocumentService
 from app.services.storage_service import StorageService
 from app.services.page import PageService
+from app.services.structure.service import StructureService
 
 router = APIRouter()
 
@@ -58,6 +65,22 @@ async def get_document_pages(
     page_service: PageService = Depends(get_page_service)
 ) -> Sequence[PageResponse]:
     return await page_service.get_document_pages(document_id, skip=skip, limit=limit)
+
+@router.get(
+    "/{document_id}/structure",
+    response_model=DocumentStructureResponse,
+    summary="Get document structure",
+    description="Analyzes document pages and extracts its hierarchical structural outline."
+)
+async def get_document_structure(
+    document_id: uuid.UUID,
+    structure_service: StructureService = Depends(get_structure_service)
+) -> DocumentStructureResponse:
+    structure = await structure_service.get_document_structure(document_id)
+    return DocumentStructureResponse(
+        document_id=document_id,
+        structure=structure
+    )
 
 @router.get(
     "", 

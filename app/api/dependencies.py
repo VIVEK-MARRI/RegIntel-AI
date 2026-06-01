@@ -13,6 +13,8 @@ from app.services.metadata.extractor import (
     PDFStructureExtractor,
     RegulatorMetadataExtractor
 )
+from app.services.structure.service import StructureService
+from app.services.structure.rule_based import RuleBasedStructureExtractor
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -57,3 +59,9 @@ _metadata_service = MetadataService([
 def get_metadata_service() -> MetadataService:
     """Dependency injection provider for MetadataService."""
     return _metadata_service
+
+async def get_structure_service(
+    page_service: PageService = Depends(get_page_service)
+) -> StructureService:
+    """Dependency injection provider for StructureService."""
+    return StructureService(page_service, RuleBasedStructureExtractor())
