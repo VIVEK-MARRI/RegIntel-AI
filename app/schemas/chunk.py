@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime
+from enum import Enum
 from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
@@ -47,5 +48,23 @@ class EnrichedChunkResponse(BaseModel):
 class DocumentEnrichedChunkingResponse(BaseModel):
     document_id: UUID
     chunks: List[EnrichedChunkResponse]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ChunkSortByEnum(str, Enum):
+    page_number = "page_number"
+    token_count = "token_count"
+    created_at = "created_at"
+
+class StoredChunkResponse(BaseModel):
+    id: UUID
+    document_id: UUID
+    page_number: int
+    section: str
+    subsection: str
+    content: str
+    token_count: int
+    metadata_json: dict
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

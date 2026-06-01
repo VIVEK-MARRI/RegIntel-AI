@@ -84,6 +84,7 @@ def test_chunker_benchmark():
 
 @pytest.mark.asyncio
 async def test_get_document_chunks_api(client: AsyncClient, db_session):
+    from app.models.chunk import DocumentChunk
     # 1. Register document
     doc = Document(
         title="RBI Cybersecurity Chunking Circular",
@@ -96,19 +97,29 @@ async def test_get_document_chunks_api(client: AsyncClient, db_session):
     db_session.add(doc)
     await db_session.commit()
     
-    # 2. Add some page content
-    page1 = DocumentPage(
+    # 2. Add some page content & chunk content to the database
+    chunk1 = DocumentChunk(
+        id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
         document_id=doc.id,
         page_number=1,
-        content=(
-            "Reserve Bank of India\n"
-            "Master Circular - Cybersecurity Chunks\n"
-            "1. Introduction\n"
-            "1.1 Scope\n"
-            "This document describes cybersecurity chunks in details.\n"
-        )
+        section="General",
+        subsection="",
+        content="General content before first section",
+        token_count=10,
+        metadata_json={"page": 1, "section": "General", "token_count": 10}
     )
-    db_session.add(page1)
+    chunk2 = DocumentChunk(
+        id=uuid.UUID("22222222-2222-2222-2222-222222222222"),
+        document_id=doc.id,
+        page_number=1,
+        section="1. Introduction",
+        subsection="1.1 Scope",
+        content="This document describes cybersecurity chunks in details.",
+        token_count=15,
+        metadata_json={"page": 1, "section": "1. Introduction", "subsection": "1.1 Scope", "token_count": 15}
+    )
+    db_session.add(chunk1)
+    db_session.add(chunk2)
     await db_session.commit()
     
     # 3. Request chunks API
@@ -116,23 +127,24 @@ async def test_get_document_chunks_api(client: AsyncClient, db_session):
     assert response.status_code == 200
     res_data = response.json()
     
-    assert res_data["document_id"] == str(doc.id)
-    chunks = res_data["chunks"]
-    assert len(chunks) > 0
+    assert isinstance(res_data, list)
+    assert len(res_data) == 2
     
-    assert len(chunks) == 2
+    # First chunk is General
+    assert res_data[0]["section"] == "General"
     
-    # First chunk is from the general header block before the first section
-    assert chunks[0]["metadata"]["section"] == "General"
-    
-    # Second chunk is from the section block under 1.1 Scope
-    second_chunk = chunks[1]
-    assert second_chunk["metadata"]["section"] == "1. Introduction"
-    assert second_chunk["metadata"]["subsection"] == "1.1 Scope"
+    # Second chunk is from section block under 1.1 Scope
+    second_chunk = res_data[1]
+    assert second_chunk["section"] == "1. Introduction"
+    assert second_chunk["subsection"] == "1.1 Scope"
     assert "This document describes" in second_chunk["content"]
-    assert second_chunk["metadata"]["token_count"] > 0
-    assert second_chunk["metadata"]["page"] == 1
-    assert "chunk_id" in second_chunk
+    assert second_chunk["token_count"] == 15
+    assert second_chunk["page_number"] == 1
+    assert "id" in second_chunk
+
+    # Cleanup to maintain test database isolation
+    await db_session.delete(doc)
+    await db_session.commit()
 
 @pytest.mark.asyncio
 async def test_get_document_chunks_api_not_found(client: AsyncClient):

@@ -85,13 +85,49 @@ class ChunkRegistryService:
             raise ChunkNotFoundError(str(chunk_id))
         return chunk
 
+    async def list_chunks(
+        self,
+        document_id: Optional[uuid.UUID] = None,
+        section: Optional[str] = None,
+        subsection: Optional[str] = None,
+        sort_by: str = "page_number",
+        sort_order: str = "asc",
+        skip: int = 0,
+        limit: int = 100
+    ) -> Sequence[DocumentChunk]:
+        """Retrieves a list of chunks across documents with optional filtering/searching/sorting."""
+        # If document_id is provided, verify it exists (raising DocumentNotFoundError if missing)
+        if document_id:
+            await self.document_service.get_document_by_id(document_id)
+        return await self.repository.list_chunks(
+            document_id=document_id,
+            section=section,
+            subsection=subsection,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            skip=skip,
+            limit=limit
+        )
+
     async def get_document_chunks(
         self, 
         document_id: uuid.UUID, 
+        section: Optional[str] = None,
+        subsection: Optional[str] = None,
+        sort_by: str = "page_number",
+        sort_order: str = "asc",
         skip: int = 0, 
         limit: int = 100
     ) -> Sequence[DocumentChunk]:
         """Retrieves a paginated list of chunks for a document, after verifying document exists."""
         # Verify document exists (raises DocumentNotFoundError if missing)
         await self.document_service.get_document_by_id(document_id)
-        return await self.repository.get_document_chunks(document_id, skip, limit)
+        return await self.repository.get_document_chunks(
+            document_id=document_id,
+            section=section,
+            subsection=subsection,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            skip=skip,
+            limit=limit
+        )

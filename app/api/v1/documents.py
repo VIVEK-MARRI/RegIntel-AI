@@ -9,7 +9,8 @@ from app.api.dependencies import (
     get_structure_service,
     get_hierarchy_builder,
     get_hierarchy_validator,
-    get_hierarchical_chunker_service
+    get_hierarchical_chunker_service,
+    get_chunk_registry_service
 )
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
@@ -24,7 +25,7 @@ from app.schemas.document import (
 )
 from app.schemas.structure import DocumentStructureResponse
 from app.schemas.hierarchy import DocumentHierarchyResponse
-from app.schemas.chunk import DocumentEnrichedChunkingResponse
+from app.schemas.chunk import StoredChunkResponse, ChunkSortByEnum
 from app.services.document import DocumentService
 from app.services.storage_service import StorageService
 from app.services.page import PageService
@@ -32,6 +33,7 @@ from app.services.structure.service import StructureService
 from app.services.structure.hierarchy import HierarchyBuilder
 from app.services.structure.validator import HierarchyValidator
 from app.services.structure.chunker import HierarchicalChunkerService
+from app.services.chunk_registry import ChunkRegistryService
 
 router = APIRouter()
 
@@ -126,18 +128,28 @@ async def get_document_hierarchy(
 
 @router.get(
     "/{document_id}/chunks",
-    response_model=DocumentEnrichedChunkingResponse,
-    summary="Get document hierarchical chunks",
-    description="Segments document pages text into structure-aware, token-bounded chunks for downstream vector database ingest."
+    response_model=Sequence[StoredChunkResponse],
+    summary="Get document stored chunks",
+    description="Retrieves paginated stored chunks for a specific document, supporting filtering, sorting, and partial match search."
 )
 async def get_document_chunks(
     document_id: uuid.UUID,
-    chunker_service: HierarchicalChunkerService = Depends(get_hierarchical_chunker_service)
-) -> DocumentEnrichedChunkingResponse:
-    chunks = await chunker_service.chunk_document_by_id(document_id)
-    return DocumentEnrichedChunkingResponse(
+    section: Optional[str] = Query(None, description="Search by section (partial match)"),
+    subsection: Optional[str] = Query(None, description="Search by subsection (partial match)"),
+    sort_by: ChunkSortByEnum = Query(ChunkSortByEnum.page_number, description="Field to sort by"),
+    sort_order: SortOrderEnum = Query(SortOrderEnum.asc, description="Sort direction (asc or desc)"),
+    skip: int = Query(0, ge=0, description="Number of chunks to skip"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of chunks to return"),
+    service: ChunkRegistryService = Depends(get_chunk_registry_service)
+) -> Sequence[StoredChunkResponse]:
+    return await service.get_document_chunks(
         document_id=document_id,
-        chunks=chunks
+        section=section,
+        subsection=subsection,
+        sort_by=sort_by.value,
+        sort_order=sort_order.value,
+        skip=skip,
+        limit=limit
     )
 
 @router.get(

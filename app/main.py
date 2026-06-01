@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1.documents import router as documents_router
+from app.api.v1.chunks import router as chunks_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
@@ -23,6 +24,12 @@ app.include_router(
     documents_router,
     prefix="/api/v1/documents",
     tags=["documents"]
+)
+
+app.include_router(
+    chunks_router,
+    prefix="/api/v1/chunks",
+    tags=["chunks"]
 )
 
 @app.get("/health", tags=["health"])
