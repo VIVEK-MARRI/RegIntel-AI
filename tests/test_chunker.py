@@ -123,15 +123,15 @@ async def test_get_document_chunks_api(client: AsyncClient, db_session):
     assert len(chunks) == 2
     
     # First chunk is from the general header block before the first section
-    assert chunks[0]["section"] == "General"
+    assert chunks[0]["metadata"]["section"] == "General"
     
     # Second chunk is from the section block under 1.1 Scope
     second_chunk = chunks[1]
-    assert second_chunk["section"] == "1. Introduction"
-    assert second_chunk["subsection"] == "1.1 Scope"
+    assert second_chunk["metadata"]["section"] == "1. Introduction"
+    assert second_chunk["metadata"]["subsection"] == "1.1 Scope"
     assert "This document describes" in second_chunk["content"]
-    assert second_chunk["token_count"] > 0
-    assert second_chunk["page_number"] == 1
+    assert second_chunk["metadata"]["token_count"] > 0
+    assert second_chunk["metadata"]["page"] == 1
     assert "chunk_id" in second_chunk
 
 @pytest.mark.asyncio

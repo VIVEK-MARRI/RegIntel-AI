@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from app.core.token_utils import BaseTokenizer
 from app.schemas.chunk import ChunkResponse
 from app.services.page import PageService
+from app.services.structure.enricher import MetadataEnricher
 
 class HierarchicalChunker:
     """Hierarchical chunker that segments documents by regulatory section/subsection,
@@ -209,17 +210,39 @@ class HierarchicalChunker:
 class HierarchicalChunkerService:
     """Service orchestrating document retrieval and chunking parsing workflows."""
 
-    def __init__(self, document_service: Any, page_service: PageService, chunker: HierarchicalChunker):
+    def __init__(
+        self, 
+        document_service: Any, 
+        page_service: PageService, 
+        chunker: HierarchicalChunker,
+        enricher: MetadataEnricher
+    ):
         self.document_service = document_service
         self.page_service = page_service
         self.chunker = chunker
+        self.enricher = enricher
 
-    async def chunk_document_by_id(self, document_id: uuid.UUID) -> List[ChunkResponse]:
-        """Fetches document and page metadata from database and parses hierarchical chunks."""
+    async def chunk_document_by_id(self, document_id: uuid.UUID) -> List[Dict[str, Any]]:
+        """Fetches document and page metadata from database, parses hierarchical chunks, and enriches them."""
         doc = await self.document_service.get_document_by_id(document_id)
         pages = await self.page_service.get_document_pages(document_id, limit=2000)
         pages_data = [
             {"page_number": p.page_number, "content": p.content}
             for p in pages
         ]
-        return self.chunker.chunk_document(doc.id, doc.title, pages_data)
+        raw_chunks = self.chunker.chunk_document(doc.id, doc.title, pages_data)
+
+        enriched_chunks = []
+        for raw in raw_chunks:
+            raw_dict = {
+                "chunk_id": raw.chunk_id,
+                "section": raw.section,
+                "subsection": raw.subsection,
+                "content": raw.content,
+                "token_count": raw.token_count,
+                "page_number": raw.page_number
+            }
+            enriched = self.enricher.enrich_chunk(doc, raw_dict)
+            enriched_chunks.append(enriched)
+
+        return enriched_chunks

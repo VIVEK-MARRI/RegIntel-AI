@@ -19,6 +19,7 @@ from app.services.structure.hierarchy import HierarchyBuilder
 from app.services.structure.validator import HierarchyValidator
 from app.core.token_utils import SimpleTokenizer
 from app.services.structure.chunker import HierarchicalChunker, HierarchicalChunkerService
+from app.services.structure.enricher import MetadataEnricher, MetadataValidator
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -78,11 +79,16 @@ def get_hierarchy_validator() -> HierarchyValidator:
     """Dependency injection provider for HierarchyValidator."""
     return HierarchyValidator()
 
+def get_metadata_enricher() -> MetadataEnricher:
+    """Dependency injection provider for MetadataEnricher."""
+    return MetadataEnricher(MetadataValidator())
+
 async def get_hierarchical_chunker_service(
     doc_service: DocumentService = Depends(get_document_service),
-    page_service: PageService = Depends(get_page_service)
+    page_service: PageService = Depends(get_page_service),
+    enricher: MetadataEnricher = Depends(get_metadata_enricher)
 ) -> HierarchicalChunkerService:
     """Dependency injection provider for HierarchicalChunkerService."""
     tokenizer = SimpleTokenizer()
     chunker = HierarchicalChunker(tokenizer)
-    return HierarchicalChunkerService(doc_service, page_service, chunker)
+    return HierarchicalChunkerService(doc_service, page_service, chunker, enricher)

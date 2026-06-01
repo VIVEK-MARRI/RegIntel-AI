@@ -24,7 +24,7 @@ from app.schemas.document import (
 )
 from app.schemas.structure import DocumentStructureResponse
 from app.schemas.hierarchy import DocumentHierarchyResponse
-from app.schemas.chunk import DocumentChunkingResponse
+from app.schemas.chunk import DocumentEnrichedChunkingResponse
 from app.services.document import DocumentService
 from app.services.storage_service import StorageService
 from app.services.page import PageService
@@ -126,16 +126,16 @@ async def get_document_hierarchy(
 
 @router.get(
     "/{document_id}/chunks",
-    response_model=DocumentChunkingResponse,
+    response_model=DocumentEnrichedChunkingResponse,
     summary="Get document hierarchical chunks",
     description="Segments document pages text into structure-aware, token-bounded chunks for downstream vector database ingest."
 )
 async def get_document_chunks(
     document_id: uuid.UUID,
     chunker_service: HierarchicalChunkerService = Depends(get_hierarchical_chunker_service)
-) -> DocumentChunkingResponse:
+) -> DocumentEnrichedChunkingResponse:
     chunks = await chunker_service.chunk_document_by_id(document_id)
-    return DocumentChunkingResponse(
+    return DocumentEnrichedChunkingResponse(
         document_id=document_id,
         chunks=chunks
     )
