@@ -25,6 +25,7 @@ from app.services.embedding import EmbeddingProvider, embedding_provider
 from app.services.embedding.pipeline import EmbeddingPipeline
 from app.services.embedding.index_manager import VectorIndexManager
 from app.services.embedding.retrieval import RetrievalService
+from app.services.embedding.benchmark_suite import RetrievalBenchmarkRunner
 from app.services.validation.embedding import EmbeddingQualityValidator
 
 # Global local storage provider instance
@@ -137,3 +138,9 @@ async def get_embedding_quality_validator(
 ) -> EmbeddingQualityValidator:
     """Dependency injection provider for EmbeddingQualityValidator."""
     return EmbeddingQualityValidator(db_session)
+
+async def get_benchmark_runner(
+    retrieval_service: RetrievalService = Depends(get_retrieval_service)
+) -> RetrievalBenchmarkRunner:
+    """Dependency injection provider for RetrievalBenchmarkRunner."""
+    return RetrievalBenchmarkRunner(retrieval_service)
