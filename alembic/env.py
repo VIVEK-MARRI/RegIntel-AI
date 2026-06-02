@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.models.document import Base
 from app.models.page import DocumentPage
 from app.models.chunk import DocumentChunk, ChunkEmbedding
+from app.models.bm25 import BM25IndexMetadata
 
 # Set database URL dynamically from application settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)
