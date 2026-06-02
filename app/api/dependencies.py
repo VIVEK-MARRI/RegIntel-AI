@@ -24,6 +24,7 @@ from app.services.chunk_registry import ChunkRegistryService
 from app.services.embedding import EmbeddingProvider, embedding_provider
 from app.services.embedding.pipeline import EmbeddingPipeline
 from app.services.embedding.index_manager import VectorIndexManager
+from app.services.embedding.retrieval import RetrievalService
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -122,3 +123,10 @@ async def get_vector_index_manager(
 ) -> VectorIndexManager:
     """Dependency injection provider for VectorIndexManager."""
     return VectorIndexManager(db_session)
+
+async def get_retrieval_service(
+    db_session: AsyncSession = Depends(get_db_session),
+    embedding_provider: EmbeddingProvider = Depends(get_embedding_provider)
+) -> RetrievalService:
+    """Dependency injection provider for RetrievalService."""
+    return RetrievalService(db_session, embedding_provider)
