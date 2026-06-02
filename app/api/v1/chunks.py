@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional, Sequence
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query
 from app.api.dependencies import get_chunk_registry_service
 from app.schemas.chunk import StoredChunkResponse, ChunkSortByEnum
 from app.schemas.document import SortOrderEnum

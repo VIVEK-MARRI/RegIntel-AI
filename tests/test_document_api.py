@@ -180,8 +180,7 @@ async def test_update_metadata(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_upload_document_api(client: AsyncClient):
     import io
-    import hashlib
-    from unittest.mock import patch, AsyncMock
+    from unittest.mock import patch
     
     file_content = b"PDF API upload content SEBI regulation"
     file_bytes = io.BytesIO(file_content)

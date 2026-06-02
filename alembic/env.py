@@ -17,7 +17,7 @@ if config.config_file_name is not None:
 from app.core.config import settings
 from app.models.document import Base
 from app.models.page import DocumentPage
-from app.models.chunk import DocumentChunk
+from app.models.chunk import DocumentChunk, ChunkEmbedding
 
 # Set database URL dynamically from application settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)

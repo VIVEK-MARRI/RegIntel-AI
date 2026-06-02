@@ -1,8 +1,6 @@
-import uuid
 from datetime import date
 from typing import Dict, Any, Optional, List
 from uuid import UUID as PyUUID
-from app.schemas.chunk import ChunkMetadata
 
 class ChunkMetadataBuilder:
     """Builder pattern implementation for constructing ChunkMetadata dictionaries incrementally."""

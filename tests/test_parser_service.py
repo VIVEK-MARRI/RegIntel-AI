@@ -1,7 +1,6 @@
 import tempfile
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock
 import fitz
 from app.services.parser_service import ParserService, PDFParsingError
 from app.services.document import DocumentService

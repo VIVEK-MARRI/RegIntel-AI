@@ -21,6 +21,8 @@ from app.core.token_utils import SimpleTokenizer
 from app.services.structure.chunker import HierarchicalChunker, HierarchicalChunkerService
 from app.services.structure.enricher import MetadataEnricher, MetadataValidator
 from app.services.chunk_registry import ChunkRegistryService
+from app.services.embedding import EmbeddingProvider, embedding_provider
+from app.services.embedding.pipeline import EmbeddingPipeline
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -100,3 +102,15 @@ async def get_chunk_registry_service(
 ) -> ChunkRegistryService:
     """Dependency injection provider for ChunkRegistryService."""
     return ChunkRegistryService(db_session, doc_service)
+
+def get_embedding_provider() -> EmbeddingProvider:
+    """Dependency injection provider for EmbeddingProvider singleton."""
+    return embedding_provider
+
+async def get_embedding_pipeline(
+    db_session: AsyncSession = Depends(get_db_session),
+    chunk_service: ChunkRegistryService = Depends(get_chunk_registry_service),
+    embedding_provider: EmbeddingProvider = Depends(get_embedding_provider)
+) -> EmbeddingPipeline:
+    """Dependency injection provider for EmbeddingPipeline."""
+    return EmbeddingPipeline(db_session, chunk_service, embedding_provider)

@@ -4,7 +4,6 @@ import statistics
 from typing import List
 from app.core.token_utils import SimpleTokenizer
 from app.services.structure.chunker import HierarchicalChunker
-from app.schemas.chunk import ChunkResponse
 
 def run_chunker_benchmark(pages_count: int = 10, lines_per_page: int = 50) -> dict:
     """Simulates document chunking over complex mock page workloads to evaluate performance."""

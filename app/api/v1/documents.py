@@ -9,7 +9,6 @@ from app.api.dependencies import (
     get_structure_service,
     get_hierarchy_builder,
     get_hierarchy_validator,
-    get_hierarchical_chunker_service,
     get_chunk_registry_service
 )
 from app.models.document import SourceEnum, StatusEnum

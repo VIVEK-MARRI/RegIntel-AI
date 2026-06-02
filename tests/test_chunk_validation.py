@@ -1,5 +1,4 @@
 import pytest
-import uuid
 from app.services.validation.rules import (
     RejectEmptyChunkRule,
     TokenThresholdRule,
