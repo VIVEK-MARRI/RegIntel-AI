@@ -11,7 +11,8 @@ from app.api.dependencies import (
     get_retrieval_service,
     get_embedding_provider,
     get_vector_index_manager,
-    get_hybrid_retriever
+    get_hybrid_retriever,
+    get_reranker_service,
 )
 from app.models.chunk import ChunkEmbedding, DocumentChunk
 from app.services.embedding.retrieval import RetrievalService
@@ -29,6 +30,8 @@ from app.schemas.search import (
 )
 from app.schemas.hybrid import HybridSearchRequest, HybridSearchResponse
 from app.services.hybrid.service import HybridRetriever
+from app.schemas.reranker import RerankRequest, RerankResponse
+from app.services.reranker.service import RerankerService
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +136,40 @@ async def hybrid_search(
             detail="An error occurred while executing the hybrid search."
         )
 
+
+@search_router.post(
+    "/rerank",
+    response_model=RerankResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Rerank retrieval candidates using cross-encoder relevance scoring",
+    description="Scores each candidate chunk against the query using BAAI/bge-reranker-base and returns the top-K most relevant results."
+)
+async def rerank_candidates(
+    request: RerankRequest,
+    reranker: RerankerService = Depends(get_reranker_service),
+) -> RerankResponse:
+    try:
+        candidates = [
+            {
+                "chunk_id": c.chunk_id,
+                "content": c.content,
+                "score": c.score,
+                "metadata": c.metadata,
+            }
+            for c in request.candidates
+        ]
+        return reranker.rerank(
+            query=request.query,
+            candidates=candidates,
+            top_k=request.top_k,
+            score_threshold=request.score_threshold,
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error executing reranking: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while reranking candidates."
+        )
 
 @search_router.get(
     "/health",

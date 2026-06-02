@@ -19,6 +19,13 @@ from app.models.document import Base
 from app.models.page import DocumentPage
 from app.models.chunk import DocumentChunk, ChunkEmbedding
 from app.models.bm25 import BM25IndexMetadata
+from app.models.analytics import (
+    RetrievalMetricsRecord,
+    AggregatedMetricsSnapshot,
+    QueryDistributionRecord,
+    RerankerGainRecord,
+    SystemHealthSnapshot,
+)
 
 # Set database URL dynamically from application settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)

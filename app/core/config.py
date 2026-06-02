@@ -44,6 +44,32 @@ class Settings(BaseSettings):
         description="Whether to fall back to sa.ARRAY(sa.Float) if the pgvector extension is not available"
     )
 
+    # Reranker
+    RERANKER_MODEL_NAME: str = Field(
+        default="BAAI/bge-reranker-base",
+        description="Name or path of the cross-encoder reranker model"
+    )
+    RERANKER_DEVICE: str | None = Field(
+        default=None,
+        description="Computation device for the reranker (cpu, cuda). Auto-detected if None"
+    )
+    RERANKER_MAX_LENGTH: int = Field(
+        default=512,
+        description="Maximum token length for reranker input pairs"
+    )
+    RERANKER_BATCH_SIZE: int = Field(
+        default=32,
+        description="Batch size for scoring query-chunk pairs"
+    )
+    RERANKER_DEFAULT_TOP_K: int = Field(
+        default=5,
+        description="Default number of top results to return after reranking"
+    )
+    RERANKER_SCORE_THRESHOLD: float = Field(
+        default=0.0,
+        description="Minimum reranker score to include a result"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

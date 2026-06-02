@@ -10,10 +10,9 @@ class RetrievalStrategy(str, Enum):
     KEYWORD = "keyword"
     HYBRID = "hybrid"
 
-class FusionMethod(str, Enum):
-    """Supported candidate score fusion methods."""
-    RRF = "rrf"
-    WEIGHTED_SUM = "weighted_sum"
+# Canonical enum lives in app.schemas.fusion; re-export for backward compat.
+from app.schemas.fusion import FusionMethod  # noqa: E402, F401
+
 
 class RetrievalResult(BaseModel):
     """Schema representing a single merged candidate chunk result."""

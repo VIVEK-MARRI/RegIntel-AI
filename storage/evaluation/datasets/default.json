@@ -1,0 +1,56 @@
+{
+  "name": "default",
+  "description": "Default sample dataset for retrieval evaluation",
+  "queries": [
+    {
+      "query_id": "q001",
+      "query_text": "What are the capital adequacy requirements for banks?",
+      "relevant_chunk_ids": [],
+      "metadata": {
+        "category": "capital_adequacy",
+        "source": "RBI"
+      }
+    },
+    {
+      "query_id": "q002",
+      "query_text": "Explain the guidelines for non-performing assets classification",
+      "relevant_chunk_ids": [],
+      "metadata": {
+        "category": "NPA",
+        "source": "RBI"
+      }
+    },
+    {
+      "query_id": "q003",
+      "query_text": "What are the KYC norms for customer identification?",
+      "relevant_chunk_ids": [],
+      "metadata": {
+        "category": "KYC",
+        "source": "RBI"
+      }
+    },
+    {
+      "query_id": "q004",
+      "query_text": "Describe the SEBI regulations for mutual funds",
+      "relevant_chunk_ids": [],
+      "metadata": {
+        "category": "mutual_funds",
+        "source": "SEBI"
+      }
+    },
+    {
+      "query_id": "q005",
+      "query_text": "What are the disclosure requirements for listed companies?",
+      "relevant_chunk_ids": [],
+      "metadata": {
+        "category": "disclosure",
+        "source": "SEBI"
+      }
+    }
+  ],
+  "created_at": "2026-06-02 04:59:08.884787",
+  "metadata": {
+    "version": "1.0",
+    "type": "sample"
+  }
+}

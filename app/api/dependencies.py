@@ -31,6 +31,8 @@ from app.services.bm25.base import BM25Retriever
 from app.services.bm25.service import BM25RetrieverService
 from app.services.query_analysis.service import QueryAnalyzer
 from app.services.hybrid.service import HybridRetriever
+from app.services.reranker.model import BGERerankerProvider
+from app.services.reranker.service import RerankerService
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -165,3 +167,29 @@ def get_hybrid_retriever(
 ) -> HybridRetriever:
     """Dependency injection provider for HybridRetriever."""
     return HybridRetriever(retrieval_service, bm25_retriever)
+
+
+# Lazy singleton reranker provider — loaded on first request
+_reranker_provider: BGERerankerProvider | None = None
+
+def get_reranker_provider() -> BGERerankerProvider:
+    """Dependency injection provider for BGERerankerProvider (singleton)."""
+    global _reranker_provider
+    if _reranker_provider is None:
+        _reranker_provider = BGERerankerProvider(
+            model_name=settings.RERANKER_MODEL_NAME,
+            device=settings.RERANKER_DEVICE,
+            max_length=settings.RERANKER_MAX_LENGTH,
+            batch_size=settings.RERANKER_BATCH_SIZE,
+        )
+    return _reranker_provider
+
+def get_reranker_service(
+    provider: BGERerankerProvider = Depends(get_reranker_provider),
+) -> RerankerService:
+    """Dependency injection provider for RerankerService."""
+    return RerankerService(
+        provider=provider,
+        default_top_k=settings.RERANKER_DEFAULT_TOP_K,
+        default_score_threshold=settings.RERANKER_SCORE_THRESHOLD,
+    )

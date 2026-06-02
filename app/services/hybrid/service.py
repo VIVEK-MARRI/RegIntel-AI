@@ -1,3 +1,9 @@
+"""Hybrid Retrieval Service.
+
+Orchestrates dense semantic search and keyword-based BM25 search, delegating
+all score fusion to the ``FusionEngine``.
+"""
+
 import time
 import uuid
 import logging
@@ -8,37 +14,48 @@ from app.schemas.hybrid import (
     RetrievalStrategy,
     FusionMethod,
     RetrievalResult,
-    HybridSearchResponse
+    HybridSearchResponse,
 )
 from app.services.embedding.retrieval import RetrievalService
 from app.services.bm25.base import BM25Retriever
-from app.services.hybrid.strategy import min_max_normalize, RetrievalStrategyManager
+from app.services.hybrid.strategy import RetrievalStrategyManager
+from app.services.fusion.engine import FusionEngine
+from app.schemas.fusion import FusionConfig
+from app.services.fusion.ranking import compute_overlap
 
 logger = logging.getLogger(__name__)
 
+
 class HybridRetriever:
     """Orchestrates dense semantic search and keyword-based BM25 search.
-    
-    Combines results using either Reciprocal Rank Fusion (RRF) or Min-Max Normalized Weighted Sum.
+
+    Combines results using either Reciprocal Rank Fusion (RRF) or Min-Max
+    Normalized Weighted Sum via the ``FusionEngine``.
     """
 
-    def __init__(self, retrieval_service: RetrievalService, bm25_retriever: BM25Retriever):
+    def __init__(
+        self,
+        retrieval_service: RetrievalService,
+        bm25_retriever: BM25Retriever,
+        fusion_engine: Optional[FusionEngine] = None,
+    ):
         self.retrieval_service = retrieval_service
         self.bm25_retriever = bm25_retriever
+        self.fusion_engine = fusion_engine or FusionEngine()
 
     async def retrieve_dense(
         self,
         query: str,
         top_k: int = 5,
         source: Optional[SourceEnum] = None,
-        document_id: Optional[uuid.UUID] = None
+        document_id: Optional[uuid.UUID] = None,
     ) -> List[Dict[str, Any]]:
         """Wraps semantic retrieval service."""
         dense_response = await self.retrieval_service.retrieve(
             query=query,
             top_k=top_k,
             source=source,
-            document_id=document_id
+            document_id=document_id,
         )
         return dense_response.get("results", [])
 
@@ -47,14 +64,14 @@ class HybridRetriever:
         query: str,
         top_k: int = 5,
         source: Optional[SourceEnum] = None,
-        document_id: Optional[uuid.UUID] = None
+        document_id: Optional[uuid.UUID] = None,
     ) -> List[Dict[str, Any]]:
         """Wraps BM25 keyword search."""
         return await self.bm25_retriever.retrieve(
             query=query,
             top_k=top_k,
             source=source,
-            document_id=document_id
+            document_id=document_id,
         )
 
     async def retrieve_hybrid(
@@ -69,220 +86,140 @@ class HybridRetriever:
         fusion_method: FusionMethod = FusionMethod.RRF,
         rrf_k: int = 60,
         source: Optional[SourceEnum] = None,
-        document_id: Optional[uuid.UUID] = None
+        document_id: Optional[uuid.UUID] = None,
     ) -> HybridSearchResponse:
         """Coordinates and fuses dense and keyword search queries based on the strategy."""
         start_overall = time.perf_counter()
-        
+
         dense_results: List[Dict[str, Any]] = []
         bm25_results: List[Dict[str, Any]] = []
         dense_latency = 0.0
         bm25_latency = 0.0
-        
-        # Balance/Normalize weights
+
+        # Balance / normalise weights
         d_weight, b_weight = RetrievalStrategyManager.balance_weights(dense_weight, bm25_weight)
-        
+
         # 1. Fetch dense candidates if strategy needs them
-        if strategy in [RetrievalStrategy.DENSE, RetrievalStrategy.HYBRID]:
+        if strategy in (RetrievalStrategy.DENSE, RetrievalStrategy.HYBRID):
             start_dense = time.perf_counter()
             dense_results = await self.retrieve_dense(
-                query=query,
-                top_k=dense_top_k,
-                source=source,
-                document_id=document_id
+                query=query, top_k=dense_top_k, source=source, document_id=document_id,
             )
             dense_latency = (time.perf_counter() - start_dense) * 1000.0
 
         # 2. Fetch BM25 candidates if strategy needs them
-        if strategy in [RetrievalStrategy.KEYWORD, RetrievalStrategy.HYBRID]:
+        if strategy in (RetrievalStrategy.KEYWORD, RetrievalStrategy.HYBRID):
             start_bm25 = time.perf_counter()
             bm25_results = await self.retrieve_bm25(
-                query=query,
-                top_k=bm25_top_k,
-                source=source,
-                document_id=document_id
+                query=query, top_k=bm25_top_k, source=source, document_id=document_id,
             )
             bm25_latency = (time.perf_counter() - start_bm25) * 1000.0
 
-        # Create dictionaries of chunk details
-        dense_map = {r["chunk_id"]: r for r in dense_results}
-        bm25_map = {r["chunk_id"]: r for r in bm25_results}
-        
-        merged_candidates: Dict[str, Dict[str, Any]] = {}
-        
-        # 3. Fuse Candidates
+        # ------------------------------------------------------------------
+        # 3. Fuse candidates via the FusionEngine
+        # ------------------------------------------------------------------
         if strategy == RetrievalStrategy.DENSE:
-            # Dense Only
-            for idx, cid in enumerate(dense_map.keys()):
-                r = dense_map[cid]
-                merged_candidates[cid] = {
-                    "chunk_id": cid,
-                    "score": r["score"],
-                    "dense_score": r["score"],
-                    "dense_rank": idx + 1,
-                    "bm25_score": None,
-                    "bm25_rank": None,
-                    "content": r["content"],
-                    "metadata": r.get("metadata") or {}
-                }
+            # Dense-only: wrap as-is, no fusion needed
+            merged = self._wrap_single_source(dense_results, source_name="dense")
         elif strategy == RetrievalStrategy.KEYWORD:
-            # BM25 Only
-            for idx, cid in enumerate(bm25_map.keys()):
-                r = bm25_map[cid]
-                # Synthesize standard metadata dict
-                meta = r.get("metadata") or {}
-                if "section" not in meta and "section" in r:
-                    meta["section"] = r["section"]
-                if "subsection" not in meta and "subsection" in r:
-                    meta["subsection"] = r["subsection"]
-                merged_candidates[cid] = {
-                    "chunk_id": cid,
-                    "score": r["score"],
-                    "dense_score": None,
-                    "dense_rank": None,
-                    "bm25_score": r["score"],
-                    "bm25_rank": idx + 1,
-                    "content": r["content"],
-                    "metadata": meta
-                }
+            # BM25-only: wrap as-is, no fusion needed
+            merged = self._wrap_single_source(bm25_results, source_name="bm25")
         else:
-            # Hybrid fusion (RRF or Weighted Sum)
-            if fusion_method == FusionMethod.RRF:
-                # Reciprocal Rank Fusion
-                all_ids = set(dense_map.keys()).union(bm25_map.keys())
-                for cid in all_ids:
-                    score = 0.0
-                    dense_rank = None
-                    bm25_rank = None
-                    dense_score = None
-                    bm25_score = None
-                    content = ""
-                    meta = {}
+            # Hybrid: delegate to the FusionEngine
+            config = FusionConfig(
+                method=fusion_method,
+                rrf_k=rrf_k,
+                dense_weight=d_weight,
+                bm25_weight=b_weight,
+            )
+            merged = self.fusion_engine.fuse_results(
+                dense_results, bm25_results, config=config,
+            )
 
-                    if cid in dense_map:
-                        dense_idx = list(dense_map.keys()).index(cid)
-                        dense_rank = dense_idx + 1
-                        dense_score = dense_map[cid]["score"]
-                        content = dense_map[cid]["content"]
-                        meta.update(dense_map[cid].get("metadata") or {})
-                        score += d_weight * (1.0 / (rrf_k + dense_rank))
-                        
-                    if cid in bm25_map:
-                        bm25_idx = list(bm25_map.keys()).index(cid)
-                        bm25_rank = bm25_idx + 1
-                        bm25_score = bm25_map[cid]["score"]
-                        if not content:
-                            content = bm25_map[cid]["content"]
-                        meta.update(bm25_map[cid].get("metadata") or {})
-                        if "section" not in meta and "section" in bm25_map[cid]:
-                            meta["section"] = bm25_map[cid]["section"]
-                        if "subsection" not in meta and "subsection" in bm25_map[cid]:
-                            meta["subsection"] = bm25_map[cid]["subsection"]
-                        score += b_weight * (1.0 / (rrf_k + bm25_rank))
+        # 4. Sort deterministically & slice to top_n
+        merged.sort(key=lambda x: (-x["score"], x["chunk_id"]))
+        sliced = merged[:top_n]
 
-                    merged_candidates[cid] = {
-                        "chunk_id": cid,
-                        "score": score,
-                        "dense_score": dense_score,
-                        "dense_rank": dense_rank,
-                        "bm25_score": bm25_score,
-                        "bm25_rank": bm25_rank,
-                        "content": content,
-                        "metadata": meta
-                    }
-            else:
-                # Min-Max Normalized Weighted Sum
-                dense_ids = list(dense_map.keys())
-                bm25_ids = list(bm25_map.keys())
-                
-                raw_dense_scores = [dense_map[cid]["score"] for cid in dense_ids]
-                raw_bm25_scores = [bm25_map[cid]["score"] for cid in bm25_ids]
-                
-                norm_dense_scores = min_max_normalize(raw_dense_scores)
-                norm_bm25_scores = min_max_normalize(raw_bm25_scores)
-                
-                dense_norm_map = {cid: norm_dense_scores[idx] for idx, cid in enumerate(dense_ids)}
-                bm25_norm_map = {cid: norm_bm25_scores[idx] for idx, cid in enumerate(bm25_ids)}
-                
-                all_ids = set(dense_map.keys()).union(bm25_map.keys())
-                for cid in all_ids:
-                    dense_rank = None
-                    bm25_rank = None
-                    dense_score = None
-                    bm25_score = None
-                    content = ""
-                    meta = {}
-                    
-                    norm_dense = 0.0
-                    norm_bm25 = 0.0
-                    
-                    if cid in dense_map:
-                        dense_idx = dense_ids.index(cid)
-                        dense_rank = dense_idx + 1
-                        dense_score = dense_map[cid]["score"]
-                        norm_dense = dense_norm_map[cid]
-                        content = dense_map[cid]["content"]
-                        meta.update(dense_map[cid].get("metadata") or {})
-                        
-                    if cid in bm25_map:
-                        bm25_idx = bm25_ids.index(cid)
-                        bm25_rank = bm25_idx + 1
-                        bm25_score = bm25_map[cid]["score"]
-                        norm_bm25 = bm25_norm_map[cid]
-                        if not content:
-                            content = bm25_map[cid]["content"]
-                        meta.update(bm25_map[cid].get("metadata") or {})
-                        if "section" not in meta and "section" in bm25_map[cid]:
-                            meta["section"] = bm25_map[cid]["section"]
-                        if "subsection" not in meta and "subsection" in bm25_map[cid]:
-                            meta["subsection"] = bm25_map[cid]["subsection"]
+        # 5. Overlap diagnostics
+        dense_ids = {r["chunk_id"] for r in dense_results}
+        bm25_ids = {r["chunk_id"] for r in bm25_results}
+        overlap_info = compute_overlap(dense_ids, bm25_ids)
 
-                    score = d_weight * norm_dense + b_weight * norm_bm25
-                    
-                    merged_candidates[cid] = {
-                        "chunk_id": cid,
-                        "score": score,
-                        "dense_score": dense_score,
-                        "dense_rank": dense_rank,
-                        "bm25_score": bm25_score,
-                        "bm25_rank": bm25_rank,
-                        "content": content,
-                        "metadata": meta
-                    }
-
-        # 4. Sort deterministically (score descending, chunk id ascending) and slice
-        sorted_results = list(merged_candidates.values())
-        sorted_results.sort(key=lambda x: (-x["score"], x["chunk_id"]))
-        sliced_results = sorted_results[:top_n]
-        
-        # 5. Calculate overlap diagnostics
-        dense_ids = set(dense_map.keys())
-        bm25_ids = set(bm25_map.keys())
-        overlap_ids = dense_ids.intersection(bm25_ids)
-        union_ids = dense_ids.union(bm25_ids)
-        
-        overlap_count = len(overlap_ids)
-        overlap_percentage = (overlap_count / len(union_ids) * 100.0) if union_ids else 0.0
-        
         overall_latency = (time.perf_counter() - start_overall) * 1000.0
-        
+
         metrics = {
             "overall_latency_ms": overall_latency,
             "dense_latency_ms": dense_latency,
             "bm25_latency_ms": bm25_latency,
             "dense_count": len(dense_results),
             "bm25_count": len(bm25_results),
-            "overlap_count": overlap_count,
-            "overlap_percentage": overlap_percentage
+            "overlap_count": overlap_info["overlap_count"],
+            "overlap_percentage": overlap_info["overlap_percentage"],
         }
-        
+
         logger.info(
-            f"Hybrid search complete. Strategy: {strategy.value}, Fusion: {fusion_method.value}. "
-            f"Returned {len(sliced_results)} results in {overall_latency:.2f}ms. Overlap: {overlap_count} ({overlap_percentage:.1f}%)."
+            "Hybrid search complete. Strategy: %s, Fusion: %s. "
+            "Returned %d results in %.2fms. Overlap: %d (%.1f%%).",
+            strategy.value,
+            fusion_method.value,
+            len(sliced),
+            overall_latency,
+            overlap_info["overlap_count"],
+            overlap_info["overlap_percentage"],
         )
-        
+
         return HybridSearchResponse(
             query=query,
-            results=[RetrievalResult(**r) for r in sliced_results],
-            metrics=metrics
+            results=[RetrievalResult(**self._to_retrieval_dict(r)) for r in sliced],
+            metrics=metrics,
         )
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _wrap_single_source(
+        results: List[Dict[str, Any]],
+        source_name: str,
+    ) -> List[Dict[str, Any]]:
+        """Wrap single-source results into the unified candidate format."""
+        wrapped: List[Dict[str, Any]] = []
+        for idx, r in enumerate(results):
+            meta = r.get("metadata") or {}
+            # Promote BM25 top-level keys into metadata
+            for key in ("section", "subsection"):
+                if key not in meta and key in r:
+                    meta[key] = r[key]
+
+            wrapped.append({
+                "chunk_id": r["chunk_id"],
+                "score": r["score"],
+                "rrf_score": None,
+                "dense_score": r["score"] if source_name == "dense" else None,
+                "bm25_score": r["score"] if source_name == "bm25" else None,
+                "dense_rank": (idx + 1) if source_name == "dense" else None,
+                "bm25_rank": (idx + 1) if source_name == "bm25" else None,
+                "sources": [source_name],
+                "content": r["content"],
+                "metadata": meta,
+            })
+        return wrapped
+
+    @staticmethod
+    def _to_retrieval_dict(candidate: Dict[str, Any]) -> Dict[str, Any]:
+        """Project a fused candidate into the ``RetrievalResult`` field set.
+
+        Drops keys like ``rrf_score`` and ``sources`` that are not part of
+        the legacy ``RetrievalResult`` schema.
+        """
+        return {
+            "chunk_id": candidate["chunk_id"],
+            "score": candidate["score"],
+            "dense_score": candidate.get("dense_score"),
+            "bm25_score": candidate.get("bm25_score"),
+            "dense_rank": candidate.get("dense_rank"),
+            "bm25_rank": candidate.get("bm25_rank"),
+            "content": candidate.get("content", ""),
+            "metadata": candidate.get("metadata", {}),
+        }
