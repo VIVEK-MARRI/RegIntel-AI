@@ -6,6 +6,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.document import Base
+from app.core.config import settings
 
 class EmbeddingStatusEnum(str, PyEnum):
     PENDING = "PENDING"
@@ -40,10 +41,9 @@ class DocumentChunk(Base):
 
     # Relationships
     document: Mapped["Document"] = relationship("Document", back_populates="chunks")
-    embedding_record: Mapped["ChunkEmbedding"] = relationship(
+    embeddings: Mapped[list["ChunkEmbedding"]] = relationship(
         "ChunkEmbedding",
         back_populates="chunk",
-        uselist=False,
         cascade="all, delete-orphan"
     )
 
@@ -55,12 +55,26 @@ class DocumentChunk(Base):
 class ChunkEmbedding(Base):
     __tablename__ = "chunk_embeddings"
 
-    chunk_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("document_chunks.id", ondelete="CASCADE"),
+    id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
+        default=uuid.uuid4,
         index=True
     )
-    embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Float), nullable=True)
+    chunk_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("document_chunks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    
+    if settings.USE_PGVECTOR_FALLBACK:
+        embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Float), nullable=True)
+    else:
+        from pgvector.sqlalchemy import Vector
+        embedding: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)
+
+    embedding_model: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    embedding_dimension: Mapped[int] = mapped_column(Integer, nullable=False)
+    
     status: Mapped[EmbeddingStatusEnum] = mapped_column(
         SQLEnum(EmbeddingStatusEnum, name="embedding_status_enum"),
         default=EmbeddingStatusEnum.PENDING,
@@ -80,4 +94,24 @@ class ChunkEmbedding(Base):
     )
 
     # Relationships
-    chunk: Mapped["DocumentChunk"] = relationship("DocumentChunk", back_populates="embedding_record")
+    chunk: Mapped["DocumentChunk"] = relationship("DocumentChunk", back_populates="embeddings")
+
+    # Optimization indexes and constraints
+    if settings.USE_PGVECTOR_FALLBACK:
+        __table_args__ = (
+            Index("idx_chunk_embeddings_chunk_id", "chunk_id"),
+            Index("idx_chunk_embeddings_model", "embedding_model"),
+            Index("idx_chunk_embeddings_chunk_model", "chunk_id", "embedding_model", unique=True),
+        )
+    else:
+        __table_args__ = (
+            Index("idx_chunk_embeddings_chunk_id", "chunk_id"),
+            Index("idx_chunk_embeddings_model", "embedding_model"),
+            Index("idx_chunk_embeddings_chunk_model", "chunk_id", "embedding_model", unique=True),
+            Index(
+                "idx_chunk_embeddings_vector",
+                "embedding",
+                postgresql_using="hnsw",
+                postgresql_ops={"embedding": "vector_cosine_ops"}
+            ),
+        )

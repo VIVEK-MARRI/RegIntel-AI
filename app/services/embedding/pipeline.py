@@ -50,12 +50,23 @@ class EmbeddingPipeline:
                 "duration_ms": duration_ms
             }
 
+        # Retrieve model details from provider
+        model_name = self.embedding_provider.get_model_name()
+        dimension = self.embedding_provider.get_dimension()
+
         # 2. Initialize PENDING state for chunks in db (if not already existing)
-        for chunk in chunks:
-            await self.embedding_repo.upsert_embedding(
-                chunk_id=chunk.id,
-                status=EmbeddingStatusEnum.PENDING
-            )
+        pending_data = [
+            {
+                "chunk_id": chunk.id,
+                "embedding": None,
+                "embedding_model": model_name,
+                "embedding_dimension": dimension,
+                "status": EmbeddingStatusEnum.PENDING,
+                "error_message": None
+            }
+            for chunk in chunks
+        ]
+        await self.embedding_repo.save_embeddings_bulk(pending_data)
         await self.db_session.commit()
 
         processed_count = 0
@@ -69,12 +80,19 @@ class EmbeddingPipeline:
 
             logger.info(f"Processing batch of {len(batch_chunks)} chunks ({i} to {i + len(batch_chunks)})...")
 
-            # Update status to PROCESSING
-            for chunk_id in batch_chunk_ids:
-                await self.embedding_repo.upsert_embedding(
-                    chunk_id=chunk_id,
-                    status=EmbeddingStatusEnum.PROCESSING
-                )
+            # Update status to PROCESSING in bulk
+            processing_data = [
+                {
+                    "chunk_id": chunk_id,
+                    "embedding": None,
+                    "embedding_model": model_name,
+                    "embedding_dimension": dimension,
+                    "status": EmbeddingStatusEnum.PROCESSING,
+                    "error_message": None
+                }
+                for chunk_id in batch_chunk_ids
+            ]
+            await self.embedding_repo.save_embeddings_bulk(processing_data)
             await self.db_session.commit()
 
             # Generate embeddings with retry mechanism
@@ -98,24 +116,36 @@ class EmbeddingPipeline:
                     )
                     await asyncio.sleep(sleep_time)
 
-            # Persist results
+            # Persist results in bulk
             if embeddings is not None:
                 # Success
-                for idx, chunk_id in enumerate(batch_chunk_ids):
-                    await self.embedding_repo.upsert_embedding(
-                        chunk_id=chunk_id,
-                        status=EmbeddingStatusEnum.COMPLETED,
-                        embedding=embeddings[idx]
-                    )
+                success_data = [
+                    {
+                        "chunk_id": chunk_id,
+                        "embedding": embeddings[idx],
+                        "embedding_model": model_name,
+                        "embedding_dimension": dimension,
+                        "status": EmbeddingStatusEnum.COMPLETED,
+                        "error_message": None
+                    }
+                    for idx, chunk_id in enumerate(batch_chunk_ids)
+                ]
+                await self.embedding_repo.save_embeddings_bulk(success_data)
                 processed_count += len(batch_chunks)
             else:
                 # Failure
-                for chunk_id in batch_chunk_ids:
-                    await self.embedding_repo.upsert_embedding(
-                        chunk_id=chunk_id,
-                        status=EmbeddingStatusEnum.FAILED,
-                        error_message=str(error_occured)
-                    )
+                failure_data = [
+                    {
+                        "chunk_id": chunk_id,
+                        "embedding": None,
+                        "embedding_model": model_name,
+                        "embedding_dimension": dimension,
+                        "status": EmbeddingStatusEnum.FAILED,
+                        "error_message": str(error_occured)
+                    }
+                    for chunk_id in batch_chunk_ids
+                ]
+                await self.embedding_repo.save_embeddings_bulk(failure_data)
                 failed_count += len(batch_chunks)
 
             await self.db_session.commit()

@@ -190,3 +190,160 @@ async def test_embedding_pipeline_permanent_failure(db_session):
     # Cleanup
     await doc_service.repository.delete(doc)
     await db_session.commit()
+
+
+@pytest.mark.asyncio
+async def test_repository_save_and_retrieve_embedding(db_session):
+    from app.repositories.embedding import ChunkEmbeddingRepository
+    from app.services.document import DocumentService
+    from app.services.chunk_registry import ChunkRegistryService
+    from app.models.document import Document, SourceEnum, StatusEnum
+    
+    doc_service = DocumentService(db_session)
+    chunk_service = ChunkRegistryService(db_session, doc_service)
+    repo = ChunkEmbeddingRepository(db_session)
+    
+    doc = Document(
+        title="Repo Test Doc",
+        source=SourceEnum.RBI,
+        file_name="repo_test.pdf",
+        file_path="RBI/repo_test.pdf",
+        checksum="x" * 64,
+        status=StatusEnum.UPLOADED
+    )
+    db_session.add(doc)
+    await db_session.commit()
+    
+    chunks_data = [
+        {"content": "Content passage 1", "section": "Sec 1", "subsection": "", "page_number": 1, "token_count": 10}
+    ]
+    registered_chunks = await chunk_service.register_chunks_bulk(doc.id, chunks_data)
+    chunk_id = registered_chunks[0].id
+    
+    # 1. Test save_embedding (single upsert)
+    emb_record = await repo.save_embedding(
+        chunk_id=chunk_id,
+        embedding=[0.1, 0.2, 0.3],
+        embedding_model="mock-model",
+        embedding_dimension=3
+    )
+    assert emb_record.status == EmbeddingStatusEnum.COMPLETED
+    assert emb_record.embedding_model == "mock-model"
+    assert emb_record.embedding_dimension == 3
+    assert emb_record.embedding == [0.1, 0.2, 0.3]
+    
+    # 2. Test get_embedding
+    retrieved = await repo.get_embedding(chunk_id, "mock-model")
+    assert retrieved is not None
+    assert retrieved.id == emb_record.id
+    assert retrieved.embedding == [0.1, 0.2, 0.3]
+    
+    # 3. Test saving a different model's embedding for the same chunk (coexistence!)
+    emb_record_2 = await repo.save_embedding(
+        chunk_id=chunk_id,
+        embedding=[0.9, 0.8, 0.7, 0.6],
+        embedding_model="mock-model-large",
+        embedding_dimension=4
+    )
+    assert emb_record_2.id != emb_record.id
+    assert emb_record_2.embedding_model == "mock-model-large"
+    assert emb_record_2.embedding == [0.9, 0.8, 0.7, 0.6]
+    
+    # Verify both exist
+    retrieved_1 = await repo.get_embedding(chunk_id, "mock-model")
+    retrieved_2 = await repo.get_embedding(chunk_id, "mock-model-large")
+    assert retrieved_1 is not None
+    assert retrieved_2 is not None
+    assert len(retrieved_1.embedding) == 3
+    assert len(retrieved_2.embedding) == 4
+    
+    # 4. Test delete_embeddings for a specific model
+    await repo.delete_embeddings(chunk_id, "mock-model")
+    assert await repo.get_embedding(chunk_id, "mock-model") is None
+    assert await repo.get_embedding(chunk_id, "mock-model-large") is not None
+    
+    # 5. Test delete_embeddings for all models
+    await repo.delete_embeddings(chunk_id)
+    assert await repo.get_embedding(chunk_id, "mock-model-large") is None
+    
+    # Cleanup
+    await doc_service.repository.delete(doc)
+    await db_session.commit()
+
+
+@pytest.mark.asyncio
+async def test_repository_save_embeddings_bulk(db_session):
+    from app.repositories.embedding import ChunkEmbeddingRepository
+    from app.services.document import DocumentService
+    from app.services.chunk_registry import ChunkRegistryService
+    from app.models.document import Document, SourceEnum, StatusEnum
+    
+    doc_service = DocumentService(db_session)
+    chunk_service = ChunkRegistryService(db_session, doc_service)
+    repo = ChunkEmbeddingRepository(db_session)
+    
+    doc = Document(
+        title="Bulk Repo Test Doc",
+        source=SourceEnum.RBI,
+        file_name="bulk_repo_test.pdf",
+        file_path="RBI/bulk_repo_test.pdf",
+        checksum="y" * 64,
+        status=StatusEnum.UPLOADED
+    )
+    db_session.add(doc)
+    await db_session.commit()
+    
+    chunks_data = [
+        {"content": "Content passage 1", "section": "Sec 1", "subsection": "", "page_number": 1, "token_count": 10},
+        {"content": "Content passage 2", "section": "Sec 2", "subsection": "", "page_number": 1, "token_count": 12}
+    ]
+    registered_chunks = await chunk_service.register_chunks_bulk(doc.id, chunks_data)
+    chunk_ids = [c.id for c in registered_chunks]
+    
+    # 1. Test save_embeddings_bulk
+    bulk_data = [
+        {
+            "chunk_id": chunk_ids[0],
+            "embedding": [0.1, 0.2],
+            "embedding_model": "mock-model",
+            "embedding_dimension": 2,
+            "status": EmbeddingStatusEnum.COMPLETED
+        },
+        {
+            "chunk_id": chunk_ids[1],
+            "embedding": [0.3, 0.4],
+            "embedding_model": "mock-model",
+            "embedding_dimension": 2,
+            "status": EmbeddingStatusEnum.COMPLETED
+        }
+    ]
+    await repo.save_embeddings_bulk(bulk_data)
+    db_session.expire_all()
+    
+    # Verify both are created
+    emb_1 = await repo.get_embedding(chunk_ids[0], "mock-model")
+    emb_2 = await repo.get_embedding(chunk_ids[1], "mock-model")
+    assert emb_1 is not None
+    assert emb_2 is not None
+    assert emb_1.embedding == [0.1, 0.2]
+    assert emb_2.embedding == [0.3, 0.4]
+    
+    # 2. Test bulk upsert/update (change embeddings)
+    bulk_data_update = [
+        {
+            "chunk_id": chunk_ids[0],
+            "embedding": [0.5, 0.6],
+            "embedding_model": "mock-model",
+            "embedding_dimension": 2,
+            "status": EmbeddingStatusEnum.COMPLETED
+        }
+    ]
+    await repo.save_embeddings_bulk(bulk_data_update)
+    db_session.expire_all()
+    
+    emb_1_updated = await repo.get_embedding(chunk_ids[0], "mock-model")
+    assert emb_1_updated.embedding == [0.5, 0.6]
+    
+    # Cleanup
+    await doc_service.repository.delete(doc)
+    await db_session.commit()

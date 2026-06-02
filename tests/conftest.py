@@ -34,8 +34,19 @@ def setup_test_db():
     conn.close()
     
     # 2. Setup tables using sync engine
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
     sync_engine = create_engine(TEST_DATABASE_URL_SYNC)
+    
+    # Conditionally create vector extension if available
+    with sync_engine.connect() as db_conn:
+        try:
+            res = db_conn.execute(text("SELECT 1 FROM pg_available_extensions WHERE name = 'vector'"))
+            if res.scalar() is not None:
+                db_conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+                db_conn.commit()
+        except Exception:
+            pass
+            
     Base.metadata.create_all(sync_engine)
     sync_engine.dispose()
     

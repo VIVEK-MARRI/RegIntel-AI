@@ -39,6 +39,10 @@ class Settings(BaseSettings):
         default="represent this query for retrieving relevant documents: ",
         description="Instruction prefix prepended to queries for BGE asymmetric retrieval"
     )
+    USE_PGVECTOR_FALLBACK: bool = Field(
+        default=True,
+        description="Whether to fall back to sa.ARRAY(sa.Float) if the pgvector extension is not available"
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
