@@ -10,7 +10,8 @@ from app.core.database import get_db_session
 from app.api.dependencies import (
     get_retrieval_service,
     get_embedding_provider,
-    get_vector_index_manager
+    get_vector_index_manager,
+    get_hybrid_retriever
 )
 from app.models.chunk import ChunkEmbedding, DocumentChunk
 from app.services.embedding.retrieval import RetrievalService
@@ -26,6 +27,8 @@ from app.schemas.search import (
     IndexHealthItem,
     SearchHealthResponse
 )
+from app.schemas.hybrid import HybridSearchRequest, HybridSearchResponse
+from app.services.hybrid.service import HybridRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +98,39 @@ async def semantic_search(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while executing the search."
+        )
+
+
+@search_router.post(
+    "/hybrid",
+    response_model=HybridSearchResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Hybrid search over regulatory document chunks",
+    description="Fuses dense retrieval and BM25 search scores using RRF or Min-Max Normalized Weighted Sum."
+)
+async def hybrid_search(
+    request: HybridSearchRequest,
+    hybrid_retriever: HybridRetriever = Depends(get_hybrid_retriever)
+) -> HybridSearchResponse:
+    try:
+        return await hybrid_retriever.retrieve_hybrid(
+            query=request.query,
+            top_n=request.top_n,
+            dense_top_k=request.dense_top_k,
+            bm25_top_k=request.bm25_top_k,
+            dense_weight=request.dense_weight,
+            bm25_weight=request.bm25_weight,
+            strategy=request.strategy,
+            fusion_method=request.fusion_method,
+            rrf_k=request.rrf_k,
+            source=request.source,
+            document_id=request.document_id
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error executing hybrid search: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while executing the hybrid search."
         )
 
 

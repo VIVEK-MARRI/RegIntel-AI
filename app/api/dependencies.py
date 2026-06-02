@@ -30,6 +30,7 @@ from app.services.validation.embedding import EmbeddingQualityValidator
 from app.services.bm25.base import BM25Retriever
 from app.services.bm25.service import BM25RetrieverService
 from app.services.query_analysis.service import QueryAnalyzer
+from app.services.hybrid.service import HybridRetriever
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
@@ -157,3 +158,10 @@ async def get_bm25_retriever(
 def get_query_analyzer() -> QueryAnalyzer:
     """Dependency injection provider for QueryAnalyzer."""
     return QueryAnalyzer()
+
+def get_hybrid_retriever(
+    retrieval_service: RetrievalService = Depends(get_retrieval_service),
+    bm25_retriever: BM25Retriever = Depends(get_bm25_retriever)
+) -> HybridRetriever:
+    """Dependency injection provider for HybridRetriever."""
+    return HybridRetriever(retrieval_service, bm25_retriever)
