@@ -23,9 +23,11 @@ from app.services.structure.enricher import MetadataEnricher, MetadataValidator
 from app.services.chunk_registry import ChunkRegistryService
 from app.services.embedding import EmbeddingProvider, embedding_provider
 from app.services.embedding.pipeline import EmbeddingPipeline
+from app.services.embedding.index_manager import VectorIndexManager
 
 # Global local storage provider instance
 _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
+
 
 async def get_document_service(
     db_session: AsyncSession = Depends(get_db_session)
@@ -114,3 +116,9 @@ async def get_embedding_pipeline(
 ) -> EmbeddingPipeline:
     """Dependency injection provider for EmbeddingPipeline."""
     return EmbeddingPipeline(db_session, chunk_service, embedding_provider)
+
+async def get_vector_index_manager(
+    db_session: AsyncSession = Depends(get_db_session)
+) -> VectorIndexManager:
+    """Dependency injection provider for VectorIndexManager."""
+    return VectorIndexManager(db_session)
