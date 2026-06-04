@@ -6,7 +6,9 @@ from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.models.document import Base
 from app.models.analytics import (
@@ -17,8 +19,19 @@ from app.models.analytics import (
     SystemHealthSnapshot,
 )
 
-# Use SQLite in-memory for tests
+# Use SQLite in-memory for tests.
+# StaticPool ensures all sessions share the same underlying connection
+# (otherwise each new connection gets a brand-new in-memory DB and
+# committed data is invisible across sessions/requests).
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+ANALYTICS_TABLES = [
+    "retrieval_metrics_records",
+    "aggregated_metrics_snapshots",
+    "query_distribution_records",
+    "reranker_gain_records",
+    "system_health_snapshots",
+]
 
 
 @pytest.fixture(scope="session")
@@ -32,8 +45,13 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def engine():
-    """Create a test database engine."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    """Create a test database engine with a shared in-memory connection."""
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -41,8 +59,21 @@ async def engine():
 
 
 @pytest_asyncio.fixture
-async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a test database session."""
+async def clean_db(engine):
+    """Truncate all analytics tables before each test for isolation.
+
+    Runs regardless of how the previous test left the DB (committed,
+    rolled back, or partially flushed) so every test starts from a
+    known-clean analytics state.
+    """
+    async with engine.begin() as conn:
+        for table in ANALYTICS_TABLES:
+            await conn.execute(text(f"DELETE FROM {table}"))
+
+
+@pytest_asyncio.fixture
+async def db_session(engine, clean_db) -> AsyncGenerator[AsyncSession, None]:
+    """Create a test database session with isolation guarantees."""
     async_session = async_sessionmaker(
         bind=engine,
         autocommit=False,
@@ -51,7 +82,6 @@ async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     )
     async with async_session() as session:
         yield session
-        await session.rollback()
 
 
 def make_metrics_data(**overrides) -> dict:

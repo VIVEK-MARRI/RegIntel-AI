@@ -160,6 +160,8 @@ class RetrievalEvaluator:
             precision_at_5=metrics.get("precision_at_5", 0.0),
             precision_at_10=metrics.get("precision_at_10", 0.0),
             hit_rate=metrics.get("hit_rate", 0.0),
+            ndcg_at_5=metrics.get("ndcg_at_5", 0.0),
+            ndcg_at_10=metrics.get("ndcg_at_10", 0.0),
             latency_ms=latency_ms,
         )
 
@@ -257,6 +259,8 @@ class RetrievalEvaluator:
                 "avg_precision_at_5": 0.0,
                 "avg_precision_at_10": 0.0,
                 "avg_hit_rate": 0.0,
+                "avg_ndcg_at_5": 0.0,
+                "avg_ndcg_at_10": 0.0,
                 "avg_latency_ms": 0.0,
             }
 
@@ -268,6 +272,8 @@ class RetrievalEvaluator:
             "avg_precision_at_5": sum(q.precision_at_5 for q in query_results) / n,
             "avg_precision_at_10": sum(q.precision_at_10 for q in query_results) / n,
             "avg_hit_rate": sum(q.hit_rate for q in query_results) / n,
+            "avg_ndcg_at_5": sum(q.ndcg_at_5 for q in query_results) / n,
+            "avg_ndcg_at_10": sum(q.ndcg_at_10 for q in query_results) / n,
             "avg_latency_ms": sum(q.latency_ms for q in query_results) / n,
         }
 
@@ -306,7 +312,7 @@ class RetrievalEvaluator:
 
             # Store metrics if configured
             if config.store_results:
-                await self.metrics_storage.store_strategy_result(
+                self.metrics_storage.store_strategy_result(
                     strategy=strategy,
                     dataset_name=dataset.name,
                     result=result,
@@ -349,6 +355,8 @@ class RetrievalEvaluator:
                     "mrr": result.avg_mrr,
                     "precision_at_5": result.avg_precision_at_5,
                     "hit_rate": result.avg_hit_rate,
+                    "ndcg_at_5": result.avg_ndcg_at_5,
+                    "ndcg_at_10": result.avg_ndcg_at_10,
                 }
             )
             entries.append({
@@ -357,6 +365,8 @@ class RetrievalEvaluator:
                 "avg_recall_at_10": result.avg_recall_at_10,
                 "avg_mrr": result.avg_mrr,
                 "avg_precision_at_5": result.avg_precision_at_5,
+                "avg_ndcg_at_5": result.avg_ndcg_at_5,
+                "avg_ndcg_at_10": result.avg_ndcg_at_10,
                 "avg_hit_rate": result.avg_hit_rate,
                 "avg_latency_ms": result.avg_latency_ms,
                 "composite_score": composite_score,

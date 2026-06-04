@@ -219,10 +219,10 @@ class TestTrendAnalysis:
         service = AnalyticsService.__new__(AnalyticsService)
 
         points = [
-            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.75),
-            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.76),
-            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.75),
-            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.74),
+            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.750),
+            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.751),
+            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.750),
+            TrendDataPoint(timestamp=datetime.now(timezone.utc), value=0.749),
         ]
 
         direction, slope = service._compute_trend(points)

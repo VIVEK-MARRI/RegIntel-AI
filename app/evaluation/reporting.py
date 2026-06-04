@@ -77,8 +77,8 @@ class ReportGenerator:
         # Leaderboard
         lines.append("## Leaderboard")
         lines.append("")
-        lines.append("| Rank | Strategy | Recall@5 | Recall@10 | MRR | Precision@5 | Hit Rate | Latency (ms) | Composite |")
-        lines.append("|------|----------|----------|-----------|-----|-------------|----------|--------------|-----------|")
+        lines.append("| Rank | Strategy | Recall@5 | Recall@10 | MRR | Precision@5 | Hit Rate | NDCG@5 | NDCG@10 | Latency (ms) | Composite |")
+        lines.append("|------|----------|----------|-----------|-----|-------------|----------|--------|---------|--------------|-----------|")
 
         for entry in report.leaderboard:
             lines.append(
@@ -89,6 +89,8 @@ class ReportGenerator:
                 f"| {entry['avg_mrr']:.4f} "
                 f"| {entry['avg_precision_at_5']:.4f} "
                 f"| {entry['avg_hit_rate']:.4f} "
+                f"| {entry.get('avg_ndcg_at_5', 0.0):.4f} "
+                f"| {entry.get('avg_ndcg_at_10', 0.0):.4f} "
                 f"| {entry['avg_latency_ms']:.2f} "
                 f"| {entry['composite_score']:.4f} |"
             )
@@ -109,6 +111,8 @@ class ReportGenerator:
             lines.append(f"- **Avg Precision@5:** {result.avg_precision_at_5:.4f}")
             lines.append(f"- **Avg Precision@10:** {result.avg_precision_at_10:.4f}")
             lines.append(f"- **Avg Hit Rate:** {result.avg_hit_rate:.4f}")
+            lines.append(f"- **Avg NDCG@5:** {result.avg_ndcg_at_5:.4f}")
+            lines.append(f"- **Avg NDCG@10:** {result.avg_ndcg_at_10:.4f}")
             lines.append(f"- **Avg Latency:** {result.avg_latency_ms:.2f}ms")
             lines.append("")
 
@@ -146,8 +150,8 @@ class ReportGenerator:
         lines = []
         lines.append("# Strategy Comparison Across Evaluations")
         lines.append("")
-        lines.append("| Report | Strategy | Recall@5 | Recall@10 | MRR | Hit Rate |")
-        lines.append("|--------|----------|----------|-----------|-----|----------|")
+        lines.append("| Report | Strategy | Recall@5 | Recall@10 | MRR | Hit Rate | NDCG@5 |")
+        lines.append("|--------|----------|----------|-----------|-----|----------|--------|")
 
         for report in reports:
             timestamp = report.timestamp.strftime('%Y-%m-%d %H:%M')
@@ -158,7 +162,8 @@ class ReportGenerator:
                     f"| {result.avg_recall_at_5:.4f} "
                     f"| {result.avg_recall_at_10:.4f} "
                     f"| {result.avg_mrr:.4f} "
-                    f"| {result.avg_hit_rate:.4f} |"
+                    f"| {result.avg_hit_rate:.4f} "
+                    f"| {result.avg_ndcg_at_5:.4f} |"
                 )
 
         lines.append("")

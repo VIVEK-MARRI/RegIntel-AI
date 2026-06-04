@@ -319,6 +319,10 @@ class AnalyticsService:
                 dataset_name=dataset_name,
             )
 
+            # Skip strategies with no recorded queries in the window
+            if agg.get("total_queries", 0) == 0:
+                continue
+
             perf = StrategyPerformance(
                 strategy=strategy,
                 avg_dense_recall_at_5=agg.get("avg_dense_recall_at_5"),
@@ -434,8 +438,8 @@ class AnalyticsService:
                 dataset_name=dataset_name,
             )
 
-            current_value = agg_current.get(metric_name)
-            previous_value = agg_previous.get(metric_name)
+            current_value = agg_current.get(f"avg_{metric_name}")
+            previous_value = agg_previous.get(f"avg_{metric_name}")
 
             change_pct = None
             if current_value is not None and previous_value is not None and previous_value != 0:
@@ -638,7 +642,17 @@ class AnalyticsService:
             hybrid_retrieval_available=True,
             reranker_available=True,
             index_consistency=True,
+            embedding_coverage_pct=None,
+            total_indexed_chunks=None,
+            avg_latency_last_hour_ms=None,
+            queries_last_hour=None,
+            error_rate_last_hour=None,
+            metadata_json={},
         )
+
+    # (accidental duplicate stub removed)
+
+
 
     async def record_system_health(
         self,

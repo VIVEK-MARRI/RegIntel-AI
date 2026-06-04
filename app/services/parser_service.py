@@ -1,6 +1,10 @@
-import fitz  # PyMuPDF
 import logging
 from typing import Callable, Any, Dict, List
+try:
+    import fitz  # PyMuPDF
+except ImportError:  # pragma: no cover
+    fitz = None
+
 from pathlib import Path
 from app.services.document import DocumentService
 from app.models.document import StatusEnum
@@ -52,6 +56,11 @@ class ParserService:
         parsed_pages = []
         doc_fitz = None
         try:
+            if fitz is None:
+                raise RuntimeError(
+                    "PyMuPDF (fitz) is required for PDF parsing but is not installed."
+                )
+
             # 3. Open PDF using PyMuPDF
             logger.info(f"Opening PDF for parsing: {file_path}")
             try:

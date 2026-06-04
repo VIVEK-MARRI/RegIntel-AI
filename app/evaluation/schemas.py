@@ -69,6 +69,8 @@ class QueryEvaluationResult(BaseModel):
     precision_at_5: float = Field(0.0, description="Precision@5 score.")
     precision_at_10: float = Field(0.0, description="Precision@10 score.")
     hit_rate: float = Field(0.0, description="Hit rate (1 if any relevant found).")
+    ndcg_at_5: float = Field(0.0, description="NDCG@5 score.")
+    ndcg_at_10: float = Field(0.0, description="NDCG@10 score.")
     latency_ms: float = Field(0.0, description="Query latency in milliseconds.")
 
 
@@ -82,6 +84,8 @@ class StrategyEvaluationResult(BaseModel):
     avg_precision_at_5: float = Field(0.0, description="Average Precision@5 across queries.")
     avg_precision_at_10: float = Field(0.0, description="Average Precision@10 across queries.")
     avg_hit_rate: float = Field(0.0, description="Average hit rate across queries.")
+    avg_ndcg_at_5: float = Field(0.0, description="Average NDCG@5 across queries.")
+    avg_ndcg_at_10: float = Field(0.0, description="Average NDCG@10 across queries.")
     avg_latency_ms: float = Field(0.0, description="Average latency in milliseconds.")
     query_results: List[QueryEvaluationResult] = Field(
         default_factory=list, description="Per-query evaluation results."
@@ -113,6 +117,8 @@ class LeaderboardEntry(BaseModel):
     avg_mrr: float = Field(0.0, description="Average MRR.")
     avg_precision_at_5: float = Field(0.0, description="Average Precision@5.")
     avg_hit_rate: float = Field(0.0, description="Average hit rate.")
+    avg_ndcg_at_5: float = Field(0.0, description="Average NDCG@5.")
+    avg_ndcg_at_10: float = Field(0.0, description="Average NDCG@10.")
     avg_latency_ms: float = Field(0.0, description="Average latency.")
     composite_score: float = Field(0.0, description="Weighted composite score for ranking.")
 
@@ -129,6 +135,8 @@ class HistoricalMetrics(BaseModel):
     precision_at_5: float = Field(0.0, description="Precision@5 score.")
     precision_at_10: float = Field(0.0, description="Precision@10 score.")
     hit_rate: float = Field(0.0, description="Hit rate.")
+    ndcg_at_5: float = Field(0.0, description="NDCG@5 score.")
+    ndcg_at_10: float = Field(0.0, description="NDCG@10 score.")
     latency_ms: float = Field(0.0, description="Average latency.")
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata."

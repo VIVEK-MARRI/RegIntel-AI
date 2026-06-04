@@ -5,7 +5,9 @@ merging, and provenance tracking.  Kept separate from the engine itself
 so they can be unit-tested and reused independently.
 """
 
-from typing import List, Dict, Any, Set, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
+
+from app.services.hybrid.strategy import min_max_normalize as _min_max_normalize
 
 
 # ---------------------------------------------------------------------------
@@ -19,8 +21,8 @@ def sort_candidates(
 ) -> List[Dict[str, Any]]:
     """Sort fused candidates deterministically.
 
-    Primary key:   ``score`` (descending by default).
-    Tiebreaker:    ``chunk_id`` (ascending, lexicographic) for reproducibility.
+    Primary key   : ``score`` (descending by default).
+    Tiebreaker   : ``chunk_id`` (ascending, lexicographic) for reproducibility.
     """
     return sorted(
         candidates,
@@ -33,8 +35,8 @@ def sort_candidates(
 # ---------------------------------------------------------------------------
 
 def compute_overlap(
-    dense_ids: Set[str],
-    bm25_ids: Set[str],
+    dense_ids: set[str],
+    bm25_ids: set[str],
 ) -> Dict[str, Any]:
     """Return overlap statistics between two ID sets.
 
@@ -105,3 +107,174 @@ def merge_metadata(
                 meta[key] = bm25_map[chunk_id][key]
 
     return content, meta
+
+
+# ---------------------------------------------------------------------------
+# Rank conflict resolution
+# ---------------------------------------------------------------------------
+
+def resolve_rank_conflicts(
+    candidates: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Detect and annotate rank conflicts.
+
+    A rank *conflict* occurs when a chunk appears at very different positions
+    in two source lists (e.g. rank 1 in dense but rank 50 in BM25).  Such
+    chunks get a ``rank_discrepancy`` field and a ``conflict`` flag so
+    downstream consumers can decide how to handle them.
+
+    Parameters
+    ----------
+    candidates : list[dict]
+        Fused candidate dicts that must contain ``dense_rank`` and ``bm25_rank``.
+
+    Returns
+    -------
+    list[dict]
+        The same list with ``rank_discrepancy`` and ``conflict`` keys added.
+    """
+    for c in candidates:
+        dr = c.get("dense_rank")
+        br = c.get("bm25_rank")
+        if dr is not None and br is not None:
+            discrepancy = abs(dr - br)
+            c["rank_discrepancy"] = discrepancy
+            c["conflict"] = discrepancy > _RANK_CONFLICT_THRESHOLD
+        else:
+            c["rank_discrepancy"] = 0
+            c["conflict"] = False
+    return candidates
+
+
+_RANK_CONFLICT_THRESHOLD = 10  # positions
+
+
+# ---------------------------------------------------------------------------
+# Multi-source rank lookup helper
+# ---------------------------------------------------------------------------
+
+def _rank_of(chunk_id: str, result_map: Dict[str, Any], ordered_ids: List[str]) -> int | None:
+    """Return the 1-based rank of *chunk_id* in *ordered_ids*, or ``None``."""
+    if chunk_id not in result_map:
+        return None
+    try:
+        return ordered_ids.index(chunk_id) + 1
+    except ValueError:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Score normalisation re-export
+# ---------------------------------------------------------------------------
+
+def normalize_scores(scores: List[float]) -> List[float]:
+    """Min-max normalise a list of scores to [0, 1].
+
+    Delegates to :func:`app.services.hybrid.strategy.min_max_normalize`.
+    """
+    return _min_max_normalize(scores)
+
+
+# ---------------------------------------------------------------------------
+# Multi-source overlap (N sources)
+# ---------------------------------------------------------------------------
+
+def compute_multi_source_overlap(
+    source_ids: Dict[str, set[str]],
+) -> Dict[str, Any]:
+    """Compute overlap statistics across *N* source ID sets.
+
+    Parameters
+    ----------
+    source_ids : dict[str, set[str]]
+        Mapping of source name → set of chunk IDs.
+
+    Returns
+    -------
+    dict
+        ``overlap_count``  – IDs present in ≥ 2 sources.
+        ``overlap_ids``    – the actual IDs.
+        ``union_count``    – total unique IDs.
+        ``source_coverage`` – dict mapping each source to its ID count.
+    """
+    all_ids: set[str] = set()
+    for ids in source_ids.values():
+        all_ids |= ids
+
+    # IDs that appear in 2+ sources
+    id_counts: Dict[str, int] = {}
+    for ids in source_ids.values():
+        for cid in ids:
+            id_counts[cid] = id_counts.get(cid, 0) + 1
+    overlap_ids = {cid for cid, cnt in id_counts.items() if cnt >= 2}
+
+    return {
+        "overlap_count": len(overlap_ids),
+        "overlap_ids": overlap_ids,
+        "union_count": len(all_ids),
+        "source_coverage": {name: len(ids) for name, ids in source_ids.items() },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Deterministic tie-breaking
+# ---------------------------------------------------------------------------
+
+def break_ties(
+    candidates: List[Dict[str, Any]],
+    *,
+    secondary_key: str = "chunk_id",
+    descending: bool = True,
+) -> List[Dict[str, Any]]:
+    """Break score ties deterministically.
+
+    When two candidates have the same ``score``, the *secondary_key* is used
+    as a tiebreaker.  By default this is ``chunk_id`` (lexicographic ascending).
+
+    Parameters
+    ----------
+    candidates : list[dict]
+        Fused candidates.
+    secondary_key : str
+        Field name to use for tie-breaking.
+    descending : bool
+        Whether the primary sort is descending.
+
+    Returns
+    -------
+    list[dict]
+        Re-sorted candidates.
+    """
+    return sorted(
+        candidates,
+        key=lambda c: (
+            -c["score"] if descending else c["score"],
+            c.get(secondary_key, ""),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Source attribution summary
+# ---------------------------------------------------------------------------
+
+def source_attribution_summary(
+    candidates: List[Dict[str, Any]],
+) -> Dict[str, int]:
+    """Count how many fused candidates came from each source.
+
+    Parameters
+    ----------
+    candidates : list[dict]
+        Each must have a ``sources`` field (list[str]).
+
+    Returns
+    -------
+    dict[str, int]
+        Mapping of source name → count.
+    """
+    counts: Dict[str, int] = {}
+    for c in candidates:
+        for src in c.get("sources", []):
+            counts[src] = counts.get(src, 0) + 1
+    return counts

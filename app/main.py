@@ -3,6 +3,8 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.chunks import router as chunks_router
 from app.api.v1.search import search_router, embeddings_router, index_router
 from app.api.v1.analytics import router as analytics_router
+from app.api.v1.bm25 import router as bm25_router
+from app.api.v1.retrieval import router as retrieval_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
@@ -56,6 +58,18 @@ app.include_router(
     analytics_router,
     prefix="/api/v1/analytics",
     tags=["analytics"]
+)
+
+app.include_router(
+    bm25_router,
+    prefix="/api/v1/bm25",
+    tags=["bm25"]
+)
+
+app.include_router(
+    retrieval_router,
+    prefix="/api/v1/retrieval",
+    tags=["retrieval"]
 )
 
 @app.get("/health", tags=["health"])

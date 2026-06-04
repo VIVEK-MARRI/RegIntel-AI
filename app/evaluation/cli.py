@@ -18,6 +18,7 @@ from pathlib import Path
 from app.evaluation.dataset import DatasetManager
 from app.evaluation.evaluator import RetrievalEvaluator
 from app.evaluation.reporting import ReportGenerator, Leaderboard
+from app.evaluation.runner import run_standalone_evaluation
 from app.evaluation.schemas import EvaluationConfig, RetrievalStrategy
 from app.evaluation.storage import MetricsStorage
 
@@ -77,6 +78,18 @@ Examples:
         help="K values for metrics (default: 5 10)",
     )
     run_parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["simulated", "production"],
+        default="simulated",
+        help="Evaluation mode. simulated=fast CI runner (default). production=uses RetrievalEvaluator + real retrieval services.",
+    )
+    run_parser.add_argument(
+        "--load-reranker-model",
+        action="store_true",
+        help="In production mode, load the real BAAI/bge-reranker-base model. Default uses a lightweight stub reranker for speed/CI.",
+    )
+    run_parser.add_argument(
         "--no-store",
         action="store_true",
         help="Do not store results historically",
@@ -113,7 +126,7 @@ Examples:
         "--metric",
         type=str,
         default="recall_at_5",
-        choices=["recall_at_5", "recall_at_10", "mrr", "precision_at_5", "hit_rate"],
+        choices=["recall_at_5", "recall_at_10", "mrr", "precision_at_5", "hit_rate", "ndcg_at_5", "ndcg_at_10"],
         help="Metric to compare (default: recall_at_5)",
     )
 
@@ -140,7 +153,6 @@ async def cmd_run(args):
     """Run evaluation command."""
     logger.info("Starting retrieval evaluation...")
 
-    # Build configuration
     strategies = [RetrievalStrategy(s) for s in args.strategies]
     config = EvaluationConfig(
         dataset_name=args.dataset,
@@ -149,25 +161,6 @@ async def cmd_run(args):
         store_results=not args.no_store,
     )
 
-    # Initialize components
-    dataset_manager = DatasetManager()
-    metrics_storage = MetricsStorage()
-    report_generator = ReportGenerator()
-
-    # Load dataset
-    dataset = dataset_manager.load_dataset(config.dataset_name)
-    if dataset is None:
-        logger.info(f"Dataset '{config.dataset_name}' not found, creating default.")
-        dataset = dataset_manager.get_or_create_default_dataset()
-
-    logger.info(f"Using dataset: {dataset.name} ({len(dataset.queries)} queries)")
-
-    # Note: In a real scenario, you would inject the actual services here
-    # For CLI usage, we create a mock evaluator that demonstrates the structure
-    logger.info("Note: CLI evaluation requires database connection setup.")
-    logger.info("For programmatic usage, use RetrievalEvaluator directly.")
-
-    # Print configuration
     print("\n" + "=" * 60)
     print("EVALUATION CONFIGURATION")
     print("=" * 60)
@@ -177,18 +170,16 @@ async def cmd_run(args):
     print(f"Store results: {config.store_results}")
     print("=" * 60)
 
-    # Print sample output format
-    print("\nSample output format:")
-    sample_output = {
-        "strategy": "hybrid_rerank",
-        "recall_at_5": 0.94,
-        "recall_at_10": 0.97,
-        "mrr": 0.89,
-        "precision_at_5": 0.85,
-        "hit_rate": 1.0,
-        "latency_ms": 156.3,
-    }
-    print(json.dumps(sample_output, indent=2))
+    report = await run_standalone_evaluation(
+        dataset_name=args.dataset,
+        strategies=args.strategies,
+        mode=args.mode,
+        load_reranker_model=args.load_reranker_model,
+        output_dir=Path(args.output) if args.output else None,
+    )
+
+    if args.output:
+        print(f"\nReports saved to: {args.output}")
 
 
 def cmd_leaderboard(args):
@@ -225,6 +216,8 @@ def cmd_history(args):
         print(f"  Recall@5:  {record.recall_at_5:.4f}")
         print(f"  Recall@10: {record.recall_at_10:.4f}")
         print(f"  MRR:       {record.mrr:.4f}")
+        print(f"  NDCG@5:    {record.ndcg_at_5:.4f}")
+        print(f"  NDCG@10:   {record.ndcg_at_10:.4f}")
         print(f"  Hit Rate:  {record.hit_rate:.4f}")
         print(f"  Latency:   {record.latency_ms:.2f}ms")
 

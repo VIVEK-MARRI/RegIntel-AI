@@ -7,7 +7,9 @@ from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db_session
 from app.main import app
@@ -15,6 +17,14 @@ from app.models.document import Base
 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+ANALYTICS_TABLES = [
+    "retrieval_metrics_records",
+    "aggregated_metrics_snapshots",
+    "query_distribution_records",
+    "reranker_gain_records",
+    "system_health_snapshots",
+]
 
 
 @pytest.fixture(scope="session")
@@ -28,8 +38,13 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def api_engine():
-    """Create a test database engine for API tests."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    """Create a test database engine with a shared in-memory connection."""
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -37,7 +52,15 @@ async def api_engine():
 
 
 @pytest_asyncio.fixture
-async def client(api_engine) -> AsyncGenerator[AsyncClient, None]:
+async def clean_api_db(api_engine):
+    """Truncate all analytics tables before each test for isolation."""
+    async with api_engine.begin() as conn:
+        for table in ANALYTICS_TABLES:
+            await conn.execute(text(f"DELETE FROM {table}"))
+
+
+@pytest_asyncio.fixture
+async def client(api_engine, clean_api_db) -> AsyncGenerator[AsyncClient, None]:
     """Create a test HTTP client with overridden DB session."""
     async_session_factory = async_sessionmaker(
         bind=api_engine,
@@ -48,7 +71,12 @@ async def client(api_engine) -> AsyncGenerator[AsyncClient, None]:
 
     async def override_get_db():
         async with async_session_factory() as session:
-            yield session
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
 
     app.dependency_overrides[get_db_session] = override_get_db
 

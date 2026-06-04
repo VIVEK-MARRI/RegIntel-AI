@@ -9,12 +9,21 @@ from datetime import datetime, timezone
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.document import Base
+from app.models.types import PortableJSON
 
 
 class RetrievalStrategyEnum(str, PyEnum):
@@ -94,7 +103,7 @@ class RetrievalMetricsRecord(Base):
     relevant_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
 
     __table_args__ = (
         Index("idx_rmr_strategy_timestamp", "strategy", "timestamp"),
@@ -167,7 +176,7 @@ class AggregatedMetricsSnapshot(Base):
     unique_queries: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
 
     __table_args__ = (
         UniqueConstraint(
@@ -228,7 +237,7 @@ class QueryDistributionRecord(Base):
     avg_result_count: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
 
     __table_args__ = (
         UniqueConstraint(
@@ -286,7 +295,7 @@ class RerankerGainRecord(Base):
     )
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
 
     __table_args__ = (
         UniqueConstraint(
@@ -339,8 +348,9 @@ class SystemHealthSnapshot(Base):
     error_rate_last_hour: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
 
     __table_args__ = (
         Index("idx_shs_status_timestamp", "status", "timestamp"),
     )
+    

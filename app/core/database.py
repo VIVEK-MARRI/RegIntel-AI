@@ -19,10 +19,15 @@ async_session_factory = async_sessionmaker(
 )
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency for getting async database sessions."""
+    """Dependency for getting async database sessions.
+
+    Commit on normal exit so that data written in one request is visible
+    to subsequent requests (SQLite test DB visibility).
+    """
     async with async_session_factory() as session:
         try:
             yield session
+            await session.commit()
         except Exception:
             await session.rollback()
             raise

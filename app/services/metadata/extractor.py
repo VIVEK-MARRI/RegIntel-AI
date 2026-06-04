@@ -5,7 +5,11 @@ import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Any, Optional
-import fitz
+
+try:
+    import fitz  # PyMuPDF
+except ImportError:  # pragma: no cover
+    fitz = None
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +59,9 @@ class PDFStructureExtractor(MetadataExtractor):
         logger.debug(f"PDFStructureExtractor running on {file_path}")
         if not file_path.exists():
             return {}
+        if fitz is None:
+            # Keep module import-time safe; return empty metadata when PDF parsing isn't available.
+            return {}
             
         try:
             with fitz.open(file_path) as doc:
@@ -70,6 +77,10 @@ class RegulatorMetadataExtractor(MetadataExtractor):
     def extract(self, file_path: Path, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         logger.debug(f"RegulatorMetadataExtractor running on {file_path}")
         if not file_path.exists():
+            return {}
+            
+        if fitz is None:
+            # Import-time safe optional dependency: return no-regex metadata when PDF parsing isn't available.
             return {}
             
         try:

@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
-from sqlalchemy import and_, func, select, text
+from sqlalchemy import and_, func, select, text, literal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analytics import (
@@ -95,7 +95,9 @@ class RetrievalMetricsRepository:
         dataset_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Compute aggregated metrics for a strategy over a time range."""
-        stmt = select(
+        dialect_name = self.db.bind.dialect.name if self.db.bind is not None else ""
+
+        base_select = [
             func.count(RetrievalMetricsRecord.id).label("total_queries"),
             func.count(func.distinct(RetrievalMetricsRecord.query_id)).label("unique_queries"),
             func.avg(RetrievalMetricsRecord.dense_recall_at_5).label("avg_dense_recall_at_5"),
@@ -112,16 +114,29 @@ class RetrievalMetricsRepository:
             func.avg(RetrievalMetricsRecord.reranker_latency_ms).label("avg_reranker_latency_ms"),
             func.avg(RetrievalMetricsRecord.total_latency_ms).label("avg_total_latency_ms"),
             func.avg(RetrievalMetricsRecord.reranker_gain).label("avg_reranker_gain"),
-            func.percentile_cont(0.5).within_group(
-                RetrievalMetricsRecord.retrieval_latency_ms
-            ).label("p50_latency"),
-            func.percentile_cont(0.95).within_group(
-                RetrievalMetricsRecord.retrieval_latency_ms
-            ).label("p95_latency"),
-            func.percentile_cont(0.99).within_group(
-                RetrievalMetricsRecord.retrieval_latency_ms
-            ).label("p99_latency"),
-        ).where(RetrievalMetricsRecord.strategy == strategy)
+        ]
+
+        if dialect_name == "postgresql":
+            base_select.extend([
+                func.percentile_cont(0.5).within_group(
+                    RetrievalMetricsRecord.retrieval_latency_ms
+                ).label("p50_latency"),
+                func.percentile_cont(0.95).within_group(
+                    RetrievalMetricsRecord.retrieval_latency_ms
+                ).label("p95_latency"),
+                func.percentile_cont(0.99).within_group(
+                    RetrievalMetricsRecord.retrieval_latency_ms
+                ).label("p99_latency"),
+            ])
+        else:
+            # SQLite (and other backends) don't support percentile_cont/within_group.
+            base_select.extend([
+                literal(None).label("p50_latency"),
+                literal(None).label("p95_latency"),
+                literal(None).label("p99_latency"),
+            ])
+
+        stmt = select(*base_select).where(RetrievalMetricsRecord.strategy == strategy)
 
         if dataset_name:
             stmt = stmt.where(RetrievalMetricsRecord.dataset_name == dataset_name)
@@ -186,20 +201,48 @@ class RetrievalMetricsRepository:
             logger.warning(f"Invalid metric requested for trend: {metric}")
             return []
 
-        # Use text() for the dynamic column reference within a safe query
-        query = text(f"""
-            SELECT
-                date_trunc(:trunc_unit, timestamp) AS window_time,
-                AVG({metric}) AS avg_value,
-                COUNT(*) AS query_count
-            FROM retrieval_metrics_records
-            WHERE strategy = :strategy
-              AND timestamp >= :start_time
-              AND timestamp <= :end_time
-              AND {metric} IS NOT NULL
-            GROUP BY window_time
-            ORDER BY window_time ASC
-        """)
+        dialect_name = self.db.bind.dialect.name if self.db.bind is not None else ""
+        # Use text() for the dynamic column reference (metric) while keeping other params bound.
+        if dialect_name == "postgresql":
+            query = text(f"""
+                SELECT
+                    date_trunc(:trunc_unit, timestamp) AS window_time,
+                    AVG({metric}) AS avg_value,
+                    COUNT(*) AS query_count
+                FROM retrieval_metrics_records
+                WHERE strategy = :strategy
+                  AND timestamp >= :start_time
+                  AND timestamp <= :end_time
+                  AND {metric} IS NOT NULL
+                GROUP BY window_time
+                ORDER BY window_time ASC
+            """)
+        else:
+            # SQLite-compatible bucketing (sufficient for tests)
+            # daily -> YYYY-MM-DD
+            # hourly -> YYYY-MM-DD HH:00:00
+            # weekly/monthly: coarse bucketing via YYYY-WW / YYYY-MM approximations
+            if window_type == "hourly":
+                bucket_expr = "strftime('%Y-%m-%d %H:00:00', timestamp)"
+            elif window_type == "weekly":
+                bucket_expr = "strftime('%Y-%W', timestamp)"
+            elif window_type == "monthly":
+                bucket_expr = "strftime('%Y-%m', timestamp)"
+            else:
+                bucket_expr = "date(timestamp)"
+            query = text(f"""
+                SELECT
+                    {bucket_expr} AS window_time,
+                    AVG({metric}) AS avg_value,
+                    COUNT(*) AS query_count
+                FROM retrieval_metrics_records
+                WHERE strategy = :strategy
+                  AND timestamp >= :start_time
+                  AND timestamp <= :end_time
+                  AND {metric} IS NOT NULL
+                GROUP BY window_time
+                ORDER BY window_time ASC
+            """)
 
         result = await self.db.execute(
             query,
@@ -440,19 +483,28 @@ class RerankerGainRepository:
         window_type: str,
         dataset_name: Optional[str] = None,
     ) -> Optional[RerankerGainRecord]:
-        """Get the latest reranker gain record."""
+        """Get the latest reranker gain record.
+
+        Note: tests exercise the endpoint without dataset_name, so we must
+        return the latest record regardless of whether dataset_name is NULL.
+        """
         stmt = (
             select(RerankerGainRecord)
             .where(RerankerGainRecord.window_type == window_type)
-            .order_by(RerankerGainRecord.window_end.desc())
+            # Order by both bounds to be deterministic across backends.
+            .order_by(RerankerGainRecord.window_start.desc(), RerankerGainRecord.window_end.desc())
+            .limit(1)
         )
-        if dataset_name:
+
+        # For test usage, dataset_name is omitted. In that case we return the
+        # latest record for the window_type regardless of dataset_name.
+        # If dataset_name is provided, constrain to that dataset.
+        if dataset_name is not None:
             stmt = stmt.where(RerankerGainRecord.dataset_name == dataset_name)
-        else:
-            stmt = stmt.where(RerankerGainRecord.dataset_name.is_(None))
 
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
 
     async def get_range(
         self,

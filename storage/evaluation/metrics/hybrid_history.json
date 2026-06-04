@@ -1,0 +1,78 @@
+[
+  {
+    "id": "69f29dd1-e030-4094-861e-77b44c5214f4",
+    "timestamp": "2026-06-03 07:09:29.742995",
+    "strategy": "hybrid",
+    "dataset_name": "regintel_eval",
+    "recall_at_5": 0.22000000000000003,
+    "recall_at_10": 0.3466666666666667,
+    "mrr": 0.31031135531135534,
+    "precision_at_5": 0.2,
+    "precision_at_10": 0.16,
+    "hit_rate": 0.9,
+    "ndcg_at_5": 0.1887826917555609,
+    "ndcg_at_10": 0.2534129342357232,
+    "latency_ms": 0.03531000038492493,
+    "metadata": {
+      "total_queries": 10,
+      "timestamp": "2026-06-03T07:09:29.742969"
+    }
+  },
+  {
+    "id": "eb3d0465-4b7e-48f5-9453-92151f0e42de",
+    "timestamp": "2026-06-03 07:10:00.585687",
+    "strategy": "hybrid",
+    "dataset_name": "regintel_eval",
+    "recall_at_5": 0.22000000000000003,
+    "recall_at_10": 0.3466666666666667,
+    "mrr": 0.31031135531135534,
+    "precision_at_5": 0.2,
+    "precision_at_10": 0.16,
+    "hit_rate": 0.9,
+    "ndcg_at_5": 0.1887826917555609,
+    "ndcg_at_10": 0.2534129342357232,
+    "latency_ms": 0.033940000139409676,
+    "metadata": {
+      "total_queries": 10,
+      "timestamp": "2026-06-03T07:10:00.585652"
+    }
+  },
+  {
+    "id": "96c0637b-23c0-4857-b6a2-14965717d4aa",
+    "timestamp": "2026-06-03 19:26:56.160537",
+    "strategy": "hybrid",
+    "dataset_name": "default",
+    "recall_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "mrr": 0.0,
+    "precision_at_5": 0.0,
+    "precision_at_10": 0.0,
+    "hit_rate": 0.0,
+    "ndcg_at_5": 0.0,
+    "ndcg_at_10": 0.0,
+    "latency_ms": 0.16132000018842518,
+    "metadata": {
+      "total_queries": 5,
+      "timestamp": "2026-06-03T19:26:56.160455"
+    }
+  },
+  {
+    "id": "855c28e8-da7f-477d-9e0c-426c707ec0bf",
+    "timestamp": "2026-06-03 19:34:05.835670",
+    "strategy": "hybrid",
+    "dataset_name": "default",
+    "recall_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "mrr": 0.0,
+    "precision_at_5": 0.0,
+    "precision_at_10": 0.0,
+    "hit_rate": 0.0,
+    "ndcg_at_5": 0.0,
+    "ndcg_at_10": 0.0,
+    "latency_ms": 0.22672000050079077,
+    "metadata": {
+      "total_queries": 5,
+      "timestamp": "2026-06-03T19:34:05.835608"
+    }
+  }
+]

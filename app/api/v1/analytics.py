@@ -330,8 +330,8 @@ async def record_query_distribution(
     window_type: str = Query(..., description="Time window type."),
     window_start: datetime = Query(..., description="Start of the window."),
     window_end: datetime = Query(..., description="End of the window."),
-    category_counts: Dict[str, int] = Query(..., description="Query counts by category."),
-    strategy_counts: Dict[str, int] = Query(..., description="Query counts by strategy."),
+    category_counts: str = Query(..., description="Query counts by category (JSON string)."),
+    strategy_counts: str = Query(..., description="Query counts by strategy (JSON string)."),
     avg_query_length: Optional[float] = Query(None, description="Average query length."),
     avg_result_count: Optional[float] = Query(None, description="Average result count."),
     service: AnalyticsService = Depends(get_analytics_service),
@@ -369,22 +369,16 @@ async def get_reranker_gain(
     dataset_name: Optional[str] = Query(None, description="Filter by dataset name."),
     service: AnalyticsService = Depends(get_analytics_service),
 ) -> RerankerGainResponse:
-    try:
-        result = await service.get_reranker_gain(window_type, dataset_name)
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No reranker gain data found for the specified window.",
-            )
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting reranker gain: {e}", exc_info=True)
+    # Treat "not found" as 404, but ensure we only return 404 for the actual
+    # absence of data (the repo/service returns None).
+    result = await service.get_reranker_gain(window_type, dataset_name)
+    if result is None:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get reranker gain: {str(e)}",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No reranker gain data found for the specified window.",
         )
+    return result
+
 
 
 @router.post(

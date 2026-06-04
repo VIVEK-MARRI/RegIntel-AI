@@ -163,10 +163,15 @@ def get_query_analyzer() -> QueryAnalyzer:
 
 def get_hybrid_retriever(
     retrieval_service: RetrievalService = Depends(get_retrieval_service),
-    bm25_retriever: BM25Retriever = Depends(get_bm25_retriever)
+    bm25_retriever: BM25Retriever = Depends(get_bm25_retriever),
+    query_analyzer: QueryAnalyzer = Depends(get_query_analyzer),
 ) -> HybridRetriever:
-    """Dependency injection provider for HybridRetriever."""
-    return HybridRetriever(retrieval_service, bm25_retriever)
+    """Dependency injection provider for HybridRetriever with query analysis."""
+    return HybridRetriever(
+        retrieval_service,
+        bm25_retriever,
+        query_analyzer=query_analyzer,
+    )
 
 
 # Lazy singleton reranker provider — loaded on first request

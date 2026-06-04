@@ -8,6 +8,7 @@ Public exports::
 from app.services.fusion.engine import (  # noqa: F401
     BaseFusionStrategy,
     FusionEngine,
+    LearningToRankStrategy,
     RRFStrategy,
     ScoreFusionStrategy,
     WeightedSumStrategy,

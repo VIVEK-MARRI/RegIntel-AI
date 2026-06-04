@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
-from sqlalchemy import ForeignKey, Integer, Text, DateTime, Index, Float, ARRAY
+from sqlalchemy import ForeignKey, Integer, Text, DateTime, Index, Float
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.document import Base
+from app.models.types import PortableJSON, PortableFloatArray
 from app.core.config import settings
 
 class EmbeddingStatusEnum(str, PyEnum):
@@ -32,7 +32,7 @@ class DocumentChunk(Base):
     subsection: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     token_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -67,7 +67,7 @@ class ChunkEmbedding(Base):
     )
     
     if settings.USE_PGVECTOR_FALLBACK:
-        embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Float), nullable=True)
+        embedding: Mapped[list[float] | None] = mapped_column(PortableFloatArray(), nullable=True)
     else:
         from pgvector.sqlalchemy import Vector
         embedding: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)

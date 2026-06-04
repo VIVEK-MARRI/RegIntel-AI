@@ -70,6 +70,8 @@ class MetricsStorage:
             precision_at_5=result.avg_precision_at_5,
             precision_at_10=result.avg_precision_at_10,
             hit_rate=result.avg_hit_rate,
+            ndcg_at_5=result.avg_ndcg_at_5,
+            ndcg_at_10=result.avg_ndcg_at_10,
             latency_ms=result.avg_latency_ms,
             metadata={
                 "total_queries": result.total_queries,

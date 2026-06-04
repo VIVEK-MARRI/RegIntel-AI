@@ -41,7 +41,7 @@ class RetrievalMetricsCreate(BaseModel):
 
 class RetrievalMetricsResponse(BaseModel):
     """Response schema for a retrieval metrics record."""
-    id: str
+    id: uuid.UUID | str
     timestamp: datetime
     query_id: str
     query_text: str
@@ -158,7 +158,9 @@ class QueryDistributionSummary(BaseModel):
 
 class RerankerGainResponse(BaseModel):
     """Response schema for reranker gain record."""
-    id: str
+    # Accept UUID (DB) or str (API). We always serialize back to str.
+    id: uuid.UUID | str
+
     timestamp: datetime
     window_start: datetime
     window_end: datetime
@@ -181,7 +183,8 @@ class RerankerGainResponse(BaseModel):
 
 class SystemHealthResponse(BaseModel):
     """Response schema for system health snapshot."""
-    id: str
+    # Accept UUID (DB) or str (API). Serialized back to str on output.
+    id: uuid.UUID | str
     timestamp: datetime
     status: str
     dense_retrieval_available: bool

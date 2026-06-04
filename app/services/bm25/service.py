@@ -8,7 +8,10 @@ from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from rank_bm25 import BM25Okapi
+try:
+    from rank_bm25 import BM25Okapi
+except ImportError:  # pragma: no cover
+    BM25Okapi = None
 
 from app.core.config import settings
 from app.models.document import Document, SourceEnum

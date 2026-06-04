@@ -1,0 +1,181 @@
+{
+  "name": "regintel_eval",
+  "description": "Comprehensive golden dataset for retrieval evaluation across RBI and SEBI regulatory domains. Contains 10 queries with graded relevance judgments mapped to chunk IDs.",
+  "queries": [
+    {
+      "query_id": "q001",
+      "query_text": "What are the capital adequacy requirements for banks under Basel III?",
+      "relevant_chunk_ids": [
+        "chunk_cap_001",
+        "chunk_cap_002",
+        "chunk_cap_003",
+        "chunk_cap_004",
+        "chunk_cap_005"
+      ],
+      "metadata": {
+        "category": "capital_adequacy",
+        "source": "RBI",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "query_id": "q002",
+      "query_text": "Explain the guidelines for non-performing assets classification and provisioning",
+      "relevant_chunk_ids": [
+        "chunk_npa_001",
+        "chunk_npa_002",
+        "chunk_npa_003",
+        "chunk_npa_004"
+      ],
+      "metadata": {
+        "category": "NPA",
+        "source": "RBI",
+        "difficulty": "hard"
+      }
+    },
+    {
+      "query_id": "q003",
+      "query_text": "What are the KYC norms and customer identification procedures for banks?",
+      "relevant_chunk_ids": [
+        "chunk_kyc_001",
+        "chunk_kyc_002",
+        "chunk_kyc_003",
+        "chunk_kyc_004",
+        "chunk_kyc_005",
+        "chunk_kyc_006"
+      ],
+      "metadata": {
+        "category": "KYC",
+        "source": "RBI",
+        "difficulty": "easy"
+      }
+    },
+    {
+      "query_id": "q004",
+      "query_text": "Describe the SEBI regulations for mutual fund schemes and NAV calculation",
+      "relevant_chunk_ids": [
+        "chunk_mf_001",
+        "chunk_mf_002",
+        "chunk_mf_003",
+        "chunk_mf_004"
+      ],
+      "metadata": {
+        "category": "mutual_funds",
+        "source": "SEBI",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "query_id": "q005",
+      "query_text": "What are the disclosure requirements for listed companies under SEBI LODR?",
+      "relevant_chunk_ids": [
+        "chunk_lodr_001",
+        "chunk_lodr_002",
+        "chunk_lodr_003",
+        "chunk_lodr_004",
+        "chunk_lodr_005"
+      ],
+      "metadata": {
+        "category": "disclosure",
+        "source": "SEBI",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "query_id": "q006",
+      "query_text": "What are the liquidity coverage ratio requirements for commercial banks?",
+      "relevant_chunk_ids": [
+        "chunk_lcr_001",
+        "chunk_lcr_002",
+        "chunk_lcr_003"
+      ],
+      "metadata": {
+        "category": "liquidity",
+        "source": "RBI",
+        "difficulty": "hard"
+      }
+    },
+    {
+      "query_id": "q007",
+      "query_text": "Explain the framework for resolution of stressed assets",
+      "relevant_chunk_ids": [
+        "chunk_stress_001",
+        "chunk_stress_002",
+        "chunk_stress_003",
+        "chunk_stress_004"
+      ],
+      "metadata": {
+        "category": "stressed_assets",
+        "source": "RBI",
+        "difficulty": "hard"
+      }
+    },
+    {
+      "query_id": "q008",
+      "query_text": "What are the insider trading regulations under SEBI PIT?",
+      "relevant_chunk_ids": [
+        "chunk_pit_001",
+        "chunk_pit_002",
+        "chunk_pit_003",
+        "chunk_pit_004",
+        "chunk_pit_005"
+      ],
+      "metadata": {
+        "category": "insider_trading",
+        "source": "SEBI",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "query_id": "q009",
+      "query_text": "What are the guidelines for priority sector lending by scheduled commercial banks?",
+      "relevant_chunk_ids": [
+        "chunk_psl_001",
+        "chunk_psl_002",
+        "chunk_psl_003",
+        "chunk_psl_004"
+      ],
+      "metadata": {
+        "category": "priority_sector",
+        "source": "RBI",
+        "difficulty": "easy"
+      }
+    },
+    {
+      "query_id": "q010",
+      "query_text": "Explain the takeover code and open offer requirements under SEBI SAST",
+      "relevant_chunk_ids": [
+        "chunk_sast_001",
+        "chunk_sast_002",
+        "chunk_sast_003",
+        "chunk_sast_004",
+        "chunk_sast_005"
+      ],
+      "metadata": {
+        "category": "takeover",
+        "source": "SEBI",
+        "difficulty": "hard"
+      }
+    }
+  ],
+  "created_at": "2026-06-03T00:00:00.000000",
+  "metadata": {
+    "version": "2.0",
+    "type": "evaluation",
+    "total_queries": 10,
+    "total_relevant_chunks": 45,
+    "domains": ["RBI", "SEBI"],
+    "categories": [
+      "capital_adequacy",
+      "NPA",
+      "KYC",
+      "mutual_funds",
+      "disclosure",
+      "liquidity",
+      "stressed_assets",
+      "insider_trading",
+      "priority_sector",
+      "takeover"
+    ]
+  }
+}

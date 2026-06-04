@@ -1,9 +1,9 @@
 """Retrieval Fusion Engine.
 
-Combines rankings from multiple retrieval systems (dense, BM25) into a single
-ranked candidate list.  Designed around a *strategy pattern* so new fusion
-algorithms (Score Fusion, Learning-to-Rank) can be plugged in without touching
-the orchestrator.
+Combines rankings from multiple retrieval systems (dense, BM25, and future
+sources) into a single ranked candidate list.  Designed around a *strategy
+pattern* so new fusion algorithms (Score Fusion, Learning-to-Rank) can be
+plugged in without touching the orchestrator.
 
 Public API
 ----------
@@ -18,7 +18,6 @@ import abc
 import logging
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -28,12 +27,16 @@ from typing import (
 
 from app.schemas.fusion import FusedCandidate, FusionConfig, FusionMethod, FusionReport
 from app.services.fusion.ranking import (
+    break_ties,
     build_provenance,
     compute_overlap,
+    compute_multi_source_overlap,
     merge_metadata,
+    normalize_scores,
+    resolve_rank_conflicts,
     sort_candidates,
+    source_attribution_summary,
 )
-from app.services.hybrid.strategy import min_max_normalize
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +86,29 @@ class RRFStrategy(BaseFusionStrategy):
     """Reciprocal Rank Fusion (RRF).
 
     score(d) = Σ_r  weight_r / (k + rank_r(d))
+
+    The constant *k* (default 60) controls how much weight is given to
+    top-ranked items vs. lower-ranked ones.  Higher *k* → flatter
+    distribution; lower *k* → top-heavy.
     """
 
     @staticmethod
     def calculate_rrf_score(rank: int, k: int = 60) -> float:
-        """Calculate the RRF contribution for a given 1-based rank."""
+        """Calculate the RRF contribution for a given 1-based rank.
+
+        Parameters
+        ----------
+        rank : int
+            1-based position in the ranked list.
+        k : int
+            Smoothing constant.  Higher values flatten the score distribution.
+
+        Returns
+        -------
+        float
+            The RRF contribution ``1 / (k + rank)``.  Returns 0 for
+            non-positive ranks.
+        """
         if rank <= 0:
             return 0.0
         return 1.0 / (k + rank)
@@ -102,6 +123,10 @@ class RRFStrategy(BaseFusionStrategy):
         bm25_map = {r["chunk_id"]: r for r in bm25_results}
         all_ids = set(dense_map) | set(bm25_map)
 
+        # Pre-compute ordered ID lists for O(1) rank lookups
+        dense_ordered = list(dense_map)
+        bm25_ordered = list(bm25_map)
+
         merged: List[Dict[str, Any]] = []
         for cid in all_ids:
             score = 0.0
@@ -111,13 +136,13 @@ class RRFStrategy(BaseFusionStrategy):
             bm25_score: Optional[float] = None
 
             if cid in dense_map:
-                dense_rank = list(dense_map).index(cid) + 1
+                dense_rank = dense_ordered.index(cid) + 1
                 dense_score = dense_map[cid]["score"]
                 rrf_contrib = self.calculate_rrf_score(dense_rank, config.rrf_k)
                 score += config.dense_weight * rrf_contrib
 
             if cid in bm25_map:
-                bm25_rank = list(bm25_map).index(cid) + 1
+                bm25_rank = bm25_ordered.index(cid) + 1
                 bm25_score = bm25_map[cid]["score"]
                 rrf_contrib = self.calculate_rrf_score(bm25_rank, config.rrf_k)
                 score += config.bm25_weight * rrf_contrib
@@ -138,7 +163,9 @@ class RRFStrategy(BaseFusionStrategy):
                 "metadata": meta,
             })
 
-        return sort_candidates(merged)
+        merged = sort_candidates(merged)
+        merged = resolve_rank_conflicts(merged)
+        return merged
 
 
 # ======================================================================
@@ -167,8 +194,8 @@ class WeightedSumStrategy(BaseFusionStrategy):
         raw_dense = [dense_map[c]["score"] for c in dense_ids]
         raw_bm25 = [bm25_map[c]["score"] for c in bm25_ids]
 
-        norm_dense = min_max_normalize(raw_dense)
-        norm_bm25 = min_max_normalize(raw_bm25)
+        norm_dense = normalize_scores(raw_dense)
+        norm_bm25 = normalize_scores(raw_bm25)
 
         dense_norm_map = dict(zip(dense_ids, norm_dense))
         bm25_norm_map = dict(zip(bm25_ids, norm_bm25))
@@ -211,18 +238,26 @@ class WeightedSumStrategy(BaseFusionStrategy):
                 "metadata": meta,
             })
 
-        return sort_candidates(merged)
+        merged = sort_candidates(merged)
+        merged = resolve_rank_conflicts(merged)
+        return merged
 
 
 # ======================================================================
-# Score Fusion Strategy  (stub – ready for implementation)
+# Score Fusion Strategy
 # ======================================================================
 
 class ScoreFusionStrategy(BaseFusionStrategy):
-    """Direct score averaging / interpolation.
+    """Direct score interpolation using calibrated raw scores.
 
-    Placeholder for a future implementation that uses raw calibrated scores
-    rather than rank positions.
+    Unlike :class:`WeightedSumStrategy` which normalises each source
+    independently, this strategy assumes scores are already on a
+    comparable scale (e.g. cosine similarity ∈ [0,1] and BM25 scores
+    that have been calibrated).  It computes a weighted average of the
+    raw scores directly.
+
+    If a chunk appears in only one source, the missing source's score
+    is treated as 0.0.
     """
 
     def fuse(
@@ -231,10 +266,139 @@ class ScoreFusionStrategy(BaseFusionStrategy):
         bm25_results: List[Dict[str, Any]],
         config: FusionConfig,
     ) -> List[Dict[str, Any]]:
-        raise NotImplementedError(
-            "ScoreFusionStrategy is not yet implemented.  "
-            "Use RRF or WEIGHTED_SUM for production workloads."
-        )
+        dense_map = {r["chunk_id"]: r for r in dense_results}
+        bm25_map = {r["chunk_id"]: r for r in bm25_results}
+
+        dense_ids = list(dense_map)
+        bm25_ids = list(bm25_map)
+
+        all_ids = set(dense_ids) | set(bm25_ids)
+        merged: List[Dict[str, Any]] = []
+
+        for cid in all_ids:
+            dense_score: Optional[float] = None
+            bm25_score: Optional[float] = None
+            dense_rank: Optional[int] = None
+            bm25_rank: Optional[int] = None
+
+            if cid in dense_map:
+                dense_rank = dense_ids.index(cid) + 1
+                dense_score = dense_map[cid]["score"]
+
+            if cid in bm25_map:
+                bm25_rank = bm25_ids.index(cid) + 1
+                bm25_score = bm25_map[cid]["score"]
+
+            # Weighted average of raw scores (missing source → 0.0)
+            d_val = dense_score if dense_score is not None else 0.0
+            b_val = bm25_score if bm25_score is not None else 0.0
+            score = config.dense_weight * d_val + config.bm25_weight * b_val
+
+            content, meta = merge_metadata(cid, dense_map, bm25_map)
+            sources = build_provenance(cid, dense_map, bm25_map)
+
+            merged.append({
+                "chunk_id": cid,
+                "score": score,
+                "rrf_score": None,
+                "dense_score": dense_score,
+                "bm25_score": bm25_score,
+                "dense_rank": dense_rank,
+                "bm25_rank": bm25_rank,
+                "sources": sources,
+                "content": content,
+                "metadata": meta,
+            })
+
+        merged = sort_candidates(merged)
+        merged = resolve_rank_conflicts(merged)
+        return merged
+
+
+# ======================================================================
+# Learning-to-Rank Strategy (extensible placeholder)
+# ======================================================================
+
+class LearningToRankStrategy(BaseFusionStrategy):
+    """Learning-to-Rank (LTR) fusion strategy.
+
+    This is an *extensible placeholder* that demonstrates the integration
+    point for an ML-based re-ranker.  By default it falls back to a
+    simple weighted combination, but consumers can subclass or replace it
+    via ``FusionEngine.register_strategy(FusionMethod.LEARNING_TO_RANK, ...)``
+    with a model-aware implementation.
+
+    Expected model interface (for subclasses):
+        model.predict(features: list[dict]) → list[float]
+    """
+
+    def fuse(
+        self,
+        dense_results: List[Dict[str, Any]],
+        bm25_results: List[Dict[str, Any]],
+        config: FusionConfig,
+    ) -> List[Dict[str, Any]]:
+        """Fallback: weighted sum of normalised scores.
+
+        Subclasses should override this to call their trained model.
+        """
+        dense_map = {r["chunk_id"]: r for r in dense_results}
+        bm25_map = {r["chunk_id"]: r for r in bm25_results}
+
+        dense_ids = list(dense_map)
+        bm25_ids = list(bm25_map)
+
+        raw_dense = [dense_map[c]["score"] for c in dense_ids]
+        raw_bm25 = [bm25_map[c]["score"] for c in bm25_ids]
+
+        norm_dense = normalize_scores(raw_dense) if raw_dense else []
+        norm_bm25 = normalize_scores(raw_bm25) if raw_bm25 else []
+
+        dense_norm_map = dict(zip(dense_ids, norm_dense))
+        bm25_norm_map = dict(zip(bm25_ids, norm_bm25))
+
+        all_ids = set(dense_ids) | set(bm25_ids)
+        merged: List[Dict[str, Any]] = []
+
+        for cid in all_ids:
+            dense_score: Optional[float] = None
+            bm25_score: Optional[float] = None
+            dense_rank: Optional[int] = None
+            bm25_rank: Optional[int] = None
+            nd = 0.0
+            nb = 0.0
+
+            if cid in dense_map:
+                dense_rank = dense_ids.index(cid) + 1
+                dense_score = dense_map[cid]["score"]
+                nd = dense_norm_map.get(cid, 0.0)
+
+            if cid in bm25_map:
+                bm25_rank = bm25_ids.index(cid) + 1
+                bm25_score = bm25_map[cid]["score"]
+                nb = bm25_norm_map.get(cid, 0.0)
+
+            score = config.dense_weight * nd + config.bm25_weight * nb
+            content, meta = merge_metadata(cid, dense_map, bm25_map)
+            sources = build_provenance(cid, dense_map, bm25_map)
+
+            merged.append({
+                "chunk_id": cid,
+                "score": score,
+                "rrf_score": None,
+                "dense_score": dense_score,
+                "bm25_score": bm25_score,
+                "dense_rank": dense_rank,
+                "bm25_rank": bm25_rank,
+                "sources": sources,
+                "content": content,
+                "metadata": meta,
+                "ltr_fallback": True,  # signals that LTR model was not used
+            })
+
+        merged = sort_candidates(merged)
+        merged = resolve_rank_conflicts(merged)
+        return merged
 
 
 # ======================================================================
@@ -259,6 +423,7 @@ class FusionEngine:
         FusionMethod.RRF: RRFStrategy(),
         FusionMethod.WEIGHTED_SUM: WeightedSumStrategy(),
         FusionMethod.SCORE_FUSION: ScoreFusionStrategy(),
+        FusionMethod.LEARNING_TO_RANK: LearningToRankStrategy(),
     }
 
     def __init__(self) -> None:
@@ -448,3 +613,21 @@ class FusionEngine:
             config=config,
         )
         return fused, report
+
+    # ------------------------------------------------------------------
+    # Utility helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def get_source_attribution(
+        fused_results: List[Dict[str, Any]],
+    ) -> Dict[str, int]:
+        """Return a count of candidates per source."""
+        return source_attribution_summary(fused_results)
+
+    @staticmethod
+    def get_multi_source_overlap(
+        source_ids: Dict[str, set[str]],
+    ) -> Dict[str, Any]:
+        """Compute overlap across N sources."""
+        return compute_multi_source_overlap(source_ids)

@@ -10,9 +10,18 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ScoringResult:
+    """Result from a scoring operation, including scores and timing."""
+
+    scores: List[float]
+    scoring_latency_ms: float = 0.0
 
 
 class BGERerankerProvider:
@@ -23,6 +32,7 @@ class BGERerankerProvider:
     - **Thread safety**: double-checked locking via ``threading.Lock``.
     - **Batch scoring**: ``score_pairs`` accepts a list of (query, text) tuples.
     - **Device auto-detection**: CUDA if available, else CPU.
+    - **Latency tracking**: ``score_pairs_timed`` returns inference latency.
     """
 
     def __init__(
@@ -110,8 +120,19 @@ class BGERerankerProvider:
         Returns:
             A list of float relevance scores, one per input pair.
         """
+        result = self.score_pairs_timed(pairs)
+        return result.scores
+
+    def score_pairs_timed(self, pairs: List[Tuple[str, str]]) -> ScoringResult:
+        """Score a batch of (query, text) pairs with latency tracking.
+
+        Uses the configured ``batch_size`` for efficient GPU/CPU throughput.
+
+        Returns:
+            ScoringResult with scores and inference latency in milliseconds.
+        """
         if not pairs:
-            return []
+            return ScoringResult(scores=[], scoring_latency_ms=0.0)
 
         model = self._get_model()
         logger.debug("Scoring %d query-text pairs (batch_size=%d)...", len(pairs), self.batch_size)
@@ -128,7 +149,10 @@ class BGERerankerProvider:
             "Scored %d pairs with reranker in %.2fms.",
             len(pairs), elapsed,
         )
-        return [float(s) for s in scores]
+        return ScoringResult(
+            scores=[float(s) for s in scores],
+            scoring_latency_ms=elapsed,
+        )
 
     # ------------------------------------------------------------------
     # Introspection
