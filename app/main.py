@@ -281,6 +281,22 @@ app.include_router(
     tags=["forecasting"]
 )
 
+# Module 8.4 — Workflow Automation Platform
+from app.api.v1.workflow import router as workflow_router  # noqa: E402
+app.include_router(
+    workflow_router,
+    prefix="/api/v1",
+    tags=["workflow"]
+)
+
+# Module 8.5 — Human-in-the-Loop Review
+from app.api.v1.review import router as review_router  # noqa: E402
+app.include_router(
+    review_router,
+    prefix="/api/v1",
+    tags=["review"]
+)
+
 # Module 6.8 — Health router (liveness / readiness / deep)
 app.include_router(
     health_router,

@@ -939,6 +939,212 @@ class ForecastingMetrics:
         self.last_reset_at = time.time()
 
 
+@dataclass
+class WorkflowMetrics:
+    workflows_created: int = 0
+    workflows_started: int = 0
+    workflows_completed: int = 0
+    workflows_cancelled: int = 0
+    workflows_failed: int = 0
+    tasks_created: int = 0
+    tasks_completed: int = 0
+    escalations_triggered: int = 0
+    success_rate: float = 0.0
+    total_completed: int = 0
+    total_terminal: int = 0
+    by_type: Dict[str, int] = field(default_factory=dict)
+    by_escalation_action: Dict[str, int] = field(default_factory=dict)
+    by_task_status: Dict[str, int] = field(default_factory=dict)
+    last_workflow_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_created(self, workflow_type: str = "unknown") -> None:
+        self.workflows_created += 1
+        self.by_type[workflow_type] = self.by_type.get(workflow_type, 0) + 1
+        self.last_workflow_at = time.time()
+
+    def record_started(self) -> None:
+        self.workflows_started += 1
+
+    def record_completed(self) -> None:
+        self.workflows_completed += 1
+        self.total_completed += 1
+        self.total_terminal += 1
+        self._recompute_rate()
+
+    def record_cancelled(self) -> None:
+        self.workflows_cancelled += 1
+        self.total_terminal += 1
+        self._recompute_rate()
+
+    def record_failed(self) -> None:
+        self.workflows_failed += 1
+        self.total_terminal += 1
+        self._recompute_rate()
+
+    def record_task_created(self) -> None:
+        self.tasks_created += 1
+
+    def record_task_completed(self, status: str = "completed") -> None:
+        self.tasks_completed += 1
+        self.by_task_status[status] = (
+            self.by_task_status.get(status, 0) + 1
+        )
+
+    def record_escalation(self, action: str = "escalate") -> None:
+        self.escalations_triggered += 1
+        self.by_escalation_action[action] = (
+            self.by_escalation_action.get(action, 0) + 1
+        )
+
+    def _recompute_rate(self) -> None:
+        if self.total_terminal > 0:
+            self.success_rate = round(
+                self.total_completed / self.total_terminal, 4
+            )
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "workflows_created": self.workflows_created,
+            "workflows_started": self.workflows_started,
+            "workflows_completed": self.workflows_completed,
+            "workflows_cancelled": self.workflows_cancelled,
+            "workflows_failed": self.workflows_failed,
+            "tasks_created": self.tasks_created,
+            "tasks_completed": self.tasks_completed,
+            "escalations_triggered": self.escalations_triggered,
+            "success_rate": self.success_rate,
+            "by_type": dict(self.by_type),
+            "by_escalation_action": dict(self.by_escalation_action),
+            "by_task_status": dict(self.by_task_status),
+            "last_workflow_at": self.last_workflow_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.workflows_created = 0
+        self.workflows_started = 0
+        self.workflows_completed = 0
+        self.workflows_cancelled = 0
+        self.workflows_failed = 0
+        self.tasks_created = 0
+        self.tasks_completed = 0
+        self.escalations_triggered = 0
+        self.success_rate = 0.0
+        self.total_completed = 0
+        self.total_terminal = 0
+        self.by_type = {}
+        self.by_escalation_action = {}
+        self.by_task_status = {}
+        self.last_workflow_at = None
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class ReviewMetrics:
+    reviews_created: int = 0
+    reviews_started: int = 0
+    reviews_approved: int = 0
+    reviews_rejected: int = 0
+    reviews_escalated: int = 0
+    corrections_recorded: int = 0
+    comments_recorded: int = 0
+    total_latency_ms: float = 0.0
+    completed_count: int = 0
+    average_latency_ms: float = 0.0
+    approval_rate: float = 0.0
+    total_decided: int = 0
+    by_status: Dict[str, int] = field(default_factory=dict)
+    by_decision: Dict[str, int] = field(default_factory=dict)
+    by_priority: Dict[str, int] = field(default_factory=dict)
+    by_role: Dict[str, int] = field(default_factory=dict)
+    last_review_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_created(self, priority: str = "medium") -> None:
+        self.reviews_created += 1
+        self.by_priority[priority] = self.by_priority.get(priority, 0) + 1
+        self.last_review_at = time.time()
+
+    def record_started(self) -> None:
+        self.reviews_started += 1
+
+    def record_decision(
+        self, decision: str = "approved", latency_ms: float = 0.0
+    ) -> None:
+        self.by_decision[decision] = self.by_decision.get(decision, 0) + 1
+        if decision == "approved":
+            self.reviews_approved += 1
+            self.total_decided += 1
+        elif decision == "rejected":
+            self.reviews_rejected += 1
+            self.total_decided += 1
+        elif decision == "escalate":
+            self.reviews_escalated += 1
+        if latency_ms > 0:
+            self.total_latency_ms += latency_ms
+            self.completed_count += 1
+            self.average_latency_ms = round(
+                self.total_latency_ms / self.completed_count, 3
+            )
+        self._recompute_rate()
+
+    def record_status(self, status: str = "pending") -> None:
+        self.by_status[status] = self.by_status.get(status, 0) + 1
+
+    def record_correction(self) -> None:
+        self.corrections_recorded += 1
+
+    def record_comment(self, role: str = "reviewer") -> None:
+        self.comments_recorded += 1
+        self.by_role[role] = self.by_role.get(role, 0) + 1
+
+    def _recompute_rate(self) -> None:
+        if self.total_decided > 0:
+            self.approval_rate = round(
+                self.reviews_approved / self.total_decided, 4
+            )
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "reviews_created": self.reviews_created,
+            "reviews_started": self.reviews_started,
+            "reviews_approved": self.reviews_approved,
+            "reviews_rejected": self.reviews_rejected,
+            "reviews_escalated": self.reviews_escalated,
+            "corrections_recorded": self.corrections_recorded,
+            "comments_recorded": self.comments_recorded,
+            "average_latency_ms": self.average_latency_ms,
+            "approval_rate": self.approval_rate,
+            "by_status": dict(self.by_status),
+            "by_decision": dict(self.by_decision),
+            "by_priority": dict(self.by_priority),
+            "by_role": dict(self.by_role),
+            "last_review_at": self.last_review_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.reviews_created = 0
+        self.reviews_started = 0
+        self.reviews_approved = 0
+        self.reviews_rejected = 0
+        self.reviews_escalated = 0
+        self.corrections_recorded = 0
+        self.comments_recorded = 0
+        self.total_latency_ms = 0.0
+        self.completed_count = 0
+        self.average_latency_ms = 0.0
+        self.approval_rate = 0.0
+        self.total_decided = 0
+        self.by_status = {}
+        self.by_decision = {}
+        self.by_priority = {}
+        self.by_role = {}
+        self.last_review_at = None
+        self.last_reset_at = time.time()
+
+
 _knowledge_graph_metrics_lock = threading.Lock()
 _knowledge_graph_metrics = KnowledgeGraphMetrics()
 
@@ -956,6 +1162,12 @@ _forecasting_metrics = ForecastingMetrics()
 
 _risk_metrics_lock = threading.Lock()
 _risk_metrics = RiskMetrics()
+
+_workflow_metrics_lock = threading.Lock()
+_workflow_metrics = WorkflowMetrics()
+
+_review_metrics_lock = threading.Lock()
+_review_metrics = ReviewMetrics()
 
 
 def get_knowledge_graph_metrics() -> KnowledgeGraphMetrics:
@@ -980,6 +1192,14 @@ def get_forecasting_metrics() -> ForecastingMetrics:
 
 def get_risk_metrics() -> RiskMetrics:
     return _risk_metrics
+
+
+def get_workflow_metrics() -> WorkflowMetrics:
+    return _workflow_metrics
+
+
+def get_review_metrics() -> ReviewMetrics:
+    return _review_metrics
 
 
 def reset_knowledge_graph_metrics() -> None:
@@ -1010,3 +1230,13 @@ def reset_forecasting_metrics() -> None:
 def reset_risk_metrics() -> None:
     with _risk_metrics_lock:
         _risk_metrics.reset()
+
+
+def reset_workflow_metrics() -> None:
+    with _workflow_metrics_lock:
+        _workflow_metrics.reset()
+
+
+def reset_review_metrics() -> None:
+    with _review_metrics_lock:
+        _review_metrics.reset()

@@ -985,3 +985,59 @@ def reset_forecasting_service() -> None:
     """Reset the ForecastingService singleton (used by tests)."""
     global _forecasting_service
     _forecasting_service = None
+
+
+# ─── Module 8.4 — Workflow Automation Platform ────────────────────
+
+from app.services.workflow import (  # noqa: E402
+    AutomationService,
+    build_default_automation_service,
+)
+
+_automation_service: "AutomationService | None" = None  # type: ignore[name-defined]
+
+
+def _automation_service_singleton() -> "AutomationService":
+    global _automation_service
+    if _automation_service is None:
+        _automation_service = build_default_automation_service()
+    return _automation_service
+
+
+def get_automation_service() -> AutomationService:
+    """Dependency injection provider for AutomationService (singleton)."""
+    return _automation_service_singleton()
+
+
+def reset_automation_service() -> None:
+    """Reset the AutomationService singleton (used by tests)."""
+    global _automation_service
+    _automation_service = None
+
+
+# ─── Module 8.5 — Human-in-the-Loop Review ─────────────────────────
+
+from app.services.review import (  # noqa: E402
+    ReviewService,
+    build_default_review_service,
+)
+
+_review_service: "ReviewService | None" = None  # type: ignore[name-defined]
+
+
+def _review_service_singleton() -> "ReviewService":
+    global _review_service
+    if _review_service is None:
+        _review_service = build_default_review_service()
+    return _review_service
+
+
+def get_review_service() -> ReviewService:
+    """Dependency injection provider for ReviewService (singleton)."""
+    return _review_service_singleton()
+
+
+def reset_review_service() -> None:
+    """Reset the ReviewService singleton (used by tests)."""
+    global _review_service
+    _review_service = None
