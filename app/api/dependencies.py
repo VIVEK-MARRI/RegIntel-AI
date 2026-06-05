@@ -677,3 +677,59 @@ def reset_copilot_analytics_service() -> None:
     """Reset the CopilotAnalyticsService singleton (used by tests)."""
     global _copilot_analytics_service
     _copilot_analytics_service = None
+
+
+# ─── Module 7.1 — Regulatory Monitoring Engine ─────────────────────────
+
+from app.services.monitoring import (  # noqa: E402
+    MonitoringService,
+    build_default_monitoring_service,
+)
+
+_monitoring_service: "MonitoringService | None" = None  # type: ignore[name-defined]
+
+
+def _monitoring_service_singleton() -> "MonitoringService":
+    global _monitoring_service
+    if _monitoring_service is None:
+        _monitoring_service = build_default_monitoring_service()
+    return _monitoring_service
+
+
+def get_monitoring_service() -> MonitoringService:
+    """Dependency injection provider for MonitoringService (singleton)."""
+    return _monitoring_service_singleton()
+
+
+def reset_monitoring_service() -> None:
+    """Reset the MonitoringService singleton (used by tests)."""
+    global _monitoring_service
+    _monitoring_service = None
+
+
+# ─── Module 7.2 — Automated Regulatory Ingestion ────────────────────────
+
+from app.services.ingestion import (  # noqa: E402
+    AutoIngestionService,
+    build_default_auto_ingestion_service,
+)
+
+_ingestion_service: "AutoIngestionService | None" = None  # type: ignore[name-defined]
+
+
+def _ingestion_service_singleton() -> "AutoIngestionService":
+    global _ingestion_service
+    if _ingestion_service is None:
+        _ingestion_service = build_default_auto_ingestion_service()
+    return _ingestion_service
+
+
+def get_ingestion_service() -> AutoIngestionService:
+    """Dependency injection provider for AutoIngestionService (singleton)."""
+    return _ingestion_service_singleton()
+
+
+def reset_ingestion_service() -> None:
+    """Reset the AutoIngestionService singleton (used by tests)."""
+    global _ingestion_service
+    _ingestion_service = None

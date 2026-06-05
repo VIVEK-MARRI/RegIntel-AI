@@ -207,3 +207,176 @@ def log_search_event(
     if extra:
         payload.update(extra)
     logger.info(event, extra=payload)
+
+
+# ─── Milestone 7 — Monitoring & Ingestion Metrics ──────────────────────────
+
+
+@dataclass
+class MonitoringMetrics:
+    """Process-wide counters for the regulatory monitoring engine."""
+
+    sources_monitored: int = 0
+    documents_discovered: int = 0
+    documents_failed: int = 0
+    monitor_runs: int = 0
+    monitor_failures: int = 0
+    last_run_at: Optional[float] = None
+    last_discovery_at: Optional[float] = None
+    source_counts: Dict[str, int] = field(default_factory=dict)
+    source_availability: Dict[str, bool] = field(default_factory=dict)
+    error_counts: Dict[str, int] = field(default_factory=dict)
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_monitor_run(self, source: str, success: bool) -> None:
+        self.monitor_runs += 1
+        self.sources_monitored += 1
+        self.source_counts[source] = self.source_counts.get(source, 0) + 1
+        self.source_availability[source] = success
+        self.last_run_at = time.time()
+        if not success:
+            self.monitor_failures += 1
+
+    def record_discovery(self, source: str, n: int = 1) -> None:
+        self.documents_discovered += n
+        self.last_discovery_at = time.time()
+
+    def record_discovery_failure(self, source: str, reason: str) -> None:
+        self.documents_failed += 1
+        key = f"{source}:{reason}"
+        self.error_counts[key] = self.error_counts.get(key, 0) + 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "sources_monitored": self.sources_monitored,
+            "documents_discovered": self.documents_discovered,
+            "documents_failed": self.documents_failed,
+            "monitor_runs": self.monitor_runs,
+            "monitor_failures": self.monitor_failures,
+            "last_run_at": self.last_run_at,
+            "last_discovery_at": self.last_discovery_at,
+            "source_counts": dict(self.source_counts),
+            "source_availability": dict(self.source_availability),
+            "error_counts": dict(self.error_counts),
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.sources_monitored = 0
+        self.documents_discovered = 0
+        self.documents_failed = 0
+        self.monitor_runs = 0
+        self.monitor_failures = 0
+        self.last_run_at = None
+        self.last_discovery_at = None
+        self.source_counts.clear()
+        self.source_availability.clear()
+        self.error_counts.clear()
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class IngestionMetrics:
+    """Process-wide counters for the automated ingestion pipeline."""
+
+    documents_ingested: int = 0
+    documents_failed: int = 0
+    chunks_created: int = 0
+    embeddings_created: int = 0
+    total_processing_latency_ms: float = 0.0
+    runs_total: int = 0
+    runs_succeeded: int = 0
+    runs_failed: int = 0
+    last_run_at: Optional[float] = None
+    source_counts: Dict[str, int] = field(default_factory=dict)
+    step_latency_ms: Dict[str, float] = field(default_factory=dict)
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_run(
+        self,
+        source: str,
+        *,
+        success: bool,
+        chunks: int = 0,
+        embeddings: int = 0,
+        latency_ms: float = 0.0,
+    ) -> None:
+        self.runs_total += 1
+        if success:
+            self.runs_succeeded += 1
+            self.documents_ingested += 1
+            self.chunks_created += chunks
+            self.embeddings_created += embeddings
+        else:
+            self.runs_failed += 1
+            self.documents_failed += 1
+        self.total_processing_latency_ms += latency_ms
+        self.source_counts[source] = self.source_counts.get(source, 0) + 1
+        self.last_run_at = time.time()
+
+    def record_step_latency(self, step: str, latency_ms: float) -> None:
+        self.step_latency_ms[step] = (
+            self.step_latency_ms.get(step, 0.0) + latency_ms
+        )
+
+    def snapshot(self) -> Dict[str, Any]:
+        avg_latency = (
+            self.total_processing_latency_ms / self.runs_total
+            if self.runs_total > 0
+            else 0.0
+        )
+        return {
+            "documents_ingested": self.documents_ingested,
+            "documents_failed": self.documents_failed,
+            "chunks_created": self.chunks_created,
+            "embeddings_created": self.embeddings_created,
+            "runs_total": self.runs_total,
+            "runs_succeeded": self.runs_succeeded,
+            "runs_failed": self.runs_failed,
+            "average_processing_latency_ms": round(avg_latency, 3),
+            "last_run_at": self.last_run_at,
+            "source_counts": dict(self.source_counts),
+            "step_latency_ms": dict(self.step_latency_ms),
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.documents_ingested = 0
+        self.documents_failed = 0
+        self.chunks_created = 0
+        self.embeddings_created = 0
+        self.total_processing_latency_ms = 0.0
+        self.runs_total = 0
+        self.runs_succeeded = 0
+        self.runs_failed = 0
+        self.last_run_at = None
+        self.source_counts.clear()
+        self.step_latency_ms.clear()
+        self.last_reset_at = time.time()
+
+
+_monitoring_metrics_lock = threading.Lock()
+_monitoring_metrics = MonitoringMetrics()
+
+_ingestion_metrics_lock = threading.Lock()
+_ingestion_metrics = IngestionMetrics()
+
+
+def get_monitoring_metrics() -> MonitoringMetrics:
+    """Return the process-wide monitoring metrics singleton."""
+    return _monitoring_metrics
+
+
+def get_ingestion_metrics() -> IngestionMetrics:
+    """Return the process-wide ingestion metrics singleton."""
+    return _ingestion_metrics
+
+
+def reset_monitoring_metrics() -> None:
+    with _monitoring_metrics_lock:
+        _monitoring_metrics.reset()
+
+
+def reset_ingestion_metrics() -> None:
+    with _ingestion_metrics_lock:
+        _ingestion_metrics.reset()
