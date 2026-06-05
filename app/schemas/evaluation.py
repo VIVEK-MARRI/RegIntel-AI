@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 
@@ -46,3 +48,99 @@ class BenchmarkReport(BaseModel):
     metrics: BenchmarkSummaryMetrics = Field(..., description="Aggregated quality metrics.")
     query_results: List[QueryEvaluationResult] = Field(default_factory=list, description="Detail query results.")
     duration_ms: float = Field(..., description="Total execution duration in milliseconds.")
+
+
+# ─── Module 5.7 — Answer Evaluation Framework ──────────────────────────────
+
+import uuid
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field  # noqa: E402
+
+from app.schemas.orchestrator import FinalAnswerResponse  # noqa: E402
+
+
+class EvaluationMetric(str, Enum):
+    """The set of metrics the framework computes."""
+
+    FAITHFULNESS = "faithfulness"
+    ANSWER_RELEVANCE = "answer_relevance"
+    CITATION_ACCURACY = "citation_accuracy"
+    SOURCE_ATTRIBUTION_ACCURACY = "source_attribution_accuracy"
+    COMPLETENESS = "completeness"
+    GROUNDEDNESS = "groundedness"
+    HALLUCINATION_RATE = "hallucination_rate"
+    EVIDENCE_COVERAGE = "evidence_coverage"
+
+
+class EvaluationStrategy(str, Enum):
+    """Comparison strategy for the benchmark runner."""
+
+    BASELINE = "baseline"
+    CANDIDATE = "candidate"
+
+
+class MetricScore(BaseModel):
+    """A single metric's value plus a short note."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    metric: EvaluationMetric
+    score: float = Field(..., ge=0.0, le=1.0)
+    note: Optional[str] = None
+    raw: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AnswerEvaluationResult(BaseModel):
+    """Per-response evaluation result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    request_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    strategy: EvaluationStrategy = EvaluationStrategy.CANDIDATE
+    scores: List[MetricScore] = Field(default_factory=list)
+    aggregate_score: float = Field(0.0, ge=0.0, le=1.0)
+    hallucination_rate: float = Field(0.0, ge=0.0, le=1.0)
+    notes: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AnswerEvaluationReport(BaseModel):
+    """Multi-response aggregate report."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    report_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    total_cases: int = Field(0, ge=0)
+    results: List[AnswerEvaluationResult] = Field(default_factory=list)
+    aggregate_metrics: Dict[str, float] = Field(default_factory=dict)
+    average_aggregate_score: float = Field(0.0, ge=0.0, le=1.0)
+    average_hallucination_rate: float = Field(0.0, ge=0.0, le=1.0)
+    regression_detected: bool = False
+    regression_delta: float = 0.0
+    notes: List[str] = Field(default_factory=list)
+
+
+class EvaluationRequest(BaseModel):
+    """Single-response evaluation request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    response: FinalAnswerResponse
+    query: str = Field(..., min_length=1, max_length=2048)
+    chunks: List[Dict[str, Any]] = Field(default_factory=list)
+    strategy: EvaluationStrategy = EvaluationStrategy.CANDIDATE
+    metrics: Optional[List[EvaluationMetric]] = None
+
+
+class EvaluationResponse(BaseModel):
+    """Single-response evaluation response."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    query: str
+    result: AnswerEvaluationResult
