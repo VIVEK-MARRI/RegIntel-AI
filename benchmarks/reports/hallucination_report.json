@@ -8,8 +8,8 @@
   "detection_accuracy": 1.0,
   "average_faithfulness_score": 0.6,
   "hallucination_rate": 0.6,
-  "average_latency_ms": 0.842,
-  "p95_latency_ms": 1.627,
+  "average_latency_ms": 0.184,
+  "p95_latency_ms": 0.415,
   "cases": [
     {
       "name": "kyc_fully_supported",
@@ -23,7 +23,7 @@
       "supported_count": 3,
       "unsupported_count": 0,
       "unsupported_claims": [],
-      "latency_ms": 1.3,
+      "latency_ms": 0.32,
       "expectations": [
         "hallucination",
         "min_faithfulness"
@@ -43,12 +43,12 @@
       "unsupported_count": 1,
       "unsupported_claims": [
         {
-          "claim_id": "clm-c81037e3",
+          "claim_id": "clm-e18a8091",
           "claim": "Banks must also file monthly tax returns for every account holder.",
           "reason": "no chunk reached lexical-overlap threshold (0.15)"
         }
       ],
-      "latency_ms": 0.75,
+      "latency_ms": 0.184,
       "expectations": [
         "hallucination",
         "max_faithfulness"
@@ -68,17 +68,17 @@
       "unsupported_count": 2,
       "unsupported_claims": [
         {
-          "claim_id": "clm-326414f9",
+          "claim_id": "clm-85515bc6",
           "claim": "Banks perform KYC.",
           "reason": "no source documents available"
         },
         {
-          "claim_id": "clm-22330df4",
+          "claim_id": "clm-80d28133",
           "claim": "KYC is required at onboarding.",
           "reason": "no source documents available"
         }
       ],
-      "latency_ms": 0.509,
+      "latency_ms": 0.094,
       "expectations": [
         "hallucination",
         "max_faithfulness"
@@ -97,7 +97,7 @@
       "supported_count": 3,
       "unsupported_count": 0,
       "unsupported_claims": [],
-      "latency_ms": 0.835,
+      "latency_ms": 0.152,
       "expectations": [
         "hallucination",
         "min_faithfulness"
@@ -117,17 +117,17 @@
       "unsupported_count": 2,
       "unsupported_claims": [
         {
-          "claim_id": "clm-432e91fd",
+          "claim_id": "clm-f01b246d",
           "claim": "The penalty is Rs 25 crore per violation.",
           "reason": "no chunk reached lexical-overlap threshold (0.15)"
         },
         {
-          "claim_id": "clm-6a619bb0",
+          "claim_id": "clm-f19dc4ac",
           "claim": "The penalty is doubled for repeat offenders within 12 months.",
           "reason": "no chunk reached lexical-overlap threshold (0.15)"
         }
       ],
-      "latency_ms": 0.815,
+      "latency_ms": 0.168,
       "expectations": [
         "hallucination",
         "max_faithfulness"

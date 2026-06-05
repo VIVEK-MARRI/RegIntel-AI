@@ -116,6 +116,7 @@ async def scheduler_tick(
 async def run_ingestion(
     request: IngestionTriggerRequest,
     service: AutoIngestionService = Depends(get_ingestion_service),
+    monitoring: MonitoringService = Depends(get_monitoring_service),
 ) -> IngestionRunResponse:
     if not request.url and not request.discovery_id:
         raise HTTPException(
@@ -124,7 +125,6 @@ async def run_ingestion(
         )
     # If only a discovery_id is provided, resolve it.
     if not request.url and request.discovery_id is not None:
-        monitoring: MonitoringService = get_monitoring_service()
         discovery = monitoring.get_discovery(request.discovery_id)
         if discovery is None:
             raise HTTPException(
