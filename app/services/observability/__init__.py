@@ -624,3 +624,208 @@ def reset_impact_analysis_metrics() -> None:
 def reset_alert_metrics() -> None:
     with _alert_metrics_lock:
         _alert_metrics.reset()
+
+
+# ─── Milestone 7.6-7.8 — KG / Research / Dashboard Metrics ───────────
+
+
+@dataclass
+class KnowledgeGraphMetrics:
+    nodes_added: int = 0
+    relationships_added: int = 0
+    traversals_executed: int = 0
+    dependency_analyses: int = 0
+    builds_executed: int = 0
+    by_entity_type: Dict[str, int] = field(default_factory=dict)
+    last_build_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_node(self, node) -> None:  # type: ignore[no-untyped-def]
+        self.nodes_added += 1
+        self.by_entity_type[node.entity_type.value] = (
+            self.by_entity_type.get(node.entity_type.value, 0) + 1
+        )
+
+    def record_relationship(self, rel) -> None:  # type: ignore[no-untyped-def]
+        self.relationships_added += 1
+
+    def record_build(self) -> None:
+        self.builds_executed += 1
+        self.last_build_at = time.time()
+
+    def record_traversal(self) -> None:
+        self.traversals_executed += 1
+
+    def record_dependency(self) -> None:
+        self.dependency_analyses += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "nodes_added": self.nodes_added,
+            "relationships_added": self.relationships_added,
+            "traversals_executed": self.traversals_executed,
+            "dependency_analyses": self.dependency_analyses,
+            "builds_executed": self.builds_executed,
+            "by_entity_type": dict(self.by_entity_type),
+            "last_build_at": self.last_build_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.nodes_added = 0
+        self.relationships_added = 0
+        self.traversals_executed = 0
+        self.dependency_analyses = 0
+        self.builds_executed = 0
+        self.by_entity_type.clear()
+        self.last_build_at = None
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class ResearchMetrics:
+    plans_generated: int = 0
+    plans_executed: int = 0
+    steps_total: int = 0
+    reports_generated: int = 0
+    comparative_research: int = 0
+    timeline_research: int = 0
+    cross_document_research: int = 0
+    average_steps_per_plan: float = 0.0
+    average_duration_ms: float = 0.0
+    total_duration_ms: float = 0.0
+    last_plan_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_plan(self, step_count: int) -> None:
+        self.plans_generated += 1
+        self.steps_total += step_count
+        self.average_steps_per_plan = self.steps_total / self.plans_generated
+        self.last_plan_at = time.time()
+
+    def record_execute(
+        self,
+        *,
+        duration_ms: float,
+        kind: str = "general",
+    ) -> None:
+        self.plans_executed += 1
+        self.total_duration_ms += duration_ms
+        self.average_duration_ms = self.total_duration_ms / self.plans_executed
+        if kind == "comparative":
+            self.comparative_research += 1
+        elif kind == "timeline":
+            self.timeline_research += 1
+        elif kind == "cross_document":
+            self.cross_document_research += 1
+
+    def record_report(self) -> None:
+        self.reports_generated += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "plans_generated": self.plans_generated,
+            "plans_executed": self.plans_executed,
+            "steps_total": self.steps_total,
+            "reports_generated": self.reports_generated,
+            "comparative_research": self.comparative_research,
+            "timeline_research": self.timeline_research,
+            "cross_document_research": self.cross_document_research,
+            "average_steps_per_plan": round(self.average_steps_per_plan, 3),
+            "average_duration_ms": round(self.average_duration_ms, 3),
+            "last_plan_at": self.last_plan_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.plans_generated = 0
+        self.plans_executed = 0
+        self.steps_total = 0
+        self.reports_generated = 0
+        self.comparative_research = 0
+        self.timeline_research = 0
+        self.cross_document_research = 0
+        self.average_steps_per_plan = 0.0
+        self.average_duration_ms = 0.0
+        self.total_duration_ms = 0.0
+        self.last_plan_at = None
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class DashboardMetrics:
+    snapshots_generated: int = 0
+    trend_analyses: int = 0
+    risk_insights_generated: int = 0
+    average_risk_score: float = 0.0
+    total_risk_score: float = 0.0
+    last_snapshot_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_snapshot(self, risk_score: float = 0.0) -> None:
+        self.snapshots_generated += 1
+        self.total_risk_score += risk_score
+        self.average_risk_score = self.total_risk_score / self.snapshots_generated
+        self.last_snapshot_at = time.time()
+
+    def record_trend(self) -> None:
+        self.trend_analyses += 1
+
+    def record_risk_insight(self) -> None:
+        self.risk_insights_generated += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "snapshots_generated": self.snapshots_generated,
+            "trend_analyses": self.trend_analyses,
+            "risk_insights_generated": self.risk_insights_generated,
+            "average_risk_score": round(self.average_risk_score, 3),
+            "last_snapshot_at": self.last_snapshot_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.snapshots_generated = 0
+        self.trend_analyses = 0
+        self.risk_insights_generated = 0
+        self.average_risk_score = 0.0
+        self.total_risk_score = 0.0
+        self.last_snapshot_at = None
+        self.last_reset_at = time.time()
+
+
+_knowledge_graph_metrics_lock = threading.Lock()
+_knowledge_graph_metrics = KnowledgeGraphMetrics()
+
+_research_metrics_lock = threading.Lock()
+_research_metrics = ResearchMetrics()
+
+_dashboard_metrics_lock = threading.Lock()
+_dashboard_metrics = DashboardMetrics()
+
+
+def get_knowledge_graph_metrics() -> KnowledgeGraphMetrics:
+    return _knowledge_graph_metrics
+
+
+def get_research_metrics() -> ResearchMetrics:
+    return _research_metrics
+
+
+def get_dashboard_metrics() -> DashboardMetrics:
+    return _dashboard_metrics
+
+
+def reset_knowledge_graph_metrics() -> None:
+    with _knowledge_graph_metrics_lock:
+        _knowledge_graph_metrics.reset()
+
+
+def reset_research_metrics() -> None:
+    with _research_metrics_lock:
+        _research_metrics.reset()
+
+
+def reset_dashboard_metrics() -> None:
+    with _dashboard_metrics_lock:
+        _dashboard_metrics.reset()

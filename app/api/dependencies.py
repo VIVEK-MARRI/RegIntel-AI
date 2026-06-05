@@ -817,3 +817,87 @@ def reset_alert_service() -> None:
     """Reset the AlertService singleton (used by tests)."""
     global _alert_service
     _alert_service = None
+
+
+# ─── Module 7.6 — Knowledge Graph Layer ──────────────────────────────
+
+from app.services.knowledge_graph import (  # noqa: E402
+    KnowledgeGraphService,
+    build_default_knowledge_graph_service,
+)
+
+_knowledge_graph_service: "KnowledgeGraphService | None" = None  # type: ignore[name-defined]
+
+
+def _knowledge_graph_service_singleton() -> "KnowledgeGraphService":
+    global _knowledge_graph_service
+    if _knowledge_graph_service is None:
+        _knowledge_graph_service = build_default_knowledge_graph_service()
+    return _knowledge_graph_service
+
+
+def get_knowledge_graph_service() -> KnowledgeGraphService:
+    """Dependency injection provider for KnowledgeGraphService (singleton)."""
+    return _knowledge_graph_service_singleton()
+
+
+def reset_knowledge_graph_service() -> None:
+    """Reset the KnowledgeGraphService singleton (used by tests)."""
+    global _knowledge_graph_service
+    _knowledge_graph_service = None
+
+
+# ─── Module 7.7 — Agentic Regulatory Research ────────────────────────
+
+from app.services.research import (  # noqa: E402
+    ResearchService,
+    build_default_research_service,
+)
+
+_research_service: "ResearchService | None" = None  # type: ignore[name-defined]
+
+
+def _research_service_singleton() -> "ResearchService":
+    global _research_service
+    if _research_service is None:
+        _research_service = build_default_research_service()
+    return _research_service
+
+
+def get_research_service() -> ResearchService:
+    """Dependency injection provider for ResearchService (singleton)."""
+    return _research_service_singleton()
+
+
+def reset_research_service() -> None:
+    """Reset the ResearchService singleton (used by tests)."""
+    global _research_service
+    _research_service = None
+
+
+# ─── Module 7.8 — Executive Dashboard ────────────────────────────────
+
+from app.services.dashboard import (  # noqa: E402
+    ExecutiveDashboardService,
+    build_default_executive_dashboard_service,
+)
+
+_dashboard_service: "ExecutiveDashboardService | None" = None  # type: ignore[name-defined]
+
+
+def _dashboard_service_singleton() -> "ExecutiveDashboardService":
+    global _dashboard_service
+    if _dashboard_service is None:
+        _dashboard_service = build_default_executive_dashboard_service()
+    return _dashboard_service
+
+
+def get_executive_dashboard_service() -> ExecutiveDashboardService:
+    """Dependency injection provider for ExecutiveDashboardService (singleton)."""
+    return _dashboard_service_singleton()
+
+
+def reset_executive_dashboard_service() -> None:
+    """Reset the ExecutiveDashboardService singleton (used by tests)."""
+    global _dashboard_service
+    _dashboard_service = None

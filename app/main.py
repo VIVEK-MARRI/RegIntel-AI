@@ -15,6 +15,7 @@ from app.api.v1.confidence import router as confidence_router
 from app.api.v1.conversation import router as conversation_router
 from app.api.v1.copilot import router as copilot_router
 from app.api.v1.copilot_analytics import router as copilot_analytics_router
+from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.evaluation import router as evaluation_router
 from app.api.v1.feedback import router as feedback_router
@@ -22,11 +23,13 @@ from app.api.v1.hallucination import router as hallucination_router
 from app.api.v1.health import router as health_router
 from app.api.v1.impact import router as impact_router
 from app.api.v1.ingestion import router as ingestion_router
+from app.api.v1.knowledge_graph import router as knowledge_graph_router
 from app.api.v1.memory import router as memory_router
 from app.api.v1.monitoring import router as monitoring_router
 from app.api.v1.orchestrator import router as orchestrator_router
 from app.api.v1.planning import router as planning_router
 from app.api.v1.reasoning import router as reasoning_router
+from app.api.v1.research import router as research_router
 from app.api.v1.retrieval import router as retrieval_router
 from app.api.v1.search import search_router, embeddings_router, index_router
 from app.core.config import settings
@@ -231,6 +234,27 @@ app.include_router(
     alerts_router,
     prefix="/api/v1",
     tags=["alerting"]
+)
+
+# Module 7.6 — Knowledge Graph Layer
+app.include_router(
+    knowledge_graph_router,
+    prefix="/api/v1",
+    tags=["knowledge-graph"]
+)
+
+# Module 7.7 — Agentic Regulatory Research
+app.include_router(
+    research_router,
+    prefix="/api/v1",
+    tags=["research"]
+)
+
+# Module 7.8 — Executive Dashboard
+app.include_router(
+    dashboard_router,
+    prefix="/api/v1",
+    tags=["dashboard"]
 )
 
 # Module 6.8 — Health router (liveness / readiness / deep)

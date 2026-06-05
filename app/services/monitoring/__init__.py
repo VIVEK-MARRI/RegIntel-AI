@@ -797,6 +797,14 @@ class MonitoringService:
 
     # ── Run / discovery ────────────────────────────────────────────────
 
+    def metrics_snapshot(self) -> Dict[str, Any]:
+        """Expose monitoring metrics for the dashboard."""
+        try:
+            return get_monitoring_metrics().snapshot()
+        except Exception:  # pragma: no cover
+            return {}
+
+    
     async def run_source(
         self, source: RegulatorySource, *, force: bool = False
     ) -> RunMonitorResponse:
