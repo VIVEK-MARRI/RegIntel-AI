@@ -503,3 +503,177 @@ def reset_answer_analytics_service() -> None:
 def get_answer_health_monitor() -> AnswerHealthMonitor:
     """Dependency injection provider for AnswerHealthMonitor."""
     return AnswerHealthMonitor(service=get_answer_analytics_service())
+
+
+# ─── Module 6.2 — Conversation Management ────────────────────────────────
+
+from app.services.conversation import (  # noqa: E402
+    ConversationService,
+    build_default_conversation_service,
+)
+
+
+_conversation_service: "ConversationService | None" = None  # type: ignore[name-defined]
+
+
+def _conversation_service_singleton() -> "ConversationService":
+    global _conversation_service
+    if _conversation_service is None:
+        _conversation_service = build_default_conversation_service()
+    return _conversation_service
+
+
+def get_conversation_service() -> ConversationService:
+    """Dependency injection provider for ConversationService (singleton)."""
+    return _conversation_service_singleton()
+
+
+def reset_conversation_service() -> None:
+    """Reset the ConversationService singleton (used by tests)."""
+    global _conversation_service
+    _conversation_service = None
+
+
+# ─── Module 6.3 — Memory Layer ────────────────────────────────────────────
+
+from app.services.memory import (  # noqa: E402
+    MemoryService,
+    build_default_memory_service,
+)
+
+
+_memory_service: "MemoryService | None" = None  # type: ignore[name-defined]
+
+
+def _memory_service_singleton() -> "MemoryService":
+    global _memory_service
+    if _memory_service is None:
+        _memory_service = build_default_memory_service()
+    return _memory_service
+
+
+def get_memory_service() -> MemoryService:
+    """Dependency injection provider for MemoryService (singleton)."""
+    return _memory_service_singleton()
+
+
+def reset_memory_service() -> None:
+    """Reset the MemoryService singleton (used by tests)."""
+    global _memory_service
+    _memory_service = None
+
+
+# ─── Module 6.4 — Query Planning Engine ─────────────────────────────────
+
+from app.services.planning import (  # noqa: E402
+    QueryPlanner,
+    build_default_query_planner,
+)
+
+
+_query_planner: "QueryPlanner | None" = None  # type: ignore[name-defined]
+
+
+def _query_planner_singleton() -> "QueryPlanner":
+    global _query_planner
+    if _query_planner is None:
+        _query_planner = build_default_query_planner()
+    return _query_planner
+
+
+def get_query_planner() -> QueryPlanner:
+    """Dependency injection provider for QueryPlanner (singleton)."""
+    return _query_planner_singleton()
+
+
+def reset_query_planner() -> None:
+    """Reset the QueryPlanner singleton (used by tests)."""
+    global _query_planner
+    _query_planner = None
+
+
+# ─── Module 6.5 — Multi-Document Reasoning ───────────────────────────────
+
+from app.services.reasoning import (  # noqa: E402
+    MultiDocumentReasoner,
+    build_default_multi_document_reasoner,
+)
+
+
+_multi_document_reasoner: "MultiDocumentReasoner | None" = None  # type: ignore[name-defined]
+
+
+def _multi_document_reasoner_singleton() -> "MultiDocumentReasoner":
+    global _multi_document_reasoner
+    if _multi_document_reasoner is None:
+        _multi_document_reasoner = build_default_multi_document_reasoner()
+    return _multi_document_reasoner
+
+
+def get_multi_document_reasoner() -> MultiDocumentReasoner:
+    """Dependency injection provider for MultiDocumentReasoner (singleton)."""
+    return _multi_document_reasoner_singleton()
+
+
+def reset_multi_document_reasoner() -> None:
+    """Reset the MultiDocumentReasoner singleton (used by tests)."""
+    global _multi_document_reasoner
+    _multi_document_reasoner = None
+
+
+# ─── Module 6.6 — Feedback Intelligence ──────────────────────────────────
+
+from app.services.feedback import (  # noqa: E402
+    FeedbackService,
+    build_default_feedback_service,
+)
+
+
+_feedback_service: "FeedbackService | None" = None  # type: ignore[name-defined]
+
+
+def _feedback_service_singleton() -> "FeedbackService":
+    global _feedback_service
+    if _feedback_service is None:
+        _feedback_service = build_default_feedback_service()
+    return _feedback_service
+
+
+def get_feedback_service() -> FeedbackService:
+    """Dependency injection provider for FeedbackService (singleton)."""
+    return _feedback_service_singleton()
+
+
+def reset_feedback_service() -> None:
+    """Reset the FeedbackService singleton (used by tests)."""
+    global _feedback_service
+    _feedback_service = None
+
+
+# ─── Module 6.7 — Copilot Analytics ──────────────────────────────────────
+
+from app.services.copilot_analytics import (  # noqa: E402
+    CopilotAnalyticsService,
+    build_default_copilot_analytics_service,
+)
+
+
+_copilot_analytics_service: "CopilotAnalyticsService | None" = None  # type: ignore[name-defined]
+
+
+def _copilot_analytics_service_singleton() -> "CopilotAnalyticsService":
+    global _copilot_analytics_service
+    if _copilot_analytics_service is None:
+        _copilot_analytics_service = build_default_copilot_analytics_service()
+    return _copilot_analytics_service
+
+
+def get_copilot_analytics_service() -> CopilotAnalyticsService:
+    """Dependency injection provider for CopilotAnalyticsService (singleton)."""
+    return _copilot_analytics_service_singleton()
+
+
+def reset_copilot_analytics_service() -> None:
+    """Reset the CopilotAnalyticsService singleton (used by tests)."""
+    global _copilot_analytics_service
+    _copilot_analytics_service = None

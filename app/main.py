@@ -1,21 +1,43 @@
+from pathlib import Path
+
 from fastapi import FastAPI
-from app.api.v1.documents import router as documents_router
-from app.api.v1.chunks import router as chunks_router
-from app.api.v1.search import search_router, embeddings_router, index_router
-from app.api.v1.analytics import router as analytics_router
-from app.api.v1.bm25 import router as bm25_router
-from app.api.v1.retrieval import router as retrieval_router
+
+from app.api.v1.answer_analytics import router as answer_analytics_router
 from app.api.v1.answer_generation import router as answer_generation_router
+from app.api.v1.analytics import router as analytics_router
+from app.api.v1.attribution import router as attribution_router
+from app.api.v1.bm25 import router as bm25_router
+from app.api.v1.chunks import router as chunks_router
 from app.api.v1.citation import router as citation_router
 from app.api.v1.confidence import router as confidence_router
-from app.api.v1.hallucination import router as hallucination_router
-from app.api.v1.attribution import router as attribution_router
-from app.api.v1.orchestrator import router as orchestrator_router
+from app.api.v1.conversation import router as conversation_router
+from app.api.v1.copilot import router as copilot_router
+from app.api.v1.copilot_analytics import router as copilot_analytics_router
+from app.api.v1.documents import router as documents_router
 from app.api.v1.evaluation import router as evaluation_router
-from app.api.v1.answer_analytics import router as answer_analytics_router
+from app.api.v1.feedback import router as feedback_router
+from app.api.v1.hallucination import router as hallucination_router
+from app.api.v1.health import router as health_router
+from app.api.v1.memory import router as memory_router
+from app.api.v1.orchestrator import router as orchestrator_router
+from app.api.v1.planning import router as planning_router
+from app.api.v1.reasoning import router as reasoning_router
+from app.api.v1.retrieval import router as retrieval_router
+from app.api.v1.search import search_router, embeddings_router, index_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
+from app.core.startup import on_shutdown, on_startup
+from app.middleware import (
+    APIKeyMiddleware,
+    APIKeyStore,
+    AuditLog,
+    AuditLogMiddleware,
+    RateLimitMiddleware,
+    RequestTracingMiddleware,
+    SecurityHeadersMiddleware,
+    SlidingWindowRateLimiter,
+)
 
 # Configure logging
 setup_logging(level="INFO" if settings.ENV == "production" else "DEBUG")
@@ -128,7 +150,111 @@ app.include_router(
     tags=["answer-analytics"]
 )
 
-@app.get("/health", tags=["health"])
+app.include_router(
+    conversation_router,
+    prefix="/api/v1",
+    tags=["conversation"]
+)
+
+app.include_router(
+    memory_router,
+    prefix="/api/v1",
+    tags=["memory"]
+)
+
+app.include_router(
+    copilot_router,
+    prefix="/api/v1",
+    tags=["copilot"]
+)
+
+app.include_router(
+    planning_router,
+    prefix="/api/v1",
+    tags=["planning"]
+)
+
+app.include_router(
+    reasoning_router,
+    prefix="/api/v1",
+    tags=["reasoning"]
+)
+
+app.include_router(
+    feedback_router,
+    prefix="/api/v1",
+    tags=["feedback"]
+)
+
+# Module 6.7 — Copilot Analytics (registered under /api/v1/copilot/* via its own prefix)
+app.include_router(
+    copilot_analytics_router,
+    prefix="/api/v1",
+    tags=["copilot-analytics"]
+)
+
+# Module 6.8 — Health router (liveness / readiness / deep)
+app.include_router(
+    health_router,
+    tags=["health"]
+)
+
+# ─── Module 6.8 — Production middleware ──────────────────────────────────
+# Order matters: tracing wraps everything so request_id is available to
+# downstream middleware; security headers apply to all responses; rate-
+# limiting and audit log run per-request.
+
+_audit_log = AuditLog(
+    persist_path=Path(settings.AUDIT_LOG_PATH) if settings.AUDIT_LOG_PERSIST else None,
+)
+
+if settings.REQUEST_TRACING_ENABLED:
+    app.add_middleware(RequestTracingMiddleware)
+
+if settings.SECURITY_HEADERS_ENABLED:
+    app.add_middleware(SecurityHeadersMiddleware)
+
+if settings.RATE_LIMIT_ENABLED:
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=SlidingWindowRateLimiter(),
+        default_limit=settings.RATE_LIMIT_PER_MINUTE,
+        window_seconds=60.0,
+    )
+
+if settings.AUDIT_LOG_ENABLED:
+    app.add_middleware(AuditLogMiddleware, audit_log=_audit_log)
+
+if settings.API_KEY_AUTH_ENABLED:
+    _api_key_store = APIKeyStore()
+    # In production, API keys are supplied via env / secrets manager.
+    # Tests construct their own stores and override middleware as needed.
+    app.add_middleware(APIKeyMiddleware, store=_api_key_store, enabled=True)
+
+
+# ─── Module 6.8 — Startup / shutdown hooks ───────────────────────────────
+
+@app.on_event("startup")
+async def _startup() -> None:
+    required_env = (
+        [v.strip() for v in settings.STARTUP_REQUIRED_ENV.split(",") if v.strip()]
+        if settings.STARTUP_REQUIRED_ENV
+        else None
+    )
+    on_startup(
+        app=app,
+        required_env=required_env,
+        storage_root=Path(settings.STORAGE_ROOT),
+        raise_on_error=settings.STARTUP_RAISE_ON_ERROR,
+    )
+
+
+@app.on_event("shutdown")
+async def _shutdown() -> None:
+    on_shutdown(app=app)
+
+
+@app.get("/health", tags=["health"], include_in_schema=False)
 async def health_check():
-    """Simple service health check endpoint."""
+    """Simple service health check endpoint (deprecated: use /health/live)."""
     return {"status": "healthy", "project": settings.PROJECT_NAME}

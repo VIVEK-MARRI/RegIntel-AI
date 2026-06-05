@@ -119,6 +119,49 @@ class Settings(BaseSettings):
         description="If true, the streaming endpoint is available",
     )
 
+    # ─── Module 6.8 — Production Readiness ────────────────────────────────
+    RATE_LIMIT_ENABLED: bool = Field(
+        default=True,
+        description="If true, RateLimitMiddleware is enabled",
+    )
+    RATE_LIMIT_PER_MINUTE: int = Field(
+        default=60,
+        ge=1,
+        description="Default per-minute request limit per identity (IP or API key)",
+    )
+    API_KEY_AUTH_ENABLED: bool = Field(
+        default=False,
+        description="If true, require X-Api-Key header on all non-exempt paths",
+    )
+    SECURITY_HEADERS_ENABLED: bool = Field(
+        default=True,
+        description="If true, SecurityHeadersMiddleware adds standard headers",
+    )
+    AUDIT_LOG_ENABLED: bool = Field(
+        default=True,
+        description="If true, AuditLogMiddleware records each request",
+    )
+    AUDIT_LOG_PERSIST: bool = Field(
+        default=False,
+        description="If true, audit log entries are also written to JSONL",
+    )
+    AUDIT_LOG_PATH: str = Field(
+        default="storage/audit/audit.log",
+        description="Path for the JSONL audit log when AUDIT_LOG_PERSIST is true",
+    )
+    REQUEST_TRACING_ENABLED: bool = Field(
+        default=True,
+        description="If true, RequestTracingMiddleware assigns/propagates X-Request-ID",
+    )
+    STARTUP_REQUIRED_ENV: str = Field(
+        default="",
+        description="Comma-separated list of required env vars for startup validation",
+    )
+    STARTUP_RAISE_ON_ERROR: bool = Field(
+        default=False,
+        description="If true, startup validation raises on errors",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
