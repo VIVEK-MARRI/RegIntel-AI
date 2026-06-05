@@ -257,6 +257,30 @@ app.include_router(
     tags=["dashboard"]
 )
 
+# Module 8.1 — Compliance Risk Intelligence
+from app.api.v1.compliance_risk import router as compliance_risk_router  # noqa: E402
+app.include_router(
+    compliance_risk_router,
+    prefix="/api/v1",
+    tags=["compliance-risk"]
+)
+
+# Module 8.2 — Regulatory Recommendation Engine
+from app.api.v1.recommendations import router as recommendations_router  # noqa: E402
+app.include_router(
+    recommendations_router,
+    prefix="/api/v1",
+    tags=["recommendations"]
+)
+
+# Module 8.3 — Risk Forecasting Engine
+from app.api.v1.forecasting import router as forecasting_router  # noqa: E402
+app.include_router(
+    forecasting_router,
+    prefix="/api/v1",
+    tags=["forecasting"]
+)
+
 # Module 6.8 — Health router (liveness / readiness / deep)
 app.include_router(
     health_router,

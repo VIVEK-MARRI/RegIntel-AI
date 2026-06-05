@@ -901,3 +901,87 @@ def reset_executive_dashboard_service() -> None:
     """Reset the ExecutiveDashboardService singleton (used by tests)."""
     global _dashboard_service
     _dashboard_service = None
+
+
+# ─── Module 8.1 — Compliance Risk Intelligence ───────────────────────
+
+from app.services.compliance_risk import (  # noqa: E402
+    ComplianceRiskService,
+    build_default_compliance_risk_service,
+)
+
+_compliance_risk_service: "ComplianceRiskService | None" = None  # type: ignore[name-defined]
+
+
+def _compliance_risk_service_singleton() -> "ComplianceRiskService":
+    global _compliance_risk_service
+    if _compliance_risk_service is None:
+        _compliance_risk_service = build_default_compliance_risk_service()
+    return _compliance_risk_service
+
+
+def get_compliance_risk_service() -> ComplianceRiskService:
+    """Dependency injection provider for ComplianceRiskService (singleton)."""
+    return _compliance_risk_service_singleton()
+
+
+def reset_compliance_risk_service() -> None:
+    """Reset the ComplianceRiskService singleton (used by tests)."""
+    global _compliance_risk_service
+    _compliance_risk_service = None
+
+
+# ─── Module 8.2 — Regulatory Recommendation Engine ──────────────────
+
+from app.services.recommendations import (  # noqa: E402
+    RecommendationService,
+    build_default_recommendation_service,
+)
+
+_recommendation_service: "RecommendationService | None" = None  # type: ignore[name-defined]
+
+
+def _recommendation_service_singleton() -> "RecommendationService":
+    global _recommendation_service
+    if _recommendation_service is None:
+        _recommendation_service = build_default_recommendation_service()
+    return _recommendation_service
+
+
+def get_recommendation_service() -> RecommendationService:
+    """Dependency injection provider for RecommendationService (singleton)."""
+    return _recommendation_service_singleton()
+
+
+def reset_recommendation_service() -> None:
+    """Reset the RecommendationService singleton (used by tests)."""
+    global _recommendation_service
+    _recommendation_service = None
+
+
+# ─── Module 8.3 — Risk Forecasting Engine ───────────────────────────
+
+from app.services.forecasting import (  # noqa: E402
+    ForecastingService,
+    build_default_forecasting_service,
+)
+
+_forecasting_service: "ForecastingService | None" = None  # type: ignore[name-defined]
+
+
+def _forecasting_service_singleton() -> "ForecastingService":
+    global _forecasting_service
+    if _forecasting_service is None:
+        _forecasting_service = build_default_forecasting_service()
+    return _forecasting_service
+
+
+def get_forecasting_service() -> ForecastingService:
+    """Dependency injection provider for ForecastingService (singleton)."""
+    return _forecasting_service_singleton()
+
+
+def reset_forecasting_service() -> None:
+    """Reset the ForecastingService singleton (used by tests)."""
+    global _forecasting_service
+    _forecasting_service = None

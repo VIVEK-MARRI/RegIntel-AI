@@ -1,4 +1,11 @@
 import asyncio
+import os
+
+# Lift rate limit ceiling for the test suite so the M5-M8 services can be
+# exercised in a single pytest run without 429s. Production keeps the
+# default 60/min cap.
+os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "100000")
+
 import pytest
 import pytest_asyncio
 import psycopg2

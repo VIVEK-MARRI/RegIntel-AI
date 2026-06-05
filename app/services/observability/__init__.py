@@ -794,6 +794,151 @@ class DashboardMetrics:
         self.last_reset_at = time.time()
 
 
+@dataclass
+class RiskMetrics:
+    assessments_generated: int = 0
+    historical_lookups: int = 0
+    trend_queries: int = 0
+    last_assessment_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+    by_level: Dict[str, int] = field(default_factory=dict)
+    by_category: Dict[str, int] = field(default_factory=dict)
+
+    def record_assessment(
+        self,
+        assessment: Any,
+    ) -> None:
+        self.assessments_generated += 1
+        try:
+            level = assessment.risk_level.value
+            self.by_level[level] = self.by_level.get(level, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+        try:
+            for cat in getattr(assessment, "risk_categories", []) or []:
+                v = cat.value if hasattr(cat, "value") else str(cat)
+                self.by_category[v] = self.by_category.get(v, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+        self.last_assessment_at = time.time()
+
+    def record_history_lookup(self) -> None:
+        self.historical_lookups += 1
+
+    def record_trend_query(self) -> None:
+        self.trend_queries += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "assessments_generated": self.assessments_generated,
+            "historical_lookups": self.historical_lookups,
+            "trend_queries": self.trend_queries,
+            "by_level": dict(self.by_level),
+            "by_category": dict(self.by_category),
+            "last_assessment_at": self.last_assessment_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.assessments_generated = 0
+        self.historical_lookups = 0
+        self.trend_queries = 0
+        self.last_assessment_at = None
+        self.by_level = {}
+        self.by_category = {}
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class RecommendationMetrics:
+    recommendations_generated: int = 0
+    total_recommendations_count: int = 0
+    feedback_recorded: int = 0
+    accepted_feedback: int = 0
+    rejected_feedback: int = 0
+    last_generated_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_generated(self, count: int = 1) -> None:
+        self.recommendations_generated += 1
+        self.total_recommendations_count += count
+        self.last_generated_at = time.time()
+
+    def record_feedback(self, status: str = "proposed") -> None:
+        self.feedback_recorded += 1
+        if status == "accepted":
+            self.accepted_feedback += 1
+        elif status == "rejected":
+            self.rejected_feedback += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "recommendations_generated": self.recommendations_generated,
+            "total_recommendations_count": self.total_recommendations_count,
+            "feedback_recorded": self.feedback_recorded,
+            "accepted_feedback": self.accepted_feedback,
+            "rejected_feedback": self.rejected_feedback,
+            "last_generated_at": self.last_generated_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.recommendations_generated = 0
+        self.total_recommendations_count = 0
+        self.feedback_recorded = 0
+        self.accepted_feedback = 0
+        self.rejected_feedback = 0
+        self.last_generated_at = None
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class ForecastingMetrics:
+    forecasts_generated: int = 0
+    scenarios_simulated: int = 0
+    trend_predictions: int = 0
+    average_horizon_days: float = 0.0
+    total_horizon_days: int = 0
+    drift_detected: int = 0
+    last_forecast_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_forecast(self, horizon_days: int = 30, *, drift: bool = False) -> None:
+        self.forecasts_generated += 1
+        self.total_horizon_days += horizon_days
+        self.average_horizon_days = self.total_horizon_days / self.forecasts_generated
+        if drift:
+            self.drift_detected += 1
+        self.last_forecast_at = time.time()
+
+    def record_scenario(self) -> None:
+        self.scenarios_simulated += 1
+
+    def record_trend_prediction(self) -> None:
+        self.trend_predictions += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "forecasts_generated": self.forecasts_generated,
+            "scenarios_simulated": self.scenarios_simulated,
+            "trend_predictions": self.trend_predictions,
+            "average_horizon_days": round(self.average_horizon_days, 3),
+            "drift_detected": self.drift_detected,
+            "last_forecast_at": self.last_forecast_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.forecasts_generated = 0
+        self.scenarios_simulated = 0
+        self.trend_predictions = 0
+        self.average_horizon_days = 0.0
+        self.total_horizon_days = 0
+        self.drift_detected = 0
+        self.last_forecast_at = None
+        self.last_reset_at = time.time()
+
+
 _knowledge_graph_metrics_lock = threading.Lock()
 _knowledge_graph_metrics = KnowledgeGraphMetrics()
 
@@ -802,6 +947,15 @@ _research_metrics = ResearchMetrics()
 
 _dashboard_metrics_lock = threading.Lock()
 _dashboard_metrics = DashboardMetrics()
+
+_recommendation_metrics_lock = threading.Lock()
+_recommendation_metrics = RecommendationMetrics()
+
+_forecasting_metrics_lock = threading.Lock()
+_forecasting_metrics = ForecastingMetrics()
+
+_risk_metrics_lock = threading.Lock()
+_risk_metrics = RiskMetrics()
 
 
 def get_knowledge_graph_metrics() -> KnowledgeGraphMetrics:
@@ -814,6 +968,18 @@ def get_research_metrics() -> ResearchMetrics:
 
 def get_dashboard_metrics() -> DashboardMetrics:
     return _dashboard_metrics
+
+
+def get_recommendation_metrics() -> RecommendationMetrics:
+    return _recommendation_metrics
+
+
+def get_forecasting_metrics() -> ForecastingMetrics:
+    return _forecasting_metrics
+
+
+def get_risk_metrics() -> RiskMetrics:
+    return _risk_metrics
 
 
 def reset_knowledge_graph_metrics() -> None:
@@ -829,3 +995,18 @@ def reset_research_metrics() -> None:
 def reset_dashboard_metrics() -> None:
     with _dashboard_metrics_lock:
         _dashboard_metrics.reset()
+
+
+def reset_recommendation_metrics() -> None:
+    with _recommendation_metrics_lock:
+        _recommendation_metrics.reset()
+
+
+def reset_forecasting_metrics() -> None:
+    with _forecasting_metrics_lock:
+        _forecasting_metrics.reset()
+
+
+def reset_risk_metrics() -> None:
+    with _risk_metrics_lock:
+        _risk_metrics.reset()
