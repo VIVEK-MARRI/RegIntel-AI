@@ -279,3 +279,360 @@
 {"query": "RBI vs SEBI", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-03T13:05:43.946056+00:00"}
 {"query": "difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-03T13:05:43.949299+00:00"}
 {"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-03T13:05:43.952195+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:42.746015+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:42.746718+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:12:42.875469+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:12:42.876152+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:43.021013+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:43.021739+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:43.151824+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:43.152747+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:43.285087+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:43.285690+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:44.357326+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:12:44.357964+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:13:01.158879+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:13:01.159653+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:52.575304+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:52.576194+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:14:52.691258+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:14:52.692161+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:52.801097+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:52.801639+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:53.007301+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:53.008095+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:53.111474+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:53.112020+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:53.894977+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:14:53.895508+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:05.963157+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:05.963715+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.371042+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.372419+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:16:35.492257+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:16:35.492798+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.632688+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.633497+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.767146+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.768122+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.898324+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:35.899341+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:36.941156+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:36.941653+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:49.298580+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:16:49.299384+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:17:30.009529+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:17:30.010419+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:18:28.711496+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:18:28.712105+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:18:40.426238+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:18:40.426695+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:18:54.048566+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:18:54.049125+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:19:06.164976+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:19:06.165620+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:19:16.851847+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:19:16.852683+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:19:58.477085+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:19:58.477649+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:20:18.983171+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:20:18.983764+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:20:43.764253+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:20:43.764824+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:21:11.386421+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:21:11.386944+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:22:40.411321+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:22:40.411901+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:01.088560+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:01.089167+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:13.520694+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:13.521207+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:36.825687+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:36.826265+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:37.028733+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:23:37.029181+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:24:19.352859+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:24:19.354437+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:24:19.515069+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:24:19.515935+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:04.286924+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.427078+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.428705+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:25:47.546917+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:25:47.548081+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.667543+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.668095+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.779063+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.779691+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.912617+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:47.913461+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:25:49.106142+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:22.420073+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:54.447489+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:54.448194+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:27:54.681719+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:27:54.682714+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:54.832914+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:54.833985+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:54.979200+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:54.979777+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:55.109728+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:55.110884+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:27:56.170565+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:42.701981+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:42.702948+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:28:42.889936+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:28:42.890927+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:43.076697+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:43.078049+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:43.382025+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:43.383356+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:43.569670+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:43.571000+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:28:44.968783+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:10.546809+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:10.547699+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:29:10.719069+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:29:10.719876+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:10.894265+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:10.894959+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:11.099251+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:11.100685+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:11.285506+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:11.286153+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:29:12.630446+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:18.513118+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:18.514071+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:30:18.652686+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:30:18.653304+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:18.787894+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:18.788423+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:18.949468+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:18.950080+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:19.079432+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:19.080421+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:20.266753+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:30:21.532047+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.041053+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.042290+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:31:05.189925+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T16:31:05.191164+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.468525+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.469055+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.632035+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.633165+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.788788+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:05.789923+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T16:31:06.736534+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:20.838125+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:20.838863+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:11:20.962398+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:11:20.962971+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:21.096036+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:21.096716+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:21.236557+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:21.237299+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:21.479243+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:21.479785+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:22.565920+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:11:23.236497+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:27.479400+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.109773+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.110326+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:12:31.342277+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:12:31.343324+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.489641+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.490466+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.636378+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.637638+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.777702+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:31.778680+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:32.677043+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.069079+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.071741+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.073422+00:00"}
+{"query": "What are the KYC requirements?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.075118+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.076685+00:00"}
+{"query": "Difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:12:33.078384+00:00"}
+{"query": "KYC Aadhaar", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.080280+00:00"}
+{"query": "SEBI/HO/DDHS/DDHS-RAC-1/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.082449+00:00"}
+{"query": "Explain the role of board in corporate governance", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.084573+00:00"}
+{"query": "RBI Master Direction KYC", "query_type": "circular", "confidence": 0.8, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.087901+00:00"}
+{"query": "", "query_type": "keyword_lookup", "confidence": 1.0, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.089835+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.093307+00:00"}
+{"query": "SEBI/HO/DDHS/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.095178+00:00"}
+{"query": "circular no 12", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.097987+00:00"}
+{"query": "master circular on KYC", "query_type": "circular", "confidence": 0.8, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.101438+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.104604+00:00"}
+{"query": "sec. 12", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.107893+00:00"}
+{"query": "chapter III regulation", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.110521+00:00"}
+{"query": "rule 9 of Companies Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.114364+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.116848+00:00"}
+{"query": "define mutual fund", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.119125+00:00"}
+{"query": "RBI vs SEBI", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:12:33.121411+00:00"}
+{"query": "difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:12:33.123671+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.125704+00:00"}
+{"query": "why did SEBI amend guidelines?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:33.127444+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.129895+00:00"}
+{"query": "AML compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:33.144765+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:34.423456+00:00"}
+{"query": "SEBI/HO/DDHS/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:34.426020+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:34.431374+00:00"}
+{"query": "sec. 12", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:34.434238+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:34.438335+00:00"}
+{"query": "AML compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:34.441488+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:34.444637+00:00"}
+{"query": "define mutual fund", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:34.447813+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:34.450269+00:00"}
+{"query": "why did SEBI amend guidelines?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:12:34.452320+00:00"}
+{"query": "RBI vs SEBI", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:12:34.454824+00:00"}
+{"query": "difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:12:34.457211+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:12:34.459481+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:01.314265+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:04.638211+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:04.638776+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:04.759410+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:04.760405+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:04.886855+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:04.887462+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:05.121640+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:05.122242+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:05.261240+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:05.261818+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.164452+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.637760+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.639543+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.642004+00:00"}
+{"query": "What are the KYC requirements?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.643994+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.645718+00:00"}
+{"query": "Difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:06.648067+00:00"}
+{"query": "KYC Aadhaar", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.651056+00:00"}
+{"query": "SEBI/HO/DDHS/DDHS-RAC-1/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.652859+00:00"}
+{"query": "Explain the role of board in corporate governance", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.655757+00:00"}
+{"query": "RBI Master Direction KYC", "query_type": "circular", "confidence": 0.8, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.658394+00:00"}
+{"query": "", "query_type": "keyword_lookup", "confidence": 1.0, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.660105+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.664676+00:00"}
+{"query": "SEBI/HO/DDHS/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.666597+00:00"}
+{"query": "circular no 12", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.669137+00:00"}
+{"query": "master circular on KYC", "query_type": "circular", "confidence": 0.8, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.671675+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.673608+00:00"}
+{"query": "sec. 12", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.676063+00:00"}
+{"query": "chapter III regulation", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.678512+00:00"}
+{"query": "rule 9 of Companies Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.680031+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.682373+00:00"}
+{"query": "define mutual fund", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.685096+00:00"}
+{"query": "RBI vs SEBI", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:06.687380+00:00"}
+{"query": "difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:06.690530+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.693555+00:00"}
+{"query": "why did SEBI amend guidelines?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:06.696884+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.699620+00:00"}
+{"query": "AML compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:06.712994+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:07.733665+00:00"}
+{"query": "SEBI/HO/DDHS/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:07.735522+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:07.737722+00:00"}
+{"query": "sec. 12", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:07.740215+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:07.742564+00:00"}
+{"query": "AML compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:07.745146+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:07.747523+00:00"}
+{"query": "define mutual fund", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:07.749422+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:07.756717+00:00"}
+{"query": "why did SEBI amend guidelines?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:07.766468+00:00"}
+{"query": "RBI vs SEBI", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:07.772079+00:00"}
+{"query": "difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:07.777651+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:07.780856+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:39.241253+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:42.438706+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:42.439826+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:42.596004+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:42.597084+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:42.737244+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:42.738095+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:42.977104+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:42.977736+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:43.218238+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:43.218925+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.086895+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.571418+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.573507+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.575139+00:00"}
+{"query": "What are the KYC requirements?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.577194+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.579887+00:00"}
+{"query": "Difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:44.581592+00:00"}
+{"query": "KYC Aadhaar", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.583503+00:00"}
+{"query": "SEBI/HO/DDHS/DDHS-RAC-1/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.586810+00:00"}
+{"query": "Explain the role of board in corporate governance", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.589627+00:00"}
+{"query": "RBI Master Direction KYC", "query_type": "circular", "confidence": 0.8, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.593780+00:00"}
+{"query": "", "query_type": "keyword_lookup", "confidence": 1.0, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.596405+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.599542+00:00"}
+{"query": "SEBI/HO/DDHS/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.601337+00:00"}
+{"query": "circular no 12", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.603463+00:00"}
+{"query": "master circular on KYC", "query_type": "circular", "confidence": 0.8, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.606042+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.608236+00:00"}
+{"query": "sec. 12", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.610507+00:00"}
+{"query": "chapter III regulation", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.613108+00:00"}
+{"query": "rule 9 of Companies Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.615753+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.619338+00:00"}
+{"query": "define mutual fund", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.622693+00:00"}
+{"query": "RBI vs SEBI", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:44.625761+00:00"}
+{"query": "difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:44.629350+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.631402+00:00"}
+{"query": "why did SEBI amend guidelines?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:44.634169+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.636978+00:00"}
+{"query": "AML compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:44.653942+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:45.860752+00:00"}
+{"query": "SEBI/HO/DDHS/P/CIR/2024/123", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:45.863813+00:00"}
+{"query": "section 45 of RBI Act", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:45.865949+00:00"}
+{"query": "sec. 12", "query_type": "regulation", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:45.867892+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:45.871337+00:00"}
+{"query": "AML compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:45.873409+00:00"}
+{"query": "What is KYC?", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:45.875470+00:00"}
+{"query": "define mutual fund", "query_type": "definition", "confidence": 0.9, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:45.878487+00:00"}
+{"query": "How do we comply with AML?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:45.880480+00:00"}
+{"query": "why did SEBI amend guidelines?", "query_type": "semantic", "confidence": 0.85, "optimal_strategy": "dense", "timestamp": "2026-06-04T17:13:45.882695+00:00"}
+{"query": "RBI vs SEBI", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:45.885244+00:00"}
+{"query": "difference between KYC and CKYC", "query_type": "comparative", "confidence": 0.95, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:13:45.887233+00:00"}
+{"query": "RBI Circular 17/2024", "query_type": "circular", "confidence": 0.95, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:13:45.888959+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:18.797834+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:18.798860+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:32:18.929114+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:32:18.930432+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:19.162634+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:19.163291+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:19.297333+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:19.298535+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:19.424434+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:19.425307+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:32:20.244711+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:02.929848+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:02.930960+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:35:03.063223+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:35:03.063962+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:03.199397+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:03.200100+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:03.337212+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:03.338110+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:03.470882+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:03.471627+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:35:04.703991+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.111161+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.111963+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:46:12.341568+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:46:12.342441+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.468580+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.469446+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.595402+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.596477+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.733436+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:12.734390+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:46:13.663382+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:23.962401+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:23.963199+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:48:24.093395+00:00"}
+{"query": "KYC mutual fund diligence", "query_type": "keyword_lookup", "confidence": 0.3, "optimal_strategy": "hybrid", "timestamp": "2026-06-04T17:48:24.094284+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.332082+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.333063+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.570421+00:00"}
+{"query": "KYC mutual fund", "query_type": "keyword_lookup", "confidence": 0.65, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.571274+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.708041+00:00"}
+{"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.709006+00:00"}
+{"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:25.647469+00:00"}

@@ -258,27 +258,26 @@ async def test_hybrid_search_api_flow(client: AsyncClient, db_session, tmp_path)
         index_manager = BM25IndexManager(db_session, storage_dir=str(tmp_path))
         await index_manager.build_index("hybrid_api_bm25_idx")
 
-        # Test POST /api/v1/search/hybrid
+        # Test POST /api/v1/search/hybrid (Module 4.8 endpoint)
         payload = {
             "query": "KYC mutual fund guidelines",
-            "top_n": 5,
+            "top_k": 5,
             "dense_top_k": 5,
             "bm25_top_k": 5,
             "dense_weight": 0.6,
             "bm25_weight": 0.4,
-            "strategy": "hybrid",
             "fusion_method": "rrf",
-            "rrf_k": 60
+            "rrf_k": 60,
+            "use_query_analysis": False,
         }
-        
+
         response = await client.post("/api/v1/search/hybrid", json=payload)
         assert response.status_code == 200
         data = response.json()
         assert data["query"] == "KYC mutual fund guidelines"
         assert len(data["results"]) >= 1
         assert data["results"][0]["chunk_id"] == str(chunk.id)
-        assert "metrics" in data
-        assert "overall_latency_ms" in data["metrics"]
+        assert "diagnostics" in data
 
     finally:
         await db_session.delete(doc)

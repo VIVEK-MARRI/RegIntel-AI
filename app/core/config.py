@@ -70,6 +70,55 @@ class Settings(BaseSettings):
         description="Minimum reranker score to include a result"
     )
 
+    # ─── LLM / Answer Generation (Module 5.1) ────────────────────────────────
+    LLM_PROVIDER: str = Field(
+        default="mock",
+        description="Default LLM provider (openai | gemini | litellm | mock)",
+    )
+    LLM_MODEL: str = Field(
+        default="gpt-4o-mini",
+        description="Default LLM model identifier",
+    )
+    LLM_API_KEY: str = Field(
+        default="",
+        description="API key for the active LLM provider",
+    )
+    LLM_API_BASE: str | None = Field(
+        default=None,
+        description="Optional custom base URL for the LLM provider",
+    )
+    LLM_TIMEOUT_SEC: float = Field(
+        default=30.0,
+        ge=1.0,
+        description="Per-request LLM timeout in seconds",
+    )
+    LLM_MAX_RETRIES: int = Field(
+        default=2,
+        ge=0,
+        description="Number of retries on transient LLM errors",
+    )
+    ANSWER_DEFAULT_TEMPERATURE: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=2.0,
+        description="Default sampling temperature for answer generation",
+    )
+    ANSWER_DEFAULT_MAX_TOKENS: int = Field(
+        default=1200,
+        ge=64,
+        le=8000,
+        description="Default max output tokens for answer generation",
+    )
+    ANSWER_CONTEXT_TOKEN_BUDGET: int = Field(
+        default=6000,
+        ge=512,
+        description="Soft cap on prompt tokens reserved for retrieved-chunk context",
+    )
+    ANSWER_STREAMING_ENABLED: bool = Field(
+        default=True,
+        description="If true, the streaming endpoint is available",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

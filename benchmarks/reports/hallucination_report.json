@@ -1,0 +1,138 @@
+{
+  "module": "hallucination_guard",
+  "version": "5.4.0",
+  "method": "lexical",
+  "use_mock_provider": false,
+  "total_cases": 5,
+  "cases_meeting_expectations": 5,
+  "detection_accuracy": 1.0,
+  "average_faithfulness_score": 0.6,
+  "hallucination_rate": 0.6,
+  "average_latency_ms": 0.328,
+  "p95_latency_ms": 0.985,
+  "cases": [
+    {
+      "name": "kyc_fully_supported",
+      "description": "KYC answer fully supported by the chunks.",
+      "method": "lexical",
+      "provider_used": null,
+      "faithfulness_score": 1.0,
+      "hallucination_detected": false,
+      "risk_level": "none",
+      "total_claims": 3,
+      "supported_count": 3,
+      "unsupported_count": 0,
+      "unsupported_claims": [],
+      "latency_ms": 0.713,
+      "expectations": [
+        "hallucination",
+        "min_faithfulness"
+      ],
+      "all_expectations_met": true
+    },
+    {
+      "name": "fabricated_filing_obligation",
+      "description": "Answer fabricates a monthly tax return obligation.",
+      "method": "lexical",
+      "provider_used": null,
+      "faithfulness_score": 0.6667,
+      "hallucination_detected": true,
+      "risk_level": "medium",
+      "total_claims": 3,
+      "supported_count": 2,
+      "unsupported_count": 1,
+      "unsupported_claims": [
+        {
+          "claim_id": "clm-c6210888",
+          "claim": "Banks must also file monthly tax returns for every account holder.",
+          "reason": "no chunk reached lexical-overlap threshold (0.15)"
+        }
+      ],
+      "latency_ms": 0.323,
+      "expectations": [
+        "hallucination",
+        "max_faithfulness"
+      ],
+      "all_expectations_met": true
+    },
+    {
+      "name": "no_chunks_means_no_support",
+      "description": "Empty chunks force hallucination flag.",
+      "method": "lexical",
+      "provider_used": null,
+      "faithfulness_score": 0.0,
+      "hallucination_detected": true,
+      "risk_level": "high",
+      "total_claims": 2,
+      "supported_count": 0,
+      "unsupported_count": 2,
+      "unsupported_claims": [
+        {
+          "claim_id": "clm-0de0471e",
+          "claim": "Banks perform KYC.",
+          "reason": "no source documents available"
+        },
+        {
+          "claim_id": "clm-84dd9964",
+          "claim": "KYC is required at onboarding.",
+          "reason": "no source documents available"
+        }
+      ],
+      "latency_ms": 0.163,
+      "expectations": [
+        "hallucination",
+        "max_faithfulness"
+      ],
+      "all_expectations_met": true
+    },
+    {
+      "name": "sebi_disclosure_supported",
+      "description": "SEBI disclosure obligation supported by SEBI circular chunk.",
+      "method": "lexical",
+      "provider_used": null,
+      "faithfulness_score": 1.0,
+      "hallucination_detected": false,
+      "risk_level": "none",
+      "total_claims": 3,
+      "supported_count": 3,
+      "unsupported_count": 0,
+      "unsupported_claims": [],
+      "latency_ms": 0.228,
+      "expectations": [
+        "hallucination",
+        "min_faithfulness"
+      ],
+      "all_expectations_met": true
+    },
+    {
+      "name": "fabricated_quantum",
+      "description": "Answer invents specific penalty quantum not in evidence.",
+      "method": "lexical",
+      "provider_used": null,
+      "faithfulness_score": 0.3333,
+      "hallucination_detected": true,
+      "risk_level": "high",
+      "total_claims": 3,
+      "supported_count": 1,
+      "unsupported_count": 2,
+      "unsupported_claims": [
+        {
+          "claim_id": "clm-e7bccfac",
+          "claim": "The penalty is Rs 25 crore per violation.",
+          "reason": "no chunk reached lexical-overlap threshold (0.15)"
+        },
+        {
+          "claim_id": "clm-e1fd5dd4",
+          "claim": "The penalty is doubled for repeat offenders within 12 months.",
+          "reason": "no chunk reached lexical-overlap threshold (0.15)"
+        }
+      ],
+      "latency_ms": 0.214,
+      "expectations": [
+        "hallucination",
+        "max_faithfulness"
+      ],
+      "all_expectations_met": true
+    }
+  ]
+}

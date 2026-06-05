@@ -5,6 +5,14 @@ from app.api.v1.search import search_router, embeddings_router, index_router
 from app.api.v1.analytics import router as analytics_router
 from app.api.v1.bm25 import router as bm25_router
 from app.api.v1.retrieval import router as retrieval_router
+from app.api.v1.answer_generation import router as answer_generation_router
+from app.api.v1.citation import router as citation_router
+from app.api.v1.confidence import router as confidence_router
+from app.api.v1.hallucination import router as hallucination_router
+from app.api.v1.attribution import router as attribution_router
+from app.api.v1.orchestrator import router as orchestrator_router
+from app.api.v1.evaluation import router as evaluation_router
+from app.api.v1.answer_analytics import router as answer_analytics_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
@@ -68,8 +76,56 @@ app.include_router(
 
 app.include_router(
     retrieval_router,
-    prefix="/api/v1/retrieval",
+    prefix="/api/v1",
     tags=["retrieval"]
+)
+
+app.include_router(
+    answer_generation_router,
+    prefix="/api/v1",
+    tags=["answer-generation"]
+)
+
+app.include_router(
+    citation_router,
+    prefix="/api/v1",
+    tags=["citation"]
+)
+
+app.include_router(
+    confidence_router,
+    prefix="/api/v1",
+    tags=["confidence"]
+)
+
+app.include_router(
+    hallucination_router,
+    prefix="/api/v1",
+    tags=["hallucination"]
+)
+
+app.include_router(
+    attribution_router,
+    prefix="/api/v1",
+    tags=["attribution"]
+)
+
+app.include_router(
+    orchestrator_router,
+    prefix="/api/v1",
+    tags=["orchestrator"]
+)
+
+app.include_router(
+    evaluation_router,
+    prefix="/api/v1",
+    tags=["evaluation"]
+)
+
+app.include_router(
+    answer_analytics_router,
+    prefix="/api/v1",
+    tags=["answer-analytics"]
 )
 
 @app.get("/health", tags=["health"])

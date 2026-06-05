@@ -1,0 +1,225 @@
+{
+  "benchmark": "confidence_v1",
+  "num_cases": 5,
+  "mean_latency_ms": 0.16641999827697873,
+  "median_latency_ms": 0.1416000013705343,
+  "p95_latency_ms": 0.27540000155568123,
+  "mean_confidence": 0.6260916666666667,
+  "level_distribution": {
+    "high": 2,
+    "medium": 1,
+    "low": 2
+  },
+  "expected_match_rate": 1.0,
+  "factor_score_means": {
+    "retrieval_relevance": 0.6393333333333333,
+    "reranker_confidence": 0.5446666666666666,
+    "source_agreement": 0.6666666666666666,
+    "chunk_coverage": 0.527,
+    "citation_coverage": 0.6599999999999999
+  },
+  "flag_frequency": {
+    "single_source": 3,
+    "low_citation_coverage": 2,
+    "no_rerank_scores": 2,
+    "low_chunk_count": 1,
+    "empty_chunks": 1
+  },
+  "results": [
+    {
+      "description": "High-quality KYC answer (single source, all factors strong)",
+      "query": "What are KYC obligations for banks?",
+      "confidence": 0.9440000000000002,
+      "level": "high",
+      "expected_level": "high",
+      "level_match": true,
+      "factor_scores": {
+        "retrieval_relevance": 0.8800000000000001,
+        "reranker_confidence": 0.9099999999999999,
+        "source_agreement": 1.0,
+        "chunk_coverage": 0.9600000000000001,
+        "citation_coverage": 1.0
+      },
+      "factor_contributions": {
+        "retrieval_relevance": 0.22000000000000003,
+        "reranker_confidence": 0.182,
+        "source_agreement": 0.15,
+        "chunk_coverage": 0.19200000000000003,
+        "citation_coverage": 0.2
+      },
+      "flag_count": 1,
+      "flags": [
+        "single_source"
+      ],
+      "latency_ms": 0.2869000018108636
+    },
+    {
+      "description": "Mixed-source SEBI/RBI answer (medium confidence)",
+      "query": "What are SEBI portfolio disclosure norms?",
+      "confidence": 0.7118333333333334,
+      "level": "medium",
+      "expected_level": "medium",
+      "level_match": true,
+      "factor_scores": {
+        "retrieval_relevance": 0.8166666666666668,
+        "reranker_confidence": 0.8433333333333334,
+        "source_agreement": 0.33333333333333326,
+        "chunk_coverage": 0.545,
+        "citation_coverage": 0.9
+      },
+      "factor_contributions": {
+        "retrieval_relevance": 0.2041666666666667,
+        "reranker_confidence": 0.1686666666666667,
+        "source_agreement": 0.04999999999999999,
+        "chunk_coverage": 0.10900000000000001,
+        "citation_coverage": 0.18000000000000002
+      },
+      "flag_count": 0,
+      "flags": [],
+      "latency_ms": 0.2294000005349517
+    },
+    {
+      "description": "Low-quality: no rerank, low citation coverage, low chunk count",
+      "query": "What is the AML reporting periodicity?",
+      "confidence": 0.49812500000000004,
+      "level": "low",
+      "expected_level": "low",
+      "level_match": true,
+      "factor_scores": {
+        "retrieval_relevance": 0.55,
+        "reranker_confidence": 0.0,
+        "source_agreement": 1.0,
+        "chunk_coverage": 0.15500000000000003,
+        "citation_coverage": 0.4
+      },
+      "factor_contributions": {
+        "retrieval_relevance": 0.171875,
+        "reranker_confidence": 0.0,
+        "source_agreement": 0.18749999999999997,
+        "chunk_coverage": 0.03875000000000001,
+        "citation_coverage": 0.1
+      },
+      "flag_count": 4,
+      "flags": [
+        "low_citation_coverage",
+        "no_rerank_scores",
+        "single_source",
+        "low_chunk_count"
+      ],
+      "latency_ms": 0.1416000013705343
+    },
+    {
+      "description": "Edge case: empty chunks",
+      "query": "Irrelevant question",
+      "confidence": 0.0,
+      "level": "low",
+      "expected_level": "low",
+      "level_match": true,
+      "factor_scores": {
+        "retrieval_relevance": 0.0,
+        "reranker_confidence": 0.0,
+        "source_agreement": 0.0,
+        "chunk_coverage": 0.0,
+        "citation_coverage": 0.0
+      },
+      "factor_contributions": {
+        "retrieval_relevance": 0.0,
+        "reranker_confidence": 0.0,
+        "source_agreement": 0.0,
+        "chunk_coverage": 0.0,
+        "citation_coverage": 0.0
+      },
+      "flag_count": 3,
+      "flags": [
+        "empty_chunks",
+        "low_citation_coverage",
+        "no_rerank_scores"
+      ],
+      "latency_ms": 0.10069998097606003
+    },
+    {
+      "description": "Single-source high-quality (5 RBI chunks, all strong)",
+      "query": "KYC documentation requirements",
+      "confidence": 0.9764999999999999,
+      "level": "high",
+      "expected_level": "high",
+      "level_match": true,
+      "factor_scores": {
+        "retrieval_relevance": 0.95,
+        "reranker_confidence": 0.97,
+        "source_agreement": 1.0,
+        "chunk_coverage": 0.975,
+        "citation_coverage": 1.0
+      },
+      "factor_contributions": {
+        "retrieval_relevance": 0.2375,
+        "reranker_confidence": 0.194,
+        "source_agreement": 0.15,
+        "chunk_coverage": 0.195,
+        "citation_coverage": 0.2
+      },
+      "flag_count": 1,
+      "flags": [
+        "single_source"
+      ],
+      "latency_ms": 0.07350000669248402
+    }
+  ],
+  "metrics_snapshot": {
+    "total_requests": 5,
+    "level_distribution": {
+      "high": 2,
+      "medium": 1,
+      "low": 2
+    },
+    "confidence": {
+      "mean": 0.6260916666666667,
+      "min": 0.0,
+      "max": 0.9764999999999999
+    },
+    "factor_stats": {
+      "retrieval_relevance": {
+        "count": 5,
+        "mean": 0.6393333333333334,
+        "min": 0.0,
+        "max": 0.95,
+        "stdev": 0.347162465969145
+      },
+      "reranker_confidence": {
+        "count": 5,
+        "mean": 0.5446666666666667,
+        "min": 0.0,
+        "max": 0.97,
+        "stdev": 0.4465203740530149
+      },
+      "source_agreement": {
+        "count": 5,
+        "mean": 0.6666666666666666,
+        "min": 0.0,
+        "max": 1.0,
+        "stdev": 0.42163702135578396
+      },
+      "chunk_coverage": {
+        "count": 5,
+        "mean": 0.527,
+        "min": 0.0,
+        "max": 0.975,
+        "stdev": 0.40115583007105865
+      },
+      "citation_coverage": {
+        "count": 5,
+        "mean": 0.6599999999999999,
+        "min": 0.0,
+        "max": 1.0,
+        "stdev": 0.39799497484264823
+      }
+    },
+    "flag_counts": {
+      "single_source": 3,
+      "low_citation_coverage": 2,
+      "no_rerank_scores": 2,
+      "low_chunk_count": 1,
+      "empty_chunks": 1
+    }
+  }
+}

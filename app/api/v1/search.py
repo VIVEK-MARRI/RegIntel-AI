@@ -104,37 +104,10 @@ async def semantic_search(
         )
 
 
-@search_router.post(
-    "/hybrid",
-    response_model=HybridSearchResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Hybrid search over regulatory document chunks",
-    description="Fuses dense retrieval and BM25 search scores using RRF or Min-Max Normalized Weighted Sum."
-)
-async def hybrid_search(
-    request: HybridSearchRequest,
-    hybrid_retriever: HybridRetriever = Depends(get_hybrid_retriever)
-) -> HybridSearchResponse:
-    try:
-        return await hybrid_retriever.retrieve_hybrid(
-            query=request.query,
-            top_n=request.top_n,
-            dense_top_k=request.dense_top_k,
-            bm25_top_k=request.bm25_top_k,
-            dense_weight=request.dense_weight,
-            bm25_weight=request.bm25_weight,
-            strategy=request.strategy,
-            fusion_method=request.fusion_method,
-            rrf_k=request.rrf_k,
-            source=request.source,
-            document_id=request.document_id
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error executing hybrid search: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while executing the hybrid search."
-        )
+# NOTE: The /hybrid endpoint was removed in Module 4.8.
+# It is now provided as the production-grade /api/v1/search/hybrid endpoint
+# in app/api/v1/retrieval.py with full diagnostics, optional reranking,
+# query classification, and Pydantic v2 contracts.
 
 
 @search_router.post(
