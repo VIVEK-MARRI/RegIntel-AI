@@ -2,11 +2,13 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
+from app.api.v1.alerts import router as alerts_router
 from app.api.v1.answer_analytics import router as answer_analytics_router
 from app.api.v1.answer_generation import router as answer_generation_router
 from app.api.v1.analytics import router as analytics_router
 from app.api.v1.attribution import router as attribution_router
 from app.api.v1.bm25 import router as bm25_router
+from app.api.v1.changes import router as changes_router
 from app.api.v1.chunks import router as chunks_router
 from app.api.v1.citation import router as citation_router
 from app.api.v1.confidence import router as confidence_router
@@ -18,6 +20,7 @@ from app.api.v1.evaluation import router as evaluation_router
 from app.api.v1.feedback import router as feedback_router
 from app.api.v1.hallucination import router as hallucination_router
 from app.api.v1.health import router as health_router
+from app.api.v1.impact import router as impact_router
 from app.api.v1.ingestion import router as ingestion_router
 from app.api.v1.memory import router as memory_router
 from app.api.v1.monitoring import router as monitoring_router
@@ -207,6 +210,27 @@ app.include_router(
     ingestion_router,
     prefix="/api/v1",
     tags=["ingestion"]
+)
+
+# Module 7.3 — Change Detection Engine
+app.include_router(
+    changes_router,
+    prefix="/api/v1",
+    tags=["change-detection"]
+)
+
+# Module 7.4 — Impact Analysis Engine
+app.include_router(
+    impact_router,
+    prefix="/api/v1",
+    tags=["impact-analysis"]
+)
+
+# Module 7.5 — Regulatory Alerting System
+app.include_router(
+    alerts_router,
+    prefix="/api/v1",
+    tags=["alerting"]
 )
 
 # Module 6.8 — Health router (liveness / readiness / deep)

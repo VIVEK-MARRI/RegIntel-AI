@@ -380,3 +380,247 @@ def reset_monitoring_metrics() -> None:
 def reset_ingestion_metrics() -> None:
     with _ingestion_metrics_lock:
         _ingestion_metrics.reset()
+
+
+# ─── Milestone 7.3-7.5 — Change / Impact / Alert Metrics ───────────────
+
+
+@dataclass
+class ChangeDetectionMetrics:
+    """Process-wide counters for the change detection engine."""
+
+    diffs_computed: int = 0
+    changes_detected: int = 0
+    critical_diffs: int = 0
+    high_diffs: int = 0
+    medium_diffs: int = 0
+    low_diffs: int = 0
+    total_latency_ms: float = 0.0
+    last_diff_at: Optional[float] = None
+    by_severity: Dict[str, int] = field(default_factory=dict)
+    by_category: Dict[str, int] = field(default_factory=dict)
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_diff(self, diff) -> None:  # type: ignore[no-untyped-def]
+        self.diffs_computed += 1
+        self.changes_detected += len(diff.changes)
+        self.total_latency_ms += diff.duration_ms
+        self.last_diff_at = time.time()
+        sev = diff.overall_severity.value
+        self.by_severity[sev] = self.by_severity.get(sev, 0) + 1
+        cat = diff.overall_category.value
+        self.by_category[cat] = self.by_category.get(cat, 0) + 1
+        if sev == "critical":
+            self.critical_diffs += 1
+        elif sev == "high":
+            self.high_diffs += 1
+        elif sev == "medium":
+            self.medium_diffs += 1
+        else:
+            self.low_diffs += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        avg_lat = (
+            self.total_latency_ms / self.diffs_computed
+            if self.diffs_computed > 0
+            else 0.0
+        )
+        return {
+            "diffs_computed": self.diffs_computed,
+            "changes_detected": self.changes_detected,
+            "critical_diffs": self.critical_diffs,
+            "high_diffs": self.high_diffs,
+            "medium_diffs": self.medium_diffs,
+            "low_diffs": self.low_diffs,
+            "average_latency_ms": round(avg_lat, 3),
+            "last_diff_at": self.last_diff_at,
+            "by_severity": dict(self.by_severity),
+            "by_category": dict(self.by_category),
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.diffs_computed = 0
+        self.changes_detected = 0
+        self.critical_diffs = 0
+        self.high_diffs = 0
+        self.medium_diffs = 0
+        self.low_diffs = 0
+        self.total_latency_ms = 0.0
+        self.last_diff_at = None
+        self.by_severity.clear()
+        self.by_category.clear()
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class ImpactAnalysisMetrics:
+    """Process-wide counters for the impact analysis engine."""
+
+    reports_generated: int = 0
+    critical_impact: int = 0
+    high_impact: int = 0
+    medium_impact: int = 0
+    low_impact: int = 0
+    total_impact_score: float = 0.0
+    affected_entities_total: int = 0
+    actions_recommended_total: int = 0
+    last_report_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_report(self, report) -> None:  # type: ignore[no-untyped-def]
+        self.reports_generated += 1
+        self.total_impact_score += report.impact_score
+        self.affected_entities_total += len(report.affected_entities)
+        self.actions_recommended_total += len(report.required_actions)
+        self.last_report_at = time.time()
+        lvl = report.impact_level.value
+        if lvl == "critical":
+            self.critical_impact += 1
+        elif lvl == "high":
+            self.high_impact += 1
+        elif lvl == "medium":
+            self.medium_impact += 1
+        else:
+            self.low_impact += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        avg = (
+            self.total_impact_score / self.reports_generated
+            if self.reports_generated > 0
+            else 0.0
+        )
+        return {
+            "reports_generated": self.reports_generated,
+            "critical_impact": self.critical_impact,
+            "high_impact": self.high_impact,
+            "medium_impact": self.medium_impact,
+            "low_impact": self.low_impact,
+            "average_impact_score": round(avg, 3),
+            "affected_entities_total": self.affected_entities_total,
+            "actions_recommended_total": self.actions_recommended_total,
+            "last_report_at": self.last_report_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.reports_generated = 0
+        self.critical_impact = 0
+        self.high_impact = 0
+        self.medium_impact = 0
+        self.low_impact = 0
+        self.total_impact_score = 0.0
+        self.affected_entities_total = 0
+        self.actions_recommended_total = 0
+        self.last_report_at = None
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class AlertMetrics:
+    """Process-wide counters for the alerting system."""
+
+    alerts_raised: int = 0
+    alerts_delivered: int = 0
+    alerts_failed: int = 0
+    digests_generated: int = 0
+    total_delivery_latency_ms: float = 0.0
+    by_channel: Dict[str, int] = field(default_factory=dict)
+    by_severity: Dict[str, int] = field(default_factory=dict)
+    last_alert_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_alert(self, alert) -> None:  # type: ignore[no-untyped-def]
+        self.alerts_raised += 1
+        self.by_severity[alert.severity.value] = (
+            self.by_severity.get(alert.severity.value, 0) + 1
+        )
+        self.last_alert_at = time.time()
+
+    def record_delivery(
+        self,
+        channel: str,
+        *,
+        success: bool,
+        latency_ms: float = 0.0,
+    ) -> None:
+        if success:
+            self.alerts_delivered += 1
+        else:
+            self.alerts_failed += 1
+        self.total_delivery_latency_ms += latency_ms
+        self.by_channel[channel] = self.by_channel.get(channel, 0) + 1
+
+    def record_digest(self) -> None:
+        self.digests_generated += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        avg_lat = (
+            self.total_delivery_latency_ms
+            / max(1, self.alerts_delivered + self.alerts_failed)
+        )
+        delivery_rate = (
+            self.alerts_delivered / self.alerts_raised
+            if self.alerts_raised > 0
+            else 0.0
+        )
+        return {
+            "alerts_raised": self.alerts_raised,
+            "alerts_delivered": self.alerts_delivered,
+            "alerts_failed": self.alerts_failed,
+            "delivery_rate": round(delivery_rate, 4),
+            "digests_generated": self.digests_generated,
+            "average_delivery_latency_ms": round(avg_lat, 3),
+            "by_channel": dict(self.by_channel),
+            "by_severity": dict(self.by_severity),
+            "last_alert_at": self.last_alert_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.alerts_raised = 0
+        self.alerts_delivered = 0
+        self.alerts_failed = 0
+        self.digests_generated = 0
+        self.total_delivery_latency_ms = 0.0
+        self.by_channel.clear()
+        self.by_severity.clear()
+        self.last_alert_at = None
+        self.last_reset_at = time.time()
+
+
+_change_detection_metrics_lock = threading.Lock()
+_change_detection_metrics = ChangeDetectionMetrics()
+
+_impact_analysis_metrics_lock = threading.Lock()
+_impact_analysis_metrics = ImpactAnalysisMetrics()
+
+_alert_metrics_lock = threading.Lock()
+_alert_metrics = AlertMetrics()
+
+
+def get_change_detection_metrics() -> ChangeDetectionMetrics:
+    return _change_detection_metrics
+
+
+def get_impact_analysis_metrics() -> ImpactAnalysisMetrics:
+    return _impact_analysis_metrics
+
+
+def get_alert_metrics() -> AlertMetrics:
+    return _alert_metrics
+
+
+def reset_change_detection_metrics() -> None:
+    with _change_detection_metrics_lock:
+        _change_detection_metrics.reset()
+
+
+def reset_impact_analysis_metrics() -> None:
+    with _impact_analysis_metrics_lock:
+        _impact_analysis_metrics.reset()
+
+
+def reset_alert_metrics() -> None:
+    with _alert_metrics_lock:
+        _alert_metrics.reset()

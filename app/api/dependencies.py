@@ -733,3 +733,87 @@ def reset_ingestion_service() -> None:
     """Reset the AutoIngestionService singleton (used by tests)."""
     global _ingestion_service
     _ingestion_service = None
+
+
+# ─── Module 7.3 — Change Detection Engine ──────────────────────────────
+
+from app.services.change_detection import (  # noqa: E402
+    ChangeDetectionService,
+    build_default_change_detection_service,
+)
+
+_change_detection_service: "ChangeDetectionService | None" = None  # type: ignore[name-defined]
+
+
+def _change_detection_service_singleton() -> "ChangeDetectionService":
+    global _change_detection_service
+    if _change_detection_service is None:
+        _change_detection_service = build_default_change_detection_service()
+    return _change_detection_service
+
+
+def get_change_detection_service() -> ChangeDetectionService:
+    """Dependency injection provider for ChangeDetectionService (singleton)."""
+    return _change_detection_service_singleton()
+
+
+def reset_change_detection_service() -> None:
+    """Reset the ChangeDetectionService singleton (used by tests)."""
+    global _change_detection_service
+    _change_detection_service = None
+
+
+# ─── Module 7.4 — Impact Analysis Engine ───────────────────────────────
+
+from app.services.impact_analysis import (  # noqa: E402
+    ImpactAnalysisService,
+    build_default_impact_analysis_service,
+)
+
+_impact_analysis_service: "ImpactAnalysisService | None" = None  # type: ignore[name-defined]
+
+
+def _impact_analysis_service_singleton() -> "ImpactAnalysisService":
+    global _impact_analysis_service
+    if _impact_analysis_service is None:
+        _impact_analysis_service = build_default_impact_analysis_service()
+    return _impact_analysis_service
+
+
+def get_impact_analysis_service() -> ImpactAnalysisService:
+    """Dependency injection provider for ImpactAnalysisService (singleton)."""
+    return _impact_analysis_service_singleton()
+
+
+def reset_impact_analysis_service() -> None:
+    """Reset the ImpactAnalysisService singleton (used by tests)."""
+    global _impact_analysis_service
+    _impact_analysis_service = None
+
+
+# ─── Module 7.5 — Regulatory Alerting System ───────────────────────────
+
+from app.services.alerting import (  # noqa: E402
+    AlertService,
+    build_default_alert_service,
+)
+
+_alert_service: "AlertService | None" = None  # type: ignore[name-defined]
+
+
+def _alert_service_singleton() -> "AlertService":
+    global _alert_service
+    if _alert_service is None:
+        _alert_service = build_default_alert_service()
+    return _alert_service
+
+
+def get_alert_service() -> AlertService:
+    """Dependency injection provider for AlertService (singleton)."""
+    return _alert_service_singleton()
+
+
+def reset_alert_service() -> None:
+    """Reset the AlertService singleton (used by tests)."""
+    global _alert_service
+    _alert_service = None
