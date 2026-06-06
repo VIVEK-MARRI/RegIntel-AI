@@ -97,6 +97,35 @@ async def list_assessments(
     return service.search(flt).model_dump(mode="json")
 
 
+# RESTful alias used by the web dashboard. Mirrors ``GET /compliance-risk``
+# but with the plural-noun path the SPA expects.
+@router.get(
+    "/assessments",
+    summary="List / filter risk assessments (alias)",
+    include_in_schema=False,
+)
+async def list_assessments_plural(
+    risk_level: Optional[RiskLevel] = Query(None),
+    category: Optional[RiskCategory] = Query(None),
+    document_id: Optional[str] = Query(None),
+    after: Optional[float] = Query(None),
+    before: Optional[float] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    service: ComplianceRiskService = Depends(get_compliance_risk_service),
+) -> Dict[str, Any]:
+    return await list_assessments(
+        risk_level=risk_level,
+        category=category,
+        document_id=document_id,
+        after=after,
+        before=before,
+        page=page,
+        page_size=page_size,
+        service=service,
+    )
+
+
 # ─── Dynamic last ─────────────────────────────────────────────────────
 
 

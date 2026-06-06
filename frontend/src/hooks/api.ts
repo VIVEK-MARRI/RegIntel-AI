@@ -640,7 +640,8 @@ export function useReviewTasks() {
 export function useRecommendations() {
   return useQuery({
     queryKey: ["recommendations"],
-    queryFn: () => api.get<Recommendation[]>("/recommendations"),
+    queryFn: () => api.get<PaginatedResponse<Recommendation>>("/recommendations"),
+    select: (res) => res?.items ?? [],
   });
 }
 

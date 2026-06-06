@@ -93,6 +93,33 @@ async def list_reviews(
     return svc.search(flt)
 
 
+# RESTful alias used by the web dashboard. Mirrors ``GET /review`` but
+# with the plural-noun path the SPA expects.
+@router.get("/tasks", response_model=PaginatedReviews, include_in_schema=False)
+async def list_review_tasks(
+    status_filter: Optional[str] = None,
+    priority: Optional[str] = None,
+    assigned_to: Optional[str] = None,
+    workflow_id: Optional[str] = None,
+    subject_type: Optional[str] = None,
+    subject_id: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 50,
+    svc: ReviewService = _service_dep(),
+) -> PaginatedReviews:
+    return await list_reviews(
+        status_filter=status_filter,
+        priority=priority,
+        assigned_to=assigned_to,
+        workflow_id=workflow_id,
+        subject_type=subject_type,
+        subject_id=subject_id,
+        page=page,
+        page_size=page_size,
+        svc=svc,
+    )
+
+
 @router.get("/{review_id}", response_model=Review)
 async def get_review(
     review_id: str, svc: ReviewService = _service_dep()

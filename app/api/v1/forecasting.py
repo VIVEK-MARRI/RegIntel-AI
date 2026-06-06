@@ -87,6 +87,15 @@ async def list_forecasts(
     return svc.list_all()
 
 
+# RESTful alias used by the web dashboard. Mirrors ``GET /forecasting``
+# but with the plural-noun path that's expected by the SPA.
+@router.get("/forecasts", response_model=List[RiskForecast], include_in_schema=False)
+async def list_forecasts_plural(
+    svc: ForecastingService = _service_dep(),
+) -> List[RiskForecast]:
+    return svc.list_all()
+
+
 @router.get("/{forecast_id}", response_model=RiskForecast)
 async def get_forecast(
     forecast_id: str, svc: ForecastingService = _service_dep()
