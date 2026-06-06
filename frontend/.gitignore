@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+.vite
+.DS_Store
+coverage
+.env
+.env.local
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
+# tsc -b emit artifacts
+*.d.ts
+!src/**/*.d.ts

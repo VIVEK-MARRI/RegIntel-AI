@@ -1,0 +1,180 @@
+import { useMemo, useState } from "react";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Metric } from "@/components/ui/Metric";
+import {
+  useGraphImpact,
+  useGraphNodes,
+  useGraphStats,
+} from "@/hooks/api";
+import type { GraphNode } from "@/types";
+
+export function KnowledgeGraphPage() {
+  const stats = useGraphStats();
+  const nodes = useGraphNodes();
+  const [selectedNode, setSelectedNode] = useState<string | undefined>();
+  const impact = useGraphImpact(selectedNode);
+
+  const nodeById = useMemo(() => {
+    const map = new Map<string, GraphNode>();
+    (nodes.data ?? []).forEach((n: GraphNode) => map.set(n.node_id, n));
+    return map;
+  }, [nodes.data]);
+
+  const types = useMemo(() => {
+    const counts = new Map<string, number>();
+    (nodes.data ?? []).forEach((n: GraphNode) => {
+      counts.set(n.type, (counts.get(n.type) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [nodes.data]);
+
+  return (
+    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_320px]">
+      <aside className="space-y-4">
+        <Card padding="md">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Node types
+          </h3>
+          <ul className="mt-3 space-y-1.5">
+            {types.map(([t, c]) => (
+              <li
+                key={t}
+                className="flex items-center justify-between rounded-md bg-slate-50 px-2 py-1 text-xs dark:bg-slate-800/40"
+              >
+                <span className="truncate text-slate-700 dark:text-slate-200">{t}</span>
+                <Badge tone="neutral" size="sm">
+                  {c}
+                </Badge>
+              </li>
+            ))}
+            {!types.length ? (
+              <li className="text-xs text-slate-500 dark:text-slate-400">
+                No nodes yet.
+              </li>
+            ) : null}
+          </ul>
+        </Card>
+      </aside>
+
+      <div className="space-y-4">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Metric
+            label="Nodes"
+            value={stats.data?.node_count ?? "—"}
+            hint="Total entities in the graph"
+          />
+          <Metric
+            label="Relationships"
+            value={stats.data?.relationship_count ?? "—"}
+            hint="Edges between entities"
+          />
+          <Metric
+            label="Generated at"
+            value={
+              stats.data
+                ? new Date(stats.data.generated_at * 1000).toLocaleString()
+                : "—"
+            }
+            hint="Snapshot timestamp"
+          />
+        </section>
+
+        <Card padding="none">
+          <CardHeader
+            title="Nodes"
+            description="Click a node to inspect impact traversal"
+            actions={
+              <Badge tone="info">
+                {(nodes.data ?? []).length} entities
+              </Badge>
+            }
+          />
+          <div className="card-body">
+            {nodes.isLoading ? (
+              <Skeleton lines={6} />
+            ) : nodes.isError ? (
+              <ErrorState error={nodes.error} onRetry={() => nodes.refetch()} />
+            ) : !nodes.data || nodes.data.length === 0 ? (
+              <EmptyState
+                title="No nodes in the knowledge graph"
+                description="Build the graph from the backend to populate this view."
+              />
+            ) : (
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {nodes.data.slice(0, 60).map((n) => (
+                  <li key={n.node_id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNode(n.node_id)}
+                      className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition ${
+                        selectedNode === n.node_id
+                          ? "border-brand-500 bg-brand-50 dark:bg-brand-950/30"
+                          : "border-slate-200 hover:border-brand-300 dark:border-slate-800 dark:hover:border-brand-500"
+                      }`}
+                    >
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {n.label}
+                      </p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500 dark:text-slate-400">
+                        {n.type} · {n.node_id}
+                      </p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <aside className="space-y-4">
+        <Card padding="none">
+          <CardHeader
+            title="Impact traversal"
+            description={
+              selectedNode
+                ? `From ${nodeById.get(selectedNode)?.label ?? selectedNode}`
+                : "Select a node to inspect"
+            }
+          />
+          <div className="card-body">
+            {!selectedNode ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Pick any node from the centre panel to see downstream impact.
+              </p>
+            ) : impact.isLoading ? (
+              <Skeleton lines={4} />
+            ) : impact.isError ? (
+              <ErrorState error={impact.error} onRetry={() => impact.refetch()} />
+            ) : !impact.data || impact.data.affected.length === 0 ? (
+              <EmptyState
+                title="No impact detected"
+                description="This node has no downstream dependencies."
+              />
+            ) : (
+              <ul className="space-y-1.5">
+                {impact.data.affected.slice(0, 12).map((n) => (
+                  <li
+                    key={n.node_id}
+                    className="rounded-md border border-slate-200 px-2 py-1.5 text-xs dark:border-slate-800"
+                  >
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">
+                      {n.label}
+                    </p>
+                    <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">
+                      {n.type}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+      </aside>
+    </div>
+  );
+}
