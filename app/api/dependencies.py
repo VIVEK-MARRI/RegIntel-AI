@@ -1041,3 +1041,106 @@ def reset_review_service() -> None:
     """Reset the ReviewService singleton (used by tests)."""
     global _review_service
     _review_service = None
+
+
+# ─── Module 8.6 — AI Governance Layer ────────────────────────
+
+from app.services.governance import (  # noqa: E402
+    GovernanceService,
+    build_default_governance_service,
+)
+
+_governance_service: "GovernanceService | None" = None  # type: ignore[name-defined]
+
+
+def _governance_service_singleton() -> "GovernanceService":
+    global _governance_service
+    if _governance_service is None:
+        _governance_service = build_default_governance_service()
+    return _governance_service
+
+
+def get_governance_service() -> GovernanceService:
+    """Dependency injection provider for GovernanceService (singleton)."""
+    return _governance_service_singleton()
+
+
+def reset_governance_service() -> None:
+    """Reset the GovernanceService singleton (used by tests)."""
+    global _governance_service
+    _governance_service = None
+
+
+# ─── Module 8.7 — Audit & Compliance Platform ────────────────
+
+from app.services.audit import (  # noqa: E402
+    AuditService,
+    build_default_audit_service,
+)
+
+_audit_service: "AuditService | None" = None  # type: ignore[name-defined]
+
+
+def _audit_service_singleton() -> "AuditService":
+    global _audit_service
+    if _audit_service is None:
+        _audit_service = build_default_audit_service()
+    return _audit_service
+
+
+def get_audit_service() -> AuditService:
+    """Dependency injection provider for AuditService (singleton)."""
+    return _audit_service_singleton()
+
+
+def reset_audit_service() -> None:
+    """Reset the AuditService singleton (used by tests)."""
+    global _audit_service
+    _audit_service = None
+
+
+# ─── Module 8.8 — Enterprise Administration Dashboard ───────
+
+from app.services.admin import (  # noqa: E402
+    AdminService,
+    build_default_admin_service,
+)
+
+_admin_service: "AdminService | None" = None  # type: ignore[name-defined]
+
+
+def _admin_service_singleton() -> "AdminService":
+    global _admin_service
+    if _admin_service is None:
+        _admin_service = build_default_admin_service()
+    return _admin_service
+
+
+def get_admin_service() -> AdminService:
+    """Dependency injection provider for AdminService (singleton)."""
+    return _admin_service_singleton()
+
+
+def reset_admin_service() -> None:
+    """Reset the AdminService singleton (used by tests)."""
+    global _admin_service
+    _admin_service = None
+
+
+def bind_cross_module_services() -> None:
+    """Wire cross-module references after all singletons are built.
+
+    Called from the FastAPI ``startup`` event (or from tests) so that
+    the admin dashboard can pull live metrics from governance, audit,
+    workflow and review.
+    """
+    try:
+        admin = get_admin_service()
+        admin.bind(
+            governance_service=get_governance_service(),
+            audit_service=get_audit_service(),
+            workflow_service=get_automation_service(),
+            review_service=get_review_service(),
+        )
+    except Exception:  # pragma: no cover - non-fatal
+        pass

@@ -1,0 +1,528 @@
+{
+  "users": [
+    {
+      "user_id": "usr-13a5e6b41e71",
+      "username": "vw",
+      "email": "vw@x.com",
+      "full_name": "",
+      "role_ids": [
+        "role-c402db2afc2c"
+      ],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780707855.471963,
+      "updated_at": 1780707855.4719634,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-426219e79398",
+      "username": "x",
+      "email": "x@x.com",
+      "full_name": "",
+      "role_ids": [],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780707855.505281,
+      "updated_at": 1780707855.5197573,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-f6b61bc23875",
+      "username": "vw",
+      "email": "vw@x.com",
+      "full_name": "",
+      "role_ids": [
+        "role-c402db2afc2c"
+      ],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780707886.58456,
+      "updated_at": 1780707886.5845609,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-364be415c4f6",
+      "username": "x",
+      "email": "x@x.com",
+      "full_name": "",
+      "role_ids": [],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780707886.6173813,
+      "updated_at": 1780707886.6321166,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-25a3971bdc07",
+      "username": "vw",
+      "email": "vw@x.com",
+      "full_name": "",
+      "role_ids": [
+        "role-c402db2afc2c"
+      ],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708027.2097166,
+      "updated_at": 1780708027.209717,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-22ac8fa1f2a0",
+      "username": "x",
+      "email": "x@x.com",
+      "full_name": "",
+      "role_ids": [],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708027.2610734,
+      "updated_at": 1780708027.2832963,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-d6d7bd525ca6",
+      "username": "vw",
+      "email": "vw@x.com",
+      "full_name": "",
+      "role_ids": [
+        "role-c402db2afc2c"
+      ],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708061.7851818,
+      "updated_at": 1780708061.7851822,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-3af812e31e36",
+      "username": "x",
+      "email": "x@x.com",
+      "full_name": "",
+      "role_ids": [],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708061.8264506,
+      "updated_at": 1780708061.847314,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-0a2d47db1d74",
+      "username": "vw",
+      "email": "vw@x.com",
+      "full_name": "",
+      "role_ids": [
+        "role-c402db2afc2c"
+      ],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708107.7666318,
+      "updated_at": 1780708107.766632,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-cfb78748e95b",
+      "username": "x",
+      "email": "x@x.com",
+      "full_name": "",
+      "role_ids": [],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708107.808536,
+      "updated_at": 1780708107.8270276,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-b1fa9f98b404",
+      "username": "vw",
+      "email": "vw@x.com",
+      "full_name": "",
+      "role_ids": [
+        "role-c402db2afc2c"
+      ],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708150.3057885,
+      "updated_at": 1780708150.3057892,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-b3f1fc587cd1",
+      "username": "x",
+      "email": "x@x.com",
+      "full_name": "",
+      "role_ids": [],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780708150.3551,
+      "updated_at": 1780708150.3731983,
+      "metadata": {}
+    }
+  ],
+  "roles": [
+    {
+      "role_id": "role-4b64388dee92",
+      "name": "admin",
+      "description": "Full administrative access to all resources.",
+      "built_in": true,
+      "permissions": [
+        {
+          "permission_id": "prm-312633dc",
+          "code": "*",
+          "description": "Wildcard \u2014 full access to all resources.",
+          "resource": "*",
+          "action": "*"
+        }
+      ],
+      "user_count": 0,
+      "created_at": 1780707855.2499347,
+      "updated_at": 1780707855.2499354,
+      "tags": [
+        "built-in",
+        "privileged"
+      ]
+    },
+    {
+      "role_id": "role-390ec832d81d",
+      "name": "compliance_officer",
+      "description": "Owns policies, audit, and compliance reporting.",
+      "built_in": true,
+      "permissions": [
+        {
+          "permission_id": "prm-417faedf",
+          "code": "governance.read",
+          "description": "Permission code: governance.read",
+          "resource": "governance",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-16fe6952",
+          "code": "governance.write",
+          "description": "Permission code: governance.write",
+          "resource": "governance",
+          "action": "write"
+        },
+        {
+          "permission_id": "prm-2ee6d6aa",
+          "code": "audit.read",
+          "description": "Permission code: audit.read",
+          "resource": "audit",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-b1b5f1bf",
+          "code": "compliance.read",
+          "description": "Permission code: compliance.read",
+          "resource": "compliance",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-e5792427",
+          "code": "compliance.write",
+          "description": "Permission code: compliance.write",
+          "resource": "compliance",
+          "action": "write"
+        },
+        {
+          "permission_id": "prm-9f9a95c8",
+          "code": "risk.read",
+          "description": "Permission code: risk.read",
+          "resource": "risk",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-b45b361d",
+          "code": "review.read",
+          "description": "Permission code: review.read",
+          "resource": "review",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-360ba664",
+          "code": "review.write",
+          "description": "Permission code: review.write",
+          "resource": "review",
+          "action": "write"
+        }
+      ],
+      "user_count": 0,
+      "created_at": 1780707855.2500298,
+      "updated_at": 1780707855.25003,
+      "tags": [
+        "built-in",
+        "compliance"
+      ]
+    },
+    {
+      "role_id": "role-923996ea34f9",
+      "name": "risk_manager",
+      "description": "Manages risk assessments, forecasts, and risk-related reviews.",
+      "built_in": true,
+      "permissions": [
+        {
+          "permission_id": "prm-e7823890",
+          "code": "governance.read",
+          "description": "Permission code: governance.read",
+          "resource": "governance",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-daf99289",
+          "code": "risk.read",
+          "description": "Permission code: risk.read",
+          "resource": "risk",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-7ba2291a",
+          "code": "risk.write",
+          "description": "Permission code: risk.write",
+          "resource": "risk",
+          "action": "write"
+        },
+        {
+          "permission_id": "prm-7c6f4e4d",
+          "code": "forecast.read",
+          "description": "Permission code: forecast.read",
+          "resource": "forecast",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-0a353ca4",
+          "code": "review.read",
+          "description": "Permission code: review.read",
+          "resource": "review",
+          "action": "read"
+        }
+      ],
+      "user_count": 0,
+      "created_at": 1780707855.2501051,
+      "updated_at": 1780707855.2501056,
+      "tags": [
+        "built-in",
+        "risk"
+      ]
+    },
+    {
+      "role_id": "role-2d0312547663",
+      "name": "reviewer",
+      "description": "Performs human-in-the-loop reviews and workflow tasks.",
+      "built_in": true,
+      "permissions": [
+        {
+          "permission_id": "prm-ece272bf",
+          "code": "review.read",
+          "description": "Permission code: review.read",
+          "resource": "review",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-828ff5fb",
+          "code": "review.write",
+          "description": "Permission code: review.write",
+          "resource": "review",
+          "action": "write"
+        },
+        {
+          "permission_id": "prm-57e80839",
+          "code": "workflow.read",
+          "description": "Permission code: workflow.read",
+          "resource": "workflow",
+          "action": "read"
+        }
+      ],
+      "user_count": 0,
+      "created_at": 1780707855.2501454,
+      "updated_at": 1780707855.2501462,
+      "tags": [
+        "built-in",
+        "operations"
+      ]
+    },
+    {
+      "role_id": "role-a6a3b3796abf",
+      "name": "analyst",
+      "description": "Read-only access to governance, risk, forecast and dashboard data.",
+      "built_in": true,
+      "permissions": [
+        {
+          "permission_id": "prm-c071eae1",
+          "code": "governance.read",
+          "description": "Permission code: governance.read",
+          "resource": "governance",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-6dd56eb3",
+          "code": "risk.read",
+          "description": "Permission code: risk.read",
+          "resource": "risk",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-d3762c3e",
+          "code": "forecast.read",
+          "description": "Permission code: forecast.read",
+          "resource": "forecast",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-f627642c",
+          "code": "workflow.read",
+          "description": "Permission code: workflow.read",
+          "resource": "workflow",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-8fd4546a",
+          "code": "dashboard.read",
+          "description": "Permission code: dashboard.read",
+          "resource": "dashboard",
+          "action": "read"
+        }
+      ],
+      "user_count": 0,
+      "created_at": 1780707855.250197,
+      "updated_at": 1780707855.2501974,
+      "tags": [
+        "built-in",
+        "analytics"
+      ]
+    },
+    {
+      "role_id": "role-ca79bdec0bf5",
+      "name": "auditor",
+      "description": "Read-only access to audit logs and compliance reports.",
+      "built_in": true,
+      "permissions": [
+        {
+          "permission_id": "prm-cfe1f248",
+          "code": "audit.read",
+          "description": "Permission code: audit.read",
+          "resource": "audit",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-0b57a5ee",
+          "code": "compliance.read",
+          "description": "Permission code: compliance.read",
+          "resource": "compliance",
+          "action": "read"
+        },
+        {
+          "permission_id": "prm-543d8cb4",
+          "code": "governance.read",
+          "description": "Permission code: governance.read",
+          "resource": "governance",
+          "action": "read"
+        }
+      ],
+      "user_count": 0,
+      "created_at": 1780707855.2502341,
+      "updated_at": 1780707855.2502346,
+      "tags": [
+        "built-in",
+        "audit"
+      ]
+    },
+    {
+      "role_id": "role-c402db2afc2c",
+      "name": "viewer",
+      "description": "Read-only access to dashboards.",
+      "built_in": true,
+      "permissions": [
+        {
+          "permission_id": "prm-03c806e4",
+          "code": "dashboard.read",
+          "description": "Permission code: dashboard.read",
+          "resource": "dashboard",
+          "action": "read"
+        }
+      ],
+      "user_count": 0,
+      "created_at": 1780707855.2502575,
+      "updated_at": 1780707855.2502577,
+      "tags": [
+        "built-in",
+        "read-only"
+      ]
+    },
+    {
+      "role_id": "role-3ecca43c0356",
+      "name": "extra",
+      "description": "",
+      "built_in": false,
+      "permissions": [],
+      "user_count": 0,
+      "created_at": 1780707855.4966207,
+      "updated_at": 1780707855.4966214,
+      "tags": []
+    },
+    {
+      "role_id": "role-6ed7f8912293",
+      "name": "extra",
+      "description": "",
+      "built_in": false,
+      "permissions": [],
+      "user_count": 0,
+      "created_at": 1780707886.6089602,
+      "updated_at": 1780707886.608961,
+      "tags": []
+    },
+    {
+      "role_id": "role-d7e746c265d1",
+      "name": "extra",
+      "description": "",
+      "built_in": false,
+      "permissions": [],
+      "user_count": 0,
+      "created_at": 1780708027.2459552,
+      "updated_at": 1780708027.2459562,
+      "tags": []
+    },
+    {
+      "role_id": "role-e48dee923253",
+      "name": "extra",
+      "description": "",
+      "built_in": false,
+      "permissions": [],
+      "user_count": 0,
+      "created_at": 1780708061.8160715,
+      "updated_at": 1780708061.816072,
+      "tags": []
+    },
+    {
+      "role_id": "role-5c8073508b3d",
+      "name": "extra",
+      "description": "",
+      "built_in": false,
+      "permissions": [],
+      "user_count": 0,
+      "created_at": 1780708107.7948816,
+      "updated_at": 1780708107.7948825,
+      "tags": []
+    },
+    {
+      "role_id": "role-0cbadde68e73",
+      "name": "extra",
+      "description": "",
+      "built_in": false,
+      "permissions": [],
+      "user_count": 0,
+      "created_at": 1780708150.3424265,
+      "updated_at": 1780708150.342428,
+      "tags": []
+    }
+  ],
+  "settings": []
+}

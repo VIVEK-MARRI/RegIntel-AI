@@ -1240,3 +1240,326 @@ def reset_workflow_metrics() -> None:
 def reset_review_metrics() -> None:
     with _review_metrics_lock:
         _review_metrics.reset()
+
+
+# ─── Milestone 8.6-8.8 — Governance / Audit / Admin Metrics ──────────
+
+
+@dataclass
+class GovernanceMetrics:
+    """Process-wide counters for the AI governance layer."""
+
+    policies_created: int = 0
+    rules_total: int = 0
+    decisions_registered: int = 0
+    checks_executed: int = 0
+    compliant_decisions: int = 0
+    non_compliant_decisions: int = 0
+    violations_total: int = 0
+    blocking_violations: int = 0
+    compliance_rate: float = 0.0
+    by_decision_type: Dict[str, int] = field(default_factory=dict)
+    by_severity: Dict[str, int] = field(default_factory=dict)
+    by_action: Dict[str, int] = field(default_factory=dict)
+    by_model: Dict[str, int] = field(default_factory=dict)
+    last_check_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_policy_created(self, rule_count: int = 0) -> None:
+        self.policies_created += 1
+        self.rules_total += rule_count
+
+    def record_decision(self, decision: Any) -> None:
+        self.decisions_registered += 1
+        try:
+            dt = decision.decision_type.value
+            self.by_decision_type[dt] = self.by_decision_type.get(dt, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+        try:
+            if decision.model_id:
+                self.by_model[decision.model_id] = (
+                    self.by_model.get(decision.model_id, 0) + 1
+                )
+        except Exception:  # pragma: no cover
+            pass
+
+    def record_check(self, *, compliant: bool, violation_count: int) -> None:
+        self.checks_executed += 1
+        if compliant:
+            self.compliant_decisions += 1
+        else:
+            self.non_compliant_decisions += 1
+        total = self.compliant_decisions + self.non_compliant_decisions
+        self.compliance_rate = (
+            round(self.compliant_decisions / total, 4) if total else 0.0
+        )
+        self.last_check_at = time.time()
+
+    def record_violation(
+        self, *, severity: Any = None, action: Any = None
+    ) -> None:
+        self.violations_total += 1
+        try:
+            if severity is not None:
+                sv = severity.value if hasattr(severity, "value") else str(severity)
+                self.by_severity[sv] = self.by_severity.get(sv, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+        try:
+            if action is not None:
+                av = action.value if hasattr(action, "value") else str(action)
+                self.by_action[av] = self.by_action.get(av, 0) + 1
+                if av == "block":
+                    self.blocking_violations += 1
+        except Exception:  # pragma: no cover
+            pass
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "policies_created": self.policies_created,
+            "rules_total": self.rules_total,
+            "decisions_registered": self.decisions_registered,
+            "checks_executed": self.checks_executed,
+            "compliant_decisions": self.compliant_decisions,
+            "non_compliant_decisions": self.non_compliant_decisions,
+            "violations_total": self.violations_total,
+            "blocking_violations": self.blocking_violations,
+            "compliance_rate": self.compliance_rate,
+            "by_decision_type": dict(self.by_decision_type),
+            "by_severity": dict(self.by_severity),
+            "by_action": dict(self.by_action),
+            "by_model": dict(self.by_model),
+            "last_check_at": self.last_check_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.policies_created = 0
+        self.rules_total = 0
+        self.decisions_registered = 0
+        self.checks_executed = 0
+        self.compliant_decisions = 0
+        self.non_compliant_decisions = 0
+        self.violations_total = 0
+        self.blocking_violations = 0
+        self.compliance_rate = 0.0
+        self.by_decision_type = {}
+        self.by_severity = {}
+        self.by_action = {}
+        self.by_model = {}
+        self.last_check_at = None
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class AuditMetrics:
+    """Process-wide counters for the audit platform."""
+
+    records_appended: int = 0
+    evidence_collected: int = 0
+    reports_generated: int = 0
+    chain_integrity_checks: int = 0
+    chain_integrity_failures: int = 0
+    by_action: Dict[str, int] = field(default_factory=dict)
+    by_severity: Dict[str, int] = field(default_factory=dict)
+    by_evidence_kind: Dict[str, int] = field(default_factory=dict)
+    by_report_kind: Dict[str, int] = field(default_factory=dict)
+    last_record_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_record(self, action: Any = None, severity: Any = None) -> None:
+        self.records_appended += 1
+        try:
+            av = action.value if hasattr(action, "value") else str(action)
+            self.by_action[av] = self.by_action.get(av, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+        try:
+            sv = severity.value if hasattr(severity, "value") else str(severity)
+            self.by_severity[sv] = self.by_severity.get(sv, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+        self.last_record_at = time.time()
+
+    def record_evidence(self, kind: Any = None) -> None:
+        self.evidence_collected += 1
+        try:
+            kv = kind.value if hasattr(kind, "value") else str(kind)
+            self.by_evidence_kind[kv] = self.by_evidence_kind.get(kv, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+
+    def record_report(self, kind: Any = None) -> None:
+        self.reports_generated += 1
+        try:
+            kv = kind.value if hasattr(kind, "value") else str(kind)
+            self.by_report_kind[kv] = self.by_report_kind.get(kv, 0) + 1
+        except Exception:  # pragma: no cover
+            pass
+
+    def record_chain_check(self, *, intact: bool) -> None:
+        self.chain_integrity_checks += 1
+        if not intact:
+            self.chain_integrity_failures += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "records_appended": self.records_appended,
+            "evidence_collected": self.evidence_collected,
+            "reports_generated": self.reports_generated,
+            "chain_integrity_checks": self.chain_integrity_checks,
+            "chain_integrity_failures": self.chain_integrity_failures,
+            "by_action": dict(self.by_action),
+            "by_severity": dict(self.by_severity),
+            "by_evidence_kind": dict(self.by_evidence_kind),
+            "by_report_kind": dict(self.by_report_kind),
+            "last_record_at": self.last_record_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.records_appended = 0
+        self.evidence_collected = 0
+        self.reports_generated = 0
+        self.chain_integrity_checks = 0
+        self.chain_integrity_failures = 0
+        self.by_action = {}
+        self.by_severity = {}
+        self.by_evidence_kind = {}
+        self.by_report_kind = {}
+        self.last_record_at = None
+        self.last_reset_at = time.time()
+
+
+@dataclass
+class AdminMetrics:
+    """Process-wide counters for the admin platform."""
+
+    users_created: int = 0
+    users_updated: int = 0
+    users_deleted: int = 0
+    roles_created: int = 0
+    rbac_checks: int = 0
+    rbac_denied: int = 0
+    settings_changed: int = 0
+    dashboard_views: int = 0
+    logins_recorded: int = 0
+    by_user_status: Dict[str, int] = field(default_factory=dict)
+    by_setting_category: Dict[str, int] = field(default_factory=dict)
+    last_action_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_user_created(self, status: str = "active") -> None:
+        self.users_created += 1
+        self.by_user_status[status] = self.by_user_status.get(status, 0) + 1
+        self.last_action_at = time.time()
+
+    def record_user_updated(self, status: str = "unchanged") -> None:
+        self.users_updated += 1
+        if status != "unchanged":
+            self.by_user_status[status] = self.by_user_status.get(status, 0) + 1
+        self.last_action_at = time.time()
+
+    def record_user_deleted(self) -> None:
+        self.users_deleted += 1
+        self.last_action_at = time.time()
+
+    def record_role_created(self, permission_count: int = 0) -> None:
+        self.roles_created += 1
+        self.last_action_at = time.time()
+
+    def record_rbac_check(self, *, allowed: bool) -> None:
+        self.rbac_checks += 1
+        if not allowed:
+            self.rbac_denied += 1
+        self.last_action_at = time.time()
+
+    def record_setting_change(self, category: str = "general") -> None:
+        self.settings_changed += 1
+        self.by_setting_category[category] = (
+            self.by_setting_category.get(category, 0) + 1
+        )
+        self.last_action_at = time.time()
+
+    def record_dashboard_view(self) -> None:
+        self.dashboard_views += 1
+
+    def record_login(self) -> None:
+        self.logins_recorded += 1
+        self.last_action_at = time.time()
+
+    def snapshot(self) -> Dict[str, Any]:
+        denial_rate = (
+            round(self.rbac_denied / self.rbac_checks, 4)
+            if self.rbac_checks
+            else 0.0
+        )
+        return {
+            "users_created": self.users_created,
+            "users_updated": self.users_updated,
+            "users_deleted": self.users_deleted,
+            "roles_created": self.roles_created,
+            "rbac_checks": self.rbac_checks,
+            "rbac_denied": self.rbac_denied,
+            "rbac_denial_rate": denial_rate,
+            "settings_changed": self.settings_changed,
+            "dashboard_views": self.dashboard_views,
+            "logins_recorded": self.logins_recorded,
+            "by_user_status": dict(self.by_user_status),
+            "by_setting_category": dict(self.by_setting_category),
+            "last_action_at": self.last_action_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.users_created = 0
+        self.users_updated = 0
+        self.users_deleted = 0
+        self.roles_created = 0
+        self.rbac_checks = 0
+        self.rbac_denied = 0
+        self.settings_changed = 0
+        self.dashboard_views = 0
+        self.logins_recorded = 0
+        self.by_user_status = {}
+        self.by_setting_category = {}
+        self.last_action_at = None
+        self.last_reset_at = time.time()
+
+
+_governance_metrics_lock = threading.Lock()
+_governance_metrics = GovernanceMetrics()
+
+_audit_metrics_lock = threading.Lock()
+_audit_metrics = AuditMetrics()
+
+_admin_metrics_lock = threading.Lock()
+_admin_metrics = AdminMetrics()
+
+
+def get_governance_metrics() -> GovernanceMetrics:
+    return _governance_metrics
+
+
+def get_audit_metrics() -> AuditMetrics:
+    return _audit_metrics
+
+
+def get_admin_metrics() -> AdminMetrics:
+    return _admin_metrics
+
+
+def reset_governance_metrics() -> None:
+    with _governance_metrics_lock:
+        _governance_metrics.reset()
+
+
+def reset_audit_metrics() -> None:
+    with _audit_metrics_lock:
+        _audit_metrics.reset()
+
+
+def reset_admin_metrics() -> None:
+    with _admin_metrics_lock:
+        _admin_metrics.reset()

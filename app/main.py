@@ -297,6 +297,30 @@ app.include_router(
     tags=["review"]
 )
 
+# Module 8.6 — AI Governance Layer
+from app.api.v1.governance import router as governance_router  # noqa: E402
+app.include_router(
+    governance_router,
+    prefix="/api/v1",
+    tags=["governance"]
+)
+
+# Module 8.7 — Audit & Compliance Platform
+from app.api.v1.audit import router as audit_router  # noqa: E402
+app.include_router(
+    audit_router,
+    prefix="/api/v1",
+    tags=["audit"]
+)
+
+# Module 8.8 — Enterprise Administration Dashboard
+from app.api.v1.admin import router as admin_router  # noqa: E402
+app.include_router(
+    admin_router,
+    prefix="/api/v1",
+    tags=["admin"]
+)
+
 # Module 6.8 — Health router (liveness / readiness / deep)
 app.include_router(
     health_router,
@@ -351,6 +375,12 @@ async def _startup() -> None:
         storage_root=Path(settings.STORAGE_ROOT),
         raise_on_error=settings.STARTUP_RAISE_ON_ERROR,
     )
+    # Wire cross-module references for the admin dashboard
+    try:
+        from app.api.dependencies import bind_cross_module_services
+        bind_cross_module_services()
+    except Exception:  # pragma: no cover - non-fatal
+        pass
 
 
 @app.on_event("shutdown")
