@@ -18,7 +18,7 @@ aiosqlite==0.22.1
 pgvector==0.4.2
 
 # --- Networking ---
-httpx==0.28.1
+httpx==0.27.2
 anyio==4.13.0
 h11==0.16.0
 httpcore==1.0.9

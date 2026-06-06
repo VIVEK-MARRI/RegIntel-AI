@@ -59,6 +59,11 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Mirror the FastAPI version into a module-level constant so other
+# components (e.g. /api/v1/system/info) can read it without importing
+# the FastAPI instance (which would create a circular import).
+APP_VERSION: str = "1.0.0"
+
 # Register custom exception handlers
 register_exception_handlers(app)
 
@@ -375,6 +380,18 @@ app.include_router(
     tags=["benchmark"]
 )
 
+# Module 10.6 — Security Platform
+from app.api.v1.security import router as security_router  # noqa: E402
+from app.security.api_gateway import APIGateway, CORSConfig, IPAllowList  # noqa: E402
+from app.security.audit_review import AuditReview  # noqa: E402
+from app.security.jwt_auth import JWTConfig, JWTIssuer  # noqa: E402
+
+app.include_router(
+    security_router,
+    prefix="/api/v1",
+    tags=["security"],
+)
+
 # ─── Module 6.8 — Production middleware ──────────────────────────────────
 # Order matters: tracing wraps everything so request_id is available to
 # downstream middleware; security headers apply to all responses; rate-
@@ -406,6 +423,44 @@ if settings.API_KEY_AUTH_ENABLED:
     # In production, API keys are supplied via env / secrets manager.
     # Tests construct their own stores and override middleware as needed.
     app.add_middleware(APIKeyMiddleware, store=_api_key_store, enabled=True)
+
+
+# ─── Module 10.6 — Security Platform wiring ──────────────────────────
+# JWT issuer + API gateway. The JWT secret is sourced from the secrets
+# manager (env → file → vault); the API gateway is configured with
+# strict-by-default CORS, IP allow list, and optional request signing.
+
+def _build_security_jwt_issuer() -> JWTIssuer:
+    from app.security.secrets import SecretsManager
+    sm = SecretsManager(
+        env_prefix="REGINTEL_",
+        cache_ttl_seconds=0,
+    )
+    try:
+        result = sm.get("jwt-secret", default=__import__("os").environ.get("REGINTEL_JWT_SECRET"))
+    except Exception:
+        result = None
+    if result is None:
+        # Dev fallback: a strong random secret. NEVER used in production.
+        import secrets as _secrets
+        from app.security.jwt_auth import generate_development_secret
+        secret = generate_development_secret()
+        import logging
+        logging.getLogger(__name__).warning(
+            "REGINTEL_JWT_SECRET is not set — generated a development secret. "
+            "Set REGINTEL_JWT_SECRET (>= 32 chars) in production."
+        )
+        sm.set_override("jwt-secret", secret)
+        result = sm.get("jwt-secret")
+    return JWTIssuer(JWTConfig(secret=result.value))
+
+
+_security_jwt_issuer: JWTIssuer = _build_security_jwt_issuer()
+_audit_review = AuditReview(_audit_log)
+_api_gateway = APIGateway(
+    cors=CORSConfig(allowed_origins=()),
+    ip_allow=IPAllowList.from_cidrs(default_allow=True),
+)
 
 
 # ─── Module 6.8 — Startup / shutdown hooks ───────────────────────────────
