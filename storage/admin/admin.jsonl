@@ -167,6 +167,34 @@
       "created_at": 1780708150.3551,
       "updated_at": 1780708150.3731983,
       "metadata": {}
+    },
+    {
+      "user_id": "usr-9788523b402d",
+      "username": "vw",
+      "email": "vw@x.com",
+      "full_name": "",
+      "role_ids": [
+        "role-c402db2afc2c"
+      ],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780709422.1910028,
+      "updated_at": 1780709422.191003,
+      "metadata": {}
+    },
+    {
+      "user_id": "usr-ab67634f58df",
+      "username": "x",
+      "email": "x@x.com",
+      "full_name": "",
+      "role_ids": [],
+      "status": "active",
+      "department": "",
+      "last_login_at": null,
+      "created_at": 1780709422.211044,
+      "updated_at": 1780709422.2194436,
+      "metadata": {}
     }
   ],
   "roles": [
@@ -521,6 +549,17 @@
       "user_count": 0,
       "created_at": 1780708150.3424265,
       "updated_at": 1780708150.342428,
+      "tags": []
+    },
+    {
+      "role_id": "role-cd8d882cb3b0",
+      "name": "extra",
+      "description": "",
+      "built_in": false,
+      "permissions": [],
+      "user_count": 0,
+      "created_at": 1780709422.205954,
+      "updated_at": 1780709422.2059548,
       "tags": []
     }
   ],

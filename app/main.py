@@ -321,6 +321,14 @@ app.include_router(
     tags=["admin"]
 )
 
+# Module 9 — Multi-Agent Framework
+from app.api.v1.agents import router as agents_router  # noqa: E402
+app.include_router(
+    agents_router,
+    prefix="/api/v1",
+    tags=["agents"]
+)
+
 # Module 6.8 — Health router (liveness / readiness / deep)
 app.include_router(
     health_router,

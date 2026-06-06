@@ -1,0 +1,31 @@
+{
+  "agents": [
+    {
+      "agent_id": "agt-482d58b68e26",
+      "name": "echo-agent",
+      "description": "Trivial agent that echoes its input back. Useful for testing.",
+      "version": "1.0.0",
+      "author": "system",
+      "capabilities": [
+        {
+          "capability_id": "cap-574fcb33",
+          "kind": "other",
+          "name": "echo",
+          "description": "echoes task.input",
+          "parameters": {}
+        }
+      ],
+      "status": "registered",
+      "default_max_retries": 0,
+      "default_timeout_ms": 30000,
+      "priority": 0,
+      "tags": [
+        "built-in",
+        "test"
+      ],
+      "registered_at": 1780709390.1641185,
+      "updated_at": 1780709390.1641185,
+      "metadata": {}
+    }
+  ]
+}

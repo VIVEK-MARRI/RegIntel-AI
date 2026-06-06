@@ -891,6 +891,108 @@
       "created_at": 1780708149.047222,
       "updated_at": 1780708149.047223,
       "tags": []
+    },
+    {
+      "policy_id": "pol-40c8b3a48aed",
+      "name": "High-Confidence Baseline",
+      "description": "All AI decisions must meet a minimum confidence threshold.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-21ec418c",
+          "name": "Min confidence 0.7",
+          "description": "",
+          "kind": "confidence_threshold",
+          "action": "block",
+          "severity": "medium",
+          "parameters": {
+            "min_confidence": 0.7
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1780709421.5185604,
+      "updated_at": 1780709421.5185604,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-e1fcbeb49965",
+      "name": "High-Risk Human-in-the-Loop",
+      "description": "Decisions classified as high or critical must be human-approved before becoming effective.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-bba18fa5",
+          "name": "Human approval for high/critical",
+          "description": "",
+          "kind": "human_in_loop",
+          "action": "require_human_review",
+          "severity": "high",
+          "parameters": {
+            "categories": []
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1780709421.51857,
+      "updated_at": 1780709421.51857,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-aa7ceeb70581",
+      "name": "Explainability Required",
+      "description": "All decisions must include a human-readable explanation.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-b22675cd",
+          "name": "outputs.explanation required",
+          "description": "",
+          "kind": "explainability_required",
+          "action": "warn",
+          "severity": "medium",
+          "parameters": {},
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1780709421.5185766,
+      "updated_at": 1780709421.5185766,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-3671e095b0e0",
+      "name": "API test",
+      "description": "",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-3e62ca1b",
+          "name": "r1",
+          "description": "",
+          "kind": "confidence_threshold",
+          "action": "warn",
+          "severity": "medium",
+          "parameters": {
+            "min_confidence": 0.5
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1780709421.5357194,
+      "updated_at": 1780709421.5357199,
+      "tags": []
     }
   ],
   "approval_policies": [],
@@ -3718,6 +3820,513 @@
       "outputs": {},
       "actor": "system",
       "timestamp": 1780708149.4764407,
+      "policy_result": null,
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-c2da05538504",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.9,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.550591,
+      "policy_result": {
+        "result_id": "chk-e6b2301b7258",
+        "decision_id": "dec-c2da05538504",
+        "policy_compliant": false,
+        "violations": [
+          {
+            "violation_id": "vio-53cff615",
+            "rule_id": "rule-e3374d29",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-ec290cf0fbb4",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.5506127
+          },
+          {
+            "violation_id": "vio-a0936745",
+            "rule_id": "rule-8884a1f6",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-d32bed6036e8",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "block",
+            "severity": "high",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.550621
+          },
+          {
+            "violation_id": "vio-d0e82bb0",
+            "rule_id": "rule-f1450f79",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-05ec0f6d6825",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.5506272
+          },
+          {
+            "violation_id": "vio-744474f2",
+            "rule_id": "rule-2e416cc3",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-507c0640e046",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "block",
+            "severity": "high",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.550632
+          },
+          {
+            "violation_id": "vio-db358e23",
+            "rule_id": "rule-c6dea6cf",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-0abafd6da11b",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.550703
+          },
+          {
+            "violation_id": "vio-ae63ef20",
+            "rule_id": "rule-be35c3ed",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-5746c4152bbf",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "block",
+            "severity": "high",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.5507085
+          },
+          {
+            "violation_id": "vio-bb4be429",
+            "rule_id": "rule-cc2d5f29",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-63873cdba273",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.5507152
+          },
+          {
+            "violation_id": "vio-988b1bf0",
+            "rule_id": "rule-9a8e914b",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-76769593ea2b",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "block",
+            "severity": "high",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.55072
+          },
+          {
+            "violation_id": "vio-19d8f03e",
+            "rule_id": "rule-52ff5e40",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-e07701051358",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.5507543
+          },
+          {
+            "violation_id": "vio-9fbaec2d",
+            "rule_id": "rule-e9b77ed6",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-9189de6b6b4c",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "block",
+            "severity": "high",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.5507994
+          },
+          {
+            "violation_id": "vio-5cd11679",
+            "rule_id": "rule-6dcba051",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-bbe222bfd2c8",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.5508137
+          },
+          {
+            "violation_id": "vio-05a4a7d2",
+            "rule_id": "rule-339c21f3",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-44e03592c437",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "block",
+            "severity": "high",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.55082
+          },
+          {
+            "violation_id": "vio-1768759d",
+            "rule_id": "rule-11c806d7",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-20852297e7a6",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.550881
+          },
+          {
+            "violation_id": "vio-8937a5f9",
+            "rule_id": "rule-8fa687e1",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-e6eb06bae8c2",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "warn",
+            "severity": "medium",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.5508895
+          },
+          {
+            "violation_id": "vio-52618dd4",
+            "rule_id": "rule-31448a51",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-6a4954ef706f",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.550898
+          },
+          {
+            "violation_id": "vio-3f00f188",
+            "rule_id": "rule-de47e8c2",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-7bfaecf82f26",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "warn",
+            "severity": "medium",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.5509038
+          },
+          {
+            "violation_id": "vio-af134af3",
+            "rule_id": "rule-d47ec089",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-1ac54e0c373c",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.550912
+          },
+          {
+            "violation_id": "vio-ee902dbc",
+            "rule_id": "rule-9d4e98c3",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-ac62a64d7ef1",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "warn",
+            "severity": "medium",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.5509171
+          },
+          {
+            "violation_id": "vio-864031f9",
+            "rule_id": "rule-bba18fa5",
+            "rule_name": "Human approval for high/critical",
+            "policy_id": "pol-e1fcbeb49965",
+            "policy_name": "High-Risk Human-in-the-Loop",
+            "kind": "human_in_loop",
+            "action": "require_human_review",
+            "severity": "high",
+            "message": "human-in-the-loop approval required but no approver recorded",
+            "details": {
+              "required_categories": []
+            },
+            "timestamp": 1780709421.5509248
+          },
+          {
+            "violation_id": "vio-98b325bc",
+            "rule_id": "rule-b22675cd",
+            "rule_name": "outputs.explanation required",
+            "policy_id": "pol-aa7ceeb70581",
+            "policy_name": "Explainability Required",
+            "kind": "explainability_required",
+            "action": "warn",
+            "severity": "medium",
+            "message": "explainability required: no 'explanation' in outputs",
+            "details": {
+              "required": "outputs.explanation"
+            },
+            "timestamp": 1780709421.5509293
+          }
+        ],
+        "required_actions": [
+          "require_human_review",
+          "block",
+          "warn"
+        ],
+        "evaluated_policies": [
+          "pol-494cb8ac16a7",
+          "pol-ec290cf0fbb4",
+          "pol-d32bed6036e8",
+          "pol-e71de8634cb4",
+          "pol-05ec0f6d6825",
+          "pol-507c0640e046",
+          "pol-fba680e025a7",
+          "pol-3d03901a4f0a",
+          "pol-0abafd6da11b",
+          "pol-5746c4152bbf",
+          "pol-7104638e2fcd",
+          "pol-5482df90053f",
+          "pol-63873cdba273",
+          "pol-76769593ea2b",
+          "pol-d89a5da8100d",
+          "pol-bd6f62e864fc",
+          "pol-e07701051358",
+          "pol-9189de6b6b4c",
+          "pol-12668aacfae1",
+          "pol-23e066208407",
+          "pol-bbe222bfd2c8",
+          "pol-44e03592c437",
+          "pol-ae2669dcd7d0",
+          "pol-73eab60022e6",
+          "pol-20852297e7a6",
+          "pol-e6eb06bae8c2",
+          "pol-389d18402544",
+          "pol-7b67ae34b49f",
+          "pol-6a4954ef706f",
+          "pol-7bfaecf82f26",
+          "pol-2191c3129ddd",
+          "pol-7a1152cb6af0",
+          "pol-1ac54e0c373c",
+          "pol-ac62a64d7ef1",
+          "pol-4570b6376d5e",
+          "pol-40c8b3a48aed",
+          "pol-e1fcbeb49965",
+          "pol-aa7ceeb70581",
+          "pol-3671e095b0e0"
+        ],
+        "evaluated_rules": 39,
+        "timestamp": 1780709421.5509498,
+        "notes": "blocked by Explainability Required :: outputs.explanation required; blocked by Explainability Required :: outputs.explanation required; blocked by Explainability Required :: outputs.explanation required; blocked by Explainability Required :: outputs.explanation required; blocked by Explainability Required :: outputs.explanation required; blocked by Explainability Required :: outputs.explanation required"
+      },
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-4953a78e6d8c",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.9,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.564842,
+      "policy_result": null,
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-d3cef7c04dfd",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.9,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.5802028,
+      "policy_result": null,
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-96e9e688793d",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.5,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.6832047,
+      "policy_result": null,
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-0b4d6839d80b",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.55,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.693694,
+      "policy_result": null,
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-eed33f27cd82",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.6,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.7023878,
+      "policy_result": null,
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-8c42e1541eec",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.65,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.7119818,
+      "policy_result": null,
+      "approved_by": [],
+      "metadata": {}
+    },
+    {
+      "decision_id": "dec-e620807c0a17",
+      "decision_type": "answer",
+      "subject_type": "",
+      "subject_id": "",
+      "model_id": "",
+      "model_version": "",
+      "decision": "",
+      "confidence": 0.7,
+      "risk_level": "",
+      "categories": [],
+      "inputs": {},
+      "outputs": {},
+      "actor": "system",
+      "timestamp": 1780709421.7222316,
       "policy_result": null,
       "approved_by": [],
       "metadata": {}

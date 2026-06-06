@@ -1144,3 +1144,31 @@ def bind_cross_module_services() -> None:
         )
     except Exception:  # pragma: no cover - non-fatal
         pass
+
+
+# ─── Module 9 — Multi-Agent Framework ─────────────────────
+
+from app.services.agents import (  # noqa: E402
+    AgentFrameworkService,
+    build_default_agent_framework_service,
+)
+
+_agent_framework_service: "AgentFrameworkService | None" = None  # type: ignore[name-defined]
+
+
+def _agent_framework_service_singleton() -> "AgentFrameworkService":
+    global _agent_framework_service
+    if _agent_framework_service is None:
+        _agent_framework_service = build_default_agent_framework_service()
+    return _agent_framework_service
+
+
+def get_agent_framework_service() -> AgentFrameworkService:
+    """Dependency injection provider for AgentFrameworkService (singleton)."""
+    return _agent_framework_service_singleton()
+
+
+def reset_agent_framework_service() -> None:
+    """Reset the AgentFrameworkService singleton (used by tests)."""
+    global _agent_framework_service
+    _agent_framework_service = None

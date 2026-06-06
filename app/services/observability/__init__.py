@@ -1563,3 +1563,130 @@ def reset_audit_metrics() -> None:
 def reset_admin_metrics() -> None:
     with _admin_metrics_lock:
         _admin_metrics.reset()
+
+
+# ─── Milestone 9 — Agent Framework Metrics ────────────────
+
+
+@dataclass
+class AgentMetrics:
+    """Process-wide counters for the multi-agent framework."""
+
+    agents_registered: int = 0
+    invocations_total: int = 0
+    invocations_succeeded: int = 0
+    invocations_failed: int = 0
+    invocations_timed_out: int = 0
+    retries_total: int = 0
+    coordination_runs: int = 0
+    coordination_succeeded: int = 0
+    coordination_failed: int = 0
+    coordination_steps_total: int = 0
+    total_duration_ms: float = 0.0
+    average_duration_ms: float = 0.0
+    by_agent: Dict[str, int] = field(default_factory=dict)
+    by_capability: Dict[str, int] = field(default_factory=dict)
+    by_status: Dict[str, int] = field(default_factory=dict)
+    last_invocation_at: Optional[float] = None
+    last_reset_at: float = field(default_factory=time.time)
+
+    def record_registration(self, agent_name: str = "unknown") -> None:
+        self.agents_registered += 1
+        self.by_agent[agent_name] = self.by_agent.get(agent_name, 0) + 1
+
+    def record_execution(
+        self,
+        agent_name: str,
+        *,
+        capability: str = "other",
+        status: str = "succeeded",
+        duration_ms: float = 0.0,
+    ) -> None:
+        self.invocations_total += 1
+        if status == "succeeded":
+            self.invocations_succeeded += 1
+        elif status == "timed_out":
+            self.invocations_timed_out += 1
+        else:
+            self.invocations_failed += 1
+        self.by_status[status] = self.by_status.get(status, 0) + 1
+        self.by_capability[capability] = (
+            self.by_capability.get(capability, 0) + 1
+        )
+        self.total_duration_ms += duration_ms
+        self.average_duration_ms = round(
+            self.total_duration_ms / self.invocations_total, 3
+        )
+        self.last_invocation_at = time.time()
+
+    def record_retry(self, agent_name: str = "unknown") -> None:
+        self.retries_total += 1
+        self.by_agent[agent_name] = self.by_agent.get(agent_name, 0) + 1
+
+    def record_coordination_step(self, duration_ms: float = 0.0) -> None:
+        self.coordination_steps_total += 1
+        self.total_duration_ms += duration_ms
+
+    def record_coordination(
+        self,
+        plan: Any = None,
+        *,
+        final_status: str = "succeeded",
+    ) -> None:
+        self.coordination_runs += 1
+        if final_status == "succeeded":
+            self.coordination_succeeded += 1
+        else:
+            self.coordination_failed += 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "agents_registered": self.agents_registered,
+            "invocations_total": self.invocations_total,
+            "invocations_succeeded": self.invocations_succeeded,
+            "invocations_failed": self.invocations_failed,
+            "invocations_timed_out": self.invocations_timed_out,
+            "retries_total": self.retries_total,
+            "coordination_runs": self.coordination_runs,
+            "coordination_succeeded": self.coordination_succeeded,
+            "coordination_failed": self.coordination_failed,
+            "coordination_steps_total": self.coordination_steps_total,
+            "average_duration_ms": self.average_duration_ms,
+            "by_agent": dict(self.by_agent),
+            "by_capability": dict(self.by_capability),
+            "by_status": dict(self.by_status),
+            "last_invocation_at": self.last_invocation_at,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.agents_registered = 0
+        self.invocations_total = 0
+        self.invocations_succeeded = 0
+        self.invocations_failed = 0
+        self.invocations_timed_out = 0
+        self.retries_total = 0
+        self.coordination_runs = 0
+        self.coordination_succeeded = 0
+        self.coordination_failed = 0
+        self.coordination_steps_total = 0
+        self.total_duration_ms = 0.0
+        self.average_duration_ms = 0.0
+        self.by_agent = {}
+        self.by_capability = {}
+        self.by_status = {}
+        self.last_invocation_at = None
+        self.last_reset_at = time.time()
+
+
+_agent_metrics_lock = threading.Lock()
+_agent_metrics = AgentMetrics()
+
+
+def get_agent_metrics() -> AgentMetrics:
+    return _agent_metrics
+
+
+def reset_agent_metrics() -> None:
+    with _agent_metrics_lock:
+        _agent_metrics.reset()
