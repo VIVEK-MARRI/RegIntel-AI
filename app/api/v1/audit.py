@@ -113,7 +113,19 @@ async def get_record(
 @router.get("/integrity")
 async def chain_integrity(svc: AuditService = _service_dep()) -> Dict[str, Any]:
     intact, message = svc.verify_chain()
-    return {"intact": intact, "message": message}
+    stats = svc.repository.stats()
+    total = stats.total_records
+    valid = total if intact else 0
+    invalid = 0 if intact else max(total, 1)
+    return {
+        "intact": intact,
+        "message": message,
+        "total": total,
+        "valid": valid,
+        "invalid": invalid,
+        "chain_length": stats.chain_length,
+        "last_chain_hash": stats.last_chain_hash,
+    }
 
 
 # ─── Evidence ─────────────────────────────────────────────────
