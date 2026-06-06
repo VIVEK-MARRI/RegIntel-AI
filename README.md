@@ -85,9 +85,8 @@ out of the box**, ready to deploy behind a load balancer.
 14. [API Overview](#-api-overview)
 15. [Screenshots](#-screenshots)
 16. [Future Roadmap](#-future-roadmap)
-17. [Contributors](#-contributors)
-18. [License](#-license)
-19. [Acknowledgements](#-acknowledgements)
+17. [License](#-license)
+18. [Acknowledgements](#-acknowledgements)
 
 ---
 
@@ -1019,26 +1018,6 @@ Full reference: [docs/architecture/07-api-reference.md](./docs/architecture/07-a
 We welcome contributions and design discussion. See
 [docs/architecture/08-developer-guide.md](./docs/architecture/08-developer-guide.md)
 for the contribution model.
-
----
-
-## 👥 Contributors
-
-RegIntel AI is built by a distributed team of engineers, security
-researchers, and domain experts.
-
-* **Engineering** — @alice, @bob, @carol, @dave, @eve
-* **Security** — @frank, @grace
-* **Documentation** — @heidi
-* **Operations** — @ivan
-
-<a href="https://github.com/regintel/regintel-ai/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=regintel/regintel-ai" alt="contributors" />
-</a>
-
-Want to contribute? Open an issue or a PR; see
-[docs/architecture/08-developer-guide.md](./docs/architecture/08-developer-guide.md)
-for the developer workflow.
 
 ---
 
