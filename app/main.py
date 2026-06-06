@@ -329,6 +329,14 @@ app.include_router(
     tags=["agents"]
 )
 
+# Module 9.4-9.6 — Intelligence Agent Layer
+from app.api.v1.intelligence_agents import router as intelligence_agents_router  # noqa: E402
+app.include_router(
+    intelligence_agents_router,
+    prefix="/api/v1",
+    tags=["intelligence-agents"]
+)
+
 # Module 6.8 — Health router (liveness / readiness / deep)
 app.include_router(
     health_router,

@@ -1172,3 +1172,31 @@ def reset_agent_framework_service() -> None:
     """Reset the AgentFrameworkService singleton (used by tests)."""
     global _agent_framework_service
     _agent_framework_service = None
+
+
+# ─── Module 9.4-9.6 — Intelligence Agent Layer ─────────────
+
+from app.services.intelligence_agents import (  # noqa: E402
+    IntelligenceAgentService,
+    build_default_intelligence_agent_service,
+)
+
+_intelligence_agent_service: "IntelligenceAgentService | None" = None  # type: ignore[name-defined]
+
+
+def _intelligence_agent_service_singleton() -> "IntelligenceAgentService":
+    global _intelligence_agent_service
+    if _intelligence_agent_service is None:
+        _intelligence_agent_service = build_default_intelligence_agent_service()
+    return _intelligence_agent_service
+
+
+def get_intelligence_agent_service() -> IntelligenceAgentService:
+    """Dependency injection provider for IntelligenceAgentService (singleton)."""
+    return _intelligence_agent_service_singleton()
+
+
+def reset_intelligence_agent_service() -> None:
+    """Reset the IntelligenceAgentService singleton (used by tests)."""
+    global _intelligence_agent_service
+    _intelligence_agent_service = None

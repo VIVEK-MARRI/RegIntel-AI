@@ -1690,3 +1690,314 @@ def get_agent_metrics() -> AgentMetrics:
 def reset_agent_metrics() -> None:
     with _agent_metrics_lock:
         _agent_metrics.reset()
+
+
+# ─── Milestone 9.4-9.6 — Intelligence Agent Metrics ──────────
+
+
+@dataclass
+class IntelligenceAgentMetrics:
+    """Process-wide counters for the Research / Compliance / Risk agents.
+
+    Tracks invocations, success / failure, confidence, latency, scenario
+    kinds, modes, collaborations and recommendation acceptance.
+    """
+
+    total_invocations: int = 0
+    total_successful: int = 0
+    total_failed: int = 0
+    total_collaborations: int = 0
+    # Per-agent tallies
+    research_invocations: int = 0
+    research_successful: int = 0
+    research_failed: int = 0
+    research_total_duration_ms: float = 0.0
+    research_confidence_total: float = 0.0
+    research_last_invocation_at: Optional[float] = None
+    research_last_error: str = ""
+    compliance_invocations: int = 0
+    compliance_successful: int = 0
+    compliance_failed: int = 0
+    compliance_total_duration_ms: float = 0.0
+    compliance_confidence_total: float = 0.0
+    compliance_last_invocation_at: Optional[float] = None
+    compliance_last_error: str = ""
+    risk_invocations: int = 0
+    risk_successful: int = 0
+    risk_failed: int = 0
+    risk_total_duration_ms: float = 0.0
+    risk_confidence_total: float = 0.0
+    risk_last_invocation_at: Optional[float] = None
+    risk_last_error: str = ""
+    # Aggregate fields
+    by_mode: Dict[str, int] = field(default_factory=dict)
+    by_scenario_kind: Dict[str, int] = field(default_factory=dict)
+    by_collaboration_pair: Dict[str, int] = field(default_factory=dict)
+    recommendations_generated: int = 0
+    recommendations_accepted: int = 0
+    recommendations_rejected: int = 0
+    evidence_items_shared: int = 0
+    last_reset_at: float = field(default_factory=time.time)
+
+    # ── per-agent recording helpers ────────────────────────
+
+    def _record_agent(
+        self,
+        agent: str,
+        *,
+        duration_ms: float,
+        confidence: float,
+        success: bool,
+        error: str = "",
+    ) -> None:
+        self.total_invocations += 1
+        if success:
+            self.total_successful += 1
+        else:
+            self.total_failed += 1
+        if agent == "research":
+            self.research_invocations += 1
+            self.research_successful += 1 if success else 0
+            self.research_failed += 0 if success else 1
+            self.research_total_duration_ms += duration_ms
+            self.research_confidence_total += confidence
+            self.research_last_invocation_at = time.time()
+            self.research_last_error = "" if success else error
+        elif agent == "compliance":
+            self.compliance_invocations += 1
+            self.compliance_successful += 1 if success else 0
+            self.compliance_failed += 0 if success else 1
+            self.compliance_total_duration_ms += duration_ms
+            self.compliance_confidence_total += confidence
+            self.compliance_last_invocation_at = time.time()
+            self.compliance_last_error = "" if success else error
+        elif agent == "risk":
+            self.risk_invocations += 1
+            self.risk_successful += 1 if success else 0
+            self.risk_failed += 0 if success else 1
+            self.risk_total_duration_ms += duration_ms
+            self.risk_confidence_total += confidence
+            self.risk_last_invocation_at = time.time()
+            self.risk_last_error = "" if success else error
+
+    def record_research(
+        self,
+        *,
+        duration_ms: float,
+        confidence: float,
+        success: bool = True,
+        error: str = "",
+        mode: str = "general",
+    ) -> None:
+        self._record_agent(
+            "research",
+            duration_ms=duration_ms,
+            confidence=confidence,
+            success=success,
+            error=error,
+        )
+        self.by_mode[mode] = self.by_mode.get(mode, 0) + 1
+
+    def record_compliance(
+        self,
+        *,
+        duration_ms: float,
+        confidence: float,
+        success: bool = True,
+        error: str = "",
+    ) -> None:
+        self._record_agent(
+            "compliance",
+            duration_ms=duration_ms,
+            confidence=confidence,
+            success=success,
+            error=error,
+        )
+
+    def record_risk(
+        self,
+        *,
+        duration_ms: float,
+        confidence: float,
+        success: bool = True,
+        error: str = "",
+        scenario_kind: str = "",
+    ) -> None:
+        self._record_agent(
+            "risk",
+            duration_ms=duration_ms,
+            confidence=confidence,
+            success=success,
+            error=error,
+        )
+        if scenario_kind:
+            self.by_scenario_kind[scenario_kind] = (
+                self.by_scenario_kind.get(scenario_kind, 0) + 1
+            )
+
+    def record_collaboration(
+        self,
+        from_agent: str,
+        to_agent: str,
+        *,
+        evidence_items: int = 0,
+    ) -> None:
+        self.total_collaborations += 1
+        self.evidence_items_shared += evidence_items
+        key = f"{from_agent}->{to_agent}"
+        self.by_collaboration_pair[key] = (
+            self.by_collaboration_pair.get(key, 0) + 1
+        )
+
+    def record_recommendation_generated(self, count: int = 1) -> None:
+        self.recommendations_generated += count
+
+    def record_recommendation_accepted(self, count: int = 1) -> None:
+        self.recommendations_accepted += count
+
+    def record_recommendation_rejected(self, count: int = 1) -> None:
+        self.recommendations_rejected += count
+
+    def record_scenario_kind(self, kind: str) -> None:
+        """Track scenario kinds separately from risk agent invocations."""
+        self.by_scenario_kind[kind] = self.by_scenario_kind.get(kind, 0) + 1
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "total_invocations": self.total_invocations,
+            "total_successful": self.total_successful,
+            "total_failed": self.total_failed,
+            "total_collaborations": self.total_collaborations,
+            "research": {
+                "invocations": self.research_invocations,
+                "successful": self.research_successful,
+                "failed": self.research_failed,
+                "average_duration_ms": (
+                    round(
+                        self.research_total_duration_ms
+                        / self.research_invocations,
+                        3,
+                    )
+                    if self.research_invocations
+                    else 0.0
+                ),
+                "average_confidence": (
+                    round(
+                        self.research_confidence_total
+                        / self.research_invocations,
+                        3,
+                    )
+                    if self.research_invocations
+                    else 0.0
+                ),
+                "last_invocation_at": self.research_last_invocation_at,
+                "last_error": self.research_last_error,
+            },
+            "compliance": {
+                "invocations": self.compliance_invocations,
+                "successful": self.compliance_successful,
+                "failed": self.compliance_failed,
+                "average_duration_ms": (
+                    round(
+                        self.compliance_total_duration_ms
+                        / self.compliance_invocations,
+                        3,
+                    )
+                    if self.compliance_invocations
+                    else 0.0
+                ),
+                "average_confidence": (
+                    round(
+                        self.compliance_confidence_total
+                        / self.compliance_invocations,
+                        3,
+                    )
+                    if self.compliance_invocations
+                    else 0.0
+                ),
+                "last_invocation_at": self.compliance_last_invocation_at,
+                "last_error": self.compliance_last_error,
+            },
+            "risk": {
+                "invocations": self.risk_invocations,
+                "successful": self.risk_successful,
+                "failed": self.risk_failed,
+                "average_duration_ms": (
+                    round(
+                        self.risk_total_duration_ms
+                        / self.risk_invocations,
+                        3,
+                    )
+                    if self.risk_invocations
+                    else 0.0
+                ),
+                "average_confidence": (
+                    round(
+                        self.risk_confidence_total
+                        / self.risk_invocations,
+                        3,
+                    )
+                    if self.risk_invocations
+                    else 0.0
+                ),
+                "last_invocation_at": self.risk_last_invocation_at,
+                "last_error": self.risk_last_error,
+            },
+            "by_mode": dict(self.by_mode),
+            "by_scenario_kind": dict(self.by_scenario_kind),
+            "by_collaboration_pair": dict(self.by_collaboration_pair),
+            "recommendations_generated": self.recommendations_generated,
+            "recommendations_accepted": self.recommendations_accepted,
+            "recommendations_rejected": self.recommendations_rejected,
+            "evidence_items_shared": self.evidence_items_shared,
+            "uptime_seconds": time.time() - self.last_reset_at,
+        }
+
+    def reset(self) -> None:
+        self.total_invocations = 0
+        self.total_successful = 0
+        self.total_failed = 0
+        self.total_collaborations = 0
+        self.research_invocations = 0
+        self.research_successful = 0
+        self.research_failed = 0
+        self.research_total_duration_ms = 0.0
+        self.research_confidence_total = 0.0
+        self.research_last_invocation_at = None
+        self.research_last_error = ""
+        self.compliance_invocations = 0
+        self.compliance_successful = 0
+        self.compliance_failed = 0
+        self.compliance_total_duration_ms = 0.0
+        self.compliance_confidence_total = 0.0
+        self.compliance_last_invocation_at = None
+        self.compliance_last_error = ""
+        self.risk_invocations = 0
+        self.risk_successful = 0
+        self.risk_failed = 0
+        self.risk_total_duration_ms = 0.0
+        self.risk_confidence_total = 0.0
+        self.risk_last_invocation_at = None
+        self.risk_last_error = ""
+        self.by_mode = {}
+        self.by_scenario_kind = {}
+        self.by_collaboration_pair = {}
+        self.recommendations_generated = 0
+        self.recommendations_accepted = 0
+        self.recommendations_rejected = 0
+        self.evidence_items_shared = 0
+        self.last_reset_at = time.time()
+
+
+_intel_agent_metrics_lock = threading.Lock()
+_intel_agent_metrics = IntelligenceAgentMetrics()
+
+
+def get_intelligence_agent_metrics() -> IntelligenceAgentMetrics:
+    """Return the process-wide intelligence agent metrics singleton."""
+    return _intel_agent_metrics
+
+
+def reset_intelligence_agent_metrics() -> None:
+    with _intel_agent_metrics_lock:
+        _intel_agent_metrics.reset()
