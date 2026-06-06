@@ -357,7 +357,11 @@ export const complianceKeys = {
 export function useComplianceAssessments() {
   return useQuery({
     queryKey: complianceKeys.list(),
-    queryFn: () => api.get<ComplianceAssessment[]>("/compliance-risk/assessments"),
+    queryFn: () =>
+      api.get<PaginatedResponse<ComplianceAssessment>>(
+        "/compliance-risk/assessments"
+      ),
+    select: (res) => res?.items ?? [],
   });
 }
 
@@ -633,7 +637,8 @@ export function useWorkflowInstances() {
 export function useReviewTasks() {
   return useQuery({
     queryKey: ["review", "tasks"],
-    queryFn: () => api.get<ReviewTask[]>("/review/tasks"),
+    queryFn: () => api.get<PaginatedResponse<ReviewTask>>("/review/tasks"),
+    select: (res) => res?.items ?? [],
   });
 }
 
