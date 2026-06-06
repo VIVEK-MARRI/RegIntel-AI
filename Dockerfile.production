@@ -1,0 +1,98 @@
+# RegIntel AI — Production Dockerfile (M10.3)
+# Multi-stage build, slim runtime, non-root user, healthcheck.
+# Builds to ~700 MB on python:3.11-slim without ML deps, or ~3 GB with the
+# full ML stack uncommented.
+
+# ─── Stage 1: builder ────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Build tooling required to compile asyncpg / psycopg2-binary wheels if
+# they fall back to source builds.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        libpq-dev \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build a relocatable virtualenv that we will copy into the runtime stage.
+WORKDIR /opt/build
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt ./
+# Install CPU-only. To embed the ML stack, uncomment the bottom of requirements.txt.
+RUN pip install --upgrade pip wheel \
+    && pip install -r requirements.txt \
+    && pip install "uvicorn[standard]==0.32.0" "gunicorn==23.0.0"
+
+# ─── Stage 2: runtime ────────────────────────────────────────────────────
+FROM python:3.11-slim AS runtime
+
+LABEL org.opencontainers.image.title="regintel-ai-backend" \
+      org.opencontainers.image.description="RegIntel AI production backend (FastAPI)" \
+      org.opencontainers.image.source="https://github.com/anomalyco/regintel-ai" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    ENV=production \
+    PORT=8000 \
+    WORKERS=2 \
+    WORKER_TIMEOUT=120 \
+    KEEP_ALIVE=5 \
+    LOG_LEVEL=INFO \
+    STORAGE_ROOT=/var/lib/regintel/storage \
+    AUDIT_LOG_PATH=/var/log/regintel/audit.log
+
+# Minimal runtime libs (no compilers / no -dev headers).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libpq5 \
+        curl \
+        tini \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root user (UID 10001) — runs the application and owns the data dirs.
+RUN groupadd --system --gid 10001 regintel \
+    && useradd  --system --uid 10001 --gid regintel --home-dir /app --shell /usr/sbin/nologin regintel \
+    && mkdir -p /app /var/lib/regintel/storage /var/log/regintel \
+    && chown -R regintel:regintel /app /var/lib/regintel /var/log/regintel
+
+WORKDIR /app
+
+# Copy the prepared virtualenv from the builder stage.
+COPY --from=builder --chown=regintel:regintel /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/app"
+
+# Copy the application source.
+COPY --chown=regintel:regintel app ./app
+COPY --chown=regintel:regintel alembic ./alembic
+COPY --chown=regintel:regintel alembic.ini ./
+COPY --chown=regintel:regintel scripts ./scripts
+
+USER regintel
+
+EXPOSE 8000
+
+# Lightweight liveness probe — confirms the process is up. The compose
+# file adds a deeper readiness probe that hits /health/ready.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:8000/health/live || exit 1
+
+# tini gives us proper signal handling and zombie reaping under PID 1.
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Default launch: uvicorn behind a small async pool. Use gunicorn for sync
+# workers; the FastAPI app is async-native, so uvicorn is preferred.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS} --timeout-keep-alive ${KEEP_ALIVE} --log-level ${LOG_LEVEL}"]

@@ -1,0 +1,64 @@
+# Docker build context exclusions (M10.3)
+# Keeps the production image small and the build deterministic.
+
+# --- VCS / metadata ---
+.git
+.gitignore
+.gitattributes
+.github
+.kilo
+
+# --- Local virtualenv / caches ---
+.venv
+.venv-*
+.venv-*/
+.python-version
+.ruff_cache
+.mypy_cache
+.pytest_cache
+.cache
+.coverage
+.coverage.*
+htmlcov
+coverage.xml
+nosetests.xml
+.tox
+.nox
+
+# --- Editor / OS noise ---
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# --- Local data and secrets ---
+storage
+.env
+.env.*
+!.env.production.example
+*.log
+logs
+tmp
+temp
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# --- Frontend noise ---
+frontend/node_modules
+frontend/dist
+frontend/.vite
+frontend/coverage
+frontend/.DS_Store
+
+# --- Docker self-references ---
+Dockerfile
+Dockerfile.*
+docker-compose*.yml
+.dockerignore
+nginx.conf
+.env.production.example

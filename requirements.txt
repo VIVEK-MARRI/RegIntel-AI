@@ -1,0 +1,57 @@
+# RegIntel AI — Production Requirements
+# Generated for the M10.3 production image.
+# Versions are pinned to the ones used during M10.3 development.
+
+# --- Core runtime ---
+fastapi==0.136.3
+uvicorn[standard]==0.32.0
+pydantic==2.13.4
+pydantic-settings==2.14.1
+python-dotenv==1.2.2
+
+# --- Database / async ---
+SQLAlchemy==2.0.50
+asyncpg==0.31.0
+psycopg2-binary==2.9.12
+alembic==1.18.4
+aiosqlite==0.22.1
+pgvector==0.4.2
+
+# --- Networking ---
+httpx==0.28.1
+anyio==4.13.0
+h11==0.16.0
+httpcore==1.0.9
+python-multipart==0.0.30
+
+# --- Templating / CLI / utilities ---
+Jinja2==3.1.6
+click==8.4.1
+typer==0.25.1
+rich==15.0.0
+shellingham==1.5.4
+
+# --- Observability / health (psutil optional, included for prod) ---
+psutil==7.0.0
+
+# --- Document / parsing / chunking ---
+PyMuPDF==1.27.2.3
+
+# --- Embeddings + ML ---
+numpy==2.4.6
+scipy==1.17.1
+scikit-learn==1.8.0
+joblib==1.5.3
+threadpoolctl==3.6.0
+networkx==3.6.1
+rank-bm25==0.2.2
+regex==2026.5.9
+
+# Tokenizers / sentence-transformers (heavy; install with --no-deps in slim image)
+# torch==2.12.0
+# transformers==5.9.0
+# sentence-transformers==5.5.1
+# tokenizers==0.22.2
+# safetensors==0.7.0
+# huggingface_hub==1.17.0
+# hf-xet==1.5.0

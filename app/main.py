@@ -7,6 +7,7 @@ from app.api.v1.answer_analytics import router as answer_analytics_router
 from app.api.v1.answer_generation import router as answer_generation_router
 from app.api.v1.analytics import router as analytics_router
 from app.api.v1.attribution import router as attribution_router
+from app.api.v1.benchmark import router as benchmark_router
 from app.api.v1.bm25 import router as bm25_router
 from app.api.v1.changes import router as changes_router
 from app.api.v1.chunks import router as chunks_router
@@ -365,6 +366,13 @@ app.include_router(
 app.include_router(
     health_router,
     tags=["health"]
+)
+
+# Module 10.5 — Benchmark & Performance Platform
+app.include_router(
+    benchmark_router,
+    prefix="/api/v1",
+    tags=["benchmark"]
 )
 
 # ─── Module 6.8 — Production middleware ──────────────────────────────────
