@@ -337,6 +337,30 @@ app.include_router(
     tags=["intelligence-agents"]
 )
 
+# Module 9.7 — Audit Agent
+from app.api.v1.audit_agent import router as audit_agent_router  # noqa: E402
+app.include_router(
+    audit_agent_router,
+    prefix="/api/v1",
+    tags=["audit-agent"]
+)
+
+# Module 9.8 — Multi-Agent Orchestration Platform
+from app.api.v1.orchestration import router as orchestration_router  # noqa: E402
+app.include_router(
+    orchestration_router,
+    prefix="/api/v1",
+    tags=["orchestration"]
+)
+
+# Module 9.9 — Agent Analytics Platform
+from app.api.v1.agent_analytics import router as agent_analytics_router  # noqa: E402
+app.include_router(
+    agent_analytics_router,
+    prefix="/api/v1",
+    tags=["agent-analytics"]
+)
+
 # Module 6.8 — Health router (liveness / readiness / deep)
 app.include_router(
     health_router,

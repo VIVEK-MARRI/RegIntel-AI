@@ -1200,3 +1200,115 @@ def reset_intelligence_agent_service() -> None:
     """Reset the IntelligenceAgentService singleton (used by tests)."""
     global _intelligence_agent_service
     _intelligence_agent_service = None
+
+
+# ─── Module 9.7 — Audit Agent ────────────────────────────────
+
+from app.services.audit_agent import (  # noqa: E402
+    AuditAgentService,
+    build_default_audit_agent_service,
+)
+
+_audit_agent_service: "AuditAgentService | None" = None  # type: ignore[name-defined]
+
+
+def _audit_agent_service_singleton() -> "AuditAgentService":
+    global _audit_agent_service
+    if _audit_agent_service is None:
+        # Wire cross-module service references lazily — these names
+        # are all defined earlier in this file but only when the
+        # singletons are first touched.
+        audit_svc = get_audit_service() if "get_audit_service" in dir() else None
+        gov_svc = get_governance_service() if "get_governance_service" in dir() else None
+        kg_svc = get_knowledge_graph_service() if "get_knowledge_graph_service" in dir() else None
+        cr_svc = (
+            get_compliance_risk_service()
+            if "get_compliance_risk_service" in dir()
+            else None
+        )
+        rec_svc = (
+            get_recommendation_service()
+            if "get_recommendation_service" in dir()
+            else None
+        )
+        _audit_agent_service = build_default_audit_agent_service(
+            audit_service=audit_svc,
+            governance_service=gov_svc,
+            knowledge_graph_service=kg_svc,
+            compliance_risk_service=cr_svc,
+            recommendation_service=rec_svc,
+        )
+    return _audit_agent_service
+
+
+def get_audit_agent_service() -> AuditAgentService:
+    """Dependency injection provider for AuditAgentService (singleton)."""
+    return _audit_agent_service_singleton()
+
+
+def reset_audit_agent_service() -> None:
+    """Reset the AuditAgentService singleton (used by tests)."""
+    global _audit_agent_service
+    _audit_agent_service = None
+
+
+# ─── Module 9.8 — Multi-Agent Orchestration Platform ───────
+
+from app.services.orchestration import (  # noqa: E402
+    OrchestrationService,
+    build_default_orchestration_service,
+)
+
+_orchestration_service: "OrchestrationService | None" = None  # type: ignore[name-defined]
+
+
+def _orchestration_service_singleton() -> "OrchestrationService":
+    global _orchestration_service
+    if _orchestration_service is None:
+        framework = get_agent_framework_service()
+        _orchestration_service = build_default_orchestration_service(
+            framework_service=framework
+        )
+    return _orchestration_service
+
+
+def get_orchestration_service() -> OrchestrationService:
+    """Dependency injection provider for OrchestrationService (singleton)."""
+    return _orchestration_service_singleton()
+
+
+def reset_orchestration_service() -> None:
+    """Reset the OrchestrationService singleton (used by tests)."""
+    global _orchestration_service
+    _orchestration_service = None
+
+
+# ─── Module 9.9 — Agent Analytics Platform ──────────────
+
+from app.services.agent_analytics import (  # noqa: E402
+    AgentAnalyticsService,
+    build_default_agent_analytics_service,
+)
+
+_agent_analytics_service: "AgentAnalyticsService | None" = None  # type: ignore[name-defined]
+
+
+def _agent_analytics_service_singleton() -> "AgentAnalyticsService":
+    global _agent_analytics_service
+    if _agent_analytics_service is None:
+        framework = get_agent_framework_service()
+        _agent_analytics_service = build_default_agent_analytics_service(
+            framework_service=framework,
+        )
+    return _agent_analytics_service
+
+
+def get_agent_analytics_service() -> AgentAnalyticsService:
+    """Dependency injection provider for AgentAnalyticsService (singleton)."""
+    return _agent_analytics_service_singleton()
+
+
+def reset_agent_analytics_service() -> None:
+    """Reset the AgentAnalyticsService singleton (used by tests)."""
+    global _agent_analytics_service
+    _agent_analytics_service = None
