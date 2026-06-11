@@ -19,23 +19,38 @@ import {
   useReviewTasks,
   useRiskForecasts,
 } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import {
+  demoAlerts,
+  demoAnalyticsOverview,
+  demoAuditIntegrity,
+  demoChanges,
+  demoComplianceAssessments,
+  demoDocuments,
+  demoGovernanceStats,
+  demoIntelligenceMetrics,
+  demoLeaderboard,
+  demoRecommendations,
+  demoReviewTasks,
+  demoRiskForecasts,
+} from "@/lib/demo";
 import { formatRelative, formatPercent, formatNumber } from "@/lib/format";
 import { useNavigate } from "react-router-dom";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const overview = useAnalyticsOverview();
-  const metrics = useIntelligenceMetrics();
-  const policies = useGovernanceStats();
-  const compliance = useComplianceAssessments();
-  const risks = useRiskForecasts();
-  const recs = useRecommendations();
-  const reviews = useReviewTasks();
-  const alerts = useAlerts();
-  const changes = useChanges();
-  const integrity = useAuditIntegrity();
-  const docs = useDocuments();
-  const leaderboard = useLeaderboard(5);
+  const overview = useDemoQuery("Dashboard", demoAnalyticsOverview, useAnalyticsOverview);
+  const metrics = useDemoQuery("Dashboard", demoIntelligenceMetrics, useIntelligenceMetrics);
+  const policies = useDemoQuery("Dashboard", demoGovernanceStats, useGovernanceStats);
+  const compliance = useDemoQuery("Dashboard", demoComplianceAssessments, useComplianceAssessments);
+  const risks = useDemoQuery("Dashboard", demoRiskForecasts, useRiskForecasts);
+  const recs = useDemoQuery("Dashboard", demoRecommendations, useRecommendations);
+  const reviews = useDemoQuery("Dashboard", demoReviewTasks, useReviewTasks);
+  const alerts = useDemoQuery("Dashboard", demoAlerts, useAlerts);
+  const changes = useDemoQuery("Dashboard", demoChanges, useChanges);
+  const integrity = useDemoQuery("Dashboard", demoAuditIntegrity, useAuditIntegrity);
+  const docs = useDemoQuery("Dashboard", demoDocuments, useDocuments);
+  const leaderboard = useDemoQuery("Dashboard", demoLeaderboard, () => useLeaderboard(5));
 
   const overallHealth = overview.data?.health.overall_health ?? "unknown";
   const complianceScore =

@@ -4,11 +4,13 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAgentMessages, useCollaborations } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import { demoAgentMessages, demoCollaborations } from "@/lib/demo";
 import { formatRelative, formatPercent } from "@/lib/format";
 
 export function AgentCollaborationPage() {
-  const collabs = useCollaborations();
-  const messages = useAgentMessages();
+  const collabs = useDemoQuery("Collaboration", demoCollaborations, useCollaborations);
+  const messages = useDemoQuery("Collaboration", demoAgentMessages, useAgentMessages);
 
   return (
     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">

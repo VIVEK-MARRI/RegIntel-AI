@@ -527,6 +527,7 @@ class DocumentPipelineCoordinator:
         duplicate_detector: DuplicateDetector,
         recovery: FailureRecovery,
         audit_service: IngestionAuditService,
+        chunk_persister: Any = None,
     ) -> None:
         self.downloader = downloader
         self.parser = parser
@@ -537,6 +538,7 @@ class DocumentPipelineCoordinator:
         self.duplicate_detector = duplicate_detector
         self.recovery = recovery
         self.audit_service = audit_service
+        self.chunk_persister = chunk_persister
 
     async def run(
         self,
@@ -594,14 +596,22 @@ class DocumentPipelineCoordinator:
             )
             return run
 
-        # ── 1b. Register document ───────────────────────────────────────
+        # ── 1b. Save downloaded content to file ─────────────────────────
+        from pathlib import Path as _Path
+        file_name = _Path(request.url or "").name or "document.pdf"
+        file_path = _Path(settings.STORAGE_ROOT) / "documents" / f"{checksum[:8]}_{file_name}"
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(content)
+
+        # ── 1c. Register document ───────────────────────────────────────
         run.status = IngestionStatus.DOWNLOADED
         try:
             doc = await self.registry.register(
                 {
                     "title": request.title or run.title or "(untitled)",
                     "source": request.source or run.source or "UNKNOWN",
-                    "file_name": Path(request.url or "").name or "document.pdf",
+                    "file_name": file_name,
+                    "file_path": str(file_path.relative_to(settings.STORAGE_ROOT)),
                     "checksum": checksum,
                     "metadata": {
                         "url": request.url,
@@ -659,17 +669,30 @@ class DocumentPipelineCoordinator:
             return run
 
         # ── 3. Chunk ───────────────────────────────────────────────────
+        logger.info("Starting chunking step for document_id=%s", run.document_id)
         chunk_step = IngestionStep(step=IngestionStepName.CHUNK)
         run.steps.append(chunk_step)
         try:
             with track_request(endpoint="/api/v1/ingestion/chunk", strategy="ingestion"):
                 chunk_step.start()
                 run.status = IngestionStatus.CHUNKING
+                logger.info("Calling chunker.chunk for document_id=%s", run.document_id)
                 chunks = await self.recovery.run(
                     lambda: self.chunker.chunk(run.document_id),
                     step=IngestionStepName.CHUNK,
                 )
+                logger.info("Chunker returned %d chunks", len(chunks))
                 run.chunks_created = len(chunks)
+                # Persist chunks to database
+                if self.chunk_persister is not None and run.document_id is not None:
+                    try:
+                        from uuid import UUID as _UUID
+                        doc_id_uuid = _UUID(str(run.document_id))
+                        persisted = await self.chunk_persister.register_chunks_bulk(doc_id_uuid, chunks)
+                        logger.info("Persisted %d chunks to database", len(persisted))
+                    except Exception as persist_exc:
+                        logger.error("Failed to persist chunks: %s", persist_exc)
+                        raise
                 chunk_step.finish(
                     IngestionStepStatus.SUCCEEDED,
                     metadata={"chunk_count": len(chunks)},
@@ -1106,37 +1129,191 @@ class DiscoveryFilter_All:
 # ─── Production factory ────────────────────────────────────────────────
 
 
+class _RealDownloader:
+    """Real HTTP/HTTPS downloader with size limits and timeout."""
+
+    def __init__(self, timeout_seconds: int = 30, max_bytes: int = 50 * 1024 * 1024) -> None:
+        self._timeout = timeout_seconds
+        self._max_bytes = max_bytes
+
+    async def download(self, url: str) -> bytes:
+        import aiohttp
+        timeout = aiohttp.ClientTimeout(total=self._timeout)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as resp:
+                resp.raise_for_status()
+                content = bytearray()
+                async for chunk in resp.content.iter_chunked(8192):
+                    content.extend(chunk)
+                    if len(content) > self._max_bytes:
+                        raise ValueError(f"Download exceeds {self._max_bytes} byte limit")
+                return bytes(content)
+
+
+class _ParserAdapter:
+    """Adapts ParserService to the ParserProtocol."""
+
+    def __init__(self, parser_service: Any) -> None:
+        self._service = parser_service
+
+    async def parse(self, document_id: Any) -> List[Dict[str, Any]]:
+        return await self._service.parse_document(document_id)
+
+
+class _ChunkerAdapter:
+    """Adapts HierarchicalChunkerService to the ChunkerProtocol."""
+
+    def __init__(self, chunker_service: Any) -> None:
+        self._service = chunker_service
+
+    async def chunk(self, document_id: Any) -> List[Dict[str, Any]]:
+        logger.info("ChunkerAdapter.chunk called for document_id=%s", document_id)
+        try:
+            result = await self._service.chunk_document_by_id(document_id)
+            logger.info("ChunkerAdapter.chunk returned %d chunks", len(result))
+            return result
+        except Exception as e:
+            logger.exception("ChunkerAdapter.chunk failed for document_id=%s: %s", document_id, e)
+            raise
+
+
+class _EmbedderAdapter:
+    """Adapts EmbeddingPipeline to the EmbedderProtocol."""
+
+    def __init__(self, embedding_pipeline: Any) -> None:
+        self._pipeline = embedding_pipeline
+
+    async def embed(self, document_id: Any) -> Dict[str, Any]:
+        return await self._pipeline.process_document_embeddings(document_id)
+
+
+class _IndexerAdapter:
+    """Adapts VectorIndexManager to the IndexerProtocol."""
+
+    def __init__(self, index_manager: Any) -> None:
+        self._manager = index_manager
+
+    async def ensure_index(self, model_name: str) -> str:
+        return await self._manager.create_index(model_name)
+
+
+class _RegistryAdapter:
+    """Adapts DocumentService to the DocumentRegistryProtocol."""
+
+    def __init__(self, document_service: Any) -> None:
+        self._service = document_service
+
+    async def register(self, payload: Dict[str, Any]) -> Any:
+        from app.schemas.document import DocumentCreate
+        doc_create = DocumentCreate(
+            title=payload.get("title", "(untitled)"),
+            source=payload.get("source", "UNKNOWN"),
+            file_name=payload.get("file_name", "document.pdf"),
+            checksum=payload.get("checksum"),
+            file_path=payload.get("file_path", ""),
+            metadata=payload.get("metadata", {}),
+        )
+        doc = await self._service.register_document(doc_create)
+        return {"document_id": str(doc.id)}
+
+    async def get_by_checksum(self, checksum: str) -> Optional[Any]:
+        return await self._service.repository.get_document_by_checksum(checksum)
+
+    async def get_by_id(self, document_id: Any) -> Optional[Any]:
+        try:
+            return await self._service.get_document_by_id(document_id)
+        except Exception:
+            return None
+
+
 def build_default_auto_ingestion_service(
     monitoring_service: Optional[Any] = None,
+    db_session: Optional[Any] = None,
+    downloader: Optional[Any] = None,
+    embedding_provider: Optional[Any] = None,
 ) -> AutoIngestionService:
-    """Build a default :class:`AutoIngestionService` with no-op
-    collaborators.  In production, replace the collaborators with the
-    real services:
+    """Build a production-ready :class:`AutoIngestionService` with real
+    service collaborators.
 
-    * ``downloader`` → your S3 / MinIO / blob fetcher
-    * ``parser``     → ``app.services.parser_service.ParserService``
-    * ``chunker``    → ``app.services.structure.chunker.HierarchicalChunkerService``
-    * ``embedder``   → ``app.services.embedding.pipeline.EmbeddingPipeline``
-    * ``indexer``    → ``app.services.embedding.index_manager.VectorIndexManager``
-    * ``registry``   → ``app.services.document.DocumentService``
+    Args:
+        monitoring_service: Optional monitoring service for discovery ingestion.
+        db_session: Optional AsyncSession for database operations. If not provided,
+                   the function will create one using the app's
+                   database configuration.
+        downloader: Optional downloader instance. If not provided, uses _RealDownloader.
+        embedding_provider: Optional embedding provider. If not provided, uses the
+                           default BGEEmbeddingProvider.
+
+    The following real services are wired:
+    * ``downloader`` → _RealDownloader (HTTP/HTTPS with timeout and size limits) or injected
+    * ``parser``     → app.services.parser_service.ParserService
+    * ``chunker``    → app.services.structure.chunker.HierarchicalChunkerService
+    * ``embedder``   → app.services.embedding.pipeline.EmbeddingPipeline
+    * ``indexer``    → app.services.embedding.index_manager.VectorIndexManager
+    * ``registry``   → app.services.document.DocumentService
     """
+    from app.services.parser_service import ParserService
+    from app.services.structure.chunker import HierarchicalChunkerService, HierarchicalChunker
+    from app.services.embedding.pipeline import EmbeddingPipeline
+    from app.services.embedding.index_manager import VectorIndexManager
+    from app.services.document import DocumentService
+    from app.services.chunk_registry import ChunkRegistryService
+    from app.core.token_utils import SimpleTokenizer
+    from app.services.page import PageService
+    from app.services.structure.enricher import MetadataEnricher, MetadataValidator
+
+    if db_session is None:
+        from app.core.database import async_session_factory
+        db_session = async_session_factory()
+
+    if downloader is None:
+        downloader = _RealDownloader()
+
+    if embedding_provider is None:
+        from app.services.embedding import embedding_provider as _default_embedder
+        embedding_provider = _default_embedder
+
     store = InMemoryIngestionStore(
         persist_path=Path(settings.STORAGE_ROOT) / "ingestion" / "ingestion.jsonl"
     )
     repository = IngestionRepository(store)
     audit_service = IngestionAuditService(repository)
-    registry = _NoOpRegistry()
+
+    # Real service instances
+    document_service = DocumentService(db_session)
+    page_service = PageService(db_session, document_service)
+    parser_service = ParserService(document_service, settings.STORAGE_ROOT, page_service=page_service)
+    chunker = HierarchicalChunker(tokenizer=SimpleTokenizer())
+    enricher = MetadataEnricher(MetadataValidator())
+    chunker_service = HierarchicalChunkerService(
+        document_service=document_service,
+        page_service=page_service,
+        chunker=chunker,
+        enricher=enricher,
+    )
+    embedding_provider = embedding_provider
+    chunk_registry = ChunkRegistryService(db_session, document_service)
+    embedding_pipeline = EmbeddingPipeline(
+        db_session=db_session,
+        chunk_service=chunk_registry,
+        embedding_provider=embedding_provider,
+    )
+    index_manager = VectorIndexManager(db_session)
+
+    # Adapters for protocol compliance
+    registry = _RegistryAdapter(document_service)
     duplicate_detector = DuplicateDetector(registry)
     coordinator = DocumentPipelineCoordinator(
-        downloader=_BytesDownloader(),
-        parser=_NoOpParser(),
-        chunker=_NoOpChunker(),
-        embedder=_NoOpEmbedder(),
-        indexer=_NoOpIndexer(),
+        downloader=downloader,
+        parser=_ParserAdapter(parser_service),
+        chunker=_ChunkerAdapter(chunker_service),
+        embedder=_EmbedderAdapter(embedding_pipeline),
+        indexer=_IndexerAdapter(index_manager),
         registry=registry,
         duplicate_detector=duplicate_detector,
         recovery=FailureRecovery(),
         audit_service=audit_service,
+        chunk_persister=chunk_registry,
     )
     synchronizer = RegistrySynchronizer(registry, duplicate_detector)
     return AutoIngestionService(

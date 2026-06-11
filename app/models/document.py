@@ -17,6 +17,7 @@ class Base(DeclarativeBase):
 class SourceEnum(str, PyEnum):
     RBI = "RBI"
     SEBI = "SEBI"
+    IRDAI = "IRDAI"
 
 class StatusEnum(str, PyEnum):
     UPLOADED = "UPLOADED"

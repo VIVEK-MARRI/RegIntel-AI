@@ -6,12 +6,14 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import { useDecisions, useGovernanceStats, usePolicies } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import { demoDecisions, demoGovernanceStats, demoPolicies } from "@/lib/demo";
 import { formatRelative, truncate } from "@/lib/format";
 
 export function GovernancePage() {
-  const policies = usePolicies();
-  const decisions = useDecisions();
-  const stats = useGovernanceStats();
+  const policies = useDemoQuery("Governance", demoPolicies, usePolicies);
+  const decisions = useDemoQuery("Governance", demoDecisions, useDecisions);
+  const stats = useDemoQuery("Governance", demoGovernanceStats, useGovernanceStats);
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">

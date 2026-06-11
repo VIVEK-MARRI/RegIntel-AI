@@ -10,6 +10,12 @@ import {
   useCopilotQuery,
   useCopilotSessions,
 } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import {
+  demoCopilotHealth,
+  demoCopilotMessages,
+  demoCopilotSessions,
+} from "@/lib/demo";
 import type {
   AgentContributionItem,
   CopilotCitation,
@@ -32,9 +38,9 @@ const SUGGESTED = [
 export function CopilotPage() {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const sessions = useCopilotSessions();
-  const health = useCopilotHealth();
-  const messagesQuery = useCopilotMessages(conversationId);
+  const sessions = useDemoQuery("Copilot", demoCopilotSessions, useCopilotSessions);
+  const health = useDemoQuery("Copilot", demoCopilotHealth, useCopilotHealth);
+  const messagesQuery = useDemoQuery("Copilot", demoCopilotMessages, () => useCopilotMessages(conversationId));
   const query = useCopilotQuery();
   const toast = useToast();
   const [input, setInput] = useState("");

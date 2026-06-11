@@ -569,7 +569,53 @@ def test_ingestion_scheduler_status_default():
 
 @pytest.fixture
 def fresh_service():
-    return build_default_auto_ingestion_service()
+    import uuid
+    from typing import List
+    class MockDownloader:
+        def __init__(self):
+            self.counter = 0
+        async def download(self, url: str) -> bytes:
+            self.counter += 1
+            unique = f"{uuid.uuid4().hex}-{self.counter}"
+            return f"""%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 44 >>
+stream
+BT /F1 12 Tf 100 700 Td (Test Page {unique}) Tj ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000010 00000 n 
+0000000060 00000 n 
+0000000117 00000 n 
+0000000214 00000 n 
+trailer
+<< /Size 5 /Root 1 0 R >>
+startxref
+322
+%%EOF""".encode()
+    class MockEmbeddingProvider:
+        def get_dimension(self): return 384
+        def get_model_name(self): return "mock-model"
+        def encode_text(self, text): return [0.0] * 384
+        def encode_query(self, query): return [0.0] * 384
+        def encode_batch(self, texts: List[str]): return [[0.0] * 384 for _ in texts]
+        def health_check(self): return True
+    return build_default_auto_ingestion_service(
+        downloader=MockDownloader(),
+        embedding_provider=MockEmbeddingProvider(),
+    )
 
 
 @pytest.fixture

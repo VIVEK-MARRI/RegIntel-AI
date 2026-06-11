@@ -137,3 +137,17 @@ class ChunkEmbeddingRepository(BaseRepository[ChunkEmbedding]):
             counts[val] = count
             
         return counts
+
+    async def get_embeddings_by_document(
+        self, document_id: uuid.UUID, embedding_model: Optional[str] = None
+    ) -> list[ChunkEmbedding]:
+        """Retrieves all ChunkEmbedding records for chunks belonging to a document."""
+        query = (
+            select(ChunkEmbedding)
+            .join(DocumentChunk, DocumentChunk.id == ChunkEmbedding.chunk_id)
+            .where(DocumentChunk.document_id == document_id)
+        )
+        if embedding_model:
+            query = query.where(ChunkEmbedding.embedding_model == embedding_model)
+        result = await self.db_session.execute(query)
+        return list(result.scalars().all())

@@ -1,5 +1,6 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 from app.core.config import settings
 from app.core.database import get_db_session
 from app.services.document import DocumentService
@@ -57,18 +58,19 @@ async def get_storage_service(
     """Dependency injection provider for StorageService."""
     return StorageService(provider, db_session)
 
-async def get_parser_service(
-    doc_service: DocumentService = Depends(get_document_service)
-) -> ParserService:
-    """Dependency injection provider for ParserService."""
-    return ParserService(doc_service, settings.STORAGE_ROOT)
-
 async def get_page_service(
     db_session: AsyncSession = Depends(get_db_session),
     doc_service: DocumentService = Depends(get_document_service)
 ) -> PageService:
     """Dependency injection provider for PageService."""
     return PageService(db_session, doc_service)
+
+async def get_parser_service(
+    doc_service: DocumentService = Depends(get_document_service),
+    page_service: PageService = Depends(get_page_service)
+) -> ParserService:
+    """Dependency injection provider for ParserService."""
+    return ParserService(doc_service, settings.STORAGE_ROOT, page_service=page_service)
 
 # Global MetadataService instance configured with standard extractors
 _metadata_service = MetadataService([
@@ -717,16 +719,18 @@ from app.services.ingestion import (  # noqa: E402
 _ingestion_service: "AutoIngestionService | None" = None  # type: ignore[name-defined]
 
 
-def _ingestion_service_singleton() -> "AutoIngestionService":
+def _ingestion_service_singleton(db_session: Any = None) -> "AutoIngestionService":
     global _ingestion_service
     if _ingestion_service is None:
-        _ingestion_service = build_default_auto_ingestion_service()
+        _ingestion_service = build_default_auto_ingestion_service(db_session=db_session)
     return _ingestion_service
 
 
-def get_ingestion_service() -> AutoIngestionService:
+async def get_ingestion_service(
+    db_session: AsyncSession = Depends(get_db_session)
+) -> AutoIngestionService:
     """Dependency injection provider for AutoIngestionService (singleton)."""
-    return _ingestion_service_singleton()
+    return _ingestion_service_singleton(db_session)
 
 
 def reset_ingestion_service() -> None:

@@ -8,12 +8,14 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useForecastRisk, useRiskForecasts, useRiskScenarios } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import { demoRiskForecasts, demoRiskScenarios } from "@/lib/demo";
 import { useToast } from "@/providers/ToastProvider";
 import { formatPercent, formatRelative } from "@/lib/format";
 
 export function RiskPage() {
-  const forecasts = useRiskForecasts();
-  const scenarios = useRiskScenarios();
+  const forecasts = useDemoQuery("Risk", demoRiskForecasts, useRiskForecasts);
+  const scenarios = useDemoQuery("Risk", demoRiskScenarios, useRiskScenarios);
   const forecast = useForecastRisk();
   const toast = useToast();
   const [horizon, setHorizon] = useState(30);

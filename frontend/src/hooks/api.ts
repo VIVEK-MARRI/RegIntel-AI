@@ -599,7 +599,8 @@ export function useRoles() {
 export function useAlerts() {
   return useQuery({
     queryKey: ["alerts"],
-    queryFn: () => api.get<MonitoringAlert[]>("/alerts"),
+    queryFn: () => api.get<PaginatedResponse<MonitoringAlert>>("/alerts"),
+    select: (res) => res?.items ?? [],
     refetchInterval: 30_000,
   });
 }
@@ -614,7 +615,8 @@ export function useIngestionJobs() {
 export function useChanges() {
   return useQuery({
     queryKey: ["changes"],
-    queryFn: () => api.get<ChangeEvent[]>("/changes"),
+    queryFn: () => api.get<PaginatedResponse<ChangeEvent>>("/changes"),
+    select: (res) => res?.items ?? [],
   });
 }
 

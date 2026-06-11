@@ -10,13 +10,19 @@ import {
   useGraphNodes,
   useGraphStats,
 } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import {
+  demoGraphImpact,
+  demoGraphNodes,
+  demoGraphStats,
+} from "@/lib/demo";
 import type { GraphNode } from "@/types";
 
 export function KnowledgeGraphPage() {
-  const stats = useGraphStats();
-  const nodes = useGraphNodes();
+  const stats = useDemoQuery("Knowledge Graph", demoGraphStats, useGraphStats);
+  const nodes = useDemoQuery("Knowledge Graph", demoGraphNodes, useGraphNodes);
   const [selectedNode, setSelectedNode] = useState<string | undefined>();
-  const impact = useGraphImpact(selectedNode);
+  const impact = useDemoQuery("Knowledge Graph", demoGraphImpact, () => useGraphImpact(selectedNode));
 
   const nodeById = useMemo(() => {
     const map = new Map<string, GraphNode>();

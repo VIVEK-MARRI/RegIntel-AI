@@ -636,3 +636,145 @@
 {"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.708041+00:00"}
 {"query": "KYC diligence", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:24.709006+00:00"}
 {"query": "KYC mutual fund guidelines", "query_type": "regulation", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-04T17:48:25.647469+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:25.649837+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:25.651685+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:25.835214+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:25.836194+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:26.084961+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:26.085980+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:26.240975+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:26.242057+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:27.587173+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:27.588433+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.749849+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.751185+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.764750+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.765761+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.776229+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.777431+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.787803+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.788893+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.799975+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:30.800945+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.045251+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.045874+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.054516+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.055636+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.064806+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.065402+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.075835+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.076777+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.084433+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:31.085440+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.009132+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.010516+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.297874+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.298801+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.461945+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.463312+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.628768+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:47.630163+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:48.659357+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:48.660486+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.820027+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.820974+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.834245+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.835216+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.845563+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.846497+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.856081+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.857028+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.869145+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:50.870113+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.004516+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.005256+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.014009+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.014512+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.020722+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.021228+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.028318+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.029663+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.044487+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:41:51.045632+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.371291+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.373047+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.541120+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.542203+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.697064+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.697742+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.943186+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:07.943790+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:08.896611+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:08.897289+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.873776+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.874969+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.889244+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.890201+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.900887+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.901871+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.912735+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.913654+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.924799+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:10.925909+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.190226+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.191402+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.204850+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.205990+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.215940+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.216988+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.228843+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.229821+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.240781+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:11.241907+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:24.141011+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:42:24.142269+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:43:42.219219+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:43:42.219966+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:07.116982+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:07.296677+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:07.470442+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:07.640324+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:08.539467+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:08.540446+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.136963+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.164501+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.184974+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.206650+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.226908+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.383698+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.407863+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.427115+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.446550+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T06:49:11.468852+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:00.092990+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:00.407024+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:00.668304+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:00.931368+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:02.284477+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:02.285620+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.485022+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.514685+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.537774+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.560685+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.587461+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.820526+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.850664+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.873167+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.894863+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T07:50:05.919430+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:24.837424+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:25.193166+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:25.453793+00:00"}
+{"query": "AML reporting", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:25.752962+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:27.241844+00:00"}
+{"query": "KYC", "query_type": "keyword_lookup", "confidence": 0.85, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:27.243253+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.345911+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.380081+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.402831+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.424345+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.444641+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.683357+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.713734+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.734672+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.755557+00:00"}
+{"query": "KYC compliance", "query_type": "keyword_lookup", "confidence": 0.75, "optimal_strategy": "bm25", "timestamp": "2026-06-11T08:01:30.778690+00:00"}

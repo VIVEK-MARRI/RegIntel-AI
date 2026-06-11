@@ -7,20 +7,24 @@ except ImportError:  # pragma: no cover
 
 from pathlib import Path
 from app.services.document import DocumentService
+from app.services.page import PageService
 from app.models.document import StatusEnum
 
 logger = logging.getLogger(__name__)
+
 
 class PDFParsingError(Exception):
     """Exception raised when PDF parsing fails."""
     pass
 
+
 class ParserService:
     """PDF parsing service extracting text page-by-page using PyMuPDF and updating registry status."""
     
-    def __init__(self, document_service: DocumentService, storage_root: str):
+    def __init__(self, document_service: DocumentService, storage_root: str, page_service: PageService = None):
         self.document_service = document_service
         self.storage_root = Path(storage_root).resolve()
+        self.page_service = page_service
         logger.info(f"Initialized ParserService with storage root: {self.storage_root}")
 
     async def parse_document(
@@ -107,7 +111,16 @@ class ParserService:
             doc_fitz.close()
             doc_fitz = None
             
-            # 5. Update status: PARSING -> PARSED
+            # 5. Store parsed pages in database
+            if self.page_service is not None:
+                try:
+                    await self.page_service.store_pages(doc.id, parsed_pages)
+                    logger.info(f"Stored {len(parsed_pages)} pages for document {doc.id}")
+                except Exception as e:
+                    logger.error(f"Failed to store pages for document {doc.id}: {e}")
+                    raise
+            
+            # 6. Update status: PARSING -> PARSED
             await self.document_service.update_document_status(doc.id, StatusEnum.PARSED)
             logger.info(f"Successfully parsed document {doc.id} ({total_pages} pages)")
             return parsed_pages

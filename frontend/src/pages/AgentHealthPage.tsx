@@ -6,11 +6,13 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useAnalyticsHealth, usePerformance } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import { demoAgentHealth, demoAgentPerformance } from "@/lib/demo";
 import { formatDurationMs, formatPercent, healthTone } from "@/lib/format";
 
 export function AgentHealthPage() {
-  const health = useAnalyticsHealth();
-  const performance = usePerformance();
+  const health = useDemoQuery("Agent Health", demoAgentHealth, useAnalyticsHealth);
+  const performance = useDemoQuery("Agent Health", demoAgentPerformance, usePerformance);
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">

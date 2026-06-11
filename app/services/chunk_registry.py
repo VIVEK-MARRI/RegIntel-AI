@@ -39,6 +39,24 @@ class ChunkRegistryService:
         logger.info(f"Registered single chunk {created.id} for document {doc_id}")
         return created
 
+    @staticmethod
+    def _serialize_metadata(meta: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert non-JSON-serializable types to strings for JSONB storage."""
+        serialized = {}
+        for k, v in meta.items():
+            if isinstance(v, uuid.UUID):
+                serialized[k] = str(v)
+            elif isinstance(v, dict):
+                serialized[k] = ChunkRegistryService._serialize_metadata(v)
+            elif isinstance(v, list):
+                serialized[k] = [
+                    ChunkRegistryService._serialize_metadata(item) if isinstance(item, dict) else str(item) if isinstance(item, uuid.UUID) else item
+                    for item in v
+                ]
+            else:
+                serialized[k] = v
+        return serialized
+
     async def register_chunks_bulk(
         self, 
         document_id: uuid.UUID, 
@@ -69,7 +87,7 @@ class ChunkRegistryService:
                     subsection=subsec,
                     content=c["content"],
                     token_count=toks,
-                    metadata_json=meta
+                    metadata_json=ChunkRegistryService._serialize_metadata(meta)
                 )
             )
 

@@ -7,11 +7,13 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, Input, TextArea } from "@/components/ui/Field";
 import { useCreateWorkflow, useRunWorkflow, useWorkflows } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import { demoWorkflows } from "@/lib/demo";
 import { useToast } from "@/providers/ToastProvider";
 import { formatRelative } from "@/lib/format";
 
 export function AgentWorkflowsPage() {
-  const workflows = useWorkflows();
+  const workflows = useDemoQuery("Agent Workflows", demoWorkflows, useWorkflows);
   const create = useCreateWorkflow();
   const runWf = useRunWorkflow();
   const toast = useToast();

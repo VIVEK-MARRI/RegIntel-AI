@@ -12,13 +12,20 @@ import {
   useAuditRecords,
   useAuditReports,
 } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import {
+  demoAuditEvidence,
+  demoAuditIntegrity,
+  demoAuditRecords,
+  demoAuditReports,
+} from "@/lib/demo";
 import { formatRelative, truncate } from "@/lib/format";
 
 export function AuditPage() {
-  const records = useAuditRecords();
-  const integrity = useAuditIntegrity();
-  const evidence = useAuditEvidence();
-  const reports = useAuditReports();
+  const records = useDemoQuery("Audit", demoAuditRecords, useAuditRecords);
+  const integrity = useDemoQuery("Audit", demoAuditIntegrity, useAuditIntegrity);
+  const evidence = useDemoQuery("Audit", demoAuditEvidence, useAuditEvidence);
+  const reports = useDemoQuery("Audit", demoAuditReports, useAuditReports);
 
   const integrityPct = integrity.data
     ? (integrity.data.valid / Math.max(1, integrity.data.total)) * 100

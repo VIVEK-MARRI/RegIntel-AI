@@ -105,6 +105,15 @@ class HierarchicalChunker:
                 "lines": current_segment_lines
             })
 
+        # If no segments were found (e.g., document has no section headings),
+        # treat the entire content as a single "General" segment
+        if not segments and current_segment_lines:
+            segments.append({
+                "section": "General",
+                "subsection": "",
+                "lines": current_segment_lines
+            })
+
         # Chunk each segment individually
         chunks: List[ChunkResponse] = []
         for seg in segments:
@@ -224,13 +233,22 @@ class HierarchicalChunkerService:
 
     async def chunk_document_by_id(self, document_id: uuid.UUID) -> List[Dict[str, Any]]:
         """Fetches document and page metadata from database, parses hierarchical chunks, and enriches them."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info("chunk_document_by_id called for document_id=%s", document_id)
         doc = await self.document_service.get_document_by_id(document_id)
+        logger.info("Got document: %s, title=%s", doc.id, doc.title)
         pages = await self.page_service.get_document_pages(document_id, limit=2000)
+        logger.info("Got %d pages", len(pages))
         pages_data = [
             {"page_number": p.page_number, "content": p.content}
             for p in pages
         ]
+        for p in pages_data:
+            logger.info("Page %d: content length=%d, preview=%s", p['page_number'], len(p['content']), repr(p['content'][:100]))
         raw_chunks = self.chunker.chunk_document(doc.id, doc.title, pages_data)
+        logger.info("Chunker returned %d raw chunks", len(raw_chunks))
 
         enriched_chunks = []
         for raw in raw_chunks:
@@ -245,4 +263,5 @@ class HierarchicalChunkerService:
             enriched = self.enricher.enrich_chunk(doc, raw_dict)
             enriched_chunks.append(enriched)
 
+        logger.info("Returning %d enriched chunks", len(enriched_chunks))
         return enriched_chunks

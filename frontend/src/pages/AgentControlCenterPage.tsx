@@ -20,18 +20,28 @@ import {
   useLeaderboard,
   usePerformance,
 } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import {
+  demoAgentHealth,
+  demoAgentPerformance,
+  demoAgents,
+  demoAnalyticsOverview,
+  demoCost,
+  demoIntelligenceMetrics,
+  demoLeaderboard,
+} from "@/lib/demo";
 import { useToast } from "@/providers/ToastProvider";
 import { formatDurationMs, formatNumber, formatPercent, healthTone } from "@/lib/format";
 import type { AgentPerformance } from "@/types";
 
 export function AgentControlCenterPage() {
-  const overview = useAnalyticsOverview();
-  const performance = usePerformance();
-  const leaderboard = useLeaderboard(10);
-  const cost = useCost();
-  const metrics = useIntelligenceMetrics();
-  const health = useAnalyticsHealth();
-  const agents = useAgents();
+  const overview = useDemoQuery("Agent Control Center", demoAnalyticsOverview, useAnalyticsOverview);
+  const performance = useDemoQuery("Agent Control Center", demoAgentPerformance, usePerformance);
+  const leaderboard = useDemoQuery("Agent Control Center", demoLeaderboard, () => useLeaderboard(10));
+  const cost = useDemoQuery("Agent Control Center", demoCost, useCost);
+  const metrics = useDemoQuery("Agent Control Center", demoIntelligenceMetrics, useIntelligenceMetrics);
+  const health = useDemoQuery("Agent Control Center", demoAgentHealth, useAnalyticsHealth);
+  const agents = useDemoQuery("Agent Control Center", demoAgents, useAgents);
   const execute = useExecuteAgent();
   const toast = useToast();
   const [selectedAgent, setSelectedAgent] = useState<string | undefined>();
@@ -116,8 +126,8 @@ export function AgentControlCenterPage() {
         />
         <Metric
           label="Cost / day"
-          value={cost.data ? `${cost.data.total_cost_units.toFixed(2)} ${cost.data.currency}` : "—"}
-          hint={cost.data ? `${cost.data.per_agent.length} agents billed` : ""}
+          value={cost.data ? `${cost.data.cost_units.toFixed(2)} ${cost.data.currency}` : "—"}
+          hint={cost.data ? `${cost.data.invocations} invocations across agents` : ""}
         />
       </section>
 

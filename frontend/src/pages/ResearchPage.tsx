@@ -7,12 +7,14 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useResearchReports, useRunResearch } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import { demoResearchReports } from "@/lib/demo";
 import { useToast } from "@/providers/ToastProvider";
 import { formatPercent, formatRelative, truncate } from "@/lib/format";
 import type { ResearchReport } from "@/types";
 
 export function ResearchPage() {
-  const reports = useResearchReports();
+  const reports = useDemoQuery("Research", demoResearchReports, useResearchReports);
   const run = useRunResearch();
   const toast = useToast();
   const [query, setQuery] = useState("What changed in SEBI LODR for Q1 2026?");

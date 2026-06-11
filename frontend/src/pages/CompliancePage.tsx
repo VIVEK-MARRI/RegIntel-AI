@@ -8,12 +8,14 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useComplianceAssessments, useRunCompliance } from "@/hooks/api";
+import { useDemoQuery } from "@/hooks/useDemoFallback";
+import { demoComplianceAssessments } from "@/lib/demo";
 import { useToast } from "@/providers/ToastProvider";
 import { formatRelative } from "@/lib/format";
 import type { ComplianceAssessment } from "@/types";
 
 export function CompliancePage() {
-  const assessments = useComplianceAssessments();
+  const assessments = useDemoQuery("Compliance", demoComplianceAssessments, useComplianceAssessments);
   const run = useRunCompliance();
   const toast = useToast();
   const [scope, setScope] = useState("All regulated entities");

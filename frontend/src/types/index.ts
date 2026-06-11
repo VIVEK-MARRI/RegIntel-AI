@@ -185,14 +185,12 @@ export interface LatencyDistribution {
 }
 
 export interface CostEstimate {
-  total_cost_units: number;
+  agent_name: string;
+  invocations: number;
+  tokens_used: number;
+  cost_units: number;
   currency: string;
   cost_per_invocation: number;
-  per_agent: Array<{
-    agent_name: string;
-    invocations: number;
-    cost_units: number;
-  }>;
   notes: string;
 }
 

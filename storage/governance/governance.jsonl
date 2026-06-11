@@ -1601,6 +1601,310 @@
       "created_at": 1780729531.789515,
       "updated_at": 1780729531.789515,
       "tags": []
+    },
+    {
+      "policy_id": "pol-035e89a0f89d",
+      "name": "High-Confidence Baseline",
+      "description": "All AI decisions must meet a minimum confidence threshold.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-780b76d7",
+          "name": "Min confidence 0.7",
+          "description": "",
+          "kind": "confidence_threshold",
+          "action": "block",
+          "severity": "medium",
+          "parameters": {
+            "min_confidence": 0.7
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781109095.020613,
+      "updated_at": 1781109095.0206141,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-aba45cc340a1",
+      "name": "High-Risk Human-in-the-Loop",
+      "description": "Decisions classified as high or critical must be human-approved before becoming effective.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-b6785cc5",
+          "name": "Human approval for high/critical",
+          "description": "",
+          "kind": "human_in_loop",
+          "action": "require_human_review",
+          "severity": "high",
+          "parameters": {
+            "categories": []
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781109095.020684,
+      "updated_at": 1781109095.0206842,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-0506bd359466",
+      "name": "Explainability Required",
+      "description": "All decisions must include a human-readable explanation.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-413385b2",
+          "name": "outputs.explanation required",
+          "description": "",
+          "kind": "explainability_required",
+          "action": "warn",
+          "severity": "medium",
+          "parameters": {},
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781109095.0207052,
+      "updated_at": 1781109095.0207055,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-59b86219f43c",
+      "name": "High-Confidence Baseline",
+      "description": "All AI decisions must meet a minimum confidence threshold.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-c819c922",
+          "name": "Min confidence 0.7",
+          "description": "",
+          "kind": "confidence_threshold",
+          "action": "block",
+          "severity": "medium",
+          "parameters": {
+            "min_confidence": 0.7
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781109242.2526426,
+      "updated_at": 1781109242.2526436,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-e29aec63bd13",
+      "name": "High-Risk Human-in-the-Loop",
+      "description": "Decisions classified as high or critical must be human-approved before becoming effective.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-d117d116",
+          "name": "Human approval for high/critical",
+          "description": "",
+          "kind": "human_in_loop",
+          "action": "require_human_review",
+          "severity": "high",
+          "parameters": {
+            "categories": []
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781109242.2526956,
+      "updated_at": 1781109242.2526958,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-4e2f17c7a783",
+      "name": "Explainability Required",
+      "description": "All decisions must include a human-readable explanation.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-ab6cc39c",
+          "name": "outputs.explanation required",
+          "description": "",
+          "kind": "explainability_required",
+          "action": "warn",
+          "severity": "medium",
+          "parameters": {},
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781109242.2527194,
+      "updated_at": 1781109242.2527196,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-977111b2776e",
+      "name": "High-Confidence Baseline",
+      "description": "All AI decisions must meet a minimum confidence threshold.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-279e00ae",
+          "name": "Min confidence 0.7",
+          "description": "",
+          "kind": "confidence_threshold",
+          "action": "block",
+          "severity": "medium",
+          "parameters": {
+            "min_confidence": 0.7
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781111831.3806715,
+      "updated_at": 1781111831.380672,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-958147a72436",
+      "name": "High-Risk Human-in-the-Loop",
+      "description": "Decisions classified as high or critical must be human-approved before becoming effective.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-427e9d07",
+          "name": "Human approval for high/critical",
+          "description": "",
+          "kind": "human_in_loop",
+          "action": "require_human_review",
+          "severity": "high",
+          "parameters": {
+            "categories": []
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781111831.3806953,
+      "updated_at": 1781111831.3806953,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-da5574fcc561",
+      "name": "Explainability Required",
+      "description": "All decisions must include a human-readable explanation.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-044b0fae",
+          "name": "outputs.explanation required",
+          "description": "",
+          "kind": "explainability_required",
+          "action": "warn",
+          "severity": "medium",
+          "parameters": {},
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781111831.3807101,
+      "updated_at": 1781111831.3807104,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-b0dbe556b3cf",
+      "name": "High-Confidence Baseline",
+      "description": "All AI decisions must meet a minimum confidence threshold.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-9b84d22d",
+          "name": "Min confidence 0.7",
+          "description": "",
+          "kind": "confidence_threshold",
+          "action": "block",
+          "severity": "medium",
+          "parameters": {
+            "min_confidence": 0.7
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781111907.2455966,
+      "updated_at": 1781111907.2455976,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-6881b4518b93",
+      "name": "High-Risk Human-in-the-Loop",
+      "description": "Decisions classified as high or critical must be human-approved before becoming effective.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-95f6fbbb",
+          "name": "Human approval for high/critical",
+          "description": "",
+          "kind": "human_in_loop",
+          "action": "require_human_review",
+          "severity": "high",
+          "parameters": {
+            "categories": []
+          },
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781111907.2457948,
+      "updated_at": 1781111907.2457952,
+      "tags": []
+    },
+    {
+      "policy_id": "pol-2243a8ee06c7",
+      "name": "Explainability Required",
+      "description": "All decisions must include a human-readable explanation.",
+      "version": "1.0.0",
+      "scope": "global",
+      "scope_value": "",
+      "rules": [
+        {
+          "rule_id": "rule-93857f0b",
+          "name": "outputs.explanation required",
+          "description": "",
+          "kind": "explainability_required",
+          "action": "warn",
+          "severity": "medium",
+          "parameters": {},
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "created_at": 1781111907.24582,
+      "updated_at": 1781111907.2458205,
+      "tags": []
     }
   ],
   "approval_policies": [],

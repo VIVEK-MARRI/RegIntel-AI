@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { clsx } from "clsx";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useState } from "react";
+import { DemoBadge } from "@/components/ui/DemoBadge";
 
 interface NavItem {
   to: string;
@@ -141,6 +142,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         {title}
       </h1>
       <div className="flex-1" />
+      <DemoBadge />
       <SystemStatusPill />
       <UserMenu />
     </header>
