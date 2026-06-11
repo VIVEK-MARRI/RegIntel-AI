@@ -50,6 +50,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     WORKER_TIMEOUT=120 \
     KEEP_ALIVE=5 \
     LOG_LEVEL=INFO \
+    WORKER_MAX_REQUESTS=10000 \
+    WORKER_MAX_REQUESTS_JITTER=1000 \
     STORAGE_ROOT=/var/lib/regintel/storage \
     AUDIT_LOG_PATH=/var/log/regintel/audit.log
 
@@ -95,4 +97,4 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Default launch: uvicorn behind a small async pool. Use gunicorn for sync
 # workers; the FastAPI app is async-native, so uvicorn is preferred.
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS} --timeout-keep-alive ${KEEP_ALIVE} --log-level ${LOG_LEVEL}"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS} --timeout-keep-alive ${KEEP_ALIVE} --log-level ${LOG_LEVEL} --limit-max-requests ${WORKER_MAX_REQUESTS}"

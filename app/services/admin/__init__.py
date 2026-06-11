@@ -13,9 +13,12 @@ Public surface
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
 import os
+import secrets
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -129,6 +132,28 @@ _BUILT_IN_ROLE_TAGS: Dict[str, List[str]] = {
 }
 
 
+# ─── Password helpers ──────────────────────────────────────────
+
+
+def _hash_password(password: str) -> str:
+    """Hash a password using PBKDF2-SHA256 with a random salt."""
+    salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 600000)
+    return f"pbkdf2-sha256$600000${salt}${dk.hex()}"
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    """Verify a password against a PBKDF2 hash."""
+    try:
+        algorithm, iterations, salt, hash_hex = stored.split("$")
+        if algorithm != "pbkdf2-sha256":
+            return False
+        dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), int(iterations))
+        return hmac.compare_digest(dk.hex(), hash_hex)
+    except (ValueError, AttributeError):
+        return False
+
+
 # ─── UserManagement ─────────────────────────────────────────────
 
 
@@ -154,6 +179,8 @@ class UserManagement:
                 department=request.department,
                 metadata=request.metadata,
             )
+            if request.password:
+                user.password_hash = _hash_password(request.password)
             self._store.add_user(user)
             get_admin_metrics().record_user_created(request.status.value)
             return user
@@ -213,6 +240,17 @@ class UserManagement:
 
     def delete(self, user_id: str) -> bool:
         return self._store.delete_user(user_id)
+
+    def authenticate(self, email: str, password: str) -> Optional[User]:
+        """Authenticate a user by email and password. Returns the User on success, None on failure."""
+        user = self._store.get_user_by_email(email)
+        if user is None:
+            return None
+        if user.status != UserStatus.ACTIVE:
+            return None
+        if not _verify_password(password, user.password_hash):
+            return None
+        return user
 
 
 # ─── RoleManager ────────────────────────────────────────────────
@@ -657,6 +695,8 @@ class AdminStore(ABC):
     @abstractmethod
     def get_user_by_username(self, username: str) -> Optional[User]: ...
     @abstractmethod
+    def get_user_by_email(self, email: str) -> Optional[User]: ...
+    @abstractmethod
     def list_users(self, flt: UserFilter) -> List[User]: ...
     @abstractmethod
     def list_users_unfiltered(self) -> List[User]: ...
@@ -698,6 +738,7 @@ class InMemoryAdminStore(AdminStore):
     def __init__(self, persist_path: Optional[str] = None) -> None:
         self._users: Dict[str, User] = {}
         self._users_by_username: Dict[str, str] = {}
+        self._users_by_email: Dict[str, str] = {}
         self._roles: Dict[str, Role] = {}
         self._roles_by_name: Dict[str, str] = {}
         self._settings: Dict[str, PlatformSetting] = {}
@@ -714,6 +755,7 @@ class InMemoryAdminStore(AdminStore):
         with self._lock:
             self._users[user.user_id] = user
             self._users_by_username[user.username] = user.user_id
+            self._users_by_email[user.email] = user.user_id
             self._persist()
 
     def get_user(self, user_id: str) -> Optional[User]:
@@ -723,6 +765,11 @@ class InMemoryAdminStore(AdminStore):
     def get_user_by_username(self, username: str) -> Optional[User]:
         with self._lock:
             uid = self._users_by_username.get(username)
+            return self._users.get(uid) if uid else None
+
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        with self._lock:
+            uid = self._users_by_email.get(email)
             return self._users.get(uid) if uid else None
 
     def list_users(self, flt: UserFilter) -> List[User]:
@@ -753,6 +800,7 @@ class InMemoryAdminStore(AdminStore):
         with self._lock:
             self._users[user.user_id] = user
             self._users_by_username[user.username] = user.user_id
+            self._users_by_email[user.email] = user.user_id
             self._persist()
 
     def delete_user(self, user_id: str) -> bool:
@@ -761,6 +809,7 @@ class InMemoryAdminStore(AdminStore):
             if user is None:
                 return False
             self._users_by_username.pop(user.username, None)
+            self._users_by_email.pop(user.email, None)
             self._persist()
             return True
 
@@ -910,6 +959,7 @@ class InMemoryAdminStore(AdminStore):
                 u = User(**raw)
                 self._users[u.user_id] = u
                 self._users_by_username[u.username] = u.user_id
+                self._users_by_email[u.email] = u.user_id
             for raw in payload.get("roles", []):
                 r = Role(**raw)
                 self._roles[r.role_id] = r
@@ -962,6 +1012,9 @@ class AdminService:
 
     def get_user(self, user_id: str) -> Optional[User]:
         return self.user_management.get(user_id)
+
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        return self.user_management._store.get_user_by_email(email)
 
     def list_users(self, flt: UserFilter) -> PaginatedUsers:
         return self.user_management.list(flt)
@@ -1055,7 +1108,51 @@ def build_default_admin_service() -> AdminService:
         settings.STORAGE_ROOT, "admin", "admin.jsonl"
     )
     store = InMemoryAdminStore(persist_path=persist_path)
-    return AdminService(store)
+    svc = AdminService(store)
+    _ensure_default_users(svc)
+    return svc
+
+
+def _ensure_default_users(svc: AdminService) -> None:
+    """Seed default users if none exist yet."""
+    existing = svc.list_users(UserFilter())
+    if existing.items:
+        return
+    admin_role = svc.get_role_by_name("admin")
+    analyst_role = svc.get_role_by_name("analyst")
+    auditor_role = svc.get_role_by_name("auditor")
+    admin_rid = admin_role.role_id if admin_role else ""
+    analyst_rid = analyst_role.role_id if analyst_role else ""
+    auditor_rid = auditor_role.role_id if auditor_role else ""
+
+    defaults = [
+        UserCreateRequest(
+            username="admin",
+            email="admin@regintel.ai",
+            password="Admin@123",
+            full_name="System Administrator",
+            role_ids=[admin_rid],
+        ),
+        UserCreateRequest(
+            username="analyst",
+            email="analyst@regintel.ai",
+            password="Analyst@123",
+            full_name="Compliance Analyst",
+            role_ids=[analyst_rid],
+        ),
+        UserCreateRequest(
+            username="auditor",
+            email="auditor@regintel.ai",
+            password="Auditor@123",
+            full_name="Internal Auditor",
+            role_ids=[auditor_rid],
+        ),
+    ]
+    for req in defaults:
+        try:
+            svc.create_user(req)
+        except Exception:
+            logger.exception("Failed to seed user %s", req.username)
 
 
 __all__ = [

@@ -71,7 +71,7 @@ async def readiness() -> JSONResponse:
     # Critical = liveness + registered "critical" components.
     critical_checks = [
         name for name in checker.checks()
-        if name in {"liveness", "storage", "config", "environment"}
+        if name in {"liveness", "storage", "config", "environment", "database"}
     ]
     report = checker.run(names=critical_checks)
     if report.status == HealthStatus.UNHEALTHY:

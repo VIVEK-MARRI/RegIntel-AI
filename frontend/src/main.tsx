@@ -4,8 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { HealthProvider } from "@/providers/HealthProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
-import { DemoProvider } from "@/providers/DemoProvider";
+import { AuthProvider } from "@/providers/AuthProvider";
 import { App } from "@/App";
 import "@/index.css";
 
@@ -29,13 +30,15 @@ ReactDOM.createRoot(rootEl).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ToastProvider>
-      <DemoProvider>
-        <BrowserRouter
-          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-        >
-          <App />
-        </BrowserRouter>
-      </DemoProvider>
+          <HealthProvider>
+            <BrowserRouter
+              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+            >
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </BrowserRouter>
+          </HealthProvider>
         </ToastProvider>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />

@@ -5,52 +5,30 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import {
-  useAlerts,
-  useAnalyticsOverview,
-  useAuditIntegrity,
-  useChanges,
-  useComplianceAssessments,
-  useDocuments,
-  useGovernanceStats,
-  useIntelligenceMetrics,
-  useLeaderboard,
-  useRecommendations,
-  useReviewTasks,
-  useRiskForecasts,
-} from "@/hooks/api";
-import { useDemoQuery } from "@/hooks/useDemoFallback";
-import {
-  demoAlerts,
-  demoAnalyticsOverview,
-  demoAuditIntegrity,
-  demoChanges,
-  demoComplianceAssessments,
-  demoDocuments,
-  demoGovernanceStats,
-  demoIntelligenceMetrics,
-  demoLeaderboard,
-  demoRecommendations,
-  demoReviewTasks,
-  demoRiskForecasts,
-} from "@/lib/demo";
+import { useQuery } from "@tanstack/react-query";
+import { getAnalyticsOverview, getIntelligenceMetrics, getAlerts, getChanges, getRecommendations, getReviewTasks, getLeaderboard } from "@/services/api/analyticsApi";
+import { getGovernanceStats } from "@/services/api/governanceApi";
+import { getComplianceAssessments } from "@/services/api/complianceApi";
+import { getRiskForecasts } from "@/services/api/riskApi";
+import { getAuditIntegrity } from "@/services/api/auditApi";
+import { getDocuments } from "@/services/api/documentsApi";
 import { formatRelative, formatPercent, formatNumber } from "@/lib/format";
 import { useNavigate } from "react-router-dom";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const overview = useDemoQuery("Dashboard", demoAnalyticsOverview, useAnalyticsOverview);
-  const metrics = useDemoQuery("Dashboard", demoIntelligenceMetrics, useIntelligenceMetrics);
-  const policies = useDemoQuery("Dashboard", demoGovernanceStats, useGovernanceStats);
-  const compliance = useDemoQuery("Dashboard", demoComplianceAssessments, useComplianceAssessments);
-  const risks = useDemoQuery("Dashboard", demoRiskForecasts, useRiskForecasts);
-  const recs = useDemoQuery("Dashboard", demoRecommendations, useRecommendations);
-  const reviews = useDemoQuery("Dashboard", demoReviewTasks, useReviewTasks);
-  const alerts = useDemoQuery("Dashboard", demoAlerts, useAlerts);
-  const changes = useDemoQuery("Dashboard", demoChanges, useChanges);
-  const integrity = useDemoQuery("Dashboard", demoAuditIntegrity, useAuditIntegrity);
-  const docs = useDemoQuery("Dashboard", demoDocuments, useDocuments);
-  const leaderboard = useDemoQuery("Dashboard", demoLeaderboard, () => useLeaderboard(5));
+  const overview = useQuery({ queryKey: ["dashboard", "overview"], queryFn: getAnalyticsOverview });
+  const metrics = useQuery({ queryKey: ["dashboard", "intelligence-metrics"], queryFn: getIntelligenceMetrics });
+  const policies = useQuery({ queryKey: ["dashboard", "governance-stats"], queryFn: getGovernanceStats });
+  const compliance = useQuery({ queryKey: ["dashboard", "compliance-assessments"], queryFn: getComplianceAssessments });
+  const risks = useQuery({ queryKey: ["dashboard", "risk-forecasts"], queryFn: getRiskForecasts });
+  const recs = useQuery({ queryKey: ["dashboard", "recommendations"], queryFn: getRecommendations });
+  const reviews = useQuery({ queryKey: ["dashboard", "review-tasks"], queryFn: getReviewTasks });
+  const alerts = useQuery({ queryKey: ["dashboard", "alerts"], queryFn: getAlerts });
+  const changes = useQuery({ queryKey: ["dashboard", "changes"], queryFn: getChanges });
+  const integrity = useQuery({ queryKey: ["dashboard", "audit-integrity"], queryFn: getAuditIntegrity });
+  const docs = useQuery({ queryKey: ["dashboard", "documents"], queryFn: getDocuments });
+  const leaderboard = useQuery({ queryKey: ["dashboard", "leaderboard"], queryFn: () => getLeaderboard(5) });
 
   const overallHealth = overview.data?.health.overall_health ?? "unknown";
   const complianceScore =
@@ -355,14 +333,14 @@ export function DashboardPage() {
           <div className="card-body">
             {recs.isLoading ? (
               <Skeleton lines={4} />
-            ) : !recs.data || recs.data.length === 0 ? (
+            ) : !recs.data ? (
               <EmptyState
                 title="No recommendations"
                 description="New suggestions will appear here."
               />
             ) : (
               <ul className="space-y-2">
-                {recs.data.slice(0, 4).map((r) => (
+                {recs.data.slice(0, 4).map((r: any) => (
                   <li
                     key={r.recommendation_id}
                     className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
@@ -454,7 +432,7 @@ export function DashboardPage() {
                 Documents
               </p>
               <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                {docs.data?.total ?? "—"}
+                {docs.data?.length ?? "—"}
               </p>
             </div>
             <div className="col-span-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40">

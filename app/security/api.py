@@ -6,7 +6,9 @@ All endpoints are namespaced under ``/api/v1/security``.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+import threading
+import time
+from typing import Any, Dict, List, Optional, Set
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
@@ -30,6 +32,57 @@ from app.security.monitoring import (
 from app.security.rbac import Permission, Principal, Role
 from app.security.secrets import SecretsManager, get_secrets_manager
 from app.security.threat_detection import ThreatDetector, get_threat_detector
+
+# ─── Account lockout tracker ───────────────────────────────────────
+_lockout_lock = threading.Lock()
+_lockout_attempts: Dict[str, int] = {}
+_lockout_until: Dict[str, float] = {}
+_LOCKOUT_MAX = 5
+_LOCKOUT_DURATION = 300.0
+
+
+def _check_lockout(identity: str) -> None:
+    with _lockout_lock:
+        until = _lockout_until.get(identity)
+        if until is not None and time.time() < until:
+            remaining = int(until - time.time())
+            raise HTTPException(
+                status_code=429,
+                detail=f"account temporarily locked out; retry in {remaining}s",
+            )
+
+
+def _record_failure(identity: str) -> None:
+    import os
+    max_attempts = int(os.environ.get("AUTH_MAX_FAILED_ATTEMPTS", str(_LOCKOUT_MAX)))
+    duration = int(os.environ.get("AUTH_LOCKOUT_DURATION_SECONDS", str(_LOCKOUT_DURATION)))
+    if max_attempts <= 0:
+        return
+    with _lockout_lock:
+        _lockout_attempts[identity] = _lockout_attempts.get(identity, 0) + 1
+        if _lockout_attempts[identity] >= max_attempts:
+            _lockout_until[identity] = time.time() + duration
+
+
+def _reset_lockout(identity: str) -> None:
+    with _lockout_lock:
+        _lockout_attempts.pop(identity, None)
+        _lockout_until.pop(identity, None)
+
+
+# ─── Refresh token revocation ─────────────────────────────────────
+_revoked_refresh_tokens: Set[str] = set()
+_revocation_lock = threading.Lock()
+
+
+def _revoke_refresh_token(jti: str) -> None:
+    with _revocation_lock:
+        _revoked_refresh_tokens.add(jti)
+
+
+def _is_refresh_token_revoked(jti: str) -> bool:
+    with _revocation_lock:
+        return jti in _revoked_refresh_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +112,38 @@ class AuditReviewRequest(BaseModel):
     request_id: str
     status: str = Field(..., pattern="^(pending|approved|rejected)$")
     notes: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "Bearer"
+    expires_in: int
+    access_expires_at: str
+    refresh_expires_at: str
+    user: Dict[str, Any]
+
+
+class SignupRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=300)
+    password: str = Field(..., min_length=6, max_length=128)
+    full_name: str = Field(default="", max_length=200)
+    username: str = Field(default="", max_length=120)
+
+
+class SignupResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "Bearer"
+    expires_in: int
+    access_expires_at: str
+    refresh_expires_at: str
+    user: Dict[str, Any]
 
 
 # ─── Helpers ────────────────────────────────────────────────────────
@@ -93,6 +178,130 @@ async def health() -> Dict[str, Any]:
 
 
 # ─── Auth ───────────────────────────────────────────────────────────
+
+
+@router.post(
+    "/auth/signup",
+    response_model=SignupResponse,
+    status_code=201,
+    summary="Register a new user account",
+)
+async def signup(body: SignupRequest) -> SignupResponse:
+    """Create a new user account and return JWT tokens."""
+    from app.main import _security_jwt_issuer
+    from app.services.admin import build_default_admin_service
+    from app.schemas.admin import UserCreateRequest
+
+    svc = build_default_admin_service()
+
+    if svc.get_user_by_email(body.email):
+        raise HTTPException(status_code=409, detail="email already registered")
+
+    username = body.username or body.email.split("@")[0]
+    full_name = body.full_name or username
+
+    req = UserCreateRequest(
+        username=username,
+        email=body.email,
+        password=body.password,
+        full_name=full_name,
+    )
+    try:
+        user = svc.create_user(req)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    rbac_roles = ["viewer"]
+    pair = _security_jwt_issuer.issue(
+        user.user_id,
+        roles=rbac_roles,
+        scopes=[],
+    )
+
+    return SignupResponse(
+        **pair.to_dict(),
+        user={
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "roles": [],
+            "rbac_roles": rbac_roles,
+        },
+    )
+
+
+@router.post(
+    "/auth/login",
+    response_model=LoginResponse,
+    summary="Authenticate with email and password",
+)
+async def login(body: LoginRequest) -> LoginResponse:
+    """Authenticate a user by email and password. Returns JWT tokens and user info."""
+    from app.main import _security_jwt_issuer
+    from app.services.admin import build_default_admin_service
+    from app.services.admin import _verify_password
+
+    identity = f"login:{body.email}"
+    _check_lockout(identity)
+
+    svc = build_default_admin_service()
+    user = svc.get_user_by_email(body.email)
+
+    if user is None:
+        _record_failure(identity)
+        raise HTTPException(status_code=401, detail="invalid email or password")
+
+    if user.status.value != "active":
+        _record_failure(identity)
+        raise HTTPException(status_code=401, detail="account is not active")
+
+    if not _verify_password(body.password, user.password_hash):
+        _record_failure(identity)
+        raise HTTPException(status_code=401, detail="invalid email or password")
+
+    _reset_lockout(identity)
+
+    role_names = []
+    for rid in user.role_ids:
+        role = svc.get_role(rid)
+        if role:
+            role_names.append(role.name)
+
+    rbac_roles = []
+    for r in role_names:
+        if r == "admin":
+            rbac_roles.append("admin")
+        elif r in ("compliance_officer", "risk_manager", "reviewer", "analyst"):
+            rbac_roles.append("analyst")
+        elif r == "auditor":
+            rbac_roles.append("auditor")
+        else:
+            rbac_roles.append("viewer")
+
+    if not rbac_roles:
+        rbac_roles = ["viewer"]
+
+    pair = _security_jwt_issuer.issue(
+        user.user_id,
+        roles=rbac_roles,
+        scopes=[],
+    )
+
+    user.last_login_at = time.time()
+    svc.user_management._store.update_user(user)
+
+    return LoginResponse(
+        **pair.to_dict(),
+        user={
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "roles": role_names,
+            "rbac_roles": rbac_roles,
+        },
+    )
 
 
 @router.post(
@@ -132,6 +341,16 @@ async def refresh_token(body: Dict[str, str]) -> TokenResponse:
     if not refresh:
         raise HTTPException(status_code=400, detail="missing refresh_token")
     from app.main import _security_jwt_issuer  # type: ignore[attr-defined]
+    try:
+        principal = _security_jwt_issuer.verify(refresh)
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"refresh failed: {exc}") from exc
+    if principal.raw_claims.get("token_use") != "refresh":
+        raise HTTPException(status_code=401, detail="not a refresh token")
+    jti = principal.raw_claims.get("jti", "")
+    if jti and _is_refresh_token_revoked(jti):
+        raise HTTPException(status_code=401, detail="refresh token revoked")
+    _revoke_refresh_token(jti)
     try:
         pair = _security_jwt_issuer.refresh(refresh)
     except Exception as exc:

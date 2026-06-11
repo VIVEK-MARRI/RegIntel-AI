@@ -1,14 +1,16 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { clsx } from "clsx";
 import { useTheme } from "@/providers/ThemeProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { useState } from "react";
-import { DemoBadge } from "@/components/ui/DemoBadge";
 
 interface NavItem {
   to: string;
   label: string;
   icon: string;
   group: "main" | "agents" | "platform";
+  /** Minimum RBAC roles required to see this item. Empty = public. */
+  minRoles?: string[];
 }
 
 const NAV: NavItem[] = [
@@ -18,18 +20,19 @@ const NAV: NavItem[] = [
   { to: "/compliance", label: "Compliance", icon: "✓", group: "main" },
   { to: "/risk", label: "Risk", icon: "△", group: "main" },
   { to: "/knowledge-graph", label: "Knowledge Graph", icon: "◌", group: "main" },
-  { to: "/agents", label: "Agent Control Center", icon: "◍", group: "agents" },
-  { to: "/agents/collaboration", label: "Collaboration", icon: "↔", group: "agents" },
-  { to: "/agents/health", label: "Agent Health", icon: "♥", group: "agents" },
-  { to: "/agents/workflows", label: "Agent Workflows", icon: "↧", group: "agents" },
-  { to: "/governance", label: "Governance", icon: "§", group: "platform" },
-  { to: "/audit", label: "Audit", icon: "⛬", group: "platform" },
-  { to: "/admin", label: "Admin", icon: "☰", group: "platform" },
+  { to: "/agents", label: "Agent Control Center", icon: "◍", group: "agents", minRoles: ["admin", "operator", "analyst"] },
+  { to: "/agents/collaboration", label: "Collaboration", icon: "↔", group: "agents", minRoles: ["admin", "operator"] },
+  { to: "/agents/health", label: "Agent Health", icon: "♥", group: "agents", minRoles: ["admin", "operator"] },
+  { to: "/agents/workflows", label: "Agent Workflows", icon: "↧", group: "agents", minRoles: ["admin", "operator"] },
+  { to: "/governance", label: "Governance", icon: "§", group: "platform", minRoles: ["admin", "auditor"] },
+  { to: "/audit", label: "Audit", icon: "⛬", group: "platform", minRoles: ["admin", "auditor"] },
+  { to: "/admin", label: "Admin", icon: "☰", group: "platform", minRoles: ["admin"] },
   { to: "/settings", label: "Settings", icon: "⚙", group: "platform" },
 ];
 
 export function Sidebar({ collapsed }: { collapsed: boolean }) {
   const { theme, toggle } = useTheme();
+  const { hasRole } = useAuth();
   const groups: Array<{ key: NavItem["group"]; title: string }> = [
     { key: "main", title: "Workspace" },
     { key: "agents", title: "Agent Control Center" },
@@ -66,7 +69,11 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         {groups.map((g) => {
-          const items = NAV.filter((n) => n.group === g.key);
+          const items = NAV.filter(
+            (n) =>
+              n.group === g.key &&
+              (!n.minRoles || n.minRoles.some((r) => hasRole(r)))
+          );
           if (!items.length) return null;
           return (
             <div key={g.key} className="mb-4">
@@ -142,7 +149,6 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         {title}
       </h1>
       <div className="flex-1" />
-      <DemoBadge />
       <SystemStatusPill />
       <UserMenu />
     </header>
@@ -164,6 +170,26 @@ function SystemStatusPill() {
 
 function UserMenu() {
   const [open, setOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const initials = user?.full_name
+    ? user.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : user?.username?.slice(0, 2).toUpperCase() || "?";
+
+  const displayName = user?.full_name || user?.username || "User";
+
+  const handleSignOut = () => {
+    setOpen(false);
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <div className="relative">
       <button
@@ -175,9 +201,9 @@ function UserMenu() {
         aria-expanded={open}
       >
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-[10px] font-semibold text-white">
-          VK
+          {initials}
         </span>
-        <span className="hidden sm:inline">Vivek K.</span>
+        <span className="hidden sm:inline">{displayName}</span>
       </button>
       {open ? (
         <div
@@ -185,7 +211,7 @@ function UserMenu() {
           className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-xs shadow-elevated
                      dark:border-slate-700 dark:bg-surface-dark-2"
         >
-          {["Profile", "API Keys", "Activity Log", "Sign out"].map((label) => (
+          {["Profile", "API Keys", "Activity Log"].map((label) => (
             <button
               key={label}
               type="button"
@@ -196,6 +222,15 @@ function UserMenu() {
               {label}
             </button>
           ))}
+          <div className="border-t border-slate-200 dark:border-slate-700" />
+          <button
+            type="button"
+            role="menuitem"
+            className="block w-full px-3 py-2 text-left text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+            onClick={handleSignOut}
+          >
+            Sign out
+          </button>
         </div>
       ) : null}
     </div>
@@ -215,6 +250,8 @@ function titleForPath(path: string): string {
   if (path.startsWith("/agents/workflows")) return "Agent Workflows";
   if (path.startsWith("/governance")) return "Governance Center";
   if (path.startsWith("/audit")) return "Audit Console";
+  if (path.startsWith("/analytics")) return "Analytics Console";
+  if (path.startsWith("/documents")) return "Document Library";
   if (path.startsWith("/admin")) return "Admin Console";
   if (path.startsWith("/settings")) return "Settings";
   return "RegIntel AI";

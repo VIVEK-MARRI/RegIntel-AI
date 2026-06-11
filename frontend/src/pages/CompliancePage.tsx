@@ -3,200 +3,101 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Field, Input } from "@/components/ui/Field";
+import { Metric } from "@/components/ui/Metric";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-import { useComplianceAssessments, useRunCompliance } from "@/hooks/api";
-import { useDemoQuery } from "@/hooks/useDemoFallback";
-import { demoComplianceAssessments } from "@/lib/demo";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getComplianceAssessments, runCompliance } from "@/services/api/complianceApi";
 import { useToast } from "@/providers/ToastProvider";
 import { formatRelative } from "@/lib/format";
 import type { ComplianceAssessment } from "@/types";
 
 export function CompliancePage() {
-  const assessments = useDemoQuery("Compliance", demoComplianceAssessments, useComplianceAssessments);
-  const run = useRunCompliance();
+  const { data: assessments, isLoading, isError, refetch } = useQuery({
+    queryKey: ["compliance", "assessments"],
+    queryFn: getComplianceAssessments,
+  });
+  const run = useMutation({
+    mutationFn: runCompliance,
+    onSuccess: () => refetch(),
+  });
   const toast = useToast();
-  const [scope, setScope] = useState("All regulated entities");
-  const [policies, setPolicies] = useState("kyc,aml,outsourcing,data-localisation");
+  const [scope, setScope] = useState("");
+  const [policiesStr, setPoliciesStr] = useState("");
   const [selected, setSelected] = useState<ComplianceAssessment | null>(null);
+
+  const avgScore = assessments?.length
+    ? Math.round(assessments.reduce((s, a) => s + a.overall_score, 0) / assessments.length * 100)
+    : null;
 
   async function handleRun() {
     if (!scope.trim()) return;
+    const policies = policiesStr.split(",").map((s) => s.trim()).filter(Boolean);
     try {
-      const result = await run.mutateAsync({
-        scope,
-        policies: policies.split(",").map((p) => p.trim()).filter(Boolean),
-      });
+      const result = await run.mutateAsync({ scope, policies: policies.length ? policies : undefined });
       setSelected(result);
-      toast.push({
-        title: "Assessment complete",
-        description: `Risk level: ${result.risk_level}`,
-        tone: "success",
-      });
+      toast.push({ title: "Assessment complete", description: `${result.scope} — score ${Math.round(result.overall_score * 100)}%`, tone: "success" });
     } catch (err) {
-      toast.push({
-        title: "Compliance run failed",
-        description: err instanceof Error ? err.message : "Unexpected error",
-        tone: "danger",
-      });
+      toast.push({ title: "Assessment failed", description: err instanceof Error ? err.message : "Unexpected error", tone: "danger" });
     }
   }
 
+  const riskTone = (level: string) => level === "critical" ? "danger" : level === "high" ? "warning" : level === "medium" ? "info" : "success";
+
   return (
-    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="space-y-4">
-        <Card padding="md">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Compliance Workspace
-          </h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Assess obligations, identify gaps, and generate remediation actions.
-          </p>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Scope" id="compliance-scope">
-              <Input
-                id="compliance-scope"
-                value={scope}
-                onChange={(e) => setScope(e.target.value)}
-                placeholder="e.g. NBFC, Trading desk"
-              />
-            </Field>
-            <Field label="Policies (comma-separated)" id="compliance-policies">
-              <Input
-                id="compliance-policies"
-                value={policies}
-                onChange={(e) => setPolicies(e.target.value)}
-                placeholder="kyc, aml, ..."
-              />
-            </Field>
-          </div>
-          <div className="mt-3 flex justify-end">
-            <Button
-              variant="primary"
-              onClick={handleRun}
-              loading={run.isPending}
-              disabled={!scope.trim()}
-            >
-              Run assessment
-            </Button>
-          </div>
-        </Card>
+    <div className="mx-auto flex max-w-7xl flex-col gap-4">
+      <header>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Compliance</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Compliance monitoring, obligations, impact analysis, and risk indicators.</p>
+      </header>
 
-        {selected ? (
-          <AssessmentDetail assessment={selected} />
-        ) : (
-          <Card padding="none">
-            <CardHeader
-              title="Recent assessments"
-              description="Stored compliance assessments"
-            />
-            <div className="card-body">
-              {assessments.isLoading ? (
-                <Skeleton lines={4} />
-              ) : assessments.isError ? (
-                <ErrorState error={assessments.error} onRetry={() => assessments.refetch()} />
-              ) : !assessments.data || assessments.data.length === 0 ? (
-                <EmptyState
-                  title="No assessments yet"
-                  description="Run an assessment above to view obligations and gaps."
-                />
-              ) : (
-                <ul className="space-y-2">
-                  {assessments.data.map((a) => (
-                    <li
-                      key={a.assessment_id}
-                      className="cursor-pointer rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 hover:shadow-glow dark:border-slate-800 dark:hover:border-brand-500"
-                      onClick={() => setSelected(a)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          tone={
-                            a.risk_level === "critical"
-                              ? "danger"
-                              : a.risk_level === "high"
-                                ? "warning"
-                                : a.risk_level === "medium"
-                                  ? "info"
-                                  : "success"
-                          }
-                        >
-                          {a.risk_level}
-                        </Badge>
-                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {a.scope}
-                        </span>
-                        <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">
-                          {formatRelative(a.generated_at)}
-                        </span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-                        <div>
-                          <p className="text-slate-500 dark:text-slate-400">Score</p>
-                          <p className="font-semibold">{a.overall_score}/100</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500 dark:text-slate-400">Obligations</p>
-                          <p className="font-semibold">{a.obligations.length}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500 dark:text-slate-400">Gaps</p>
-                          <p className="font-semibold">{a.gaps.length}</p>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </Card>
-        )}
-      </div>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Metric label="Compliance Score" value={avgScore !== null ? `${avgScore}%` : "—"} hint={assessments ? `${assessments.length} assessment(s)` : "Loading…"} />
+        <Metric label="Assessments" value={assessments?.length ?? "—"} />
+        <Metric label="Open Gaps" value={assessments?.reduce((s, a) => s + a.gaps.length, 0) ?? "—"} />
+      </section>
 
-      <aside className="space-y-4">
-        <Card padding="md">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Severity distribution
-          </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Aggregated across the latest assessment.
-          </p>
-          <div className="mt-3 space-y-2">
-            {(
-              ["critical", "high", "medium", "low"] as const
-            ).map((sev) => {
-              const count = selected
-                ? selected.gaps.filter((g) => g.severity === sev).length
-                : 0;
-              return (
-                <div key={sev} className="text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="capitalize text-slate-700 dark:text-slate-200">
-                      {sev}
-                    </span>
-                    <span className="font-mono text-slate-500 dark:text-slate-400">
-                      {count}
-                    </span>
+      <Card padding="md">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Run Compliance Assessment</h3>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <Field label="Scope" id="compliance-scope">
+            <Input id="compliance-scope" value={scope} onChange={(e) => setScope(e.target.value)} placeholder="e.g. All regulated entities" />
+          </Field>
+          <Field label="Policies (comma-separated)" id="compliance-policies">
+            <Input id="compliance-policies" value={policiesStr} onChange={(e) => setPoliciesStr(e.target.value)} placeholder="kyc, aml, data-localisation" />
+          </Field>
+          <div className="flex items-end">
+            <Button variant="primary" onClick={handleRun} loading={run.isPending} disabled={!scope.trim()}>Assess</Button>
+          </div>
+        </div>
+      </Card>
+
+      {selected ? <AssessmentDetail assessment={selected} /> : null}
+
+      <Card padding="none">
+        <CardHeader title="Recent Assessments" />
+        <div className="card-body">
+          {isLoading ? <Skeleton lines={4} />
+          : isError ? <ErrorState onRetry={refetch} />
+          : !assessments?.length ? <EmptyState title="No assessments yet" description="Run an assessment above." />
+          : <ul className="space-y-2">
+              {assessments.map((a) => (
+                <li key={a.assessment_id} className="cursor-pointer rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 dark:border-slate-800 dark:hover:border-brand-500"
+                  onClick={() => setSelected(a)}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.scope}</span>
+                    <Badge tone={riskTone(a.risk_level)}>{a.risk_level}</Badge>
+                    <Badge tone="brand" size="sm">{Math.round(a.overall_score * 100)}%</Badge>
+                    <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">{formatRelative(a.generated_at)}</span>
                   </div>
-                  <ProgressBar
-                    value={count}
-                    max={Math.max(1, selected?.gaps.length ?? 1)}
-                    tone={
-                      sev === "critical"
-                        ? "danger"
-                        : sev === "high"
-                          ? "warning"
-                          : "brand"
-                    }
-                    className="mt-1"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      </aside>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{a.obligations.length} obligations · {a.gaps.length} gaps</p>
+                </li>
+              ))}
+            </ul>
+          }
+        </div>
+      </Card>
     </div>
   );
 }
@@ -204,128 +105,33 @@ export function CompliancePage() {
 function AssessmentDetail({ assessment }: { assessment: ComplianceAssessment }) {
   return (
     <Card padding="none">
-      <CardHeader
-        title={assessment.scope}
-        description="Detailed compliance assessment"
-        actions={
-          <Badge
-            tone={
-              assessment.risk_level === "critical"
-                ? "danger"
-                : assessment.risk_level === "high"
-                  ? "warning"
-                  : "success"
-            }
-          >
-            {assessment.risk_level}
-          </Badge>
-        }
+      <CardHeader title={assessment.scope}
+        actions={<Badge tone={assessment.risk_level === "critical" ? "danger" : assessment.risk_level === "high" ? "warning" : "info"}>{assessment.risk_level}</Badge>}
       />
-      <div className="card-body space-y-5">
-        <section className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Overall score
-            </p>
-            <p className="mt-1 text-2xl font-semibold">{assessment.overall_score}/100</p>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Obligations
-            </p>
-            <p className="mt-1 text-2xl font-semibold">{assessment.obligations.length}</p>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Gaps
-            </p>
-            <p className="mt-1 text-2xl font-semibold">{assessment.gaps.length}</p>
-          </div>
+      <div className="card-body space-y-4">
+        <section>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Obligations ({assessment.obligations.length})</h4>
+          <ul className="mt-2 space-y-1.5">
+            {assessment.obligations.map((o) => (
+              <li key={o.obligation_id} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
+                <span className="flex-1 font-medium text-slate-900 dark:text-slate-100">{o.title}</span>
+                <Badge tone={o.severity === "critical" ? "danger" : o.severity === "high" ? "warning" : "info"} size="sm">{o.severity}</Badge>
+                <Badge tone={o.status === "met" ? "success" : o.status === "breached" ? "danger" : "warning"} size="sm">{o.status}</Badge>
+              </li>
+            ))}
+          </ul>
         </section>
-
-        {assessment.obligations.length ? (
-          <section>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Obligations
-            </h4>
-            <ul className="mt-2 space-y-2">
-              {assessment.obligations.map((o) => (
-                <li
-                  key={o.obligation_id}
-                  className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"
-                >
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      tone={
-                        o.severity === "critical"
-                          ? "danger"
-                          : o.severity === "high"
-                            ? "warning"
-                            : "info"
-                      }
-                      size="sm"
-                    >
-                      {o.severity}
-                    </Badge>
-                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {o.title}
-                    </span>
-                    <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">
-                      {o.status}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                    {o.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {assessment.gaps.length ? (
-          <section>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Identified gaps
-            </h4>
-            <ul className="mt-2 space-y-2">
-              {assessment.gaps.map((g) => (
-                <li
-                  key={g.gap_id}
-                  className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"
-                >
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      tone={
-                        g.severity === "critical"
-                          ? "danger"
-                          : g.severity === "high"
-                            ? "warning"
-                            : "info"
-                      }
-                      size="sm"
-                    >
-                      {g.severity}
-                    </Badge>
-                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {g.description}
-                    </span>
-                    <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">
-                      {formatRelative(g.detected_at)}
-                    </span>
-                  </div>
-                  {g.recommended_actions.length ? (
-                    <ul className="mt-2 list-inside list-disc text-[11px] text-slate-600 dark:text-slate-300">
-                      {g.recommended_actions.map((a, i) => (
-                        <li key={i}>{a}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        {assessment.gaps.length ? (<section>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gaps ({assessment.gaps.length})</h4>
+          <ul className="mt-2 space-y-1.5">
+            {assessment.gaps.map((g) => (
+              <li key={g.gap_id} className="rounded-lg border border-red-200 bg-red-50/40 px-3 py-2 text-xs dark:border-red-900/40 dark:bg-red-950/20">
+                <p className="font-medium text-red-800 dark:text-red-200">{g.description}</p>
+                <p className="mt-1 text-red-600 dark:text-red-400">Actions: {g.recommended_actions.join(", ")}</p>
+              </li>
+            ))}
+          </ul>
+        </section>) : null}
       </div>
     </Card>
   );

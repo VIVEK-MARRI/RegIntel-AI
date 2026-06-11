@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -129,6 +131,29 @@ def register_default_health_checks(
         )
         registered.append("storage")
 
+    if settings.DATABASE_URL and not settings.DATABASE_URL.startswith("sqlite"):
+        def _db_check() -> ComponentHealth:
+            try:
+                import anyio
+                async def _probe() -> bool:
+                    try:
+                        from sqlalchemy.ext.asyncio import create_async_engine
+                        engine = create_async_engine(settings.DATABASE_URL, pool_size=1, max_overflow=0)
+                        async with engine.connect() as conn:
+                            await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+                        await engine.dispose()
+                        return True
+                    except Exception:
+                        return False
+                ok = anyio.run(_probe)
+                if ok:
+                    return ComponentHealth(name="database", status=HealthStatus.HEALTHY, message="database reachable")
+                return ComponentHealth(name="database", status=HealthStatus.UNHEALTHY, message="database unreachable")
+            except Exception as exc:
+                return ComponentHealth(name="database", status=HealthStatus.UNHEALTHY, message=str(exc))
+        health_checker.register("database", _db_check)
+        registered.append("database")
+
     return registered
 
 
@@ -157,6 +182,19 @@ def on_startup(
     report.errors.extend(env_errors)
     if storage_root is not None:
         report.errors.extend(validate_storage_root(storage_root))
+    # Development convenience: create all tables if using SQLite
+    if settings.ENV == "development" and settings.DATABASE_URL.startswith("sqlite"):
+        try:
+            from sqlalchemy import create_engine
+            from app.models.document import Base
+            sync_url = settings.DATABASE_URL.replace("+aiosqlite", "+pysqlite")
+            sync_engine = create_engine(sync_url)
+            Base.metadata.create_all(sync_engine)
+            sync_engine.dispose()
+            logger.info("Development mode: ensured all database tables exist")
+        except Exception as exc:
+            logger.warning("Could not auto-create tables: %s", exc)
+
     checker = get_health_checker()
     registered = register_default_health_checks(
         checker,

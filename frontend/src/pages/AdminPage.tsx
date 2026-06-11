@@ -5,21 +5,15 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
-import { useAdminOverview, useAdminStats, useRoles, useUsers } from "@/hooks/api";
-import { useDemoQuery } from "@/hooks/useDemoFallback";
-import {
-  demoAdminOverview,
-  demoAdminStats,
-  demoRoles,
-  demoUsers,
-} from "@/lib/demo";
+import { useQuery } from "@tanstack/react-query";
+import { getAdminOverview, getAdminStats, getUsers, getRoles } from "@/services/api/adminApi";
 import { formatRelative, truncate } from "@/lib/format";
 
 export function AdminPage() {
-  const overview = useDemoQuery("Admin", demoAdminOverview, useAdminOverview);
-  const stats = useDemoQuery("Admin", demoAdminStats, useAdminStats);
-  const users = useDemoQuery("Admin", demoUsers, useUsers);
-  const roles = useDemoQuery("Admin", demoRoles, useRoles);
+  const overview = useQuery({ queryKey: ["admin", "overview"], queryFn: getAdminOverview });
+  const stats = useQuery({ queryKey: ["admin", "stats"], queryFn: getAdminStats });
+  const users = useQuery({ queryKey: ["admin", "users"], queryFn: getUsers });
+  const roles = useQuery({ queryKey: ["admin", "roles"], queryFn: getRoles });
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@/providers/ThemeProvider";
@@ -96,7 +96,7 @@ describe("Pages render", () => {
 
   it("AuditPage", () => {
     renderPage(<AuditPage />);
-    expect(screen.getByText(/Audit Console/i)).toBeInTheDocument();
+    expect(screen.getByText("Audit")).toBeInTheDocument();
   });
 
   it("AdminPage", () => {
@@ -106,12 +106,12 @@ describe("Pages render", () => {
 
   it("CompliancePage", () => {
     renderPage(<CompliancePage />);
-    expect(screen.getByText(/Compliance Workspace/i)).toBeInTheDocument();
+    expect(screen.getByText("Compliance")).toBeInTheDocument();
   });
 
   it("CopilotPage", () => {
     renderPage(<CopilotPage />);
-    expect(screen.getByText(/Copilot Workspace/i)).toBeInTheDocument();
+    expect(screen.getByText("Copilot")).toBeInTheDocument();
   });
 
   it("KnowledgeGraphPage", () => {
@@ -121,16 +121,16 @@ describe("Pages render", () => {
 
   it("GovernancePage", () => {
     renderPage(<GovernancePage />);
-    expect(screen.getByText(/Governance Center/i)).toBeInTheDocument();
+    expect(screen.getByText("Governance")).toBeInTheDocument();
   });
 
   it("ResearchPage", () => {
     renderPage(<ResearchPage />);
-    expect(screen.getByText(/Research Workspace/i)).toBeInTheDocument();
+    expect(screen.getByText("Research")).toBeInTheDocument();
   });
 
   it("RiskPage", () => {
     renderPage(<RiskPage />);
-    expect(screen.getByText(/Risk Workspace/i)).toBeInTheDocument();
+    expect(screen.getByText("Risk")).toBeInTheDocument();
   });
 });

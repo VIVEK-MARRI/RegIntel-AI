@@ -162,6 +162,22 @@ class Settings(BaseSettings):
         description="If true, startup validation raises on errors",
     )
 
+    # ─── Security ─────────────────────────────────────────────────
+    CORS_ORIGINS: str = Field(
+        default="",
+        description="Comma-separated allowed CORS origins (empty = same-origin only)",
+    )
+    AUTH_MAX_FAILED_ATTEMPTS: int = Field(
+        default=5,
+        ge=0,
+        description="Failed login attempts before temporary lockout (0 = disabled)",
+    )
+    AUTH_LOCKOUT_DURATION_SECONDS: int = Field(
+        default=300,
+        ge=1,
+        description="Lockout duration in seconds after max failed attempts",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

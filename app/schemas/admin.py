@@ -99,6 +99,7 @@ class User(BaseModel):
     )
     username: str = Field(..., min_length=1, max_length=120)
     email: str = Field(..., min_length=3, max_length=300)
+    password_hash: str = ""
     full_name: str = ""
     role_ids: List[str] = Field(default_factory=list)
     status: UserStatus = UserStatus.ACTIVE
@@ -116,6 +117,7 @@ class UserCreateRequest(BaseModel):
 
     username: str = Field(..., min_length=1, max_length=120)
     email: str = Field(..., min_length=3, max_length=300)
+    password: str = Field(default="", min_length=1, max_length=128)
     full_name: str = ""
     role_ids: List[str] = Field(default_factory=list)
     department: str = ""
