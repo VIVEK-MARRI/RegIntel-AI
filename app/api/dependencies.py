@@ -719,10 +719,10 @@ from app.services.ingestion import (  # noqa: E402
 _ingestion_service: "AutoIngestionService | None" = None  # type: ignore[name-defined]
 
 
-def _ingestion_service_singleton(db_session: Any = None) -> "AutoIngestionService":
+def _ingestion_service_singleton() -> "AutoIngestionService":
     global _ingestion_service
     if _ingestion_service is None:
-        _ingestion_service = build_default_auto_ingestion_service(db_session=db_session)
+        _ingestion_service = build_default_auto_ingestion_service()
     return _ingestion_service
 
 
@@ -730,7 +730,7 @@ async def get_ingestion_service(
     db_session: AsyncSession = Depends(get_db_session)
 ) -> AutoIngestionService:
     """Dependency injection provider for AutoIngestionService (singleton)."""
-    return _ingestion_service_singleton(db_session)
+    return _ingestion_service_singleton()
 
 
 def reset_ingestion_service() -> None:

@@ -132,6 +132,7 @@ interface TopbarProps {
 export function Topbar({ onToggleSidebar }: TopbarProps) {
   const location = useLocation();
   const title = titleForPath(location.pathname);
+  const demoMode = import.meta.env.VITE_AUTH_ENABLED === "false";
   return (
     <header
       className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur
@@ -148,6 +149,14 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
       <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         {title}
       </h1>
+      {demoMode ? (
+        <span
+          className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700
+                     dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-400"
+        >
+          Demo
+        </span>
+      ) : null}
       <div className="flex-1" />
       <SystemStatusPill />
       <UserMenu />
@@ -222,15 +231,19 @@ function UserMenu() {
               {label}
             </button>
           ))}
-          <div className="border-t border-slate-200 dark:border-slate-700" />
-          <button
-            type="button"
-            role="menuitem"
-            className="block w-full px-3 py-2 text-left text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
-            onClick={handleSignOut}
-          >
-            Sign out
-          </button>
+          {import.meta.env.VITE_AUTH_ENABLED !== "false" ? (
+            <>
+              <div className="border-t border-slate-200 dark:border-slate-700" />
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-2 text-left text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                onClick={handleSignOut}
+              >
+                Sign out
+              </button>
+            </>
+          ) : null}
         </div>
       ) : null}
     </div>

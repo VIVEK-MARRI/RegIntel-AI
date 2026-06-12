@@ -30,7 +30,7 @@ export function DashboardPage() {
   const docs = useQuery({ queryKey: ["dashboard", "documents"], queryFn: getDocuments });
   const leaderboard = useQuery({ queryKey: ["dashboard", "leaderboard"], queryFn: () => getLeaderboard(5) });
 
-  const overallHealth = overview.data?.health.overall_health ?? "unknown";
+  const overallHealth = overview.data?.health?.overall_health ?? "unknown";
   const complianceScore =
     compliance.data && compliance.data.length
       ? Math.round(
@@ -44,7 +44,7 @@ export function DashboardPage() {
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-          Welcome back, Vivek
+          Welcome back
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           A unified view of regulatory intelligence, agent performance, and platform health.
@@ -70,7 +70,7 @@ export function DashboardPage() {
           value={
             <span className="capitalize">{overallHealth}</span>
           }
-          hint={overview.data?.health.notes ?? "No data"}
+          hint={overview.data?.health?.notes ?? "No data"}
           icon={<span aria-hidden>♥</span>}
         />
         <Metric

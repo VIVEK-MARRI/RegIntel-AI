@@ -1,26 +1,31 @@
 import uuid
+import mimetypes
+import logging
 from typing import Optional, Sequence
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
 from app.api.dependencies import (
-    get_document_service, 
-    get_storage_service, 
-    get_page_service, 
+    get_document_service,
+    get_storage_service,
+    get_page_service,
     get_structure_service,
     get_hierarchy_builder,
     get_hierarchy_validator,
-    get_chunk_registry_service
+    get_chunk_registry_service,
+    get_ingestion_service,
+    get_knowledge_graph_service,
 )
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
-    DocumentCreate, 
-    DocumentResponse, 
-    DocumentStatusUpdate, 
+    DocumentCreate,
+    DocumentResponse,
+    DocumentDetailResponse,
+    DocumentStatusUpdate,
     DocumentUpdate,
     DocumentUploadResponse,
     SortByEnum,
     SortOrderEnum,
-    PageResponse
+    PageResponse,
 )
 from app.schemas.structure import DocumentStructureResponse
 from app.schemas.hierarchy import DocumentHierarchyResponse
@@ -31,115 +36,185 @@ from app.services.page import PageService
 from app.services.structure.service import StructureService
 from app.services.structure.hierarchy import HierarchyBuilder
 from app.services.structure.validator import HierarchyValidator
-from app.services.structure.chunker import HierarchicalChunkerService
 from app.services.chunk_registry import ChunkRegistryService
+from app.services.ingestion import AutoIngestionService
+from app.services.knowledge_graph import KnowledgeGraphService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Allowed file types for user upload
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".html", ".htm"}
+ALLOWED_MIME_TYPES = {
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "text/html",
+}
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
+
+
+def _validate_upload_file(file: UploadFile) -> None:
+    """Validate file extension, MIME type, and size."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+
+    ext = "." + file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{ext}'. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+        )
+
+    mime_type, _ = mimetypes.guess_type(file.filename)
+    if mime_type and mime_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported MIME type '{mime_type}'. Allowed: PDF, DOCX, TXT, HTML",
+        )
+
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size exceeds the maximum limit of {MAX_FILE_SIZE // (1024*1024)} MB",
+        )
+
+
+def _sanitize_filename(filename: str) -> str:
+    """Remove path traversal characters from filename."""
+    import os
+    sanitized = os.path.basename(filename)
+    if not sanitized:
+        sanitized = "document"
+    return sanitized
+
+
 @router.post(
-    "", 
-    response_model=DocumentResponse, 
+    "",
+    response_model=DocumentResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new document",
-    description="Registers a new document in the registry, ensuring duplicate check using SHA-256 checksum."
 )
 async def register_document(
     doc_in: DocumentCreate,
-    service: DocumentService = Depends(get_document_service)
+    service: DocumentService = Depends(get_document_service),
 ) -> DocumentResponse:
     return await service.register_document(doc_in)
 
+
 @router.get(
-    "/{document_id}", 
-    response_model=DocumentResponse,
-    summary="Get document details",
-    description="Fetches metadata details for a registered document by its UUID."
+    "/{document_id}",
+    response_model=DocumentDetailResponse,
+    summary="Get document details with processing info",
 )
 async def get_document(
     document_id: uuid.UUID,
-    service: DocumentService = Depends(get_document_service)
-) -> DocumentResponse:
-    return await service.get_document_by_id(document_id)
+    document_service: DocumentService = Depends(get_document_service),
+    chunk_service: ChunkRegistryService = Depends(get_chunk_registry_service),
+    ingestion_service: AutoIngestionService = Depends(get_ingestion_service),
+) -> DocumentDetailResponse:
+    doc = await document_service.get_document_by_id(document_id)
+    chunks = await chunk_service.get_document_chunks(document_id)
+    embedding_count = 0
+    for c in chunks:
+        emb = await chunk_service.get_chunk_embeddings(c.id)
+        embedding_count += len([e for e in (emb or []) if e.status == "completed"])
+
+    run = ingestion_service.repository.latest_run_for_document(str(document_id))
+    processing_status = "pending"
+    indexed = False
+    if run:
+        processing_status = run.status.value
+        indexed = run.status.value == "completed"
+
+    return DocumentDetailResponse(
+        id=doc.id,
+        title=doc.title,
+        source=doc.source,
+        file_name=doc.file_name,
+        file_path=doc.file_path,
+        document_type=doc.document_type,
+        publication_date=doc.publication_date,
+        checksum=doc.checksum,
+        page_count=doc.page_count,
+        status=doc.status,
+        uploaded_at=doc.uploaded_at,
+        updated_at=doc.updated_at,
+        chunk_count=len(chunks),
+        page_count_actual=doc.page_count,
+        embedding_count=embedding_count,
+        indexed=indexed,
+        processing_status=processing_status,
+    )
+
 
 @router.get(
     "/{document_id}/pages",
     response_model=Sequence[PageResponse],
     summary="Get document pages",
-    description="Retrieves paginated text content pages for a specific document, sorted by page number ascending."
 )
 async def get_document_pages(
     document_id: uuid.UUID,
-    skip: int = Query(0, ge=0, description="Number of pages to skip"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of pages to return"),
-    page_service: PageService = Depends(get_page_service)
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    page_service: PageService = Depends(get_page_service),
 ) -> Sequence[PageResponse]:
     return await page_service.get_document_pages(document_id, skip=skip, limit=limit)
+
 
 @router.get(
     "/{document_id}/structure",
     response_model=DocumentStructureResponse,
     summary="Get document structure",
-    description="Analyzes document pages and extracts its hierarchical structural outline."
 )
 async def get_document_structure(
     document_id: uuid.UUID,
-    structure_service: StructureService = Depends(get_structure_service)
+    structure_service: StructureService = Depends(get_structure_service),
 ) -> DocumentStructureResponse:
     structure = await structure_service.get_document_structure(document_id)
-    return DocumentStructureResponse(
-        document_id=document_id,
-        structure=structure
-    )
+    return DocumentStructureResponse(document_id=document_id, structure=structure)
+
 
 @router.get(
     "/{document_id}/hierarchy",
     response_model=DocumentHierarchyResponse,
     summary="Get document hierarchy tree",
-    description="Transforms parsed document structural outline into a navigable tree structure."
 )
 async def get_document_hierarchy(
     document_id: uuid.UUID,
     structure_service: StructureService = Depends(get_structure_service),
     document_service: DocumentService = Depends(get_document_service),
     hierarchy_builder: HierarchyBuilder = Depends(get_hierarchy_builder),
-    hierarchy_validator: HierarchyValidator = Depends(get_hierarchy_validator)
+    hierarchy_validator: HierarchyValidator = Depends(get_hierarchy_validator),
 ) -> DocumentHierarchyResponse:
-    # 1. Fetch document to get fallback title (raises DocumentNotFoundError if missing)
     doc = await document_service.get_document_by_id(document_id)
-    
-    # 2. Extract structure elements
     structure = await structure_service.get_document_structure(document_id)
-    
-    # 3. Build tree
     root_node = hierarchy_builder.build_hierarchy(document_id, doc.title, structure)
-    
-    # 4. Validate hierarchy tree
-    import logging
-    logger = logging.getLogger(__name__)
     validation_errors = hierarchy_validator.validate(root_node)
     if validation_errors:
-        logger.warning(f"Hierarchy validation warnings for {document_id}: {validation_errors}")
-        
-    return DocumentHierarchyResponse(
-        document_id=document_id,
-        root=root_node
-    )
+        logger.warning("Hierarchy validation warnings for %s: %s", document_id, validation_errors)
+    return DocumentHierarchyResponse(document_id=document_id, root=root_node)
+
 
 @router.get(
     "/{document_id}/chunks",
     response_model=Sequence[StoredChunkResponse],
     summary="Get document stored chunks",
-    description="Retrieves paginated stored chunks for a specific document, supporting filtering, sorting, and partial match search."
 )
 async def get_document_chunks(
     document_id: uuid.UUID,
-    section: Optional[str] = Query(None, description="Search by section (partial match)"),
-    subsection: Optional[str] = Query(None, description="Search by subsection (partial match)"),
-    sort_by: ChunkSortByEnum = Query(ChunkSortByEnum.page_number, description="Field to sort by"),
-    sort_order: SortOrderEnum = Query(SortOrderEnum.asc, description="Sort direction (asc or desc)"),
-    skip: int = Query(0, ge=0, description="Number of chunks to skip"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of chunks to return"),
-    service: ChunkRegistryService = Depends(get_chunk_registry_service)
+    section: Optional[str] = Query(None),
+    subsection: Optional[str] = Query(None),
+    sort_by: ChunkSortByEnum = Query(ChunkSortByEnum.page_number),
+    sort_order: SortOrderEnum = Query(SortOrderEnum.asc),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    service: ChunkRegistryService = Depends(get_chunk_registry_service),
 ) -> Sequence[StoredChunkResponse]:
     return await service.get_document_chunks(
         document_id=document_id,
@@ -148,23 +223,23 @@ async def get_document_chunks(
         sort_by=sort_by.value,
         sort_order=sort_order.value,
         skip=skip,
-        limit=limit
+        limit=limit,
     )
 
+
 @router.get(
-    "", 
+    "",
     response_model=Sequence[DocumentResponse],
     summary="List and filter documents",
-    description="Lists documents from the registry, filtered by document source regulator or status."
 )
 async def list_documents(
-    source: Optional[SourceEnum] = Query(None, description="Filter by document source (RBI/SEBI)"),
-    status: Optional[StatusEnum] = Query(None, description="Filter by lifecycle status"),
-    sort_by: SortByEnum = Query(SortByEnum.uploaded_at, description="Field to sort by"),
-    sort_order: SortOrderEnum = Query(SortOrderEnum.desc, description="Order of sorting (asc or desc)"),
-    skip: int = Query(0, ge=0, description="Number of documents to skip"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of documents to return"),
-    service: DocumentService = Depends(get_document_service)
+    source: Optional[SourceEnum] = Query(None),
+    status: Optional[StatusEnum] = Query(None),
+    sort_by: SortByEnum = Query(SortByEnum.uploaded_at),
+    sort_order: SortOrderEnum = Query(SortOrderEnum.desc),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    service: DocumentService = Depends(get_document_service),
 ) -> Sequence[DocumentResponse]:
     return await service.list_documents(
         source=source,
@@ -172,100 +247,85 @@ async def list_documents(
         sort_by=sort_by,
         sort_order=sort_order,
         skip=skip,
-        limit=limit
+        limit=limit,
     )
 
+
 @router.patch(
-    "/{document_id}/status", 
+    "/{document_id}/status",
     response_model=DocumentResponse,
     summary="Update document status",
-    description="Updates the parsing lifecycle status of a document, enforcing permitted state transitions."
 )
 async def update_document_status(
     document_id: uuid.UUID,
     status_update: DocumentStatusUpdate,
-    service: DocumentService = Depends(get_document_service)
+    service: DocumentService = Depends(get_document_service),
 ) -> DocumentResponse:
     return await service.update_document_status(document_id, status_update.status)
 
+
 @router.patch(
-    "/{document_id}", 
+    "/{document_id}",
     response_model=DocumentResponse,
     summary="Update document metadata",
-    description="Updates general metadata details of a document like title, document_type, page_count."
 )
 async def update_document_metadata(
     document_id: uuid.UUID,
     metadata_update: DocumentUpdate,
-    service: DocumentService = Depends(get_document_service)
+    service: DocumentService = Depends(get_document_service),
 ) -> DocumentResponse:
     return await service.update_document_metadata(document_id, metadata_update)
+
 
 @router.post(
     "/upload",
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Upload and register a document",
-    description="Uploads a regulatory PDF file, stores it locally under source subdirectories, and registers metadata in the database."
+    summary="Upload a document (PDF, DOCX, TXT, HTML) for ingestion",
+    description="Uploads an enterprise document, validates it, saves it, registers it, and asynchronously triggers the full ingestion pipeline (parse, chunk, embed, index, KG extraction).",
 )
 async def upload_document(
-    source: SourceEnum = Form(..., description="The regulatory agency (RBI or SEBI)"),
-    title: str = Form(..., max_length=255, description="Document title"),
-    document_type: Optional[str] = Form(None, max_length=100, description="E.g. Circular, Regulation"),
-    publication_date: Optional[str] = Form(None, description="Date formatted as YYYY-MM-DD"),
-    page_count: Optional[int] = Form(None, ge=0),
-    file: UploadFile = File(..., description="The PDF document file to store"),
+    file: UploadFile = File(..., description="Document file (PDF, DOCX, TXT, HTML)"),
+    title: Optional[str] = Form(None, max_length=255, description="Document title (defaults to filename)"),
+    document_type: Optional[str] = Form(None, max_length=100, description="E.g. Policy, Report, SOP"),
+    source: Optional[SourceEnum] = Form(SourceEnum.USER_UPLOAD, description="Document source"),
     document_service: DocumentService = Depends(get_document_service),
-    storage_service: StorageService = Depends(get_storage_service)
+    storage_service: StorageService = Depends(get_storage_service),
+    ingestion_service: AutoIngestionService = Depends(get_ingestion_service),
 ) -> DocumentUploadResponse:
-    # 1. Validate file extension (Only PDF allowed)
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are allowed"
-        )
-        
-    # 2. Validate file size (Max 50 MB)
-    file.file.seek(0, 2)
-    file_size = file.file.tell()
-    file.file.seek(0)
-    
-    if file_size > 50 * 1024 * 1024:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File size exceeds the maximum limit of 50 MB"
-        )
+    _validate_upload_file(file)
 
-    pub_date: Optional[date] = None
-    if publication_date:
-        try:
-            pub_date = datetime.strptime(publication_date, "%Y-%m-%d").date()
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="publication_date must be in YYYY-MM-DD format"
-            ) from e
+    original_filename = _sanitize_filename(file.filename or "document")
+    display_title = title or original_filename.rsplit(".", 1)[0]
 
-    # Save file via StorageService (handles checksum & deduplication check)
     file_path, checksum = await storage_service.save_file(
         file_data=file.file,
-        original_filename=file.filename,
-        source=source.value
+        original_filename=original_filename,
+        source=source.value,
     )
 
     doc_create = DocumentCreate(
-        title=title,
+        title=display_title,
         source=source,
-        file_name=file.filename,
+        file_name=original_filename,
         file_path=file_path,
         document_type=document_type,
-        publication_date=pub_date,
         checksum=checksum,
-        page_count=page_count
     )
 
     doc = await document_service.register_document(doc_create)
+
+    # Asynchronously process through the ingestion pipeline
+    run_id = None
+    try:
+        result = await ingestion_service.ingest_upload(str(doc.id))
+        run_id = result.run_id
+        logger.info("Upload ingestion started for document %s (run %s)", doc.id, run_id)
+    except Exception as exc:
+        logger.exception("Failed to start ingestion for uploaded document %s: %s", doc.id, exc)
+
     return DocumentUploadResponse(
         document_id=doc.id,
-        status="uploaded"
+        status="processing",
+        run_id=run_id,
     )

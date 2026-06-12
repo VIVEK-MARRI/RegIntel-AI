@@ -163,6 +163,10 @@ class Settings(BaseSettings):
     )
 
     # ─── Security ─────────────────────────────────────────────────
+    AUTH_ENABLED: bool = Field(
+        default=True,
+        description="If false, all auth checks are bypassed for public demo mode",
+    )
     CORS_ORIGINS: str = Field(
         default="",
         description="Comma-separated allowed CORS origins (empty = same-origin only)",

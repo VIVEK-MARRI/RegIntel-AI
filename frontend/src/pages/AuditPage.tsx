@@ -39,7 +39,7 @@ export function AuditPage() {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Metric label="Total records" value={records?.length ?? "—"} />
         <Metric label="Valid" value={integrity?.valid ?? "—"} hint="Cryptographically valid" />
-        <Metric label="Broken chains" value={integrity?.broken_chains.length ?? 0} hint="Requires attention" />
+        <Metric label="Broken chains" value={integrity?.broken_chains?.length ?? 0} hint="Requires attention" />
         <Metric label="Evidence items" value={evidence?.length ?? "—"} />
       </section>
 
@@ -50,8 +50,8 @@ export function AuditPage() {
           : iError ? <ErrorState onRetry={iRefetch} />
           : <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs">
-                <Badge tone={!integrity?.broken_chains.length ? "success" : "danger"}>
-                  {!integrity?.broken_chains.length ? "Healthy" : "Compromised"}
+                <Badge tone={!integrity?.broken_chains?.length ? "success" : "danger"}>
+                  {!integrity?.broken_chains?.length ? "Healthy" : "Compromised"}
                 </Badge>
                 <span className="text-slate-500 dark:text-slate-400">Last check: {formatRelative(integrity?.checked_at)}</span>
               </div>

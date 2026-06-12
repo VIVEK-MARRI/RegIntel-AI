@@ -1121,9 +1121,11 @@ def _ensure_default_users(svc: AdminService) -> None:
     admin_role = svc.get_role_by_name("admin")
     analyst_role = svc.get_role_by_name("analyst")
     auditor_role = svc.get_role_by_name("auditor")
+    viewer_role = svc.get_role_by_name("viewer")
     admin_rid = admin_role.role_id if admin_role else ""
     analyst_rid = analyst_role.role_id if analyst_role else ""
     auditor_rid = auditor_role.role_id if auditor_role else ""
+    viewer_rid = viewer_role.role_id if viewer_role else ""
 
     defaults = [
         UserCreateRequest(
@@ -1146,6 +1148,13 @@ def _ensure_default_users(svc: AdminService) -> None:
             password="Auditor@123",
             full_name="Internal Auditor",
             role_ids=[auditor_rid],
+        ),
+        UserCreateRequest(
+            username="viewer",
+            email="viewer@regintel.ai",
+            password="Viewer@123",
+            full_name="Read-Only Viewer",
+            role_ids=[viewer_rid],
         ),
     ]
     for req in defaults:

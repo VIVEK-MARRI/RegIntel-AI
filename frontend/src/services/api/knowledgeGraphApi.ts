@@ -6,7 +6,7 @@ export async function getGraphStats(): Promise<KnowledgeGraphStats> {
 }
 
 export async function getGraphNodes(): Promise<GraphNode[]> {
-  return api.get<GraphNode[]>("/knowledge-graph/nodes");
+  return api.get<{ items: GraphNode[] }>("/knowledge-graph/nodes").then((r) => r.items);
 }
 
 export async function getGraphRelationships(): Promise<GraphRelationship[]> {
@@ -14,5 +14,5 @@ export async function getGraphRelationships(): Promise<GraphRelationship[]> {
 }
 
 export async function getGraphImpact(nodeId: string): Promise<{ affected: GraphNode[]; total: number }> {
-  return api.get<{ affected: GraphNode[]; total: number }>(`/knowledge-graph/impact-traversal/${nodeId}`);
+  return api.post<{ affected: GraphNode[]; total: number }>(`/knowledge-graph/impact-traversal/${nodeId}`);
 }

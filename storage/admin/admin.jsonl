@@ -1,77 +1,79 @@
 {
   "users": [
     {
-      "user_id": "usr-482bb1119674",
+      "user_id": "usr-e3df18bb3710",
       "username": "admin",
       "email": "admin@regintel.ai",
-      "password_hash": "pbkdf2-sha256$600000$8153354036500105752798daa01fffb3$8d766201e4e42503dfa051a9b02e3f94787e97647f9c4fdfb4da741f107ebcf8",
+      "password_hash": "pbkdf2-sha256$600000$bd8c4ea722de913d1466e990b18d557d$4d523e9f1d9baa8e74cf17f4204ed71ca42cfcee5e551b7a0261f0f8f1fdaaa2",
       "full_name": "System Administrator",
       "role_ids": [
-        "role-ca7b3b33c922"
+        "role-33bf54292a1e"
       ],
       "status": "active",
       "department": "",
-      "last_login_at": 1781189264.4458911,
-      "created_at": 1781187857.41418,
-      "updated_at": 1781187857.41418,
+      "last_login_at": null,
+      "created_at": 1781238925.188173,
+      "updated_at": 1781238925.1881733,
       "metadata": {}
     },
     {
-      "user_id": "usr-111394aeb50a",
+      "user_id": "usr-3b64f8abebb3",
       "username": "analyst",
       "email": "analyst@regintel.ai",
-      "password_hash": "pbkdf2-sha256$600000$2122bc706b8e0a40a9db5c46463c8289$0f2fa92caf04c7882f8cb6501b1e4d1f4c0c85c8506c12a935da85fed3dab3ab",
+      "password_hash": "pbkdf2-sha256$600000$b83814aeec6a8d38bcd5e65337e81b75$d47ff49a3eb1705c8e3957f4351339e6ad0b72ac43fe1a67221de4a414a99adc",
       "full_name": "Compliance Analyst",
       "role_ids": [
-        "role-8c54ca44a47c"
+        "role-2cada88b9a7d"
       ],
       "status": "active",
       "department": "",
-      "last_login_at": 1781187884.6042838,
-      "created_at": 1781187857.6509085,
-      "updated_at": 1781187857.6509085,
+      "last_login_at": null,
+      "created_at": 1781238925.431574,
+      "updated_at": 1781238925.4315743,
       "metadata": {}
     },
     {
-      "user_id": "usr-52e1dfacd0b4",
+      "user_id": "usr-3476553bad45",
       "username": "auditor",
       "email": "auditor@regintel.ai",
-      "password_hash": "pbkdf2-sha256$600000$1adfcab44edafddc444c90827c96e95e$30ddf2df3d7639883519bf58d840502bad9f4914865f40e7f090daf73e4b7ad5",
+      "password_hash": "pbkdf2-sha256$600000$781b9c9ffdb9302601a1f3368176daa5$151d05100b433677b9068fb425185c6297633f022eb2b9e07ddb95f86aeff08b",
       "full_name": "Internal Auditor",
       "role_ids": [
-        "role-f4aec46eb4bc"
+        "role-0200f4c3cde7"
       ],
       "status": "active",
       "department": "",
       "last_login_at": null,
-      "created_at": 1781187857.8754797,
-      "updated_at": 1781187857.8754804,
+      "created_at": 1781238925.7191,
+      "updated_at": 1781238925.7191005,
       "metadata": {}
     },
     {
-      "user_id": "usr-6c2dd92fc4f3",
-      "username": "demo",
-      "email": "demo@example.com",
-      "password_hash": "pbkdf2-sha256$600000$ce434c8ae463a6f9efe4dc751f15e840$8fada7f647b274732ba12f303652c850ad63ddd6438840fd84dfd0c250d7933f",
-      "full_name": "Demo User",
-      "role_ids": [],
+      "user_id": "usr-402191d6c074",
+      "username": "viewer",
+      "email": "viewer@regintel.ai",
+      "password_hash": "pbkdf2-sha256$600000$b372292920157960caebec7f8a332728$c372f0990a1d0bf5e176a3b0cfe3e050a2f93741f2d2946020754d4d5044727e",
+      "full_name": "Read-Only Viewer",
+      "role_ids": [
+        "role-4e81ff2f2fbc"
+      ],
       "status": "active",
       "department": "",
-      "last_login_at": null,
-      "created_at": 1781187883.8880816,
-      "updated_at": 1781187883.888082,
+      "last_login_at": 1781240471.2284966,
+      "created_at": 1781238926.00514,
+      "updated_at": 1781238926.005141,
       "metadata": {}
     }
   ],
   "roles": [
     {
-      "role_id": "role-ca7b3b33c922",
+      "role_id": "role-33bf54292a1e",
       "name": "admin",
       "description": "Full administrative access to all resources.",
       "built_in": true,
       "permissions": [
         {
-          "permission_id": "prm-4017f6f4",
+          "permission_id": "prm-0c640afc",
           "code": "*",
           "description": "Wildcard \u2014 full access to all resources.",
           "resource": "*",
@@ -79,70 +81,70 @@
         }
       ],
       "user_count": 0,
-      "created_at": 1781187857.4139872,
-      "updated_at": 1781187857.4139876,
+      "created_at": 1781238925.188005,
+      "updated_at": 1781238925.1880052,
       "tags": [
         "built-in",
         "privileged"
       ]
     },
     {
-      "role_id": "role-cadad4561426",
+      "role_id": "role-1729112372c4",
       "name": "compliance_officer",
       "description": "Owns policies, audit, and compliance reporting.",
       "built_in": true,
       "permissions": [
         {
-          "permission_id": "prm-8251b70c",
+          "permission_id": "prm-b9e023b5",
           "code": "governance.read",
           "description": "Permission code: governance.read",
           "resource": "governance",
           "action": "read"
         },
         {
-          "permission_id": "prm-01b41f28",
+          "permission_id": "prm-dbf81e84",
           "code": "governance.write",
           "description": "Permission code: governance.write",
           "resource": "governance",
           "action": "write"
         },
         {
-          "permission_id": "prm-894fe750",
+          "permission_id": "prm-7a399fd7",
           "code": "audit.read",
           "description": "Permission code: audit.read",
           "resource": "audit",
           "action": "read"
         },
         {
-          "permission_id": "prm-2593d656",
+          "permission_id": "prm-c8b7f007",
           "code": "compliance.read",
           "description": "Permission code: compliance.read",
           "resource": "compliance",
           "action": "read"
         },
         {
-          "permission_id": "prm-336b7c27",
+          "permission_id": "prm-dbc46b00",
           "code": "compliance.write",
           "description": "Permission code: compliance.write",
           "resource": "compliance",
           "action": "write"
         },
         {
-          "permission_id": "prm-17865dd6",
+          "permission_id": "prm-d940c5b0",
           "code": "risk.read",
           "description": "Permission code: risk.read",
           "resource": "risk",
           "action": "read"
         },
         {
-          "permission_id": "prm-920f5c2b",
+          "permission_id": "prm-b4596e04",
           "code": "review.read",
           "description": "Permission code: review.read",
           "resource": "review",
           "action": "read"
         },
         {
-          "permission_id": "prm-7045497d",
+          "permission_id": "prm-976a6296",
           "code": "review.write",
           "description": "Permission code: review.write",
           "resource": "review",
@@ -150,49 +152,49 @@
         }
       ],
       "user_count": 0,
-      "created_at": 1781187857.4140298,
-      "updated_at": 1781187857.4140298,
+      "created_at": 1781238925.1880424,
+      "updated_at": 1781238925.1880424,
       "tags": [
         "built-in",
         "compliance"
       ]
     },
     {
-      "role_id": "role-60298ae98f12",
+      "role_id": "role-71f064f57e2e",
       "name": "risk_manager",
       "description": "Manages risk assessments, forecasts, and risk-related reviews.",
       "built_in": true,
       "permissions": [
         {
-          "permission_id": "prm-7dc1f499",
+          "permission_id": "prm-fd26c450",
           "code": "governance.read",
           "description": "Permission code: governance.read",
           "resource": "governance",
           "action": "read"
         },
         {
-          "permission_id": "prm-dfc74dc5",
+          "permission_id": "prm-0caa11bd",
           "code": "risk.read",
           "description": "Permission code: risk.read",
           "resource": "risk",
           "action": "read"
         },
         {
-          "permission_id": "prm-6b16929a",
+          "permission_id": "prm-86484985",
           "code": "risk.write",
           "description": "Permission code: risk.write",
           "resource": "risk",
           "action": "write"
         },
         {
-          "permission_id": "prm-aca5d885",
+          "permission_id": "prm-5e88d068",
           "code": "forecast.read",
           "description": "Permission code: forecast.read",
           "resource": "forecast",
           "action": "read"
         },
         {
-          "permission_id": "prm-1f874435",
+          "permission_id": "prm-5c4dc6b8",
           "code": "review.read",
           "description": "Permission code: review.read",
           "resource": "review",
@@ -200,35 +202,35 @@
         }
       ],
       "user_count": 0,
-      "created_at": 1781187857.4140487,
-      "updated_at": 1781187857.414049,
+      "created_at": 1781238925.1880612,
+      "updated_at": 1781238925.1880615,
       "tags": [
         "built-in",
         "risk"
       ]
     },
     {
-      "role_id": "role-289ddb9671dd",
+      "role_id": "role-49f8e98b9bb1",
       "name": "reviewer",
       "description": "Performs human-in-the-loop reviews and workflow tasks.",
       "built_in": true,
       "permissions": [
         {
-          "permission_id": "prm-2d1f9f26",
+          "permission_id": "prm-477154a1",
           "code": "review.read",
           "description": "Permission code: review.read",
           "resource": "review",
           "action": "read"
         },
         {
-          "permission_id": "prm-b009da12",
+          "permission_id": "prm-14aaf5a5",
           "code": "review.write",
           "description": "Permission code: review.write",
           "resource": "review",
           "action": "write"
         },
         {
-          "permission_id": "prm-ff72b946",
+          "permission_id": "prm-9cadc542",
           "code": "workflow.read",
           "description": "Permission code: workflow.read",
           "resource": "workflow",
@@ -236,49 +238,49 @@
         }
       ],
       "user_count": 0,
-      "created_at": 1781187857.4140613,
-      "updated_at": 1781187857.4140613,
+      "created_at": 1781238925.1880722,
+      "updated_at": 1781238925.1880722,
       "tags": [
         "built-in",
         "operations"
       ]
     },
     {
-      "role_id": "role-8c54ca44a47c",
+      "role_id": "role-2cada88b9a7d",
       "name": "analyst",
       "description": "Read-only access to governance, risk, forecast and dashboard data.",
       "built_in": true,
       "permissions": [
         {
-          "permission_id": "prm-53648512",
+          "permission_id": "prm-be330594",
           "code": "governance.read",
           "description": "Permission code: governance.read",
           "resource": "governance",
           "action": "read"
         },
         {
-          "permission_id": "prm-d1c858de",
+          "permission_id": "prm-cf93004a",
           "code": "risk.read",
           "description": "Permission code: risk.read",
           "resource": "risk",
           "action": "read"
         },
         {
-          "permission_id": "prm-01680cb9",
+          "permission_id": "prm-7fd8cd94",
           "code": "forecast.read",
           "description": "Permission code: forecast.read",
           "resource": "forecast",
           "action": "read"
         },
         {
-          "permission_id": "prm-ae96fb1d",
+          "permission_id": "prm-6be300b7",
           "code": "workflow.read",
           "description": "Permission code: workflow.read",
           "resource": "workflow",
           "action": "read"
         },
         {
-          "permission_id": "prm-64e22b8b",
+          "permission_id": "prm-5049ee2f",
           "code": "dashboard.read",
           "description": "Permission code: dashboard.read",
           "resource": "dashboard",
@@ -286,35 +288,35 @@
         }
       ],
       "user_count": 0,
-      "created_at": 1781187857.4140787,
-      "updated_at": 1781187857.414079,
+      "created_at": 1781238925.188086,
+      "updated_at": 1781238925.188086,
       "tags": [
         "built-in",
         "analytics"
       ]
     },
     {
-      "role_id": "role-f4aec46eb4bc",
+      "role_id": "role-0200f4c3cde7",
       "name": "auditor",
       "description": "Read-only access to audit logs and compliance reports.",
       "built_in": true,
       "permissions": [
         {
-          "permission_id": "prm-f94651a0",
+          "permission_id": "prm-ba01c2a3",
           "code": "audit.read",
           "description": "Permission code: audit.read",
           "resource": "audit",
           "action": "read"
         },
         {
-          "permission_id": "prm-8fcdc928",
+          "permission_id": "prm-58a64cd4",
           "code": "compliance.read",
           "description": "Permission code: compliance.read",
           "resource": "compliance",
           "action": "read"
         },
         {
-          "permission_id": "prm-fcc1db2d",
+          "permission_id": "prm-df812613",
           "code": "governance.read",
           "description": "Permission code: governance.read",
           "resource": "governance",
@@ -322,21 +324,21 @@
         }
       ],
       "user_count": 0,
-      "created_at": 1781187857.4140894,
-      "updated_at": 1781187857.4140894,
+      "created_at": 1781238925.1880956,
+      "updated_at": 1781238925.1880956,
       "tags": [
         "built-in",
         "audit"
       ]
     },
     {
-      "role_id": "role-1926b17a46e5",
+      "role_id": "role-4e81ff2f2fbc",
       "name": "viewer",
       "description": "Read-only access to dashboards.",
       "built_in": true,
       "permissions": [
         {
-          "permission_id": "prm-be7d3504",
+          "permission_id": "prm-0e09e8b1",
           "code": "dashboard.read",
           "description": "Permission code: dashboard.read",
           "resource": "dashboard",
@@ -344,8 +346,8 @@
         }
       ],
       "user_count": 0,
-      "created_at": 1781187857.414096,
-      "updated_at": 1781187857.4140964,
+      "created_at": 1781238925.1881032,
+      "updated_at": 1781238925.1881034,
       "tags": [
         "built-in",
         "read-only"

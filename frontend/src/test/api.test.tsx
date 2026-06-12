@@ -61,12 +61,9 @@ describe("API service functions", () => {
 
   it("getDocuments returns document list", async () => {
     fetchMock.mockResolvedValue(
-      mockJsonResponse({
-        items: [{ document_id: "d1", title: "test.pdf", source: "upload", status: "ready", created_at: 1000, chunk_count: 5 }],
-        total: 1,
-        page: 1,
-        page_size: 20,
-      })
+      mockJsonResponse([
+        { document_id: "d1", title: "test.pdf", source: "upload", status: "ready", created_at: 1000, chunk_count: 5 },
+      ])
     );
     const data = await getDocuments();
     expect(data).toHaveLength(1);

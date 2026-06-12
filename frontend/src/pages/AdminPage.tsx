@@ -29,9 +29,9 @@ export function AdminPage() {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Metric
           label="Users"
-          value={stats.data?.total_users ?? overview.data?.users.total ?? "—"}
+          value={stats.data?.total_users ?? overview.data?.users?.total ?? "—"}
           hint={
-            overview.data
+            overview.data?.users
               ? `${overview.data.users.active} active`
               : undefined
           }

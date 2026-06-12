@@ -48,8 +48,8 @@ class StorageService:
             Tuple of (relative_storage_path, sha256_checksum)
         """
         source_upper = source.upper()
-        if source_upper not in ["RBI", "SEBI"]:
-            raise ValueError("Invalid source regulatory body. Must be RBI or SEBI.")
+        if source_upper not in ["RBI", "SEBI", "USER_UPLOAD"]:
+            raise ValueError("Invalid source regulatory body. Must be RBI, SEBI, or USER_UPLOAD.")
             
         # Calculate checksum
         checksum = await self.calculate_checksum(file_data)

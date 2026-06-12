@@ -55,6 +55,7 @@ export function LoginPage() {
               <div>admin@regintel.ai / Admin@123</div>
               <div>analyst@regintel.ai / Analyst@123</div>
               <div>auditor@regintel.ai / Auditor@123</div>
+              <div>viewer@regintel.ai / Viewer@123</div>
             </div>
           </details>
         </div>

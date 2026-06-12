@@ -373,10 +373,14 @@ export interface GraphRelationship {
 }
 
 export interface KnowledgeGraphStats {
-  node_count: number;
-  relationship_count: number;
-  nodes_by_type: Record<string, number>;
-  relationships_by_type: Record<string, number>;
+  total_nodes: number;
+  total_relationships: number;
+  by_entity_type: Record<string, number>;
+  by_relationship_type: Record<string, number>;
+  by_source: Record<string, number>;
+  average_degree: number;
+  max_depth: number;
+  connected_components: number;
   generated_at: number;
 }
 
@@ -500,6 +504,12 @@ export interface IngestionJob {
   started_at: number;
   completed_at?: number;
   error?: string;
+  document_id?: string;
+  chunks_created?: number;
+  embeddings_created?: number;
+  pages_parsed?: number;
+  ingestion_status?: string;
+  failure_reason?: string;
 }
 
 export interface ChangeEvent {
@@ -568,13 +578,34 @@ export interface RiskForecast {
 }
 
 export interface Document {
-  document_id: string;
+  id: string;
   title: string;
   source: string;
-  jurisdiction?: string;
   status: string;
-  created_at: number;
   chunk_count: number;
+  file_name?: string;
+  document_type?: string;
+  page_count?: number;
+  checksum?: string;
+  uploaded_at?: string;
+  updated_at?: string;
+  created_at?: number;
+  processing_status?: string;
+  indexed?: boolean;
+}
+
+export interface DocumentDetail extends Document {
+  embedding_count: number;
+  page_count_actual: number;
+  indexed: boolean;
+  processing_status: string;
+  file_path?: string;
+}
+
+export interface DocumentUploadResult {
+  document_id: string;
+  status: string;
+  run_id?: string;
 }
 
 export interface ChatSession {

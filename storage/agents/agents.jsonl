@@ -35,28 +35,28 @@
       "author": "system",
       "capabilities": [
         {
-          "capability_id": "cap-2258c517",
+          "capability_id": "cap-b779a044",
           "kind": "retrieval",
           "name": "retrieval",
           "description": "retrieval capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-eff830e1",
+          "capability_id": "cap-fb093e9e",
           "kind": "reasoning",
           "name": "reasoning",
           "description": "reasoning capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-4bd35316",
+          "capability_id": "cap-a1df7180",
           "kind": "summarization",
           "name": "summarization",
           "description": "summarization capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-0b68ec2d",
+          "capability_id": "cap-6013d3cf",
           "kind": "knowledge_graph",
           "name": "knowledge_graph",
           "description": "knowledge_graph capability for intelligence agent",
@@ -72,7 +72,7 @@
         "research"
       ],
       "registered_at": 1780727313.3386555,
-      "updated_at": 1781187947.562456,
+      "updated_at": 1781239928.512459,
       "metadata": {}
     },
     {
@@ -83,35 +83,35 @@
       "author": "system",
       "capabilities": [
         {
-          "capability_id": "cap-35bcd2ee",
+          "capability_id": "cap-16d59cf1",
           "kind": "compliance",
           "name": "compliance",
           "description": "compliance capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-93c23435",
+          "capability_id": "cap-ab635871",
           "kind": "reasoning",
           "name": "reasoning",
           "description": "reasoning capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-3486c0d6",
+          "capability_id": "cap-8acf704f",
           "kind": "recommendation",
           "name": "recommendation",
           "description": "recommendation capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-f97ca04c",
+          "capability_id": "cap-9a73ec20",
           "kind": "governance",
           "name": "governance",
           "description": "governance capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-649d6b6c",
+          "capability_id": "cap-36be87ca",
           "kind": "impact_analysis",
           "name": "impact_analysis",
           "description": "impact_analysis capability for intelligence agent",
@@ -127,7 +127,7 @@
         "compliance"
       ],
       "registered_at": 1780727313.356054,
-      "updated_at": 1781187947.5647295,
+      "updated_at": 1781239928.5174346,
       "metadata": {}
     },
     {
@@ -138,28 +138,28 @@
       "author": "system",
       "capabilities": [
         {
-          "capability_id": "cap-97a77fa5",
+          "capability_id": "cap-75cfa4da",
           "kind": "risk_assessment",
           "name": "risk_assessment",
           "description": "risk_assessment capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-e954eb0e",
+          "capability_id": "cap-a0b21578",
           "kind": "forecasting",
           "name": "forecasting",
           "description": "forecasting capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-aa11257f",
+          "capability_id": "cap-30ea06ea",
           "kind": "reasoning",
           "name": "reasoning",
           "description": "reasoning capability for intelligence agent",
           "parameters": {}
         },
         {
-          "capability_id": "cap-54c1b4fc",
+          "capability_id": "cap-babf90ac",
           "kind": "recommendation",
           "name": "recommendation",
           "description": "recommendation capability for intelligence agent",
@@ -175,7 +175,7 @@
         "risk"
       ],
       "registered_at": 1780727313.3665125,
-      "updated_at": 1781187947.567153,
+      "updated_at": 1781239928.5207844,
       "metadata": {}
     }
   ]

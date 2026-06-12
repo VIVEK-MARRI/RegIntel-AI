@@ -13,12 +13,15 @@ export async function getCopilotHealth(): Promise<{ status: string; module: stri
 }
 
 export async function getSessions(): Promise<PaginatedResponse<ChatSession>> {
-  return api.get("/conversation/sessions");
+  return api.get("/conversations");
 }
 
-export async function getMessages(conversationId?: string): Promise<PaginatedResponse<CopilotMessage>> {
-  const path = conversationId ? `/conversation/${conversationId}/messages` : "/conversation/messages";
-  return api.get(path);
+export async function getMessages(conversationId?: string): Promise<{ items: CopilotMessage[] }> {
+  if (conversationId) {
+    const conv = await api.get<{ messages: CopilotMessage[] }>(`/conversations/${conversationId}`);
+    return { items: conv.messages ?? [] };
+  }
+  return { items: [] };
 }
 
 export async function queryCopilot(payload: CopilotRequestPayload): Promise<CopilotResponsePayload> {

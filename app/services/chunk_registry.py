@@ -127,6 +127,14 @@ class ChunkRegistryService:
             limit=limit
         )
 
+    async def get_chunk_embeddings(self, chunk_id: uuid.UUID) -> Sequence[Any]:
+        """Retrieves embeddings for a given chunk."""
+        from app.models.chunk import ChunkEmbedding
+        from sqlalchemy import select
+        stmt = select(ChunkEmbedding).where(ChunkEmbedding.chunk_id == chunk_id)
+        result = await self.db_session.execute(stmt)
+        return result.scalars().all()
+
     async def get_document_chunks(
         self, 
         document_id: uuid.UUID, 

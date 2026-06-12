@@ -39,6 +39,7 @@ class NodeSource(str, Enum):
     CHANGE_DETECTION = "change_detection"
     IMPACT_ANALYSIS = "impact_analysis"
     RESEARCH = "research"
+    USER_UPLOAD = "user_upload"
 
 
 # ─── Graph nodes ────────────────────────────────────────────────────

@@ -55,7 +55,7 @@ export function CompliancePage() {
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Metric label="Compliance Score" value={avgScore !== null ? `${avgScore}%` : "—"} hint={assessments ? `${assessments.length} assessment(s)` : "Loading…"} />
         <Metric label="Assessments" value={assessments?.length ?? "—"} />
-        <Metric label="Open Gaps" value={assessments?.reduce((s, a) => s + a.gaps.length, 0) ?? "—"} />
+        <Metric label="Open Gaps" value={assessments?.reduce((s, a) => s + (a.gaps?.length ?? 0), 0) ?? "—"} />
       </section>
 
       <Card padding="md">
@@ -91,7 +91,7 @@ export function CompliancePage() {
                     <Badge tone="brand" size="sm">{Math.round(a.overall_score * 100)}%</Badge>
                     <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">{formatRelative(a.generated_at)}</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{a.obligations.length} obligations · {a.gaps.length} gaps</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{(a.obligations?.length ?? 0)} obligations · {(a.gaps?.length ?? 0)} gaps</p>
                 </li>
               ))}
             </ul>
@@ -110,24 +110,24 @@ function AssessmentDetail({ assessment }: { assessment: ComplianceAssessment }) 
       />
       <div className="card-body space-y-4">
         <section>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Obligations ({assessment.obligations.length})</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Obligations ({(assessment.obligations ?? []).length})</h4>
           <ul className="mt-2 space-y-1.5">
-            {assessment.obligations.map((o) => (
+            {(assessment.obligations ?? []).map((o) => (
               <li key={o.obligation_id} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
-                <span className="flex-1 font-medium text-slate-900 dark:text-slate-100">{o.title}</span>
+                <span className="flex-1 font-medium text-slate-900 dark:text-slate-100">{o.title ?? "—"}</span>
                 <Badge tone={o.severity === "critical" ? "danger" : o.severity === "high" ? "warning" : "info"} size="sm">{o.severity}</Badge>
                 <Badge tone={o.status === "met" ? "success" : o.status === "breached" ? "danger" : "warning"} size="sm">{o.status}</Badge>
               </li>
             ))}
           </ul>
         </section>
-        {assessment.gaps.length ? (<section>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gaps ({assessment.gaps.length})</h4>
+        {(assessment.gaps ?? []).length ? (<section>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gaps ({(assessment.gaps ?? []).length})</h4>
           <ul className="mt-2 space-y-1.5">
-            {assessment.gaps.map((g) => (
+            {(assessment.gaps ?? []).map((g) => (
               <li key={g.gap_id} className="rounded-lg border border-red-200 bg-red-50/40 px-3 py-2 text-xs dark:border-red-900/40 dark:bg-red-950/20">
                 <p className="font-medium text-red-800 dark:text-red-200">{g.description}</p>
-                <p className="mt-1 text-red-600 dark:text-red-400">Actions: {g.recommended_actions.join(", ")}</p>
+                <p className="mt-1 text-red-600 dark:text-red-400">Actions: {(g.recommended_actions ?? []).join(", ") || "—"}</p>
               </li>
             ))}
           </ul>

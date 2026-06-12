@@ -108,22 +108,26 @@ class DocumentService:
 
     def _is_valid_transition(self, current: StatusEnum, target: StatusEnum) -> bool:
         """Enforces lifecycle transition rules.
-        
+
         Rules:
-        - UPLOADED -> PARSING, FAILED
+        - UPLOADED -> PROCESSING, FAILED
+        - PROCESSING -> PARSING, FAILED
         - PARSING -> PARSED, FAILED
-        - FAILED -> PARSING (allow retrying parsing)
+        - PARSED -> INDEXED, FAILED
+        - INDEXED -> FAILED
+        - FAILED -> PROCESSING (allow retrying)
         """
-        # Identity transition is always valid (e.g. UPLOADED to UPLOADED)
         if current == target:
             return True
-            
+
         transitions = {
-            StatusEnum.UPLOADED: {StatusEnum.PARSING, StatusEnum.FAILED},
+            StatusEnum.UPLOADED: {StatusEnum.PROCESSING, StatusEnum.PARSING, StatusEnum.FAILED},
+            StatusEnum.PROCESSING: {StatusEnum.PARSING, StatusEnum.FAILED},
             StatusEnum.PARSING: {StatusEnum.PARSED, StatusEnum.FAILED},
-            StatusEnum.PARSED: set(),  # terminal state
-            StatusEnum.FAILED: {StatusEnum.PARSING}  # retry parsing
+            StatusEnum.PARSED: {StatusEnum.INDEXED, StatusEnum.FAILED},
+            StatusEnum.INDEXED: {StatusEnum.FAILED},
+            StatusEnum.FAILED: {StatusEnum.PROCESSING},
         }
-        
+
         allowed = transitions.get(current, set())
         return target in allowed

@@ -457,11 +457,14 @@ def _build_security_jwt_issuer() -> JWTIssuer:
 
 _security_jwt_issuer: JWTIssuer = _build_security_jwt_issuer()
 _audit_review = AuditReview(_audit_log)
-_cors_origins = (
-    [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
-    if settings.CORS_ORIGINS
-    else ()
-)
+if not settings.AUTH_ENABLED:
+    _cors_origins = ("*",)
+else:
+    _cors_origins = (
+        [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+        if settings.CORS_ORIGINS
+        else ()
+    )
 _api_gateway = APIGateway(
     cors=CORSConfig(allowed_origins=_cors_origins, allow_credentials=bool(_cors_origins)),
     ip_allow=IPAllowList.from_cidrs(default_allow=True),
@@ -495,6 +498,10 @@ async def _startup() -> None:
 async def _shutdown() -> None:
     on_shutdown(app=app)
 
+
+@app.get("/", tags=["health"], include_in_schema=False)
+async def root():
+    return {"status": "ok", "project": settings.PROJECT_NAME, "docs": "/docs"}
 
 @app.get("/health", tags=["health"], include_in_schema=False)
 async def health_check():

@@ -124,9 +124,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // Bootstrap on mount
+    // Bootstrap on mount
   useEffect(() => {
     const init = async () => {
+      const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
+      if (!authEnabled) {
+        const demoUser: User = {
+          user_id: "demo-user",
+          username: "demo",
+          email: "demo@regintel.ai",
+          full_name: "Demo User",
+          roles: ["admin", "analyst", "operator", "auditor"],
+          rbac_roles: ["admin", "analyst", "operator", "auditor"],
+        };
+        setUser(demoUser);
+        setRefreshToken("demo");
+        setAccessToken("demo");
+        setIsLoading(false);
+        return;
+      }
       const storedRefresh = loadPersistedRefreshToken();
       if (storedRefresh) {
         try {
@@ -154,6 +170,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
+      const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
+      if (!authEnabled) {
+        const demoUser: User = {
+          user_id: "demo-user",
+          username: "demo",
+          email: "demo@regintel.ai",
+          full_name: "Demo User",
+          roles: ["admin", "analyst", "operator", "auditor"],
+          rbac_roles: ["admin", "analyst", "operator", "auditor"],
+        };
+        setUser(demoUser);
+        setRefreshToken("demo");
+        setAccessToken("demo");
+        return;
+      }
       const res = await authApi.login({ email, password });
       setAccessToken(res.access_token);
       setRefreshToken(res.refresh_token);
@@ -166,6 +197,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
+    if (!authEnabled) return;
     clearTokens();
     if (refreshTimer.current) {
       clearTimeout(refreshTimer.current);
@@ -174,22 +207,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = useCallback(
     (...roles: string[]) => {
+      const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
+      if (!authEnabled) return true;
       if (!user) return false;
       return roles.some((r) => user.rbac_roles.includes(r));
     },
     [user]
   );
 
+  const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: !!user && !!refreshToken,
+      isAuthenticated: authEnabled ? !!user && !!refreshToken : true,
       isLoading,
       login,
       logout,
       hasRole,
     }),
-    [user, refreshToken, isLoading, login, logout, hasRole]
+    [user, refreshToken, isLoading, login, logout, hasRole, authEnabled]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1007,8 +1007,246 @@ class AutoIngestionService:
         self.registry = registry
         self.monitoring_service = monitoring_service
         self.scheduler = scheduler or IngestionScheduler(self)
+        self.recovery = FailureRecovery()
 
     # ── Public API ────────────────────────────────────────────────────
+
+    async def ingest_upload(self, document_id_str: str) -> IngestionRunResponse:
+        """Process an already-uploaded document through the ingestion pipeline
+        (parse → chunk → embed → index → KG extraction), skipping the download step.
+
+        The document must already exist in the document registry with a saved file.
+        """
+        from uuid import UUID as _UUID
+        document_id = _UUID(document_id_str)
+        run = IngestionRun(
+            document_id=document_id_str,
+            source="USER_UPLOAD",
+        )
+        self.repository.add_run(run)
+        self.audit_service.record(
+            run.run_id, "user_upload_ingestion_started",
+            document_id=document_id_str,
+        )
+        metrics = get_ingestion_metrics()
+
+        # ── Fetch document ────────────────────────────────────────────
+        try:
+            doc = await self.registry.get_by_id(document_id)
+            if doc is None:
+                raise ValueError(f"Document {document_id} not found in registry")
+            run.title = getattr(doc, "title", None) or str(document_id)
+            run.status = IngestionStatus.DOWNLOADED
+            self.audit_service.record(
+                run.run_id, "document_found",
+                document_id=document_id_str,
+            )
+        except Exception as exc:
+            run.finish(IngestionStatus.FAILED, failure_reason=f"document_lookup: {exc}")
+            self.repository.add_run(run)
+            return IngestionRunResponse.from_run(run)
+
+        # ── 2. Parse (skip download for local uploads) ────────────────
+        parse_step = IngestionStep(step=IngestionStepName.PARSE)
+        run.steps.append(parse_step)
+        try:
+            with track_request(endpoint="/api/v1/ingestion/parse", strategy="ingestion"):
+                parse_step.start()
+                run.status = IngestionStatus.PARSING
+                pages = await self.recovery.run(
+                    lambda: self.coordinator.parser.parse(document_id),
+                    step=IngestionStepName.PARSE,
+                )
+                run.pages_parsed = len(pages)
+                parse_step.finish(
+                    IngestionStepStatus.SUCCEEDED,
+                    metadata={"page_count": len(pages)},
+                )
+                self.audit_service.record(
+                    run.run_id, "parse_succeeded",
+                    step=IngestionStepName.PARSE,
+                    document_id=document_id_str,
+                    metadata={"page_count": len(pages)},
+                )
+        except Exception as exc:
+            logger.exception("parse failed for upload %s: %s", document_id, exc)
+            parse_step.finish(IngestionStepStatus.FAILED, error=str(exc))
+            run.finish(IngestionStatus.FAILED, failure_reason=f"parse: {exc}")
+            self.repository.add_run(run)
+            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            return IngestionRunResponse.from_run(run)
+
+        # ── 3. Chunk ───────────────────────────────────────────────────
+        chunk_step = IngestionStep(step=IngestionStepName.CHUNK)
+        run.steps.append(chunk_step)
+        try:
+            with track_request(endpoint="/api/v1/ingestion/chunk", strategy="ingestion"):
+                chunk_step.start()
+                run.status = IngestionStatus.CHUNKING
+                chunks = await self.recovery.run(
+                    lambda: self.coordinator.chunker.chunk(document_id),
+                    step=IngestionStepName.CHUNK,
+                )
+                run.chunks_created = len(chunks)
+                if self.coordinator.chunk_persister is not None:
+                    from uuid import UUID as _UUID
+                    doc_id_uuid = _UUID(str(document_id))
+                    await self.coordinator.chunk_persister.register_chunks_bulk(doc_id_uuid, chunks)
+                chunk_step.finish(
+                    IngestionStepStatus.SUCCEEDED,
+                    metadata={"chunk_count": len(chunks)},
+                )
+                self.audit_service.record(
+                    run.run_id, "chunk_succeeded",
+                    step=IngestionStepName.CHUNK,
+                    document_id=document_id_str,
+                )
+        except Exception as exc:
+            logger.exception("chunk failed for upload %s: %s", document_id, exc)
+            chunk_step.finish(IngestionStepStatus.FAILED, error=str(exc))
+            run.finish(IngestionStatus.FAILED, failure_reason=f"chunk: {exc}")
+            self.repository.add_run(run)
+            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            return IngestionRunResponse.from_run(run)
+
+        # ── 4. Embed ───────────────────────────────────────────────────
+        embed_step = IngestionStep(step=IngestionStepName.EMBED)
+        run.steps.append(embed_step)
+        try:
+            with track_request(endpoint="/api/v1/ingestion/embed", strategy="ingestion"):
+                embed_step.start()
+                run.status = IngestionStatus.EMBEDDING
+                result = await self.recovery.run(
+                    lambda: self.coordinator.embedder.embed(document_id),
+                    step=IngestionStepName.EMBED,
+                )
+                run.embeddings_created = int(result.get("processed_chunks", 0))
+                embed_step.finish(
+                    IngestionStepStatus.SUCCEEDED,
+                    metadata={
+                        "total_chunks": result.get("total_chunks"),
+                        "failed_chunks": result.get("failed_chunks"),
+                    },
+                )
+                self.audit_service.record(
+                    run.run_id, "embed_succeeded",
+                    step=IngestionStepName.EMBED,
+                    document_id=document_id_str,
+                )
+        except Exception as exc:
+            logger.exception("embed failed for upload %s: %s", document_id, exc)
+            embed_step.finish(IngestionStepStatus.FAILED, error=str(exc))
+            run.finish(IngestionStatus.FAILED, failure_reason=f"embed: {exc}")
+            self.repository.add_run(run)
+            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            return IngestionRunResponse.from_run(run)
+
+        # ── 5. Index ───────────────────────────────────────────────────
+        index_step = IngestionStep(step=IngestionStepName.INDEX)
+        run.steps.append(index_step)
+        try:
+            with track_request(endpoint="/api/v1/ingestion/index", strategy="ingestion"):
+                index_step.start()
+                run.status = IngestionStatus.INDEXING
+                index_name = await self.recovery.run(
+                    lambda: self.coordinator.indexer.ensure_index("default"),
+                    step=IngestionStepName.INDEX,
+                )
+                index_step.finish(
+                    IngestionStepStatus.SUCCEEDED,
+                    metadata={"index_name": index_name},
+                )
+                self.audit_service.record(
+                    run.run_id, "index_succeeded",
+                    step=IngestionStepName.INDEX,
+                    document_id=document_id_str,
+                )
+        except Exception as exc:
+            logger.exception("index failed for upload %s: %s", document_id, exc)
+            index_step.finish(IngestionStepStatus.FAILED, error=str(exc))
+            run.finish(IngestionStatus.FAILED, failure_reason=f"index: {exc}")
+            self.repository.add_run(run)
+            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            return IngestionRunResponse.from_run(run)
+
+        # ── 6. Knowledge Graph Extraction ──────────────────────────────
+        kg_extracted = False
+        try:
+            content_parts = []
+            for step in run.steps:
+                if step.step == IngestionStepName.PARSE and step.status == IngestionStepStatus.SUCCEEDED:
+                    from app.services.page import PageService
+                    from app.api.dependencies import get_page_service
+                    # Get pages from page store for KG extraction
+                    from app.core.database import async_session_factory
+                    from app.services.document import DocumentService
+                    session = async_session_factory()
+                    try:
+                        page_service = PageService(session, DocumentService(session))
+                        pages = await page_service.get_document_pages(document_id)
+                        content_parts = [p.content for p in pages]
+                    finally:
+                        await session.close()
+                    break
+
+            if content_parts:
+                full_text = "\n\n".join(content_parts)
+                from app.api.dependencies import get_knowledge_graph_service
+                kg_service = get_knowledge_graph_service()
+                from app.schemas.knowledge_graph import NodeSource
+                kg_service.build_from_text(
+                    full_text,
+                    source=NodeSource.USER_UPLOAD,
+                )
+                kg_extracted = True
+                self.audit_service.record(
+                    run.run_id, "kg_extraction_succeeded",
+                    document_id=document_id_str,
+                )
+        except Exception as exc:
+            logger.warning("KG extraction failed for upload %s: %s", document_id, exc)
+            self.audit_service.record(
+                run.run_id, "kg_extraction_failed",
+                level="warning",
+                document_id=document_id_str,
+                message=str(exc),
+            )
+
+        # ── Done ───────────────────────────────────────────────────────
+        run.status = IngestionStatus.COMPLETED
+        run.finish(IngestionStatus.COMPLETED)
+        self.repository.add_run(run)
+        self.audit_service.record(
+            run.run_id, "user_upload_ingestion_completed",
+            document_id=document_id_str,
+            metadata={
+                "chunks_created": run.chunks_created,
+                "embeddings_created": run.embeddings_created,
+                "pages_parsed": run.pages_parsed,
+                "kg_extracted": kg_extracted,
+            },
+        )
+        metrics.record_run(
+            "user_upload",
+            success=True,
+            chunks=run.chunks_created,
+            embeddings=run.embeddings_created,
+            latency_ms=run.duration_ms,
+        )
+        for step in run.steps:
+            metrics.record_step_latency(step.step.value, step.duration_ms)
+
+        # Update document status to INDEXED
+        try:
+            from app.schemas.document import DocumentStatusUpdate
+            from app.models.document import StatusEnum as _StatusEnum
+            if hasattr(self.registry, "service") and hasattr(self.registry.service, "update_document_status"):
+                doc_id_uuid = uuid.UUID(document_id)
+                await self.registry.service.update_document_status(doc_id_uuid, _StatusEnum.INDEXED)
+        except Exception as exc:
+            logger.warning("Failed to update document status to INDEXED: %s", exc)
+
+        return IngestionRunResponse.from_run(run)
 
     async def ingest(
         self, request: IngestionTriggerRequest
@@ -1221,8 +1459,11 @@ class _RegistryAdapter:
 
     async def get_by_id(self, document_id: Any) -> Optional[Any]:
         try:
-            return await self._service.get_document_by_id(document_id)
-        except Exception:
+            from uuid import UUID as _UUID
+            doc_id = _UUID(str(document_id))
+            return await self._service.get_document_by_id(doc_id)
+        except Exception as exc:
+            logger.warning("get_by_id failed for %s: %s: %s", document_id, type(exc).__name__, exc)
             return None
 
 

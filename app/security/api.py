@@ -29,6 +29,7 @@ from app.security.monitoring import (
     SecurityMonitor,
     get_security_monitor,
 )
+from app.core.config import settings
 from app.security.rbac import Permission, Principal, Role
 from app.security.secrets import SecretsManager, get_secrets_manager
 from app.security.threat_detection import ThreatDetector, get_threat_detector
@@ -55,7 +56,7 @@ def _check_lockout(identity: str) -> None:
 def _record_failure(identity: str) -> None:
     import os
     max_attempts = int(os.environ.get("AUTH_MAX_FAILED_ATTEMPTS", str(_LOCKOUT_MAX)))
-    duration = int(os.environ.get("AUTH_LOCKOUT_DURATION_SECONDS", str(_LOCKOUT_DURATION)))
+    duration = int(float(os.environ.get("AUTH_LOCKOUT_DURATION_SECONDS", str(_LOCKOUT_DURATION))))
     if max_attempts <= 0:
         return
     with _lockout_lock:
@@ -149,8 +150,20 @@ class SignupResponse(BaseModel):
 # ─── Helpers ────────────────────────────────────────────────────────
 
 
+def _demo_principal() -> Principal:
+    """Return a full-access demo principal used when AUTH_ENABLED=False."""
+    return Principal(
+        subject_id="demo-user",
+        email="demo@regintel.ai",
+        username="demo",
+        full_name="Demo User",
+        roles={Role.ADMIN, Role.ANALYST, Role.OPERATOR, Role.AUDITOR, Role.ADMIN},
+    )
+
 def _principal_from_request(request: Request) -> Optional[Principal]:
     """Best-effort principal resolution from a JWT in the Authorization header."""
+    if not settings.AUTH_ENABLED:
+        return _demo_principal()
     auth = request.headers.get("authorization", "")
     if not auth.lower().startswith("bearer "):
         return None
@@ -188,6 +201,18 @@ async def health() -> Dict[str, Any]:
 )
 async def signup(body: SignupRequest) -> SignupResponse:
     """Create a new user account and return JWT tokens."""
+    if not settings.AUTH_ENABLED:
+        resp = _demo_login_response()
+        return SignupResponse(
+            access_token=resp.access_token,
+            refresh_token=resp.refresh_token,
+            token_type=resp.token_type,
+            expires_in=resp.expires_in,
+            access_expires_at=resp.access_expires_at,
+            refresh_expires_at=resp.refresh_expires_at,
+            user=resp.user,
+        )
+
     from app.main import _security_jwt_issuer
     from app.services.admin import build_default_admin_service
     from app.schemas.admin import UserCreateRequest
@@ -238,6 +263,9 @@ async def signup(body: SignupRequest) -> SignupResponse:
 )
 async def login(body: LoginRequest) -> LoginResponse:
     """Authenticate a user by email and password. Returns JWT tokens and user info."""
+    if not settings.AUTH_ENABLED:
+        return _demo_login_response()
+
     from app.main import _security_jwt_issuer
     from app.services.admin import build_default_admin_service
     from app.services.admin import _verify_password
@@ -304,6 +332,27 @@ async def login(body: LoginRequest) -> LoginResponse:
     )
 
 
+def _demo_login_response() -> LoginResponse:
+    """Return a fake admin login response used when AUTH_ENABLED=False."""
+    from app.main import _security_jwt_issuer
+    pair = _security_jwt_issuer.issue(
+        "demo-user",
+        roles=["admin", "analyst", "operator", "auditor"],
+        scopes=[],
+    )
+    return LoginResponse(
+        **pair.to_dict(),
+        user={
+            "user_id": "demo-user",
+            "username": "demo",
+            "email": "demo@regintel.ai",
+            "full_name": "Demo User",
+            "roles": ["admin", "analyst", "operator", "auditor"],
+            "rbac_roles": ["admin", "analyst", "operator", "auditor"],
+        },
+    )
+
+
 @router.post(
     "/auth/token",
     response_model=TokenResponse,
@@ -339,6 +388,16 @@ async def issue_token(request: TokenRequest) -> TokenResponse:
 async def refresh_token(body: Dict[str, str]) -> TokenResponse:
     refresh = body.get("refresh_token", "")
     if not refresh:
+        if not settings.AUTH_ENABLED:
+            resp = _demo_login_response()
+            return TokenResponse(
+                access_token=resp.access_token,
+                refresh_token=resp.refresh_token,
+                token_type=resp.token_type,
+                expires_in=resp.expires_in,
+                access_expires_at=resp.access_expires_at,
+                refresh_expires_at=resp.refresh_expires_at,
+            )
         raise HTTPException(status_code=400, detail="missing refresh_token")
     from app.main import _security_jwt_issuer  # type: ignore[attr-defined]
     try:

@@ -61,8 +61,8 @@ export function KnowledgeGraphPage() {
 
       <div className="space-y-4">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Metric label="Nodes" value={stats?.node_count ?? "—"} hint="Total entities in the graph" />
-          <Metric label="Relationships" value={stats?.relationship_count ?? "—"} hint="Edges between entities" />
+          <Metric label="Nodes" value={stats?.total_nodes ?? "—"} hint="Total entities in the graph" />
+          <Metric label="Relationships" value={stats?.total_relationships ?? "—"} hint="Edges between entities" />
           <Metric label="Generated at" value={stats ? new Date(stats.generated_at * 1000).toLocaleString() : "—"} hint="Snapshot timestamp" />
         </section>
 

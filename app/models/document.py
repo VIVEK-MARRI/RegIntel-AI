@@ -18,11 +18,14 @@ class SourceEnum(str, PyEnum):
     RBI = "RBI"
     SEBI = "SEBI"
     IRDAI = "IRDAI"
+    USER_UPLOAD = "USER_UPLOAD"
 
 class StatusEnum(str, PyEnum):
     UPLOADED = "UPLOADED"
+    PROCESSING = "PROCESSING"
     PARSING = "PARSING"
     PARSED = "PARSED"
+    INDEXED = "INDEXED"
     FAILED = "FAILED"
 
 class Document(Base):
