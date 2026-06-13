@@ -216,3 +216,43 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime storage (regenerated on startup)
+storage/admin/
+storage/agents/
+storage/analytics/
+storage/audit/
+storage/bm25/
+storage/compliance_risk/
+storage/conversations/
+storage/documents/
+storage/evaluation/
+storage/feedback/
+storage/governance/
+storage/ingestion/
+storage/knowledge_graph/
+storage/monitoring/
+storage/recommendations/
+storage/USER_UPLOAD/
+storage/workflow/
+
+# Generated benchmark reports
+benchmarks/reports/
+
+# Log files
+*.log
+
+# Coverage files
+.coverage
+.coverage.*
+
+# Third-party tool artifacts
+.kilo/
+
+# User upload directory at root
+USER_UPLOAD/

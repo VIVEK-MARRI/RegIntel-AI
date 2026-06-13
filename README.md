@@ -8,8 +8,8 @@
 complex compliance workflows.*
 
 [![Version](https://img.shields.io/badge/version-1.0.0-2563eb?style=for-the-badge&logo=semver&logoColor=white)](./docs/VERSIONING.md)
-[![Status](https://img.shields.io/badge/status-production%20ready-16a34a?style=for-the-badge&logo=check-circle&logoColor=white)](#)
-[![Tests](https://img.shields.io/badge/tests-2239%20passing-22c55e?style=for-the-badge&logo=pytest&logoColor=white)](#testing--quality)
+[![Status](https://img.shields.io/badge/status-beta-16a34a?style=for-the-badge&logo=check-circle&logoColor=white)](#)
+[![Tests](https://img.shields.io/badge/tests-2000%2B-22c55e?style=for-the-badge&logo=pytest&logoColor=white)](#testing--quality)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -19,8 +19,6 @@ complex compliance workflows.*
 [![CI](https://img.shields.io/badge/CI-passing-2088ff?style=for-the-badge&logo=github-actions&logoColor=white)](./.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](./LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-22c55e?style=for-the-badge&logo=codecov&logoColor=white)](#testing--quality)
-
-**LangGraph • AutoGen • CrewAI quality — built for the regulatory domain.**
 
 [Architecture](#-architecture-overview) ·
 [Quick Start](#-quick-start) ·
@@ -55,15 +53,12 @@ solves this with a tightly integrated stack of:
 * **Governance platform** — decisions, reviews, audit trails, and
   role-based access control baked into the runtime.
 * **Knowledge graph** — entity-aware retrieval with versioning,
-  alias resolution, and graph traversal.
+  graph traversal, and dependency analysis.
 * **Production security** — HS256 JWT, RBAC, secrets manager, CORS,
   IP allowlist, request signing, threat detection, and audit review.
 * **Full deployment stack** — multi-stage Docker, GitHub Actions
   CI/CD with multi-arch release images, observability, runbooks, and
   release checklists.
-
-It is the only open-source platform that ships with **all of the above
-out of the box**, ready to deploy behind a load balancer.
 
 ---
 
@@ -116,16 +111,16 @@ system that can be deployed, monitored, and operated at scale.
 
 | Domain | Capabilities |
 |--------|--------------|
-| **Ingestion** | PDF / DOCX / HTML parsing • Sliding + semantic chunking • BGE embeddings • Entity / relation extraction • SHA-256 idempotency • Async background workers |
+| **Ingestion** | PDF / DOCX / HTML parsing • Sliding + semantic chunking • BGE-small embeddings • Entity / relation extraction • SHA-256 idempotency • Async background workers |
 | **Retrieval** | BM25 lexical search • Dense vector search (pgvector / HNSW) • Reciprocal rank fusion (RRF) • BGE cross-encoder reranking • Knowledge-graph expansion • Faceted filters |
 | **Answer Generation** | Citation-enforced prompting • Hallucination guard • Confidence scoring • Multi-document synthesis • Streaming responses |
-| **Multi-Agent System** | Coordinator • Research • Compliance • Risk • Audit • Synthesis • Analytics agents • Tool-use planner • Memory + reflection |
-| **Knowledge Graph** | Entity / relation store • Alias resolution • Jaro-Winkler deduplication • Versioning + rollback • Graph traversal |
+| **Multi-Agent System** | Coordinator • Research • Compliance • Risk Intelligence • Audit agents • Agent execution engine • Capability-based dispatch |
+| **Knowledge Graph** | Entity / relation store • Rule-based extraction • Versioning + rollback • Graph traversal • Dependency analysis |
 | **Governance** | Decision workflows • Human-in-the-loop review • Approval states • Full audit trail • Export to JSONL / CSV |
-| **Security** | HS256 JWT (RFC 7519, no PyJWT) • 6 roles / 16 permissions • Layered secrets (env → file → vault) • CORS • IP allowlist • HMAC-SHA256 request signing • Threat detection • Audit review • Security monitoring |
-| **Observability** | Prometheus metrics • Structured JSON logs • OpenTelemetry traces • Grafana dashboards • Alert rules |
+| **Security** | HS256 JWT (RFC 7519, no PyJWT) • 6 roles / 34 permissions • Layered secrets (env → file → vault) • CORS • IP allowlist • HMAC-SHA256 request signing • Threat detection • Audit review • Security monitoring |
+| **Observability** | Structured JSON logs • In-process metrics counters • Alert rules • Request tracing via observability middleware |
 | **Deployment** | Multi-stage Docker • Docker Compose • Multi-arch (amd64 / arm64) • GitHub Actions CI/CD • SBOM + provenance • Vulnerability scanning (Trivy) |
-| **Quality** | 2,239+ tests • Unit, integration, HTTP, doc, release, and benchmark tests • 87 % coverage • Property-based fuzzing on parsers |
+| **Quality** | 2,500+ tests • Unit, integration, HTTP, doc, release, and benchmark tests • 87 % coverage • Property-based fuzzing on parsers |
 
 ---
 
@@ -171,17 +166,15 @@ flowchart TB
         COORD["Coordinator"]:::agent
         RESEARCH["Research Agent"]:::agent
         COMPLIANCE["Compliance Agent"]:::agent
-        RISK["Risk Agent"]:::agent
+        RISK["Risk Intelligence Agent"]:::agent
         AUDIT_A["Audit Agent"]:::agent
-        SYNTH["Synthesis Agent"]:::agent
-        ANALYTICS["Analytics Agent"]:::agent
     end
 
     %% ─── LAYER 5: INTELLIGENCE ─────────────────────────────────
     subgraph INTELLIGENCE["🧠  INTELLIGENCE LAYER"]
         direction LR
-        LLM["LLM Provider<br/>OpenAI / Azure / Bedrock"]:::llm
-        EMBED["Embedding Service<br/>BGE-large"]:::llm
+        LLM["LLM Provider<br/>OpenAI / Gemini / LiteLLM"]:::llm
+        EMBED["Embedding Service<br/>BGE-small"]:::llm
         RERANK["BGE Reranker<br/>cross-encoder"]:::llm
     end
 
@@ -198,7 +191,7 @@ flowchart TB
     subgraph KNOWLEDGE["🕸️  KNOWLEDGE LAYER"]
         direction LR
         KG["Knowledge Graph<br/>entities + relations"]:::kg
-        EXTRACT["Entity Extractor<br/>LLM-based"]:::kg
+        EXTRACT["Entity Extractor<br/>rule-based"]:::kg
         VERSION["Versioning<br/>snapshot + rollback"]:::kg
     end
 
@@ -221,16 +214,15 @@ flowchart TB
     %% ─── LAYER 10: OBSERVABILITY ───────────────────────────────
     subgraph OBS["📊  OBSERVABILITY LAYER"]
         direction LR
-        METRICS["Prometheus<br/>metrics"]:::obs
-        LOGS["Loki / CloudWatch<br/>structured logs"]:::obs
-        TRACES["OpenTelemetry<br/>distributed traces"]:::obs
+        METRICS["In-process metrics<br/>APIMetrics counters"]:::obs
+        LOGS["Structured JSON<br/>logging"]:::obs
     end
 
     %% ─── LAYER 11: SECURITY ────────────────────────────────────
     subgraph SECURITY["🔒  SECURITY LAYER"]
         direction LR
         JWT["JWT<br/>HS256, RFC 7519"]:::sec
-        RBAC["RBAC<br/>6 roles · 16 permissions"]:::sec
+        RBAC["RBAC<br/>6 roles · 34 permissions"]:::sec
         SECRETS["Secrets<br/>env → file → vault"]:::sec
         THREAT["Threat Detection"]:::sec
         APIGW["API Gateway<br/>CORS · IP · Signing"]:::sec
@@ -303,10 +295,8 @@ flowchart TB
         direction TB
         RES["🔬 Research Agent<br/>web + corpus search"]:::spec
         COMP["📋 Compliance Agent<br/>regulatory mapping"]:::spec
-        RISK["⚠️ Risk Agent<br/>scenario analysis"]:::spec
+        RISK["⚠️ Risk Intelligence Agent<br/>scenario analysis"]:::spec
         AUD["📑 Audit Agent<br/>evidence + provenance"]:::spec
-        SYN["🧩 Synthesis Agent<br/>multi-source fusion"]:::spec
-        ANA["📈 Analytics Agent<br/>usage + cost + feedback"]:::spec
     end
 
     subgraph TOOLS["Tool Surface"]
@@ -327,15 +317,11 @@ flowchart TB
     COORD -->|delegate| COMP
     COORD -->|delegate| RISK
     COORD -->|delegate| AUD
-    COORD -->|delegate| SYN
-    COORD -->|delegate| ANA
     RES --> T1 & T2
     COMP --> T1 & T3 & T5
     RISK --> T1 & T3 & T4
     AUD --> T1
-    SYN --> T1
-    ANA --> T1
-    RES & COMP & RISK & AUD & SYN & ANA -->|evidence| COORD
+    RES & COMP & RISK & AUD -->|evidence| COORD
     COORD --> FINAL
 
     classDef coord fill:#1e1b4b,stroke:#818cf8,stroke-width:3px,color:#e0e7ff
@@ -353,10 +339,8 @@ these concerns so each can be tuned and audited independently:
 
 * **Research** retrieves and ranks candidate evidence.
 * **Compliance** maps evidence to specific regulatory regimes.
-* **Risk** runs forward-looking scenario analysis.
+* **Risk Intelligence** runs forward-looking scenario analysis.
 * **Audit** verifies citation discipline and provenance.
-* **Synthesis** composes the final answer from the agent outputs.
-* **Analytics** instruments the run for cost and quality dashboards.
 
 The **coordinator** is the only component that knows the user's
 authorisation context, the tool surface, and the budget. It is also
@@ -377,12 +361,10 @@ sequenceDiagram
     participant API as ⚙️ FastAPI
     participant JW as 🔑 JWT / RBAC
     participant CO as 🎯 Coordinator
-    participant PL as 🧠 Planner
     participant R as 🔍 Retriever
     participant KG as 🕸️ KG
     participant AG as 🤖 Agents
     participant L as 🧠 LLM
-    participant V as ✅ Verifier
     participant DB as 💾 Postgres
     participant AUD as 📑 Audit
 
@@ -393,10 +375,8 @@ sequenceDiagram
     JW-->>API: principal {roles, scopes}
     API->>AUD: log(request_id, principal)
     API->>CO: run_agent(query, history)
-    CO->>CO: rewrite → plan
-    CO->>PL: select tools + budgets
+    CO->>CO: rewrite → plan → select tools
     loop up to max_steps
-        PL-->>CO: tool calls
         alt hybrid_search
             CO->>R: hybrid_search(query, top_k)
             R->>KG: expand entities (optional)
@@ -414,12 +394,7 @@ sequenceDiagram
     AG->>L: compose prompt + cite
     L-->>AG: draft answer
     AG-->>CO: agent outputs
-    CO->>V: verify(citations, evidence)
-    alt accepted
-        V-->>CO: ok
-    else rejected
-        V-->>CO: error → replan
-    end
+    CO->>CO: verify(citations, evidence)
     CO-->>API: final answer + citations
     API->>AUD: log(answer + evidence_hash)
     API-->>FE: 200 {answer, citations, request_id}
@@ -438,14 +413,14 @@ sequenceDiagram
 | **Frontend** | React 18 · TypeScript 5 · Vite 5 · Tailwind 3 · TanStack Query 5 · React Router 6 · Recharts 2 · Vitest 2 · Testing Library |
 | **Backend (API)** | FastAPI 0.136 · Pydantic 2.13 · Uvicorn · Gunicorn · python-multipart |
 | **Backend (Async)** | SQLAlchemy 2.0 (async) · asyncpg · aiosqlite · Alembic |
-| **AI / ML** | OpenAI / Azure OpenAI / AWS Bedrock (pluggable) · BGE-large embeddings · BGE cross-encoder reranker · rank-bm25 · scikit-learn · NetworkX |
+| **AI / ML** | OpenAI / Gemini / LiteLLM (pluggable) · BGE-small embeddings · BGE cross-encoder reranker · rank-bm25 · scikit-learn · NetworkX |
 | **Document AI** | PyMuPDF · Custom DOCX / HTML / text parsers · Sliding + semantic chunking |
 | **Databases** | PostgreSQL 16+ · pgvector (HNSW index) · Redis 7 (optional) |
 | **Object Storage** | S3 · GCS · Azure Blob (provider-agnostic) |
 | **Container** | Docker 24+ · Docker Compose 2.20+ · Multi-arch (linux/amd64, linux/arm64) |
 | **Edge / Reverse Proxy** | nginx 1.27 (alpine) · HTTP/2 · gzip · security headers · rate limit |
-| **Observability** | Prometheus · Grafana · OpenTelemetry · OTLP · Loki / CloudWatch / Datadog |
-| **Security** | HS256 JWT (RFC 7519) · passlib · HMAC-SHA256 · OWASP-aligned defaults |
+| **Observability** | Structured JSON logs · In-process metrics (APIMetrics) · FastAPI Prometheus integration (planned) |
+| **Security** | HS256 JWT (RFC 7519) · passlib · HMAC-SHA256 · CORS · IP allowlist · Threat detection |
 | **CI / CD** | GitHub Actions · Trivy · pip-audit · Bandit · mypy · ruff · Dependabot |
 | **Release** | SBOM (SPDX) · Provenance attestations · Multi-arch images · GHCR |
 | **Quality** | pytest · pytest-asyncio · pytest-cov · coverage.py · property-based fuzz |
@@ -459,69 +434,65 @@ RegIntel-AI/
 ├── app/                          # Backend application
 │   ├── __init__.py               # __version__ = "1.0.0"
 │   ├── main.py                   # FastAPI composition root
-│   ├── api/v1/                   # 45+ FastAPI routers
-│   │   ├── agent.py              # Agent run + history
-│   │   ├── retrieval.py          # Hybrid search
-│   │   ├── governance.py         # Decisions + review
-│   │   ├── security.py           # JWT / RBAC / audit / threat
-│   │   ├── benchmark.py          # Performance + load
-│   │   └── ...                   # 40+ more
-│   ├── agent/                    # Multi-agent runtime
-│   │   ├── rewriter.py           # Query rewriting
-│   │   ├── planner.py            # Tool-use planner
-│   │   ├── composer.py           # Answer composition
-│   │   ├── verifier.py           # Citation verification
-│   │   ├── runner.py             # Async orchestrator
-│   │   └── tools/                # Tool implementations
-│   ├── retrieval/                # Hybrid retrieval
-│   │   ├── hybrid.py             # BM25 + dense + RRF
-│   │   ├── reranker.py           # Cross-encoder
-│   │   └── evaluation.py         # Offline metrics
-│   ├── knowledge_graph/          # Entity / relation store
-│   ├── governance/               # Decision workflows
-│   ├── security/                 # M10.6 Security Platform
+│   ├── api/                      # FastAPI routers
+│   ├── benchmark/                # Benchmark platform
+│   ├── core/                     # Config, settings, dependencies
+│   ├── evaluation/               # Evaluation framework
+│   ├── middleware/               # Audit, API keys, rate limit
+│   ├── models/                   # SQLAlchemy ORM models
+│   ├── repositories/            # Data access layer
+│   ├── schemas/                  # Pydantic models
+│   ├── security/                 # Security platform
 │   │   ├── jwt_auth.py           # HS256 JWT
-│   │   ├── rbac.py               # 6 roles / 16 permissions
+│   │   ├── rbac.py               # 6 roles / 34 permissions
 │   │   ├── secrets.py            # env → file → vault
 │   │   ├── api_gateway.py        # CORS / IP / signing
 │   │   ├── threat_detection.py   # Brute force / UA / payload
 │   │   ├── audit_review.py       # Filter / export
 │   │   └── monitoring.py         # Dashboard + alerts
-│   ├── benchmark/                # M10.5 Benchmark Platform
-│   ├── middleware/               # Audit, API keys, rate limit
-│   ├── llm/                      # Provider-agnostic LLM client
-│   ├── parsing/                  # PDF / DOCX / HTML parsers
-│   ├── chunking/                 # Sliding + semantic
-│   ├── storage/                  # Object storage abstraction
-│   ├── analytics/                # Usage / cost / feedback
-│   ├── models/                   # SQLAlchemy ORM
-│   ├── schemas/                  # Pydantic models
 │   └── services/                 # Business logic services
+│       ├── agents/               # Multi-agent runtime
+│       ├── answer_generation/    # LLM providers + prompt builder
+│       ├── audit_agent/          # Audit agent
+│       ├── bm25/                 # BM25 lexical search engine
+│       ├── chunking/             # Sliding + semantic chunkers
+│       ├── citation/             # Citation builder + verifier
+│       ├── confidence/           # Confidence scoring engine
+│       ├── conversation/         # Multi-turn conversation
+│       ├── copilot/              # Top-level copilot orchestrator
+│       ├── embedding/            # Dense retrieval + benchmark suite
+│       ├── evaluation/           # Answer evaluation framework
+│       ├── fusion/               # RRF + strategy pattern fusion
+│       ├── governance/           # Decision workflows
+│       ├── hallucination/        # Hallucination guard (LLM + lexical)
+│       ├── hybrid/               # Concurrent dense + BM25 retrieval
+│       ├── ingestion/            # Document ingestion pipeline
+│       ├── intelligence_agents/  # Research + Compliance agents
+│       ├── knowledge_graph/      # Entity extraction + graph store
+│       ├── memory/               # Short/long-term memory
+│       ├── observability/        # Metrics + tracing
+│       ├── orchestrator/         # Pipeline coordinator
+│       ├── parsing/              # PDF / DOCX / HTML parsers
+│       ├── reranker/             # BGE cross-encoder reranker
+│       └── retrieval/            # Retrieval intelligence
 ├── frontend/                     # Web SPA
 │   ├── src/
 │   │   ├── components/           # Reusable UI components
 │   │   ├── pages/                # Route-level views
 │   │   ├── hooks/                # React hooks
-│   │   ├── api/                  # Typed API client
-│   │   ├── stores/               # State management
-│   │   └── theme/                # Design system
-│   ├── tests/                    # Vitest + Testing Library
+│   │   ├── services/             # Typed API client
+│   │   └── test/                 # Vitest + Testing Library
 │   ├── Dockerfile.production     # Node 20 → nginx alpine
 │   └── package.json
 ├── alembic/                      # Database migrations
 │   └── versions/                 # Migration history
-├── tests/                        # Backend test suite (2,239+)
-│   ├── test_security.py          # M10.6 unit
-│   ├── test_security_api.py      # M10.6 HTTP
-│   ├── test_benchmark.py         # M10.5 unit
-│   ├── test_benchmark_api.py     # M10.5 HTTP
-│   ├── test_deployment.py        # M10.3 validation
-│   ├── test_pipeline.py          # M10.4 CI validation
-│   ├── test_documentation.py     # M10.7 doc validation
-│   ├── test_release.py           # M10.8 release validation
-│   └── test_milestone*.py        # M1–M9 regression suite
+├── tests/                        # Backend test suite (2,500+)
+│   ├── fixtures/                 # Test fixture files
+│   ├── test_analytics/           # Analytics tests
+│   └── test_evaluation/          # Evaluation tests
+├── benchmarks/                   # Benchmark reports
 ├── docs/                         # Documentation
-│   ├── architecture/             # 10 architecture docs
+│   ├── architecture/             # Architecture docs
 │   │   ├── README.md
 │   │   ├── 01-system-architecture.md
 │   │   ├── 02-agent-architecture.md
@@ -532,6 +503,7 @@ RegIntel-AI/
 │   │   ├── 07-api-reference.md
 │   │   ├── 08-developer-guide.md
 │   │   └── 09-operations-guide.md
+│   ├── reviews/                  # Architecture reviews
 │   ├── DEPLOYMENT.md
 │   ├── OPERATIONS.md
 │   ├── USER_GUIDE.md
@@ -539,14 +511,13 @@ RegIntel-AI/
 │   ├── TROUBLESHOOTING.md
 │   ├── VERSIONING.md
 │   └── RELEASE_CHECKLIST.md
+├── storage/                      # Runtime storage (BM25 index, KG, etc.)
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml                # 7-job CI
+│   │   ├── ci.yml                # CI pipeline
 │   │   ├── release.yml           # Multi-arch release
 │   │   └── benchmark.yml         # Weekly benchmarks
 │   └── dependabot.yml
-├── benchmarks/                   # M10.5 benchmark reports
-├── storage/                      # Runtime storage
 ├── Dockerfile.production         # Multi-stage backend image
 ├── docker-compose.production.yml # Production orchestration
 ├── nginx.conf                    # Edge reverse proxy
@@ -558,49 +529,6 @@ RegIntel-AI/
 ```
 
 ---
-
-## 🛤️ Milestone Journey
-
-RegIntel AI has been built incrementally across ten milestones, each
-shipping a production-ready layer of capability.
-
-```mermaid
-%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1f2937','primaryTextColor':'#f9fafb','lineColor':'#94a3b8','fontSize':'13px'}}}%%
-gantt
-    title RegIntel AI — Milestone Roadmap
-    dateFormat YYYY-MM-DD
-    axisFormat %b
-    section M1–M3 Foundation
-    Domain models, repos, REST API         :m1, 2025-09-01, 21d
-    Ingestion + embeddings                 :m2, after m1, 21d
-    Search + glossary + routing            :m3, after m2, 21d
-    section M4–M6 RAG Core
-    Hybrid retrieval + reranker            :m4, after m3, 21d
-    RAG agent + memory                     :m5, after m4, 21d
-    Ragas/DeepEval eval + adapters         :m6, after m5, 21d
-    section M7–M8 Governance
-    Knowledge graph + alerting             :m7, after m6, 21d
-    Compliance + workflows + HITL          :m8, after m7, 21d
-    section M9 Multi-Agent
-    Agent framework + audit agent          :m9, after m8, 21d
-    section M10 Production
-    UX + agent control center              :m10ux, after m9, 14d
-    Prod deploy + CI/CD + benchmark        :m10ops, after m10ux, 14d
-    Security + docs + release              :milestone, after m10ops, 14d
-```
-
-| Milestone | Theme | Highlights |
-|-----------|-------|------------|
-| **M1** | Foundation | Domain models · Repositories · REST API skeleton |
-| **M2** | Ingestion | Parsers · Chunkers · Embeddings |
-| **M3** | Search | Faceted search · Glossary · Query routing |
-| **M4** | RAG Core | Hybrid retrieval (BM25 + dense) · Reranker · Evaluation |
-| **M5** | RAG Agent | Plan → retrieve → answer · Memory · Reflection |
-| **M6** | Evaluation | Ragas · DeepEval · Adaptive model routing |
-| **M7** | Knowledge | Knowledge graph · Alerting · Impact analysis |
-| **M8** | Governance | Decisions · Workflows · Human-in-the-loop |
-| **M9** | Multi-Agent | Audit agent · Orchestration · Analytics |
-| **M10** | Production | UX · CI/CD · Benchmark · Security · Docs · v1.0 RC |
 
 ---
 
@@ -672,10 +600,11 @@ See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for the full procedure.
 
 ## 🧪 Testing & Quality
 
+> _Note: Screenshots and Kubernetes manifests are planned but not yet included in this repository._
+
 | Metric | Value |
 |--------|-------|
-| **Total tests** | 2,239+ |
-| **Skipped** | 7 (intentional, environment-gated) |
+| **Total tests** | 2,500+ |
 | **Coverage** | 87 % |
 | **CI runtime** | ~6 min (parallel) |
 | **Property-based** | Parser, chunker, secrets, RBAC |
@@ -729,8 +658,7 @@ mutmut run
 
 ## 🔒 Security
 
-RegIntel AI is built to operate in regulated environments. Security
-is not a feature — it is a load-bearing structural property.
+RegIntel AI is built to operate in regulated environments.
 
 ### Authentication
 
@@ -745,10 +673,8 @@ is not a feature — it is a load-bearing structural property.
 ### Authorisation
 
 * **RBAC** — 6 built-in roles (`viewer`, `analyst`, `operator`,
-  `auditor`, `admin`, `service`) and 16 permissions across the
+  `auditor`, `admin`, `service`) and 34 permissions across the
   read / write / execute / manage dimensions.
-* **Decorators** — `@require_role(role)` and
-  `@require_permission(perm, ...)`.
 * **Unknown roles / scopes** — silently dropped to prevent
   privilege escalation through the JWT.
 
@@ -793,11 +719,7 @@ is not a feature — it is a load-bearing structural property.
 
 ### Compliance
 
-* OWASP Top 10 — defaults align with the OWASP recommendations for
-  LLM applications.
 * GDPR — user data is exportable and deletable via admin APIs.
-* SOC 2 — see `compliance/soc2/`.
-* ISO 27001 — see `compliance/iso27001/`.
 
 ---
 
@@ -861,19 +783,6 @@ docker compose -f docker-compose.production.yml up -d
 # Health check
 curl -f https://<host>/health/live
 curl -f https://<host>/api/v1/security/selftest
-```
-
-### Kubernetes
-
-```bash
-# Apply manifests (in k8s/)
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/backend.yaml
-kubectl apply -f k8s/frontend.yaml
-kubectl apply -f k8s/ingress.yaml
-
-# Roll out a new version
-kubectl rollout undo deploy/regintel-backend
 ```
 
 ### Environment variables (excerpt)
@@ -963,25 +872,9 @@ Full reference: [docs/architecture/07-api-reference.md](./docs/architecture/07-a
 
 ---
 
-## 📸 Screenshots
-
-> The web console provides a focused, citation-first experience for
-> regulatory research.
-
-<div align="center">
-
-| | |
-|---|---|
-| ![Query view](./docs/screenshots/01-query.png)<br/>**Query + citations** | ![Knowledge graph](./docs/screenshots/02-kg.png)<br/>**Knowledge graph explorer** |
-| ![Governance](./docs/screenshots/03-governance.png)<br/>**Governance review** | ![Security dashboard](./docs/screenshots/04-security.png)<br/>**Security dashboard** |
-| ![Benchmark](./docs/screenshots/05-benchmark.png)<br/>**Benchmark results** | ![Agent control center](./docs/screenshots/06-agent.png)<br/>**Agent control center** |
-
-</div>
-
-> _Screenshots are illustrative; the production console is light /
-> dark theme aware and responsive across viewports._
-
 ---
+
+
 
 ## 🗺️ Future Roadmap
 
@@ -1042,34 +935,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 ---
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
-RegIntel AI is built on the shoulders of giants. We are deeply grateful
-to the maintainers and contributors of the following projects:
+This project builds on the work of many open-source projects:
 
-* [FastAPI](https://fastapi.tiangolo.com/) · [Pydantic](https://docs.pydantic.dev/) · [SQLAlchemy](https://www.sqlalchemy.org/) — the Python web + data stack.
-* [pgvector](https://github.com/pgvector/pgvector) — vector search in PostgreSQL.
-* [BAAI / BGE](https://github.com/FlagOpen/FlagEmbedding) — state-of-the-art embeddings and rerankers.
-* [PyMuPDF](https://pymupdf.io/) — robust PDF parsing.
-* [OpenTelemetry](https://opentelemetry.io/) — vendor-neutral observability.
-* [Mermaid](https://mermaid.js.org/) — diagrams-as-code.
-* [LangGraph](https://github.com/langchain-ai/langgraph), [AutoGen](https://github.com/microsoft/autogen), [CrewAI](https://github.com/crewAIInc/crewAI) — inspiration for the multi-agent runtime.
-* [Prometheus](https://prometheus.io/) · [Grafana](https://grafana.com/) — metrics + dashboards.
-* [Trivy](https://trivy.dev/) — vulnerability scanning.
-* [GitHub Actions](https://github.com/features/actions) — CI/CD.
-
-If RegIntel AI has helped your team, please consider ⭐ starring the
-repository and sharing it with your network.
+* [FastAPI](https://fastapi.tiangolo.com/) · [Pydantic](https://docs.pydantic.dev/) · [SQLAlchemy](https://www.sqlalchemy.org/)
+* [pgvector](https://github.com/pgvector/pgvector)
+* [BAAI / BGE](https://github.com/FlagOpen/FlagEmbedding)
+* [PyMuPDF](https://pymupdf.io/)
+* [OpenTelemetry](https://opentelemetry.io/)
+* [Mermaid](https://mermaid.js.org/)
+* [Prometheus](https://prometheus.io/) · [Grafana](https://grafana.com/)
+* [Trivy](https://trivy.dev/)
+* [GitHub Actions](https://github.com/features/actions)
 
 ---
 
-<div align="center">
-
-**Built with discipline. Operated with care. Open-sourced with
-conviction.**
-
-[⭐ Star this repo](https://github.com/regintel/regintel-ai) ·
 [🐛 Report a bug](https://github.com/regintel/regintel-ai/issues) ·
 [📖 Read the docs](./docs/architecture/README.md)
-
-</div>
