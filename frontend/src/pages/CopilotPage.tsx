@@ -46,9 +46,7 @@ export function CopilotPage() {
 
   const query = useMutation({
     mutationFn: queryCopilot,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["copilot", "sessions"] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["copilot", "sessions"] }),
   });
 
   const [input, setInput] = useState("");
@@ -92,7 +90,7 @@ export function CopilotPage() {
   }
 
   return (
-    <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_320px]">
+    <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
       <SessionList
         sessions={sessions?.items}
         isLoading={sessionsLoading}
@@ -110,12 +108,12 @@ export function CopilotPage() {
           ) : messagesError ? (
             <ErrorState title="Failed to load messages" onRetry={refetchMessages} />
           ) : messages.length === 0 && !streaming ? (
-            <EmptyState title="Ask the RegIntel Copilot" description="A regulatory copilot with citations, source attribution, and agent collaboration." />
+            <EmptyState title="Ask the RegIntel Copilot" description="Ask regulatory, compliance, or risk questions and get citation-backed answers." />
           ) : (
             <ul className="space-y-4">
               {messages.map((m, i) => (<MessageBubble key={i} message={m} />))}
               {streaming ? (
-                <li className="flex items-start gap-3">
+                <li key="streaming" className="flex items-start gap-3">
                   <Avatar role="assistant" />
                   <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-elevated dark:border-slate-800 dark:bg-surface-dark-2">
                     <Skeleton lines={2} />
@@ -142,9 +140,6 @@ export function CopilotPage() {
           </form>
         </div>
       </Card>
-      <aside className="hidden h-[calc(100vh-7rem)] flex-col gap-4 lg:flex">
-        <ContextPanel />
-      </aside>
     </div>
   );
 }
@@ -300,24 +295,6 @@ function MemoryContextView({ ctx }: { ctx?: MemoryContext }) {
     </div>
     {ctx.entities?.length ? (<div className="mt-2 flex flex-wrap gap-1.5">{ctx.entities.slice(0, 6).map((e, i) => (<Badge key={i} tone="brand" size="sm">{e}</Badge>))}</div>) : null}
   </section>);
-}
-
-function ContextPanel() {
-  return (<>
-    <Card padding="md" className="space-y-3">
-      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">How the Copilot works</h3>
-      <ol className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-        <li className="flex items-start gap-2"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">1</span><span>Retrieves the most relevant regulatory chunks via hybrid search.</span></li>
-        <li className="flex items-start gap-2"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">2</span><span>Routes through research, compliance, and risk agents.</span></li>
-        <li className="flex items-start gap-2"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">3</span><span>Synthesises a citation-backed answer with confidence scores.</span></li>
-        <li className="flex items-start gap-2"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">4</span><span>Logs decisions for governance and audit.</span></li>
-      </ol>
-    </Card>
-    <Card padding="md">
-      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Memory</h3>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">The copilot remembers your recent conversations and surfaces relevant long-term facts.</p>
-    </Card>
-  </>);
 }
 
 function buildAssistantMessage(r: CopilotResponsePayload): CopilotMessage {

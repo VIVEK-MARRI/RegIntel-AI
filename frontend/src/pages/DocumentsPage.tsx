@@ -195,7 +195,7 @@ export function DocumentsPage() {
                         <TD><Badge tone="neutral" size="sm">{d.source}</Badge></TD>
                         <TD><Badge tone={statusTone(d.status) as any} size="sm">{d.status}</Badge></TD>
                         <TD className="text-slate-500">{d.page_count ?? "—"}</TD>
-                        <TD className="text-slate-500">{d.chunk_count}</TD>
+                        <TD className="text-slate-500">{d.chunk_count ?? "—"}</TD>
                         <TD className="text-slate-500 text-[10px]">{formatRelative(d.created_at)}</TD>
                       </TR>
                     ))}
@@ -218,8 +218,8 @@ export function DocumentsPage() {
                 <div className="flex justify-between"><dt className="text-slate-500">Source</dt><dd className="font-medium">{detail.source}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Type</dt><dd>{detail.document_type || "—"}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Pages</dt><dd>{detail.page_count ?? "—"}</dd></div>
-                <div className="flex justify-between"><dt className="text-slate-500">Chunks</dt><dd>{detail.chunk_count}</dd></div>
-                <div className="flex justify-between"><dt className="text-slate-500">Embeddings</dt><dd>{detail.embedding_count}</dd></div>
+                <div className="flex justify-between"><dt className="text-slate-500">Chunks</dt><dd>{detail.chunk_count ?? "—"}</dd></div>
+                <div className="flex justify-between"><dt className="text-slate-500">Embeddings</dt><dd>{detail.embedding_count ?? "—"}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Indexed</dt><dd>{detail.indexed ? "Yes" : "No"}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Processing</dt><dd>{detail.processing_status}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Uploaded</dt><dd>{formatRelative(detail.created_at)}</dd></div>

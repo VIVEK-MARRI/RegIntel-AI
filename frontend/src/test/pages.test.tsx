@@ -7,19 +7,14 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { SettingsPage } from "@/pages/SettingsPage";
-import { AgentControlCenterPage } from "@/pages/AgentControlCenterPage";
-import { AgentCollaborationPage } from "@/pages/AgentCollaborationPage";
-import { AgentHealthPage } from "@/pages/AgentHealthPage";
-import { AgentWorkflowsPage } from "@/pages/AgentWorkflowsPage";
+import { AgentsPage } from "@/pages/AgentsPage";
 import { AuditPage } from "@/pages/AuditPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { CompliancePage } from "@/pages/CompliancePage";
 import { CopilotPage } from "@/pages/CopilotPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { KnowledgeGraphPage } from "@/pages/KnowledgeGraphPage";
-import { GovernancePage } from "@/pages/GovernancePage";
 import { ResearchPage } from "@/pages/ResearchPage";
-import { RiskPage } from "@/pages/RiskPage";
 import type { ReactNode } from "react";
 
 function renderPage(node: ReactNode, initialRoute = "/") {
@@ -74,24 +69,9 @@ describe("Pages render", () => {
     expect(screen.getByText(/Page not found/i)).toBeInTheDocument();
   });
 
-  it("AgentControlCenterPage renders header", () => {
-    renderPage(<AgentControlCenterPage />);
-    expect(screen.getByText(/Agent Control Center/i)).toBeInTheDocument();
-  });
-
-  it("AgentCollaborationPage", () => {
-    renderPage(<AgentCollaborationPage />);
-    expect(screen.getByText("Collaborations")).toBeInTheDocument();
-  });
-
-  it("AgentHealthPage", () => {
-    renderPage(<AgentHealthPage />);
-    expect(screen.getByText(/Agent Health Dashboard/i)).toBeInTheDocument();
-  });
-
-  it("AgentWorkflowsPage", () => {
-    renderPage(<AgentWorkflowsPage />);
-    expect(screen.getByText("Workflows")).toBeInTheDocument();
+  it("AgentsPage", () => {
+    renderPage(<AgentsPage />);
+    expect(screen.getByText("AI Agents")).toBeInTheDocument();
   });
 
   it("AuditPage", () => {
@@ -116,21 +96,11 @@ describe("Pages render", () => {
 
   it("KnowledgeGraphPage", () => {
     renderPage(<KnowledgeGraphPage />);
-    expect(screen.getByText(/Node types/i)).toBeInTheDocument();
-  });
-
-  it("GovernancePage", () => {
-    renderPage(<GovernancePage />);
-    expect(screen.getByText("Governance")).toBeInTheDocument();
+    expect(screen.getByText(/Entity Types/i)).toBeInTheDocument();
   });
 
   it("ResearchPage", () => {
     renderPage(<ResearchPage />);
     expect(screen.getByText("Research")).toBeInTheDocument();
-  });
-
-  it("RiskPage", () => {
-    renderPage(<RiskPage />);
-    expect(screen.getByText("Risk")).toBeInTheDocument();
   });
 });

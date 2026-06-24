@@ -89,7 +89,7 @@ export function AuditPage() {
                       <TD><Badge tone="brand" size="sm">{r.action}</Badge></TD>
                       <TD>{truncate(r.subject, 80)}</TD>
                       <TD>{r.outcome}</TD>
-                      <TD>{r.evidence_ids.length}</TD>
+                      <TD>{(r.evidence_ids?.length ?? 0)}</TD>
                       <TD>{formatRelative(r.timestamp)}</TD>
                     </TR>
                   ))}
@@ -113,7 +113,7 @@ export function AuditPage() {
                       <Badge tone={r.status === "published" ? "success" : "warning"} size="sm">{r.status}</Badge>
                       <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">{formatRelative(r.generated_at)}</span>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{r.period_start} – {r.period_end} · {r.sections.length} sections</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{r.period_start} – {r.period_end} · {(r.sections?.length ?? 0)} sections</p>
                   </li>
                 ))}
               </ul>

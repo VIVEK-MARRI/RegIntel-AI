@@ -85,7 +85,7 @@ export function AdminPage() {
                     <TD>{u.email}</TD>
                     <TD>
                       <div className="flex flex-wrap gap-1">
-                        {u.roles.map((r) => (
+                        {(u.roles ?? []).map((r) => (
                           <Badge key={r} tone="brand" size="sm">
                             {r}
                           </Badge>
@@ -140,9 +140,9 @@ export function AdminPage() {
                     {truncate(r.description, 100)}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {r.permissions.slice(0, 4).map((p) => (
-                      <Badge key={p} tone="neutral" size="sm">
-                        {p}
+                    {(r.permissions ?? []).slice(0, 4).map((p) => (
+                      <Badge key={p.permission_id ?? p.code} tone="neutral" size="sm">
+                        {p.code ?? p.description}
                       </Badge>
                     ))}
                   </div>

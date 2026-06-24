@@ -2,42 +2,39 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { clsx } from "clsx";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 interface NavItem {
   to: string;
   label: string;
   icon: string;
-  group: "main" | "agents" | "platform";
-  /** Minimum RBAC roles required to see this item. Empty = public. */
-  minRoles?: string[];
+  minRole?: string;
 }
 
 const NAV: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: "▦", group: "main" },
-  { to: "/copilot", label: "Copilot", icon: "✦", group: "main" },
-  { to: "/research", label: "Research", icon: "⌕", group: "main" },
-  { to: "/compliance", label: "Compliance", icon: "✓", group: "main" },
-  { to: "/risk", label: "Risk", icon: "△", group: "main" },
-  { to: "/knowledge-graph", label: "Knowledge Graph", icon: "◌", group: "main" },
-  { to: "/agents", label: "Agent Control Center", icon: "◍", group: "agents", minRoles: ["admin", "operator", "analyst"] },
-  { to: "/agents/collaboration", label: "Collaboration", icon: "↔", group: "agents", minRoles: ["admin", "operator"] },
-  { to: "/agents/health", label: "Agent Health", icon: "♥", group: "agents", minRoles: ["admin", "operator"] },
-  { to: "/agents/workflows", label: "Agent Workflows", icon: "↧", group: "agents", minRoles: ["admin", "operator"] },
-  { to: "/governance", label: "Governance", icon: "§", group: "platform", minRoles: ["admin", "auditor"] },
-  { to: "/audit", label: "Audit", icon: "⛬", group: "platform", minRoles: ["admin", "auditor"] },
-  { to: "/admin", label: "Admin", icon: "☰", group: "platform", minRoles: ["admin"] },
-  { to: "/settings", label: "Settings", icon: "⚙", group: "platform" },
+  { to: "/", label: "Dashboard", icon: "Dashboard" },
+  { to: "/copilot", label: "Copilot", icon: "Copilot" },
+  { to: "/research", label: "Research", icon: "Research" },
+  { to: "/documents", label: "Documents", icon: "Documents" },
+  { to: "/knowledge-graph", label: "Knowledge Graph", icon: "Knowledge" },
+  { to: "/compliance", label: "Compliance", icon: "Compliance" },
+  { to: "/audit", label: "Audit", icon: "Audit" },
+  { to: "/analytics", label: "Analytics", icon: "Analytics" },
+  { to: "/settings", label: "Settings", icon: "Settings" },
 ];
+
+const AGENT_ITEM: NavItem = { to: "/agents", label: "AI Agents", icon: "Agents", minRole: "admin" };
+const ADMIN_ITEM: NavItem = { to: "/admin", label: "Admin", icon: "Admin", minRole: "admin" };
 
 export function Sidebar({ collapsed }: { collapsed: boolean }) {
   const { theme, toggle } = useTheme();
   const { hasRole } = useAuth();
-  const groups: Array<{ key: NavItem["group"]; title: string }> = [
-    { key: "main", title: "Workspace" },
-    { key: "agents", title: "Agent Control Center" },
-    { key: "platform", title: "Platform" },
-  ];
+
+  const items = NAV.filter((n) => !n.minRole || hasRole(n.minRole));
+
+  const extraItems = [AGENT_ITEM, ADMIN_ITEM].filter(
+    (n) => !n.minRole || hasRole(n.minRole)
+  );
 
   return (
     <aside
@@ -53,7 +50,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
           aria-hidden
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-glow"
         >
-          ⌬
+          R
         </div>
         {!collapsed ? (
           <div className="min-w-0">
@@ -68,42 +65,44 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {groups.map((g) => {
-          const items = NAV.filter(
-            (n) =>
-              n.group === g.key &&
-              (!n.minRoles || n.minRoles.some((r) => hasRole(r)))
-          );
-          if (!items.length) return null;
-          return (
-            <div key={g.key} className="mb-4">
-              {!collapsed ? (
-                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  {g.title}
-                </p>
-              ) : null}
-              <ul className="space-y-0.5">
-                {items.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      end={item.to === "/"}
-                      className={({ isActive }) =>
-                        clsx("nav-link", isActive && "nav-link-active")
-                      }
-                      title={collapsed ? item.label : undefined}
-                    >
-                      <span aria-hidden className="text-base">
-                        {item.icon}
-                      </span>
-                      {!collapsed ? <span className="truncate">{item.label}</span> : null}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+        <ul className="space-y-0.5">
+          {items.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  clsx("nav-link", isActive && "nav-link-active")
+                }
+                title={collapsed ? item.label : undefined}
+              >
+                <NavIcon name={item.icon} />
+                {!collapsed ? <span className="truncate">{item.label}</span> : null}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+        {extraItems.length > 0 && (
+          <>
+            <hr className="my-3 border-slate-200 dark:border-slate-700" />
+            <ul className="space-y-0.5">
+              {extraItems.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      clsx("nav-link", isActive && "nav-link-active")
+                    }
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <NavIcon name={item.icon} />
+                    {!collapsed ? <span className="truncate">{item.label}</span> : null}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </nav>
 
       <div className="border-t border-slate-200 p-2 dark:border-slate-800">
@@ -113,26 +112,34 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
           className="nav-link w-full justify-start"
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         >
-          <span aria-hidden>{theme === "dark" ? "☀" : "☾"}</span>
-          {!collapsed ? (
-            <span className="truncate">
-              {theme === "dark" ? "Light" : "Dark"} mode
-            </span>
-          ) : null}
+          <span aria-hidden>{theme === "dark" ? "Light" : "Dark"}</span>
+          {!collapsed ? <span className="truncate ml-2">{theme === "dark" ? "Light" : "Dark"} mode</span> : null}
         </button>
       </div>
     </aside>
   );
 }
 
-interface TopbarProps {
-  onToggleSidebar: () => void;
+function NavIcon({ name }: { name: string }) {
+  const icons: Record<string, ReactNode> = {
+    Dashboard: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
+    Copilot: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+    Research: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+    Documents: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+    Knowledge: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 0 0-9-9 9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9z"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg>,
+    Compliance: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+    Audit: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+    Analytics: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    Settings: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+    Agents: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    Admin: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  };
+  return <span aria-hidden className="shrink-0">{icons[name] ?? name}</span>;
 }
 
 export function Topbar({ onToggleSidebar }: TopbarProps) {
   const location = useLocation();
   const title = titleForPath(location.pathname);
-  const demoMode = import.meta.env.VITE_AUTH_ENABLED === "false";
   return (
     <header
       className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur
@@ -144,25 +151,19 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         aria-label="Toggle sidebar"
         className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
       >
-        ☰
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         {title}
       </h1>
-      {demoMode ? (
-        <span
-          className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700
-                     dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-400"
-        >
-          Demo
-        </span>
-      ) : null}
       <div className="flex-1" />
       <SystemStatusPill />
       <UserMenu />
     </header>
   );
 }
+
+interface TopbarProps { onToggleSidebar: () => void }
 
 function SystemStatusPill() {
   return (
@@ -171,7 +172,7 @@ function SystemStatusPill() {
                  dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300"
       role="status"
     >
-      <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-emerald-500" />
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
       <span>All systems operational</span>
     </div>
   );
@@ -183,12 +184,7 @@ function UserMenu() {
   const navigate = useNavigate();
 
   const initials = user?.full_name
-    ? user.full_name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+    ? user.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.username?.slice(0, 2).toUpperCase() || "?";
 
   const displayName = user?.full_name || user?.username || "User";
@@ -252,20 +248,15 @@ function UserMenu() {
 
 function titleForPath(path: string): string {
   if (path === "/") return "Dashboard";
-  if (path.startsWith("/copilot")) return "Copilot Workspace";
-  if (path.startsWith("/research")) return "Research Workspace";
-  if (path.startsWith("/compliance")) return "Compliance Workspace";
-  if (path.startsWith("/risk")) return "Risk Workspace";
-  if (path.startsWith("/knowledge-graph")) return "Knowledge Graph Explorer";
-  if (path === "/agents") return "Agent Control Center";
-  if (path.startsWith("/agents/collaboration")) return "Agent Collaboration";
-  if (path.startsWith("/agents/health")) return "Agent Health";
-  if (path.startsWith("/agents/workflows")) return "Agent Workflows";
-  if (path.startsWith("/governance")) return "Governance Center";
-  if (path.startsWith("/audit")) return "Audit Console";
-  if (path.startsWith("/analytics")) return "Analytics Console";
-  if (path.startsWith("/documents")) return "Document Library";
-  if (path.startsWith("/admin")) return "Admin Console";
+  if (path.startsWith("/copilot")) return "Copilot";
+  if (path.startsWith("/research")) return "Research";
+  if (path.startsWith("/documents")) return "Documents";
+  if (path.startsWith("/knowledge-graph")) return "Knowledge Graph";
+  if (path.startsWith("/compliance")) return "Compliance";
+  if (path.startsWith("/audit")) return "Audit";
+  if (path.startsWith("/analytics")) return "Analytics";
   if (path.startsWith("/settings")) return "Settings";
+  if (path.startsWith("/agents")) return "AI Agents";
+  if (path.startsWith("/admin")) return "Admin";
   return "RegIntel AI";
 }
