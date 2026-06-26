@@ -132,130 +132,128 @@ boundary. This separation makes the system testable, replaceable, and
 operable.
 
 ```mermaid
-%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1f2937','primaryTextColor':'#f9fafb','primaryBorderColor':'#6366f1','lineColor':'#94a3b8','fontSize':'14px','fontFamily':'Inter, system-ui, sans-serif'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1f2937','primaryTextColor':'#f9fafb','primaryBorderColor':'#6366f1','lineColor':'#94a3b8','fontSize':'13px','fontFamily':'Inter, system-ui, sans-serif'}}}%%
 flowchart TB
-    %% ─── LAYER 1: EDGE ───────────────────────────────────────────
-    subgraph EDGE["🛡️  EDGE LAYER"]
-        direction LR
-        DNS["DNS / WAF"]:::edge
-        LB["Load Balancer<br/>TLS termination"]:::edge
-        RL["Rate Limiter<br/>100 rps / IP"]:::edge
-        DNS --> LB --> RL
+    classDef edge fill:#0F172A,stroke:#3B82F6,stroke-width:2px,color:#F8FAFC,rx:10,ry:10
+    classDef ui fill:#1E293B,stroke:#64748B,stroke-width:2px,color:#F1F5F9,rx:10,ry:10
+    classDef api fill:#1E1B4B,stroke:#6366F1,stroke-width:2px,color:#EEF2FF,rx:10,ry:10
+    classDef ml fill:#064E3B,stroke:#10B981,stroke-width:2px,color:#ECFDF5,rx:10,ry:10
+    classDef agent fill:#4C1D95,stroke:#A78BFA,stroke-width:2px,color:#F5F3FF,rx:10,ry:10
+    classDef retrieval fill:#1E3A8A,stroke:#60A5FA,stroke-width:2px,color:#EFF6FF,rx:10,ry:10
+    classDef kg fill:#134E4A,stroke:#14B8A6,stroke-width:2px,color:#F0FDFA,rx:10,ry:10
+    classDef gov fill:#7F1D1D,stroke:#F87171,stroke-width:2px,color:#FEF2F2,rx:10,ry:10
+    classDef db fill:#1E3A8A,stroke:#60A5FA,stroke-width:2px,color:#EFF6FF,rx:10,ry:10
+    classDef cache fill:#7F1D1D,stroke:#F87171,stroke-width:2px,color:#FEF2F2,rx:10,ry:10
+    classDef obs fill:#451A03,stroke:#F59E0B,stroke-width:2px,color:#FEF3C7,rx:10,ry:10
+    classDef sec fill:#374151,stroke:#9CA3AF,stroke-width:2px,color:#F9FAFB,rx:10,ry:10
+    classDef cluster fill:none,stroke:#475569,stroke-width:1px,stroke-dasharray:5 5,color:#94A3B8
+
+    subgraph EdgeLayer["Edge Layer"]
+        NG["Nginx Reverse Proxy<br/>TLS Termination • Rate Limiting"]:::edge
     end
 
-    %% ─── LAYER 2: PRESENTATION ─────────────────────────────────
-    subgraph PRESENTATION["🖥️  PRESENTATION LAYER"]
-        direction LR
-        SPA["Web SPA<br/>React 18 + Vite"]:::ui
-        ADMIN["Admin Console<br/>Quotas, Users, Keys"]:::ui
-        OBS_UI["Observability UI<br/>Grafana Dashboards"]:::ui
+    subgraph PresentationLayer["Presentation Layer"]
+        UI["React 18 + TypeScript<br/>Dashboard • Admin Console"]:::ui
     end
 
-    %% ─── LAYER 3: COPILOT ─────────────────────────────────────
-    subgraph COPILOT["💬  COPILOT LAYER"]
-        direction LR
-        REWRITER["Query Rewriter"]:::copilot
-        PLANNER["Planner<br/>tool selection"]:::copilot
-        COMPOSER["Answer Composer"]:::copilot
-        VERIFIER["Citation Verifier"]:::copilot
+    subgraph ApplicationLayer["Application Layer"]
+        API["FastAPI Gateway<br/>REST + WebSocket"]:::api
+        ORCH["Orchestrator<br/>Request Pipeline"]:::api
     end
 
-    %% ─── LAYER 4: MULTI-AGENT ─────────────────────────────────
-    subgraph AGENTS["🤖  MULTI-AGENT LAYER"]
-        direction LR
-        COORD["Coordinator"]:::agent
-        RESEARCH["Research Agent"]:::agent
-        COMPLIANCE["Compliance Agent"]:::agent
-        RISK["Risk Intelligence Agent"]:::agent
-        AUDIT_A["Audit Agent"]:::agent
+    subgraph CopilotEngine["Copilot Engine"]
+        REWRITER["Query Rewriter"]:::api
+        PLANNER["Planner<br/>Tool Selection"]:::api
+        COMPOSER["Answer Composer"]:::api
+        VERIFIER["Citation Verifier"]:::api
     end
 
-    %% ─── LAYER 5: INTELLIGENCE ─────────────────────────────────
-    subgraph INTELLIGENCE["🧠  INTELLIGENCE LAYER"]
-        direction LR
-        LLM["LLM Provider<br/>OpenAI / Gemini / LiteLLM"]:::llm
-        EMBED["Embedding Service<br/>BGE-small"]:::llm
-        RERANK["BGE Reranker<br/>cross-encoder"]:::llm
+    subgraph AgentLayer["Multi-Agent Layer"]
+        COORD["Coordinator<br/>Reasoning Loop"]:::agent
+        RESEARCH["Research Agent<br/>Corpus Search"]:::agent
+        COMPLIANCE["Compliance Agent<br/>Regulatory Mapping"]:::agent
+        RISK["Risk Agent<br/>Scenario Analysis"]:::agent
+        AUDIT["Audit Agent<br/>Evidence Provenance"]:::agent
     end
 
-    %% ─── LAYER 6: RETRIEVAL ────────────────────────────────────
-    subgraph RETRIEVAL["🔍  RETRIEVAL LAYER"]
-        direction LR
-        BM25["BM25<br/>lexical index"]:::retrieval
+    subgraph IntelligenceLayer["Intelligence Layer"]
+        LLM["LLM Provider<br/>OpenAI / Gemini / LiteLLM"]:::ml
+        EMBED["Embedding Service<br/>BGE-small"]:::ml
+        RERANK["BGE Cross-Encoder<br/>Reranker"]:::ml
+    end
+
+    subgraph RetrievalLayer["Retrieval Layer"]
+        BM25["BM25<br/>Lexical Index"]:::retrieval
         VECTOR["Vector Store<br/>pgvector HNSW"]:::retrieval
         FUSION["RRF Fusion"]:::retrieval
-        FILT["Faceted Filters"]:::retrieval
+        FILTERS["Faceted Filters"]:::retrieval
     end
 
-    %% ─── LAYER 7: KNOWLEDGE ────────────────────────────────────
-    subgraph KNOWLEDGE["🕸️  KNOWLEDGE LAYER"]
-        direction LR
-        KG["Knowledge Graph<br/>entities + relations"]:::kg
-        EXTRACT["Entity Extractor<br/>rule-based"]:::kg
-        VERSION["Versioning<br/>snapshot + rollback"]:::kg
+    subgraph KnowledgeLayer["Knowledge Layer"]
+        KG["Knowledge Graph<br/>Entities + Relations"]:::kg
+        EXTRACT["Entity Extractor<br/>Rule-based"]:::kg
+        VERSION["Versioning<br/>Snapshot + Rollback"]:::kg
     end
 
-    %% ─── LAYER 8: GOVERNANCE ───────────────────────────────────
-    subgraph GOVERNANCE["⚖️  GOVERNANCE LAYER"]
-        direction LR
-        DECISIONS["Decisions<br/>draft → review → approved"]:::gov
+    subgraph GovernanceLayer["Governance Layer"]
+        DECISIONS["Decisions<br/>Draft → Review → Approved"]:::gov
         REVIEW["Human Review"]:::gov
-        AUDIT_LOG["Audit Log<br/>immutable"]:::gov
+        AUDIT_LOG["Audit Log<br/>Immutable Trail"]:::gov
+        RBAC["RBAC<br/>6 Roles • 34 Permissions"]:::gov
     end
 
-    %% ─── LAYER 9: DATA ─────────────────────────────────────────
-    subgraph DATA["💾  DATA LAYER"]
-        direction LR
-        PG[("PostgreSQL 16<br/>+ pgvector")]:::data
-        BLOB[("Object Storage<br/>S3 / GCS / Azure")]:::data
-        CACHE[("Redis<br/>rate limit + cache")]:::data
+    subgraph DataLayer["Persistence Layer"]
+        PG[("PostgreSQL 16<br/>+ pgvector")]:::db
+        BLOB[("Object Storage<br/>S3 / GCS / Azure")]:::db
+        CACHE[("Redis 7<br/>Cache + Rate Limit")]:::cache
     end
 
-    %% ─── LAYER 10: OBSERVABILITY ───────────────────────────────
-    subgraph OBS["📊  OBSERVABILITY LAYER"]
-        direction LR
-        METRICS["In-process metrics<br/>APIMetrics counters"]:::obs
-        LOGS["Structured JSON<br/>logging"]:::obs
+    subgraph ObservabilityLayer["Observability Stack"]
+        METRICS["In-process Metrics<br/>APIMetrics Counters"]:::obs
+        LOGS["Structured JSON<br/>Logging"]:::obs
+        PROM["Prometheus<br/>Metrics Scraping"]:::obs
+        GRAF["Grafana<br/>Dashboards"]:::obs
     end
 
-    %% ─── LAYER 11: SECURITY ────────────────────────────────────
-    subgraph SECURITY["🔒  SECURITY LAYER"]
-        direction LR
+    subgraph SecurityLayer["Security Layer"]
         JWT["JWT<br/>HS256, RFC 7519"]:::sec
-        RBAC["RBAC<br/>6 roles · 34 permissions"]:::sec
         SECRETS["Secrets<br/>env → file → vault"]:::sec
         THREAT["Threat Detection"]:::sec
-        APIGW["API Gateway<br/>CORS · IP · Signing"]:::sec
+        SIGNING["HMAC-SHA256<br/>Request Signing"]:::sec
     end
 
-    %% ─── Cross-layer wiring ───────────────────────────────────
-    EDGE --> PRESENTATION
-    PRESENTATION --> COPILOT
-    COPILOT --> AGENTS
-    AGENTS --> INTELLIGENCE
-    COPILOT --> RETRIEVAL
-    RETRIEVAL --> KNOWLEDGE
-    AGENTS --> GOVERNANCE
-    AGENTS --> DATA
-    RETRIEVAL --> DATA
-    KNOWLEDGE --> DATA
-    AGENTS --> OBS
-    COPILOT --> SECRETS
-    EDGE --> APIGW
-    APIGW --> COPILOT
+    %% Cross-layer connections
+    NG --> UI
+    UI <-->|REST + WS| API
+    API --> ORCH
+    ORCH --> REWRITER
+    REWRITER --> PLANNER
+    PLANNER --> COMPOSER
+    COMPOSER --> VERIFIER
+    VERIFIER --> COORD
+    COORD --> RESEARCH & COMPLIANCE & RISK & AUDIT
+    RESEARCH & COMPLIANCE & RISK & AUDIT --> LLM & EMBED & RERANK
+    RESEARCH & COMPLIANCE --> BM25 & VECTOR
+    BM25 & VECTOR --> FUSION
+    FUSION --> FILTERS
+    FILTERS --> KG
+    KG --> EXTRACT & VERSION
+    COORD --> DECISIONS
+    DECISIONS --> REVIEW
+    REVIEW --> AUDIT_LOG
+    AUDIT_LOG --> RBAC
+    RESEARCH & COMPLIANCE & RISK & AUDIT --> PG & BLOB
+    RESEARCH & COMPLIANCE & RISK & AUDIT --> CACHE
+    API --> PROM
+    PROM --> GRAF
+    API & ORCH --> METRICS & LOGS
+    API --> JWT
+    JWT --> RBAC
+    JWT --> SECRETS
+    SECRETS --> THREAT
+    THREAT --> SIGNING
 
-    %% ─── Styling ──────────────────────────────────────────────
-    classDef edge fill:#1e293b,stroke:#0ea5e9,stroke-width:2px,color:#f0f9ff
-    classDef ui fill:#312e81,stroke:#a78bfa,stroke-width:2px,color:#ede9fe
-    classDef copilot fill:#0c4a6e,stroke:#38bdf8,stroke-width:2px,color:#e0f2fe
-    classDef agent fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#d1fae5
-    classDef llm fill:#7c2d12,stroke:#fb923c,stroke-width:2px,color:#fed7aa
-    classDef retrieval fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#dbeafe
-    classDef kg fill:#581c87,stroke:#c084fc,stroke-width:2px,color:#f3e8ff
-    classDef gov fill:#7f1d1d,stroke:#f87171,stroke-width:2px,color:#fee2e2
-    classDef data fill:#374151,stroke:#9ca3af,stroke-width:2px,color:#f3f4f6
-    classDef obs fill:#134e4a,stroke:#2dd4bf,stroke-width:2px,color:#ccfbf1
-    classDef sec fill:#831843,stroke:#f472b6,stroke-width:2px,color:#fce7f3
+    class EdgeLayer,PresentationLayer,ApplicationLayer,CopilotEngine,AgentLayer,IntelligenceLayer,RetrievalLayer,KnowledgeLayer,GovernanceLayer,DataLayer,ObservabilityLayer,SecurityLayer cluster
 ```
 
 > **Read this diagram as a stack of contracts.** Each layer is a
@@ -286,17 +284,22 @@ invoke, in what order, with what arguments.
 ```mermaid
 %%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1f2937','primaryTextColor':'#f9fafb','lineColor':'#94a3b8','fontSize':'13px'}}}%%
 flowchart TB
-    subgraph CORE["Coordinator (control plane)"]
-        COORD["🎯 Coordinator<br/>reasoning loop<br/>step / token budgets"]:::coord
-        MEM["💾 Memory<br/>short-term + working<br/>+ long-term KG"]:::coord
+    classDef coord fill:#1e1b4b,stroke:#818cf8,stroke-width:3px,color:#e0e7ff
+    classDef spec fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#d1fae5
+    classDef tool fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#dbeafe
+    classDef user fill:#7c2d12,stroke:#fb923c,stroke-width:3px,color:#fed7aa
+
+    subgraph CORE["Coordinator (Control Plane)"]
+        COORD["Coordinator<br/>Reasoning Loop<br/>Step / Token Budgets"]:::coord
+        MEM["Memory<br/>Short-term + Working<br/>+ Long-term KG"]:::coord
     end
 
     subgraph SPECIALISTS["Specialist Agents"]
         direction TB
-        RES["🔬 Research Agent<br/>web + corpus search"]:::spec
-        COMP["📋 Compliance Agent<br/>regulatory mapping"]:::spec
-        RISK["⚠️ Risk Intelligence Agent<br/>scenario analysis"]:::spec
-        AUD["📑 Audit Agent<br/>evidence + provenance"]:::spec
+        RES["Research Agent<br/>Web + Corpus Search"]:::spec
+        COMP["Compliance Agent<br/>Regulatory Mapping"]:::spec
+        RISK["Risk Intelligence Agent<br/>Scenario Analysis"]:::spec
+        AUD["Audit Agent<br/>Evidence + Provenance"]:::spec
     end
 
     subgraph TOOLS["Tool Surface"]
@@ -308,8 +311,8 @@ flowchart TB
         T5[lookup_term]:::tool
     end
 
-    USER(["User Query"]):::user
-    FINAL(["Final Answer<br/>+ citations + audit"]):::user
+    USER(("User Query")):::user
+    FINAL(("Final Answer<br/>+ Citations + Audit")):::user
 
     USER --> COORD
     COORD <--> MEM
@@ -323,11 +326,6 @@ flowchart TB
     AUD --> T1
     RES & COMP & RISK & AUD -->|evidence| COORD
     COORD --> FINAL
-
-    classDef coord fill:#1e1b4b,stroke:#818cf8,stroke-width:3px,color:#e0e7ff
-    classDef spec fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#d1fae5
-    classDef tool fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#dbeafe
-    classDef user fill:#7c2d12,stroke:#fb923c,stroke-width:3px,color:#fed7aa
 ```
 
 ### Why a multi-agent system?
@@ -355,18 +353,18 @@ trust model easy to reason about.
 %%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1f2937','primaryTextColor':'#f9fafb','lineColor':'#94a3b8','fontSize':'13px'}}}%%
 sequenceDiagram
     autonumber
-    actor U as 👤 User
-    participant FE as 🖥️ Web SPA
-    participant NX as 🛡️ nginx
-    participant API as ⚙️ FastAPI
-    participant JW as 🔑 JWT / RBAC
-    participant CO as 🎯 Coordinator
-    participant R as 🔍 Retriever
-    participant KG as 🕸️ KG
-    participant AG as 🤖 Agents
-    participant L as 🧠 LLM
-    participant DB as 💾 Postgres
-    participant AUD as 📑 Audit
+    actor U as User
+    participant FE as Web SPA
+    participant NX as nginx
+    participant API as FastAPI
+    participant JW as JWT / RBAC
+    participant CO as Coordinator
+    participant R as Retriever
+    participant KG as Knowledge Graph
+    participant AG as Agents
+    participant L as LLM
+    participant DB as PostgreSQL
+    participant AUD as Audit
 
     U->>FE: Ask a regulatory question
     FE->>NX: POST /api/v1/agent/run (JWT)
