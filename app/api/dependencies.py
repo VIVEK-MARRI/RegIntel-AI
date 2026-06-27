@@ -424,14 +424,16 @@ _orchestrator: "ResponseOrchestrator | None" = None  # type: ignore[name-defined
 def _orchestrator_singleton() -> "ResponseOrchestrator":
     global _orchestrator
     if _orchestrator is None:
+        provider_name = get_llm_provider_name()
+        llm_provider = get_llm_provider(provider_name=provider_name)
         _orchestrator = build_default_orchestrator(
             answer_generator=get_answer_generator_service(
-                provider=get_llm_provider(),
+                provider=llm_provider,
                 builder=get_prompt_builder(),
             ),
             citation=get_citation_service(),
             confidence=get_confidence_service(),
-            hallucination_guard=get_hallucination_guard_service(provider=get_llm_provider()),
+            hallucination_guard=get_hallucination_guard_service(provider=llm_provider),
             attribution=get_attribution_service(),
         )
     return _orchestrator

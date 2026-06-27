@@ -1,0 +1,56 @@
+name: regintel-dev
+
+services:
+  backend:
+    build: .
+    image: regintel/backend:dev
+    container_name: regintel-backend
+    env_file:
+      - .env
+    environment:
+      LOG_LEVEL: info
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+      - ./regintel_dev.db:/app/regintel_dev.db
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - regintel_net
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+        reservations:
+          cpus: "1.0"
+          memory: 2G
+
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: regintel-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - regintel_net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+networks:
+  regintel_net:
+    driver: bridge
+    name: regintel_net

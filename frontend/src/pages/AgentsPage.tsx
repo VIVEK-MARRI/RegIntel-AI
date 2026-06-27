@@ -74,7 +74,9 @@ function OverviewTab() {
   async function handleExecute() {
     if (!selectedAgent) { toast.push({ title: "Pick an agent first", tone: "warning" }); return; }
     try {
-      const r = await execute.mutateAsync({ agent_name: selectedAgent, input });
+      const agent = (agents?.items ?? []).find((a) => a.name === selectedAgent);
+      const capability = agent?.capabilities?.[0]?.kind ?? "retrieval";
+      const r = await execute.mutateAsync({ agent_name: selectedAgent, capability, input: { text: input } });
       setOutput(JSON.stringify(r, null, 2));
       toast.push({ title: "Agent execution complete", description: `${r.agent_name} · ${r.status}`, tone: r.status === "succeeded" ? "success" : "warning" });
     } catch (err) {
@@ -116,7 +118,7 @@ function OverviewTab() {
                 <li key={a.agent_id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.name}</p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{a.capabilities?.join(", ") || a.description || "—"}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{a.capabilities?.map((c) => c.kind).join(", ") || a.description || "—"}</p>
                   </div>
                   <Badge tone="neutral" size="sm">{a.status || "idle"}</Badge>
                 </li>

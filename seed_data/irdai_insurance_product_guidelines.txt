@@ -1,0 +1,116 @@
+INSURANCE REGULATORY AND DEVELOPMENT AUTHORITY OF INDIA
+IRDAI/ACTL/PRD/2025-26/01
+
+September 1, 2025
+
+Guidelines on Product Filing and Approval Procedure for Insurance Products
+
+The Insurance Regulatory and Development Authority of India (IRDAI), in exercise of the powers conferred under Section 34 of the Insurance Regulatory and Development Authority Act, 1999, read with Section 14 of the Insurance Act, 1938, hereby issues the following guidelines for the filing and approval of insurance products.
+
+PART A - GENERAL PROVISIONS
+
+1. Applicability
+
+These guidelines shall apply to all insurers carrying on life insurance business, general insurance business, and health insurance business in India.
+
+2. Definitions
+
+a) "File and Use" means a procedure whereby an insurer files a product with the Authority and thereafter uses the product for sale.
+b) "Use and File" means a procedure whereby an insurer uses a product for sale and subsequently files it with the Authority.
+c) "Standard Product" means a product whose terms and conditions are determined by the Authority.
+d) "Non-Standard Product" means a product whose terms and conditions are determined by the insurer.
+
+PART B - PRODUCT CLASSIFICATION
+
+3. Life Insurance Products
+
+Life insurance products shall be classified as:
+a) Participating products (with-profit)
+b) Non-participating products (without-profit)
+c) Unit-linked insurance products (ULIPs)
+d) Variable insurance products
+e) Annuity products
+f) Health insurance products offered by life insurers
+
+4. General Insurance Products
+
+General insurance products shall be classified as:
+a) Fire insurance
+b) Marine insurance
+c) Motor insurance
+d) Engineering insurance
+e) Liability insurance
+f) Personal accident insurance
+g) Miscellaneous insurance
+
+PART C - FILING PROCEDURE
+
+5. Product Filing
+
+Every insurer shall file every product with the Authority in the manner prescribed. The filing shall include:
+a) Product document and policy wording.
+b) Premium rate tables and basis.
+c) Actuarial report and certificate.
+d) Benefit illustrations where applicable.
+e) Terms and conditions of the product.
+f) Sales literature and marketing materials.
+
+6. File and Use Procedure
+
+For non-standard products that meet the prescribed criteria, the insurer may adopt the File and Use procedure:
+a) The insurer shall file the product with the Authority electronically.
+b) The product shall be deemed approved 45 days from the date of filing unless the Authority communicates otherwise.
+c) The insurer shall not use the product until the expiry of 45 days from the date of filing.
+
+7. Use and File Procedure
+
+For standard products that comply with Authority-preserved specifications, the Use and File procedure applies:
+a) The insurer may use the product immediately after the date of filing.
+b) The insurer shall file the product within 15 days of the first sale.
+
+PART D - POLICYHOLDER PROTECTION
+
+8. Free-Look Period
+
+Every insurance policy shall provide a free-look period of not less than:
+a) 30 days for life insurance and ULIP policies.
+b) 15 days for general insurance and health insurance policies.
+
+During the free-look period, the policyholder may return the policy for cancellation and receive a refund of premium subject to deduction of proportionate risk premium for the period of cover.
+
+9. Policyholder Disclosure
+
+Every insurer shall provide to the policyholder at the time of sale:
+a) A copy of the policy document.
+b) Key features document summarizing the product benefits, risks, and exclusions.
+c) Premium payment receipt.
+d) Benefit illustrations for participating and ULIP products.
+e) Grievance redressal mechanism and contact details.
+
+10. Grievance Redressal
+
+Every insurer shall establish a robust grievance redressal mechanism in accordance with the Protection of Policyholders' Interests Regulations. The insurer shall resolve complaints within 45 days of receipt.
+
+PART E - ACTUARIAL REQUIREMENTS
+
+11. Premium Determination
+
+The premium for insurance products shall be determined based on:
+a) Mortality or morbidity tables as certified by the appointed actuary.
+b) Expense assumptions supported by the insurer's expense analysis.
+c) Lapse and surrender assumptions for life insurance products.
+d) Claim frequency and severity assumptions for general insurance products.
+
+12. Solvency Requirements
+
+The insurer shall maintain a solvency margin of not less than 150% of the solvency requirement as determined under the IRDAI (Assets, Liabilities, and Solvency Margin) Regulations.
+
+PART F - PENALTIES
+
+13. Non-Compliance
+
+Non-compliance with these guidelines shall attract penalties under Section 102 of the Insurance Act, 1938, including monetary penalties and suspension of product approvals.
+
+Sd/-
+Member (Actuarial)
+Insurance Regulatory and Development Authority of India

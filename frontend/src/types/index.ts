@@ -90,6 +90,7 @@ export interface CopilotMessage {
   hallucination_risk_level?: string;
   memory_context?: MemoryContext;
   latency_ms?: number;
+  answer_section?: AnswerSection;
 }
 
 export interface MemoryContext {
@@ -108,11 +109,27 @@ export interface AgentContributionItem {
   depends_on?: string[];
 }
 
+export interface SupportingEvidence {
+  chunk_id: string;
+  document_id: string;
+  source?: string;
+  page_number?: number;
+  section?: string;
+  excerpt: string;
+}
+
+export interface AnswerSection {
+  executive_summary: string;
+  detailed_explanation: string;
+  supporting_evidence: SupportingEvidence[];
+  key_regulatory_references: string[];
+}
+
 export interface CopilotResponsePayload {
   request_id: string;
   conversation_id: string;
   query: string;
-  answer: string | null;
+  answer: AnswerSection | string | null;
   citations: CopilotCitation[];
   sources: CopilotAttribution[];
   confidence_score: number;
@@ -128,11 +145,19 @@ export interface CopilotResponsePayload {
   attribution_coverage_ratio: number;
 }
 
+export interface AgentCapability {
+  capability_id: string;
+  kind: string;
+  name: string;
+  description?: string;
+  parameters?: Dict;
+}
+
 export interface AgentSummary {
   agent_id: string;
   name: string;
   description?: string;
-  capabilities: string[];
+  capabilities: AgentCapability[];
   tags?: string[];
   status?: string;
   registered_at?: string;
@@ -209,9 +234,11 @@ export interface AgentAnalyticsOverview {
 
 export interface AgentExecutionRequest {
   agent_name: string;
-  input: string | Dict;
+  capability: string;
+  input: Dict;
   context?: Dict;
-  metadata?: Dict;
+  max_retries?: number | null;
+  timeout_ms?: number | null;
 }
 
 export interface AgentExecutionResult {
@@ -332,7 +359,7 @@ export interface ComplianceAssessment {
   scope: string;
   obligations: ComplianceObligation[];
   gaps: ComplianceGap[];
-  overall_score: number;
+  risk_score: number;
   risk_level: "low" | "medium" | "high" | "critical";
   generated_at: number;
 }
@@ -457,11 +484,19 @@ export interface AdminUser {
   last_login_at?: number;
 }
 
+export interface Permission {
+  permission_id: string;
+  code: string;
+  description: string;
+  resource: string;
+  action: string;
+}
+
 export interface AdminRole {
   role_id: string;
   name: string;
   description: string;
-  permissions: string[];
+  permissions: Permission[];
   member_count: number;
 }
 

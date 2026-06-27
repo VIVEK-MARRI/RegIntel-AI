@@ -90,6 +90,9 @@ class InMemoryKnowledgeProvider:
         return self._items.get(item_id)
 
 
+
+
+
 # ─── Planner ─────────────────────────────────────────────────────────
 
 
@@ -520,15 +523,19 @@ class ResearchService:
         self.reporter = ResearchReportGenerator()
         self.top_k = top_k
 
-    def run(
+    async     def run(
         self,
         request: ResearchRequest,
         *,
         top_k: Optional[int] = None,
+        knowledge_items: Optional[List[Dict[str, Any]]] = None,
     ) -> ResearchReport:
         with track_request(
             endpoint="/api/v1/research/run", strategy="research_run"
         ):
+            if knowledge_items:
+                for item in knowledge_items:
+                    self.provider.add(item)
             plan = self.planner.plan(request)
             executed = self.executor.execute(plan, top_k=top_k or self.top_k)
             report = self.reporter.generate(executed)
@@ -592,15 +599,18 @@ class ResearchService:
 # ─── Factory ────────────────────────────────────────────────────────
 
 
-def build_default_research_service() -> ResearchService:
+def build_default_research_service(
+    provider: Optional[KnowledgeProviderProtocol] = None,
+) -> ResearchService:
     persist = os.path.join(settings.STORAGE_ROOT, "research", "research.jsonl")
     store = InMemoryResearchStore(persist_path=persist)
-    return ResearchService(store=store)
+    return ResearchService(store=store, provider=provider)
 
 
 __all__ = [
     "KnowledgeProviderProtocol",
     "InMemoryKnowledgeProvider",
+    "HybridKnowledgeProvider",
     "ResearchPlanner",
     "ResearchExecutor",
     "ResearchReportGenerator",

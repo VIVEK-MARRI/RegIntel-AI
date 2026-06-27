@@ -9,6 +9,6 @@ export async function getResearchReport(id: string): Promise<ResearchReport> {
   return api.get(`/research/${id}`);
 }
 
-export async function runResearch(payload: { query: string; depth?: number }): Promise<ResearchReport> {
+export async function runResearch(payload: { query: string; max_steps?: number }): Promise<ResearchReport> {
   return api.post("/research/run", payload);
 }

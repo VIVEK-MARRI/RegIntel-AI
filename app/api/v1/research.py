@@ -7,8 +7,9 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.api.dependencies import get_research_service
+from app.api.dependencies import get_hybrid_rerank_pipeline, get_research_service
 from app.schemas.research import ResearchFilter, ResearchKind, ResearchRequest
+from app.services.hybrid.pipeline import HybridRerankPipeline
 from app.services.research import ResearchService
 
 logger = logging.getLogger(__name__)
@@ -47,8 +48,26 @@ async def stats(
 async def run(
     request: ResearchRequest,
     service: ResearchService = Depends(get_research_service),
+    hybrid: HybridRerankPipeline = Depends(get_hybrid_rerank_pipeline),
 ) -> Dict[str, Any]:
-    return service.run(request).model_dump(mode="json")
+    knowledge_items: list[Dict[str, Any]] = []
+    try:
+        resp = await hybrid.search(query=request.query, top_k=5)
+        for r in resp.results:
+            meta = r.metadata or {}
+            knowledge_items.append({
+                "id": r.chunk_id,
+                "title": meta.get("title", ""),
+                "content": r.content,
+                "body": r.content,
+                "score": r.rerank_score,
+                "document_id": meta.get("document_id", ""),
+                "section": meta.get("section", ""),
+                "page_number": meta.get("page_number"),
+            })
+    except Exception as exc:
+        logger.warning("Hybrid search failed for query '%s': %s", request.query, exc)
+    return (await service.run(request, knowledge_items=knowledge_items)).model_dump(mode="json")
 
 
 @router.post(

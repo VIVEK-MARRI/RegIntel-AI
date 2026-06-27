@@ -187,7 +187,7 @@ class AnswerGenerationStep(AnswerPipeline):
     async def run(self, context: ResponseContext) -> None:
         tone_str = context.options.get("tone", "regulatory")
         temperature = context.options.get("temperature", 0.2)
-        max_tokens = context.options.get("max_tokens", 700)
+        max_tokens = context.options.get("max_tokens", 3072)
         try:
             tone = AnswerTone(tone_str)
         except ValueError:

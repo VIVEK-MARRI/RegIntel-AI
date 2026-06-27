@@ -66,21 +66,25 @@ class AnswerGeneratorTelemetry:
 # ─── Section Parsing ────────────────────────────────────────────────────────
 
 
+# Match section headers in either colon (e.g. "Executive Summary:") or
+# Markdown (e.g. "### Executive Summary" or "## Executive Summary:") format.
+_HDR = r"^\s*(?:#{1,6}\s+)?"
+_FMT = r"\s*:?\s*(.*)$"
 _SECTION_PATTERNS = {
     "executive_summary": re.compile(
-        r"^\s*executive\s+summary\s*:\s*(.*)$",
+        _HDR + r"executive\s+summary" + _FMT,
         re.IGNORECASE | re.DOTALL | re.MULTILINE,
     ),
     "detailed_explanation": re.compile(
-        r"^\s*detailed\s+explanation\s*:\s*(.*)$",
+        _HDR + r"detailed\s+explanation" + _FMT,
         re.IGNORECASE | re.DOTALL | re.MULTILINE,
     ),
     "supporting_evidence": re.compile(
-        r"^\s*supporting\s+evidence\s*:\s*(.*)$",
+        _HDR + r"supporting\s+evidence" + _FMT,
         re.IGNORECASE | re.DOTALL | re.MULTILINE,
     ),
     "key_regulatory_references": re.compile(
-        r"^\s*key\s+regulatory\s+references\s*:\s*(.*)$",
+        _HDR + r"key\s+regulatory\s+references" + _FMT,
         re.IGNORECASE | re.DOTALL | re.MULTILINE,
     ),
 }
@@ -135,12 +139,29 @@ def parse_sections(raw_text: str) -> Dict[str, str]:
         "key_regulatory_references": "",
     }
     for i, m in enumerate(matches):
-        # Body goes from "after the colon" up to the start of the next section's header.
         next_header = (
             matches[i + 1]["header_start"] if i + 1 < len(matches) else len(raw_text)
         )
         body = raw_text[m["body_start"] : next_header].strip()
         sections[m["name"]] = body
+
+    # If the model omitted section headers, assign remaining text to the
+    # first missing section.
+    found = {m["name"] for m in matches}
+    for section_name in ("detailed_explanation", "supporting_evidence", "key_regulatory_references"):
+        if section_name in found:
+            continue
+        if sections["executive_summary"] and section_name == "detailed_explanation":
+            # Everything after the exec summary body goes to detailed.
+            es_idx = matches[0]["body_start"]
+            rest = raw_text[es_idx:].strip()
+            # Remove the exec summary body from this rest to avoid duplication.
+            es_body_len = len(sections["executive_summary"])
+            rest = rest[es_body_len:].strip()
+            if rest:
+                sections["detailed_explanation"] = rest
+                break
+        break
 
     return sections
 

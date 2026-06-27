@@ -55,10 +55,8 @@ frontend/.vite
 frontend/coverage
 frontend/.DS_Store
 
-# --- Docker self-references ---
-Dockerfile
-Dockerfile.*
-docker-compose*.yml
+# --- Docker self-references (keep Dockerfile for dev builds) ---
+docker-compose.production.yml
 .dockerignore
 nginx.conf
 .env.production.example

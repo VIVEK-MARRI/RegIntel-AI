@@ -237,8 +237,8 @@ export function DocumentsPage() {
               : jError ? <ErrorState onRetry={jRefetch} />
               : !jobs?.length ? <EmptyState title="No jobs" />
               : <ul className="space-y-1.5">
-                  {jobs.slice(0, 20).map((j) => (
-                    <li key={j.job_id} className="rounded-lg border border-slate-200 px-2.5 py-2 dark:border-slate-800">
+                    {jobs.slice(0, 20).map((j, idx) => (
+                    <li key={j.job_id ?? idx} className="rounded-lg border border-slate-200 px-2.5 py-2 dark:border-slate-800">
                       <div className="flex items-center gap-1.5">
                         <span className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">{truncate(j.source || j.document_id || j.job_id, 35)}  // eslint-disable-line</span>
                         <Badge tone={j.status === "succeeded" ? "success" : j.status === "failed" ? "danger" : "warning"} size="sm">{j.ingestion_status || j.status}</Badge>

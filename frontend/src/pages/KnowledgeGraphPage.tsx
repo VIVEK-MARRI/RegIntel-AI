@@ -52,8 +52,8 @@ export function KnowledgeGraphPage() {
           {sLoading || nLoading ? <Skeleton lines={4} className="mt-3" />
           : errorAny ? <ErrorState onRetry={() => { sRefetch(); nRefetch(); }} />
           : <ul className="mt-3 space-y-1.5">
-              {types.map(([t, c]) => (
-                <li key={t} className="flex items-center justify-between rounded-md bg-slate-50 px-2 py-1 text-xs dark:bg-slate-800/40">
+              {types.map(([t, c], idx) => (
+                <li key={t ?? `type-${idx}`} className="flex items-center justify-between rounded-md bg-slate-50 px-2 py-1 text-xs dark:bg-slate-800/40">
                   <span className="truncate text-slate-700 dark:text-slate-200">{t}</span>
                   <Badge tone="neutral" size="sm">{c}</Badge>
                 </li>
@@ -91,8 +91,8 @@ export function KnowledgeGraphPage() {
             : nError ? <ErrorState onRetry={nRefetch} />
             : !nodes?.length ? <EmptyState title="No nodes yet" />
             : <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {filtered.slice(0, 60).map((n) => (
-                  <li key={n.node_id}>
+                {filtered.slice(0, 60).map((n, idx) => (
+                  <li key={n.node_id ?? idx}>
                     <button type="button" onClick={() => setSelectedNode(n.node_id)}
                       className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition ${
                         selectedNode === n.node_id
@@ -122,8 +122,8 @@ export function KnowledgeGraphPage() {
             : iError ? <ErrorState onRetry={iRefetch} />
             : !impact || !impact.affected?.length ? <EmptyState title="No impact detected" />
             : <ul className="space-y-1.5">
-                {impact.affected.slice(0, 15).map((n) => (
-                  <li key={n.node_id} className="rounded-md border border-slate-200 px-2 py-1.5 text-xs dark:border-slate-800">
+                {impact.affected.slice(0, 15).map((n, idx) => (
+                  <li key={n.node_id ?? idx} className="rounded-md border border-slate-200 px-2 py-1.5 text-xs dark:border-slate-800">
                     <p className="truncate font-medium text-slate-900 dark:text-slate-100">{n.label}</p>
                     <p className="truncate text-[10px] text-slate-500">{n.type}</p>
                   </li>

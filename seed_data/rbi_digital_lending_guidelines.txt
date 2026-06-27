@@ -1,0 +1,80 @@
+RESERVE BANK OF INDIA
+RBI/2025-26/72
+DOR.CRE.REC.42/21.04.172/2025-26
+
+October 1, 2025
+
+Guidelines on Digital Lending and Algorithmic Lending Models
+
+The Reserve Bank of India, in exercise of the powers conferred by Section 35A of the Banking Regulation Act, 1949, and Section 45L of the Reserve Bank of India Act, 1934, issues the following guidelines on digital lending and algorithmic lending models for all Regulated Entities (REs).
+
+1. Purpose and Scope
+
+These guidelines aim to protect borrowers, promote transparency, and strengthen the regulatory framework for digital lending. They apply to all REs that extend credit through digital channels or use algorithmic lending models for credit evaluation.
+
+2. Definitions
+
+a) "Digital Lending" means the process of extending credit through digital channels with minimal or no physical intervention.
+b) "Algorithmic Lending Model" means a quantitative model used for credit evaluation, risk scoring, or loan underwriting that uses statistical techniques, machine learning, or artificial intelligence.
+c) "Lending Service Provider" (LSP) means an agent engaged by REs to carry out ancillary functions such as customer acquisition, underwriting support, loan servicing, and collection.
+
+3. Data Privacy and Consent
+
+3.1. REs shall obtain explicit informed consent from borrowers before collecting, storing, or processing personal data.
+3.2. Borrowers shall have the right to opt out of data collection not essential for credit evaluation.
+3.3. REs shall not use or share personal data beyond the specific purpose for which it was collected.
+3.4. Data collected for one loan product shall not be used for cross-selling of other financial products without explicit consent.
+
+4. Algorithmic Lending Models
+
+4.1. REs shall validate algorithmic lending models before deployment and at regular intervals thereafter.
+4.2. Model validation shall include testing for:
+   a) Accuracy and predictive performance on out-of-sample data.
+   b) Fairness across demographic groups, including testing for bias based on religion, caste, gender, or region.
+   c) Stability of model outputs over time.
+   d) Explainability of credit decisions at a level understandable to borrowers.
+4.3. REs shall maintain documentation of model design, development, validation, and ongoing monitoring.
+
+5. Disclosure Requirements
+
+5.1. REs shall provide borrowers with a standardized Key Fact Statement (KFS) before loan execution, containing:
+   a) Total loan amount and annual percentage rate (APR).
+   b) All fees, charges, and penalties.
+   c) Repayment schedule with breakup of principal and interest.
+   d) Effective annual interest rate including all charges.
+5.2. REs shall ensure that the APR disclosed in the KFS does not exceed the APR at disbursement.
+
+6. Lending Service Providers
+
+6.1. REs shall be fully responsible for the actions of LSPs engaged by them.
+6.2. Loans disbursed through LSPs shall be reflected in the borrower's credit report.
+6.3. REs shall ensure that LSPs comply with all applicable data protection and fair lending laws.
+6.4. REs shall conduct annual audits of LSP operations and compliance.
+
+7. Recovery and Collections
+
+7.1. REs and LSPs shall follow fair recovery practices as specified by the Banking Codes and Standards Board of India.
+7.2. Recovery calls shall be made only between 8:00 AM and 7:00 PM, with a maximum of 3 recovery calls per day.
+7.3. REs shall not employ recovery agents with criminal records or engage in coercive recovery practices.
+7.4. Penalties for default shall be reasonable and proportionate to the amount of default.
+
+8. Data Localization
+
+REs shall ensure that all borrower data collected in India is stored within India. Any sharing of data outside India shall require explicit regulatory approval and written consent from the borrower.
+
+9. Technology Standards
+
+REs shall implement minimum technology standards including:
+a) End-to-end encryption for all data transmission.
+b) Secure authentication mechanisms using multi-factor authentication.
+c) Audit trails for all transactions and data access.
+d) Disaster recovery and business continuity plans.
+
+10. Compliance and Reporting
+
+10.1. REs shall submit an annual compliance certificate to the RBI confirming adherence to these guidelines.
+10.2. REs shall report any breach of data or security incident to the RBI within 72 hours of detection.
+
+Sd/-
+Chief General Manager
+Reserve Bank of India

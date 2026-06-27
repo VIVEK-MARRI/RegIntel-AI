@@ -158,47 +158,98 @@ class MockLLMProvider(BaseLLMProvider):
 
     @staticmethod
     def _synthesise_answer(user_prompt: str) -> str:
-        """Build a deterministic, parser-friendly answer from the prompt.
-
-        Pulls the actual question (right after the ``Question:`` marker)
-        and the real chunk ids (lines starting with ``Chunk ID:``) so the
-        output round-trips through the section parser.
-        """
+        """Build a content-grounded answer from the actual chunk content."""
         lines = [ln for ln in user_prompt.splitlines() if ln.strip()]
         question = "Unknown question."
-        chunk_ids: List[str] = []
-        for idx, ln in enumerate(lines):
+        chunks: List[Dict[str, str]] = []
+        current: Dict[str, str] = {}
+        collecting_content = False
+        content_parts: List[str] = []
+
+        for ln in lines:
             stripped = ln.strip()
             lower = stripped.lower()
-            if lower.startswith("question:") and idx + 1 < len(lines):
-                question = lines[idx + 1].strip()
-            # Accept both "Chunk ID: <id>" and "[1] Chunk ID: <id>" forms.
-            if "chunk id:" in lower:
-                tail = lower.split("chunk id:", 1)[1].strip()
-                if tail:
-                    chunk_ids.append(tail)
-            if lower.startswith("now produce"):
-                break
-        if not chunk_ids:
-            chunk_ids = ["chunk-1"]
+            if lower.startswith("question:") and not chunks:
+                idx = lines.index(ln)
+                if idx + 1 < len(lines):
+                    question = lines[idx + 1].strip()
+            if lower.startswith("[") and "chunk id:" in lower:
+                if current:
+                    if content_parts:
+                        current["content"] = " ".join(content_parts)
+                    chunks.append(current)
+                current = {"raw_id": lower.split("chunk id:", 1)[1].strip()}
+                collecting_content = False
+                content_parts = []
+            elif lower.startswith("source:"):
+                current["source"] = stripped.split(":", 1)[1].strip()
+            elif lower.startswith("document:"):
+                current["document"] = stripped.split(":", 1)[1].strip()
+            elif lower.startswith("section:"):
+                current["section"] = stripped.split(":", 1)[1].strip()
+            elif lower.startswith("subsection:"):
+                current["subsection"] = stripped.split(":", 1)[1].strip()
+            elif lower.startswith("content:"):
+                collecting_content = True
+                content_parts.append(stripped[len("content:"):].strip())
+            elif collecting_content and not lower.startswith("[") and not lower.startswith("now produce"):
+                content_parts.append(stripped)
 
+        if current:
+            if content_parts:
+                current["content"] = " ".join(content_parts)
+            chunks.append(current)
+
+        if not chunks:
+            chunks = [{"raw_id": "chunk-1", "content": "No chunk data available."}]
+
+        # Build executive summary from the question + first chunk's key point.
+        first_content = chunks[0].get("content", "")
+        # Strip "Document: ... Section: ..." prefix from content for clean summary
+        for prefix in ["Document:", "Section:", "Subsection:"]:
+            if prefix in first_content:
+                first_content = first_content.split(prefix, 1)[-1]
+        summary_lead = first_content.strip().lstrip(".").strip()[:300] if first_content else ""
         summary = (
-            f"Executive Summary: {question} The regulatory framework "
-            "outlines specific compliance obligations summarised below."
+            f"Executive Summary: {question.strip()}"
+            + (f" {summary_lead}" if summary_lead else "")
         )
-        detail = (
-            "Detailed Explanation: The retrieved regulatory chunks provide "
-            "grounded guidance on the query. The explanation combines the "
-            "rules from the cited sources and explains their application in "
-            "practice. Key obligations, applicability thresholds, and "
-            "reporting requirements are addressed in sequence to give the "
-            "reader a complete picture."
-        )
-        evidence = "Supporting Evidence:\n" + ", ".join(chunk_ids)
-        refs = (
-            "Key Regulatory References: Master Circular on KYC, RBI Act 1934, "
-            "Prevention of Money Laundering Act 2002."
-        )
+
+        # Detailed explanation: enumerate each chunk's contribution.
+        detail_parts: List[str] = ["Detailed Explanation:"]
+        for i, c in enumerate(chunks, 1):
+            doc = c.get("document", c.get("source", "Regulatory Source"))
+            section = c.get("section", "")
+            content = c.get("content", "")
+            # Strip the "Document: ..." / "Section: ..." prefix from content
+            clean_lines: List[str] = []
+            for cl in content.split("Document:"):
+                last = cl.rsplit("Section:", 1)[-1] if "Section:" in cl else cl
+                clean_lines.append(last.strip().lstrip(".").strip())
+            snippet = " ".join(clean_lines)[:400] if clean_lines else (content[:400] if content else "")
+            label = f" according to {doc}" if doc else ""
+            if section:
+                label += f" ({section})"
+            detail_parts.append(f"\n{i}.{label}: {snippet}")
+        detail = "".join(detail_parts)
+
+        # Supporting evidence: chunk IDs.
+        evidence_ids = [c.get("raw_id", f"chunk-{i}") for i, c in enumerate(chunks, 1)]
+        evidence = "Supporting Evidence:\n" + ", ".join(evidence_ids)
+
+        # Regulatory references: unique document titles.
+        refs_seen: List[str] = []
+        for c in chunks:
+            doc_title = c.get("document", "")
+            if doc_title and doc_title not in refs_seen:
+                refs_seen.append(doc_title)
+            src = c.get("source", "")
+            if src and src not in refs_seen and src != doc_title:
+                refs_seen.append(src)
+        if not refs_seen:
+            refs_seen = ["RBI Act 1934", "SEBI Act 1992", "IRDAI Act 1999"]
+        refs = "Key Regulatory References: " + ", ".join(refs_seen)
+
         return "\n\n".join([summary, detail, evidence, refs])
 
 
@@ -318,14 +369,14 @@ class OpenAIProvider(BaseLLMProvider):
 
 
 class GeminiProvider(BaseLLMProvider):
-    """Google Gemini provider (async)."""
+    """Google Gemini provider using google-genai SDK."""
 
     name = LLMProviderName.GEMINI
 
     def __init__(
         self,
         *,
-        model: str = "gemini-1.5-flash",
+        model: str = "gemini-2.5-flash",
         api_key: Optional[str] = None,
         timeout: float = 30.0,
         **kwargs: Any,
@@ -345,19 +396,18 @@ class GeminiProvider(BaseLLMProvider):
             return
 
         try:
-            import google.generativeai as genai  # type: ignore[import-not-found]
-        except Exception as exc:  # pragma: no cover - import guard
+            from google import genai  # type: ignore[import-not-found]
+        except Exception as exc:
             self._init_error = ImportError(
-                "The 'google-generativeai' package is not installed. "
-                "Install with: pip install google-generativeai"
+                "The 'google-genai' package is not installed. "
+                "Install with: pip install google-genai"
             )
             self._init_error.__cause__ = exc
             return
 
         try:
-            genai.configure(api_key=self.api_key)  # type: ignore[attr-defined]
-            self._client = genai.GenerativeModel(self.model)  # type: ignore[attr-defined]
-        except Exception as exc:  # pragma: no cover - construction guard
+            self._client = genai.Client(api_key=self.api_key)
+        except Exception as exc:
             self._init_error = exc
             return
 
@@ -372,32 +422,22 @@ class GeminiProvider(BaseLLMProvider):
         if self._init_error is not None or self._client is None:
             raise self._init_error or RuntimeError("Gemini client unavailable")
 
-        # google-generativeai exposes async via generate_content_async.
-        try:
-            response = await self._client.generate_content_async(
-                contents=[system_prompt, user_prompt],
-                generation_config={
-                    "max_output_tokens": max_tokens,
-                    "temperature": temperature,
-                },
-            )
-        except AttributeError:
-            # Sync fallback (older versions) – run in a thread.
-            import asyncio
+        from google.genai import types
 
-            loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self._client.generate_content(
-                    [system_prompt, user_prompt],
-                    generation_config={
-                        "max_output_tokens": max_tokens,
-                        "temperature": temperature,
-                    },
+        try:
+            response = await self._client.aio.models.generate_content(
+                model=self.model,
+                contents=[system_prompt, user_prompt],
+                config=types.GenerateContentConfig(
+                    max_output_tokens=max_tokens,
+                    temperature=temperature,
                 ),
             )
+        except Exception as exc:
+            logger.exception("Gemini generate failed: %s", exc)
+            raise
 
-        text = (getattr(response, "text", "") or "").strip()
+        text = (getattr(response, "text", None) or "").strip()
         usage = getattr(response, "usage_metadata", None) or {}
         return LLMResponse(
             text=text,
@@ -406,7 +446,7 @@ class GeminiProvider(BaseLLMProvider):
             total_tokens=int(getattr(usage, "total_token_count", 0) or 0),
             model=self.model,
             provider=self.name.value,
-            raw={"finish_reason": _first_finish_reason(response)},
+            raw={"finish_reason": getattr(response, "finish_reason", None)},
         )
 
     async def stream(
@@ -420,21 +460,23 @@ class GeminiProvider(BaseLLMProvider):
         if self._init_error is not None or self._client is None:
             raise self._init_error or RuntimeError("Gemini client unavailable")
 
+        from google.genai import types
+
         try:
-            stream = await self._client.generate_content_async(
+            async for event in await self._client.aio.models.generate_content_stream(
+                model=self.model,
                 contents=[system_prompt, user_prompt],
-                generation_config={
-                    "max_output_tokens": max_tokens,
-                    "temperature": temperature,
-                },
-                stream=True,
-            )
-            async for event in stream:
+                config=types.GenerateContentConfig(
+                    max_output_tokens=max_tokens,
+                    temperature=temperature,
+                ),
+            ):
                 piece = getattr(event, "text", None)
                 if piece:
                     yield piece
-        except AttributeError:
-            # No streaming support – fall back to full response chunked.
+        except Exception as exc:
+            logger.exception("Gemini stream failed: %s", exc)
+            # Fallback to non-streaming chunked.
             response = await self.generate(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,

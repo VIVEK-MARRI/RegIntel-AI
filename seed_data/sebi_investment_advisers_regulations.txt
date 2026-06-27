@@ -1,0 +1,100 @@
+SECURITIES AND EXCHANGE BOARD OF INDIA
+SEBI/LAD-NRO/GN/2025/67
+
+December 1, 2025
+
+SEBI (Investment Advisers) Regulations, 2025
+
+The Securities and Exchange Board of India, in exercise of the powers conferred by Section 30 of the SEBI Act, 1992, hereby makes the following regulations to provide for registration and regulation of investment advisers.
+
+CHAPTER I - PRELIMINARY
+
+1. Short Title and Commencement
+
+These regulations shall be called the SEBI (Investment Advisers) Regulations, 2025. They shall come into force on the date of their publication in the Gazette.
+
+2. Definitions
+
+a) "Investment Adviser" means any person who for consideration provides investment advice to clients on securities, financial products, or investment strategies.
+b) "Investment Advice" means advice on buying, selling, dealing in securities, or on investment strategies relating to securities.
+c) "Client" means any person who receives investment advice from an investment adviser.
+d) "Body of Investors" means a group of not more than 50 investors who invest collectively.
+
+CHAPTER II - REGISTRATION
+
+3. Requirement for Registration
+
+No person shall act as an investment adviser unless registered with SEBI. Existing advisers shall apply for registration within 90 days of the commencement of these regulations.
+
+4. Conditions for Registration
+
+An applicant shall fulfill the following conditions:
+a) The applicant shall be a body corporate or a partnership firm with at least two partners.
+b) The applicant shall have a minimum net worth of Rs. 50 lakh.
+c) The individual adviser or principal officer shall possess a professional qualification in finance, accounting, law, or economics with at least 5 years of experience.
+d) The applicant shall have passed the NISM Series X-A or Series X-B certification examination.
+e) The applicant shall have adequate infrastructure including office premises, communication facilities, and record-keeping systems.
+
+5. Categories of Registration
+
+Investment advisers shall be registered in the following categories:
+a) Category I - Non-Individual Advisers: Body corporates or partnership firms providing advice or distribution.
+b) Category II - Individual Advisers: Sole proprietors or individual practitioners providing only advisory services.
+
+CHAPTER III - CODE OF CONDUCT
+
+6. General Obligations
+
+Every investment adviser shall:
+a) Act in a fiduciary capacity towards its clients.
+b) Disclose all material conflicts of interest.
+c) Not guarantee any returns on investment.
+d) Not engage in any unfair trade practices.
+e) Maintain confidentiality of client information.
+
+7. Disclosure Requirements
+
+The investment adviser shall disclose to the client:
+a) The adviser's educational qualifications and professional experience.
+b) Fee structure including all charges and break-up.
+c) Actual or potential conflicts of interest.
+d) Details of any disciplinary action taken by SEBI or any other regulatory body.
+e) The nature of services provided and the scope of advice.
+
+8. Suitability Assessment
+
+Every investment adviser shall conduct a suitability assessment of the client before providing investment advice. The suitability assessment shall consider the client's:
+a) Investment objectives and risk appetite.
+b) Financial situation and net worth.
+c) Investment knowledge and experience.
+d) Investment horizon and liquidity requirements.
+
+CHAPTER IV - FEES AND CHARGES
+
+9. Fee Structure
+
+a) Investment advisers shall charge fees as a percentage of assets under advice or a fixed fee.
+b) Fees shall not be linked to the performance of the portfolio.
+c) No trail commission or kickbacks shall be accepted from product manufacturers.
+d) The fee structure shall be disclosed upfront and any change in fees shall require 30 days prior notice.
+
+CHAPTER V - RECORD KEEPING
+
+10. Maintenance of Records
+
+Every investment adviser shall maintain the following records for a minimum period of 5 years:
+a) Client agreements and suitability assessments.
+b) Investment advice provided and the basis for such advice.
+c) Communications with clients.
+d) Fee invoices and receipts.
+e) Complaints received and their resolution.
+
+CHAPTER VI - COMPLIANCE AUDIT
+
+11. Audit Requirements
+
+Every investment adviser shall conduct an annual compliance audit by an independent auditor. The audit report shall be submitted to SEBI within 6 months of the end of the financial year.
+
+Sd/-
+Chairperson
+Securities and Exchange Board of India

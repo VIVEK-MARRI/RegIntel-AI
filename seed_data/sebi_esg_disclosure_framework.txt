@@ -1,0 +1,83 @@
+SECURITIES AND EXCHANGE BOARD OF INDIA
+SEBI/HO/CFD/CMD/CIR/2025/127
+
+November 30, 2025
+
+Circular on Business Responsibility and Sustainability Reporting (BRSR) Framework
+
+The Securities and Exchange Board of India, in continuation of its circular SEBI/HO/CFD/CMD/CIR/2024/89 dated August 15, 2024, hereby issues the following framework for Business Responsibility and Sustainability Reporting (BRSR) by listed entities.
+
+1. Applicability
+
+1.1. BRSR reporting shall be mandatory for the top 1000 listed entities by market capitalization.
+1.2. The reporting shall be on a comply-or-explain basis for the first two years.
+1.3. Entities listed on the SME exchange shall submit a simplified BRSR Lite report.
+
+2. Reporting Framework
+
+The BRSR report shall cover the following nine principles of the National Guidelines on Responsible Business Conduct (NGRBC):
+
+2.1. Principle 1 - Ethics and Transparency: Businesses shall conduct and govern themselves with integrity, in a manner that is ethical, transparent, and accountable.
+
+2.2. Principle 2 - Product Sustainability: Businesses shall provide goods and services that are safe and contribute to sustainability throughout their life cycle.
+
+2.3. Principle 3 - Employee Well-being: Businesses shall respect and promote the well-being of all employees, including those in their value chains.
+
+2.4. Principle 4 - Stakeholder Engagement: Businesses shall respect the interests of and be responsive to all their stakeholders.
+
+2.5. Principle 5 - Human Rights: Businesses shall respect and promote human rights.
+
+2.6. Principle 6 - Environment: Businesses shall respect and make efforts to protect and restore the environment.
+
+2.7. Principle 7 - Public Advocacy: Businesses shall engage in responsible public advocacy and refrain from anti-competitive conduct.
+
+2.8. Principle 8 - Inclusive Growth: Businesses shall promote inclusive growth and equitable development.
+
+2.9. Principle 9 - Customer Responsibility: Businesses shall provide value to their customers in a responsible manner.
+
+3. ESG Disclosures
+
+3.1. Listed entities shall disclose the following Environmental metrics:
+   a) Greenhouse gas emissions (Scope 1, Scope 2, and Scope 3).
+   b) Water withdrawal and consumption.
+   c) Energy consumption and renewable energy usage.
+   d) Waste generation and disposal methods.
+   e) Environmental compliance and regulatory breaches.
+
+3.2. Listed entities shall disclose the following Social metrics:
+   a) Workforce diversity including gender, caste, and disability representation.
+   b) Employee turnover and training hours.
+   c) Occupational health and safety incidents.
+   d) Community development expenditure.
+   e) Human rights assessments and remediation.
+
+3.3. Listed entities shall disclose the following Governance metrics:
+   a) Board composition and independence.
+   b) Executive compensation ratio.
+   c) Whistleblower mechanism and cases reported.
+   d) Anti-corruption policies and cases.
+   e) Regulatory compliance and penalty history.
+
+4. Assurance Requirements
+
+4.1. All reported environmental data shall be subject to reasonable assurance by a certified third-party auditor.
+4.2. Social and governance data shall be subject to limited assurance.
+4.3. The assurance report shall be submitted along with the BRSR filing.
+
+5. Digital Platform
+
+All BRSR reports shall be filed through the SEBI BRSR digital platform available on the SEBI website. The filing window shall be open from April 1 to June 30 each year.
+
+6. Timeline for Compliance
+
+6.1. Top 500 entities by market capitalization: BRSR reporting mandatory from FY 2025-26.
+6.2. Next 500 entities by market capitalization: BRSR reporting mandatory from FY 2026-27.
+6.3. SME exchange listed entities: BRSR Lite from FY 2026-27.
+
+7. Consequences of Non-Compliance
+
+Non-compliance with BRSR filing requirements shall attract a penalty of Rs. 50,000 per day of delay, subject to a maximum of Rs. 50 lakh per entity per financial year.
+
+Sd/-
+Executive Director
+Securities and Exchange Board of India

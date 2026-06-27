@@ -246,6 +246,12 @@ benchmarks/reports/
 
 # Log files
 *.log
+backend.err
+
+# Runtime storage — newly generated subdirectories and extracted text
+storage/memory/
+storage/research/
+storage/**/*.txt
 
 # Coverage files
 .coverage

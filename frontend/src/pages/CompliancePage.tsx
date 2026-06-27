@@ -71,7 +71,7 @@ function OverviewTab() {
   const [selected, setSelected] = useState<ComplianceAssessment | null>(null);
 
   const avgScore = assessments?.length
-    ? Math.round(assessments.reduce((s, a) => s + a.overall_score, 0) / assessments.length * 100)
+    ? Math.round(assessments.reduce((s, a) => s + a.risk_score, 0) / assessments.length * 100)
     : null;
 
   const riskTone = (level: string) => level === "critical" ? "danger" : level === "high" ? "warning" : level === "medium" ? "info" : "success";
@@ -82,7 +82,7 @@ function OverviewTab() {
     try {
       const result = await run.mutateAsync({ scope, policies: policies.length ? policies : undefined });
       setSelected(result);
-      toast.push({ title: "Assessment complete", description: `${result.scope} — score ${Math.round(result.overall_score * 100)}%`, tone: "success" });
+      toast.push({ title: "Assessment complete", description: `${result.scope} — score ${Math.round(result.risk_score * 100)}%`, tone: "success" });
     } catch (err) {
       toast.push({ title: "Assessment failed", description: err instanceof Error ? err.message : "Unexpected error", tone: "danger" });
     }
@@ -157,7 +157,7 @@ function OverviewTab() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.scope}</span>
                     <Badge tone={riskTone(a.risk_level)}>{a.risk_level}</Badge>
-                    <Badge tone="brand" size="sm">{Math.round(a.overall_score * 100)}%</Badge>
+                    <Badge tone="brand" size="sm">{Math.round(a.risk_score * 100)}%</Badge>
                     <span className="ml-auto text-[10px] text-slate-500">{formatRelative(a.generated_at)}</span>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">{(a.obligations?.length ?? 0)} obligations · {(a.gaps?.length ?? 0)} gaps</p>

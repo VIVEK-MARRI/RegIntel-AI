@@ -24,6 +24,12 @@ class ChunkRepository(BaseRepository[DocumentChunk]):
         """Retrieves a single chunk by its ID."""
         return await self.get(chunk_id)
 
+    async def get_all(self) -> Sequence[DocumentChunk]:
+        """Fetch all DocumentChunk entries."""
+        query = select(self.model)
+        result = await self.db_session.execute(query)
+        return result.scalars().all()
+
     async def list_chunks(
         self,
         document_id: Optional[uuid.UUID] = None,

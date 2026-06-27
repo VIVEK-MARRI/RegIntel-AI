@@ -1,0 +1,67 @@
+RESERVE BANK OF INDIA
+MASTER DIRECTION
+DOR.AML.REC.68/14.01.001/2025-26
+
+July 1, 2025
+
+Master Direction on Know Your Customer (KYC) Norms and Anti-Money Laundering (AML) Measures
+
+The Reserve Bank of India, in exercise of the powers conferred by Section 35A of the Banking Regulation Act, 1949, and Section 11 of the Reserve Bank of India Act, 1934, hereby issues the following Master Direction consolidating all instructions on KYC norms and AML measures for Regulated Entities (REs).
+
+1. Applicability
+
+These directions shall apply to all Scheduled Commercial Banks, Small Finance Banks, Payments Banks, Non-Banking Financial Companies (NBFCs), Asset Reconstruction Companies (ARCs), and All India Financial Institutions (AIFIs).
+
+2. Customer Due Diligence (CDD)
+
+2.1. Every RE shall undertake CDD measures while establishing a business relationship with a customer. CDD measures include identifying and verifying the customer's identity using reliable and independent sources.
+
+2.2. REs shall classify customers into the following risk categories:
+   a) Low Risk: Individuals and entities where the source of funds is clear and transparent.
+   b) Medium Risk: Customers where there is some ambiguity in the ownership structure or source of funds.
+   c) High Risk: Non-resident customers, politically exposed persons (PEPs), trusts, charities, and shell companies.
+
+2.3. Enhanced Due Diligence (EDD) shall be applied for high-risk customers. This includes obtaining additional information about the customer's source of funds, source of wealth, and the economic rationale for the transaction.
+
+3. Simplified KYC for Low-Risk Customers
+
+REs may apply simplified KYC measures for customers classified as low risk. Simplified KYC requires only basic identity verification using a single officially valid document (OVD).
+
+4. Beneficial Ownership Identification
+
+4.1. REs shall identify and verify the beneficial owner of all legal entity customers.
+4.2. Beneficial owner means the natural person who ultimately owns or controls a legal entity, directly or indirectly through:
+   a) Ownership of at least 10% of shares or capital.
+   b) Control through management rights, voting rights, or contractual arrangements.
+
+5. Periodic Updation of KYC
+
+All REs shall ensure that KYC records are periodically updated:
+   a) Low-risk customers: Once every 10 years.
+   b) Medium-risk customers: Once every 8 years.
+   c) High-risk customers: Once every 2 years.
+
+6. Record Keeping
+
+6.1. REs shall maintain all records pertaining to KYC and transactions for a period of at least 10 years from the date of cessation of the business relationship.
+6.2. All transaction records shall be maintained for at least 10 years from the date of the transaction.
+
+7. Suspicious Transaction Reporting
+
+7.1. REs shall report suspicious transactions to the Financial Intelligence Unit - India (FIU-IND) within 7 working days of the transaction being identified as suspicious.
+7.2. The report shall be submitted in the prescribed format as specified by FIU-IND.
+7.3. REs shall not disclose the fact that a suspicious transaction report has been submitted to any person.
+
+8. Compliance and Audit
+
+8.1. The Board of Directors of each RE shall appoint a Principal Officer responsible for overseeing KYC and AML compliance.
+8.2. An independent internal audit shall be conducted annually to assess the effectiveness of KYC and AML measures.
+8.3. The audit report shall be submitted to the Board and retained for at least 5 years.
+
+9. Penalties
+
+Non-compliance with these directions shall attract monetary penalties under Section 47A of the Banking Regulation Act, 1949, and Section 25 of the Payment and Settlement Systems Act, 2007.
+
+Sd/-
+Chief General Manager
+Reserve Bank of India

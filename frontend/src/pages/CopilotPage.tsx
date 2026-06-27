@@ -190,7 +190,44 @@ function MessageBubble({ message }: { message: CopilotMessage }) {
           ? "border-brand-200 bg-brand-50 text-slate-900 dark:border-brand-900/40 dark:bg-brand-950/30 dark:text-slate-100"
           : "border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-surface-dark-2 dark:text-slate-100"
       }`}>
-        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        {message.answer_section ? (
+          <div className="space-y-3">
+            <div>
+              <p className="whitespace-pre-wrap leading-relaxed">{message.answer_section.executive_summary}</p>
+            </div>
+            {message.answer_section.detailed_explanation ? (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Analysis</p>
+                <p className="whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300">{message.answer_section.detailed_explanation}</p>
+              </div>
+            ) : null}
+            {message.answer_section.supporting_evidence?.length ? (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Evidence ({message.answer_section.supporting_evidence.length})</p>
+                <ul className="space-y-1">
+                  {message.answer_section.supporting_evidence.map((ev, i) => (
+                    <li key={ev.chunk_id ?? i} className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] dark:border-slate-800 dark:bg-slate-800/40">
+                      <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                        {ev.source ? `[${ev.source}]` : ""} {ev.section ?? ""}
+                      </span>
+                      <p className="mt-0.5 line-clamp-2 italic text-slate-700 dark:text-slate-300">"{ev.excerpt}"</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {message.answer_section.key_regulatory_references?.length ? (
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">References:</span>
+                {message.answer_section.key_regulatory_references.map((ref, i) => (
+                  <Badge key={i} tone="neutral" size="sm">{ref}</Badge>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        )}
         {!isUser ? (
           <div className="space-y-3 pt-2">
             {message.citations?.length ? <CitationList citations={message.citations} /> : null}
@@ -298,9 +335,15 @@ function MemoryContextView({ ctx }: { ctx?: MemoryContext }) {
 }
 
 function buildAssistantMessage(r: CopilotResponsePayload): CopilotMessage {
+  const sections = r.answer && typeof r.answer === "object" ? r.answer : null;
+  const text = sections
+    ? [sections.executive_summary, sections.detailed_explanation].filter(Boolean).join("\n\n")
+    : typeof r.answer === "string"
+      ? r.answer
+      : "";
   return {
     role: "assistant",
-    content: typeof r.answer === "string" ? r.answer : JSON.stringify(r.answer ?? ""),
+    content: text,
     timestamp: new Date().toISOString(),
     citations: r.citations ?? [],
     sources: r.sources ?? [],
@@ -312,5 +355,6 @@ function buildAssistantMessage(r: CopilotResponsePayload): CopilotMessage {
     memory_context: r.memory_context,
     latency_ms: r.latency_ms,
     agent_contributions: r.agent_contributions ?? [],
+    answer_section: sections ?? undefined,
   };
 }

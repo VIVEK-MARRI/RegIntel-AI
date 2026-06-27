@@ -1,0 +1,92 @@
+SECURITIES AND EXCHANGE BOARD OF INDIA
+SEBI/LAD-NRO/GN/2025/45
+
+August 15, 2025
+
+SEBI (Prohibition of Insider Trading) Regulations, 2025
+
+The Securities and Exchange Board of India, in exercise of the powers conferred under Section 30 of the SEBI Act, 1992 (15 of 1992), hereby makes the following regulations to prohibit insider trading in securities.
+
+CHAPTER I - PRELIMINARY
+
+1. Short Title and Commencement
+
+These regulations shall be called the SEBI (Prohibition of Insider Trading) Regulations, 2025. They shall come into force on the date of their publication in the Official Gazette.
+
+2. Definitions
+
+In these regulations, unless the context otherwise requires:
+
+a) "Connected Person" means any person who is associated with a company in any capacity including promoter, director, officer, employee, or any person who has access to unpublished price-sensitive information.
+
+b) "Insider" means any person who is a connected person or who is in possession of or has access to unpublished price-sensitive information.
+
+c) "Unpublished Price-Sensitive Information" (UPSI) means any information relating to a company or its securities that is not generally available and which, if generally available, would materially affect the price of the securities.
+
+d) "Trading" means buying, selling, dealing, or agreeing to buy, sell, or deal in securities.
+
+e) "Legitimate Purpose" includes sharing of UPSI in the ordinary course of business by an insider with partners, collaborators, lenders, customers, suppliers, merchant bankers, legal advisors, auditors, insolvency professionals, or other such persons.
+
+CHAPTER II - PROHIBITION OF INSIDER TRADING
+
+3. Prohibition of Trading by Insiders
+
+No insider shall trade in securities that are listed or proposed to be listed on a stock exchange while in possession of UPSI.
+
+4. Communication of UPSI
+
+No insider shall communicate, provide, or allow access to any UPSI relating to a company or its securities to any person, except when required for legitimate purposes, discharge of legal obligations, or in compliance with applicable laws.
+
+CHAPTER III - TRADING PLANS
+
+5. Trading Plans
+
+An insider may formulate a trading plan for trading in securities in compliance with the following conditions:
+
+a) The trading plan shall be submitted to the compliance officer of the company at least 120 days prior to commencement of trading.
+b) The trading plan shall be irrevocable once approved.
+c) The trading period under the plan shall not commence before 120 days from the approval.
+d) The plan shall not entail trading during the first 6 months of the trading window closure periods.
+
+6. Approval of Trading Plans
+
+The compliance officer shall approve or reject the trading plan within 15 working days of receipt. Rejection shall be communicated with reasons in writing.
+
+CHAPTER IV - DISCLOSURES
+
+7. Initial Disclosure
+
+Every person who becomes a promoter or director of a company shall disclose their holdings of securities within 7 working days of such appointment.
+
+8. Continual Disclosure
+
+Every promoter, director, and designated person shall disclose any change in their holdings within 2 working days of such change.
+
+CHAPTER V - CODE OF CONDUCT
+
+9. Code of Conduct
+
+Every listed company shall adopt a code of conduct for its directors, officers, and employees to regulate trading by insiders. The code shall include:
+
+a) A policy on trading window closure periods.
+b) Pre-clearance of trades above a specified threshold.
+c) Restrictions on trading during the window closure period.
+d) Procedures for contra-trade prohibitions with a minimum 6-month holding period.
+
+10. Institutional Mechanism
+
+Every listed company shall implement an institutional mechanism to prevent insider trading, including:
+a) Designation of a compliance officer.
+b) Maintenance of a structured digital database of persons with whom UPSI is shared.
+c) Implementation of internal controls and procedures.
+d) Annual audit of compliance with these regulations.
+
+CHAPTER VI - PENALTIES
+
+11. Penalties for Insider Trading
+
+Violation of these regulations shall attract penalties as specified under Section 15A and Section 15G of the SEBI Act, 1992, including monetary penalties up to Rs. 25 crore or three times the profits made, whichever is higher, and prohibition from accessing the securities market.
+
+Sd/-
+Chairperson
+Securities and Exchange Board of India

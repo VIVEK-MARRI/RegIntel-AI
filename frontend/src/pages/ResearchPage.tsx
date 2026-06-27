@@ -29,7 +29,7 @@ export function ResearchPage() {
   async function handleRun() {
     if (!query.trim()) return;
     try {
-      const result = await run.mutateAsync({ query, depth });
+      const result = await run.mutateAsync({ query, max_steps: depth });
       setSelected(result);
       toast.push({ title: "Research report ready", description: (result.query || result.summary || "").slice(0, 80), tone: "success" });
     } catch (err) {

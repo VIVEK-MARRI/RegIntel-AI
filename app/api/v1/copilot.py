@@ -17,14 +17,16 @@ from app.api.dependencies import (
     get_conversation_service,
     get_memory_service,
     get_response_orchestrator,
+    get_retrieval_service,
 )
-from app.schemas.copilot import CopilotRequest, CopilotResponse
+from app.schemas.copilot import CopilotMode, CopilotRequest, CopilotResponse
 from app.services.answer_analytics import (
     AnswerAnalyticsService,
     build_default_answer_analytics_service,
 )
 from app.services.conversation import ConversationService
 from app.services.copilot import CopilotController, CopilotService
+from app.services.embedding.retrieval import RetrievalService
 from app.services.memory import MemoryService
 from app.services.orchestrator import ResponseOrchestrator
 
@@ -96,12 +98,38 @@ def reset_copilot_service() -> None:
 async def copilot_query(
     request: CopilotRequest,
     service: CopilotService = Depends(get_copilot_service),
+    retrieval_service: RetrievalService = Depends(get_retrieval_service),
 ) -> CopilotResponse:
     if not request.query.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="`query` must be a non-empty string",
         )
+    # Auto-retrieve chunks when in answer mode and no chunks provided.
+    if request.mode == CopilotMode.ANSWER and not request.chunks:
+        search_res = await retrieval_service.retrieve(
+            query=request.query,
+            top_k=5,
+            score_threshold=0.5,
+        )
+        results = search_res.get("results", [])
+        if results:
+            request.chunks = []
+            for i, r in enumerate(results):
+                meta = r.get("metadata", {})
+                meta_json = meta.get("metadata_json") or {}
+                request.chunks.append({
+                    "chunk_id": r["chunk_id"],
+                    "document_id": meta["document_id"],
+                    "content": r["content"],
+                    "score": r["score"],
+                    "source": meta_json.get("source") if isinstance(meta_json, dict) else None,
+                    "page_number": meta.get("page_number"),
+                    "section": meta.get("section"),
+                    "subsection": meta.get("subsection"),
+                    "document_title": meta_json.get("title") if isinstance(meta_json, dict) else None,
+                    "rank": i + 1,
+                })
     controller = CopilotController(service=service)
     try:
         return await controller.handle(request)
