@@ -15,7 +15,7 @@ complex compliance workflows.*
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![pgvector](https://img.shields.io/badge/pgvector-0.4-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![Redis](https://img.shields.io/badge/redis-optional-dc382d?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
-[![Docker](https://img.shields.io/badge/docker-ready-2496ed?style=for-the-badge&logo=docker&logoColor=white)](./Dockerfile.production)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ed?style=for-the-badge&logo=docker&logoColor=white)](./Dockerfile)
 [![CI](https://img.shields.io/badge/CI-passing-2088ff?style=for-the-badge&logo=github-actions&logoColor=white)](./.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](./LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-22c55e?style=for-the-badge&logo=codecov&logoColor=white)](#testing--quality)
@@ -23,8 +23,7 @@ complex compliance workflows.*
 [Architecture](#-architecture-overview) ·
 [Quick Start](#-quick-start) ·
 [API Reference](./docs/architecture/07-api-reference.md) ·
-[Deployment](./docs/DEPLOYMENT.md) ·
-[Roadmap](#-future-roadmap)
+[Deployment](./docs/DEPLOYMENT.md)
 
 </div>
 
@@ -79,9 +78,8 @@ solves this with a tightly integrated stack of:
 13. [Deployment](#-deployment)
 14. [API Overview](#-api-overview)
 15. [Screenshots](#-screenshots)
-16. [Future Roadmap](#-future-roadmap)
-17. [License](#-license)
-18. [Acknowledgements](#-acknowledgements)
+16. [License](#-license)
+17. [Acknowledgements](#-acknowledgements)
 
 ---
 
@@ -532,58 +530,54 @@ RegIntel-AI/
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
+### Prerequisites
+
+* Docker 24+ and Docker Compose 2.20+
+* An LLM API key (Gemini, OpenAI, or LiteLLM)
+
+### Quick start (Docker — recommended)
+
+```bash
+git clone https://github.com/VIVEK-MARRI/RegIntel-AI.git
+cd RegIntel-AI
+
+# Create a .env file with your LLM provider and API key
+echo "LLM_PROVIDER=gemini" >> .env
+echo "LLM_API_KEY=your-api-key-here" >> .env
+
+# Start the full stack (backend + frontend)
+docker compose up -d
+```
+
+The backend is at `http://localhost:8000` and the frontend at
+`http://localhost:80`. The backend health endpoint is available at
+`GET /health`.
+
+> **First run:** ML models (embedding + reranker) download
+> automatically on the first request — this can take 1–5 minutes
+> depending on your connection. The database is SQLite by default
+> (no PostgreSQL required).
+
+### Manual setup (without Docker)
 
 * Python 3.11+
 * Node 20+ (frontend)
 * PostgreSQL 16+ with the `pgvector` extension
-* Docker 24+ (recommended for production)
-
-### 2. Clone and bootstrap
 
 ```bash
-git clone https://github.com/regintel/regintel-ai.git
-cd regintel-ai
+git clone https://github.com/VIVEK-MARRI/RegIntel-AI.git
+cd RegIntel-AI
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 ```
 
-### 3. Run the database
+Then start PostgreSQL, run `alembic upgrade head`, and start the
+backend with `uvicorn app.main:app --reload --port 8000`. See
+[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for details.
 
-```bash
-# Option A: Docker
-docker run -d --name regintel-postgres \
-  -e POSTGRES_USER=regintel -e POSTGRES_PASSWORD=regintel \
-  -e POSTGRES_DB=regintel -p 5432:5432 \
-  pgvector/pgvector:pg16
-
-# Option B: existing instance
-createdb regintel
-psql regintel -c "CREATE EXTENSION IF NOT EXISTS vector;"
-```
-
-### 4. Apply migrations and start
-
-```bash
-alembic upgrade head
-uvicorn app.main:app --reload --port 8000
-```
-
-### 5. Open the UI
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Visit `http://localhost:5173`. Sign in with the dev token
-endpoint (`POST /api/v1/security/auth/token`) or with a pre-issued
-JWT.
-
-### 6. Production deployment (Docker)
+### Production deployment
 
 ```bash
 cp .env.production.example .env.production
@@ -874,44 +868,6 @@ Full reference: [docs/architecture/07-api-reference.md](./docs/architecture/07-a
 
 
 
-## 🗺️ Future Roadmap
-
-### v1.1 — Q3 2026
-
-* **RS256 JWT** — asymmetric signing with JWKS for multi-tenant IDP
-  integration.
-* **Streaming agent** — Server-Sent Events for long-running runs.
-* **Vector DB adapter** — Qdrant and Milvus for > 10 M chunks.
-* **Multi-tenant quotas** — per-org token and rate budgets.
-* **Webhooks** — push notifications for governance events.
-
-### v1.2 — Q4 2026
-
-* **Graph RAG v2** — community detection, hop-by-hop explanations.
-* **Adaptive retrieval** — learned ranker (LightGBM on click logs).
-* **Audit export to S3** — durable, queryable audit log.
-* **Cost guardrails** — hard cap with a graceful degradation ladder.
-* **Offline evaluation harness** — regression suite over golden
-  question sets.
-
-### v2.0 — 2027
-
-* **Regulatory ontology** — first-class FCA, SEC, ESMA, RBI, SEBI
-  ontologies with cross-walks.
-* **Decision-impact simulation** — "what changes if MiFID II §X is
-  amended?" queries backed by causal inference.
-* **Distributed multi-agent** — agents can run on separate worker
-  pools with their own backpressure.
-* **SDK** — typed Python + TypeScript clients.
-* **Marketplace** — installable agent packs (audit, compliance,
-  risk, ESG, AML).
-
-We welcome contributions and design discussion. See
-[docs/architecture/08-developer-guide.md](./docs/architecture/08-developer-guide.md)
-for the contribution model.
-
----
-
 ## 📄 License
 
 RegIntel AI is released under the **Apache License 2.0**. See
@@ -949,5 +905,5 @@ This project builds on the work of many open-source projects:
 
 ---
 
-[🐛 Report a bug](https://github.com/regintel/regintel-ai/issues) ·
+[🐛 Report a bug](https://github.com/VIVEK-MARRI/RegIntel-AI/issues) ·
 [📖 Read the docs](./docs/architecture/README.md)
