@@ -130,7 +130,7 @@ boundary. This separation makes the system testable, replaceable, and
 operable.
 
 ```mermaid
-%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1f2937','primaryTextColor':'#f9fafb','primaryBorderColor':'#6366f1','lineColor':'#94a3b8','fontSize':'13px','fontFamily':'Inter, system-ui, sans-serif'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1f2937','primaryTextColor':'#f9fafb','primaryBorderColor':'#6366f1','lineColor':'#94a3b8','titleColor':'#94A3B8','fontSize':'13px','fontFamily':'Inter, system-ui, sans-serif'}}}%%
 flowchart TB
     classDef edge fill:#0F172A,stroke:#3B82F6,stroke-width:2px,color:#F8FAFC,rx:10,ry:10
     classDef ui fill:#1E293B,stroke:#64748B,stroke-width:2px,color:#F1F5F9,rx:10,ry:10
@@ -144,14 +144,14 @@ flowchart TB
     classDef cache fill:#7F1D1D,stroke:#F87171,stroke-width:2px,color:#FEF2F2,rx:10,ry:10
     classDef obs fill:#451A03,stroke:#F59E0B,stroke-width:2px,color:#FEF3C7,rx:10,ry:10
     classDef sec fill:#374151,stroke:#9CA3AF,stroke-width:2px,color:#F9FAFB,rx:10,ry:10
-    classDef cluster fill:none,stroke:#475569,stroke-width:1px,stroke-dasharray:5 5,color:#94A3B8
+    classDef cluster fill:none,stroke:#475569,stroke-width:1px,stroke-dasharray:5 5
 
     subgraph EdgeLayer["Edge Layer"]
-        NG["Nginx Reverse Proxy<br/>TLS Termination • Rate Limiting"]:::edge
+        NG["Nginx Reverse Proxy<br/>TLS Termination - Rate Limiting"]:::edge
     end
 
     subgraph PresentationLayer["Presentation Layer"]
-        UI["React 18 + TypeScript<br/>Dashboard • Admin Console"]:::ui
+        UI["React 18 + TypeScript<br/>Dashboard - Admin Console"]:::ui
     end
 
     subgraph ApplicationLayer["Application Layer"]
@@ -194,10 +194,10 @@ flowchart TB
     end
 
     subgraph GovernanceLayer["Governance Layer"]
-        DECISIONS["Decisions<br/>Draft → Review → Approved"]:::gov
+        DECISIONS["Decisions<br/>Draft - Review - Approved"]:::gov
         REVIEW["Human Review"]:::gov
         AUDIT_LOG["Audit Log<br/>Immutable Trail"]:::gov
-        RBAC["RBAC<br/>6 Roles • 34 Permissions"]:::gov
+        RBAC["RBAC<br/>6 Roles - 34 Permissions"]:::gov
     end
 
     subgraph DataLayer["Persistence Layer"]
@@ -215,12 +215,12 @@ flowchart TB
 
     subgraph SecurityLayer["Security Layer"]
         JWT["JWT<br/>HS256, RFC 7519"]:::sec
-        SECRETS["Secrets<br/>env → file → vault"]:::sec
+        SECRETS["Secrets<br/>env - file - vault"]:::sec
         THREAT["Threat Detection"]:::sec
         SIGNING["HMAC-SHA256<br/>Request Signing"]:::sec
     end
 
-    %% Cross-layer connections
+    %% Presentation flow
     NG --> UI
     UI <-->|REST + WS| API
     API --> ORCH
@@ -229,22 +229,57 @@ flowchart TB
     PLANNER --> COMPOSER
     COMPOSER --> VERIFIER
     VERIFIER --> COORD
-    COORD --> RESEARCH & COMPLIANCE & RISK & AUDIT
-    RESEARCH & COMPLIANCE & RISK & AUDIT --> LLM & EMBED & RERANK
-    RESEARCH & COMPLIANCE --> BM25 & VECTOR
-    BM25 & VECTOR --> FUSION
+
+    %% Coordinator delegates to specialist agents
+    COORD --> RESEARCH
+    COORD --> COMPLIANCE
+    COORD --> RISK
+    COORD --> AUDIT
+
+    %% Agents use intelligence services
+    RESEARCH --> LLM
+    RESEARCH --> EMBED
+    RESEARCH --> RERANK
+    COMPLIANCE --> LLM
+    RISK --> LLM
+    AUDIT --> LLM
+
+    %% Retrieval pipeline
+    RESEARCH --> BM25
+    RESEARCH --> VECTOR
+    COMPLIANCE --> BM25
+    COMPLIANCE --> VECTOR
+    BM25 --> FUSION
+    VECTOR --> FUSION
     FUSION --> FILTERS
     FILTERS --> KG
-    KG --> EXTRACT & VERSION
+    KG --> EXTRACT
+    KG --> VERSION
+
+    %% Governance flow
     COORD --> DECISIONS
     DECISIONS --> REVIEW
     REVIEW --> AUDIT_LOG
     AUDIT_LOG --> RBAC
-    RESEARCH & COMPLIANCE & RISK & AUDIT --> PG & BLOB
-    RESEARCH & COMPLIANCE & RISK & AUDIT --> CACHE
+
+    %% Data layer access
+    RESEARCH --> PG
+    RESEARCH --> BLOB
+    COMPLIANCE --> PG
+    RISK --> PG
+    AUDIT --> PG
+    RESEARCH --> CACHE
+    COMPLIANCE --> CACHE
+
+    %% Observability
     API --> PROM
     PROM --> GRAF
-    API & ORCH --> METRICS & LOGS
+    API --> METRICS
+    ORCH --> METRICS
+    API --> LOGS
+    ORCH --> LOGS
+
+    %% Security layer
     API --> JWT
     JWT --> RBAC
     JWT --> SECRETS
@@ -318,11 +353,21 @@ flowchart TB
     COORD -->|delegate| COMP
     COORD -->|delegate| RISK
     COORD -->|delegate| AUD
-    RES --> T1 & T2
-    COMP --> T1 & T3 & T5
-    RISK --> T1 & T3 & T4
+
+    RES --> T1
+    RES --> T2
+    COMP --> T1
+    COMP --> T3
+    COMP --> T5
+    RISK --> T1
+    RISK --> T3
+    RISK --> T4
     AUD --> T1
-    RES & COMP & RISK & AUD -->|evidence| COORD
+
+    RES -->|evidence| COORD
+    COMP -->|evidence| COORD
+    RISK -->|evidence| COORD
+    AUD -->|evidence| COORD
     COORD --> FINAL
 ```
 
@@ -355,7 +400,7 @@ sequenceDiagram
     participant FE as Web SPA
     participant NX as nginx
     participant API as FastAPI
-    participant JW as JWT / RBAC
+    participant JW as JWT + RBAC
     participant CO as Coordinator
     participant R as Retriever
     participant KG as Knowledge Graph
