@@ -355,7 +355,7 @@ class TestKeywordLookupRule:
         self.rule = KeywordLookupRule()
 
     def test_query_type(self):
-        assert self.rule.query_type == QueryType.KEYWORD
+        assert self.rule.query_type == QueryType.KEYWORD_LOOKUP
 
     def test_single_word(self):
         assert self.rule.evaluate("KYC") > 0.8
@@ -407,17 +407,17 @@ class TestRuleBasedQueryClassifier:
 
     def test_keyword_classification(self):
         qtype, conf = self.classifier.classify("KYC")
-        assert qtype == QueryType.KEYWORD
+        assert qtype == QueryType.KEYWORD_LOOKUP
         assert conf > 0.8
 
     def test_empty_query(self):
         qtype, conf = self.classifier.classify("")
-        assert qtype == QueryType.KEYWORD
+        assert qtype == QueryType.KEYWORD_LOOKUP
         assert conf == 1.0
 
     def test_whitespace_query(self):
         qtype, conf = self.classifier.classify("   ")
-        assert qtype == QueryType.KEYWORD
+        assert qtype == QueryType.KEYWORD_LOOKUP
         assert conf == 1.0
 
     def test_custom_rules(self):
@@ -436,7 +436,7 @@ class TestRuleBasedQueryClassifier:
         best score since no other rules match.
         """
         qtype, conf = self.classifier.classify("xyz abc def ghi jkl")
-        assert qtype == QueryType.KEYWORD
+        assert qtype == QueryType.KEYWORD_LOOKUP
         assert conf == 0.3
 
 
@@ -656,7 +656,7 @@ class TestQueryAnalyzer:
 
     def test_keyword_query(self):
         result = self.analyzer.analyze("KYC")
-        assert result.query_type == "keyword"
+        assert result.query_type == "keyword_lookup"
         assert result.confidence > 0.8
         assert result.optimal_strategy == "bm25"
 
@@ -728,7 +728,7 @@ class TestQueryAnalyzer:
             ("what is KYC", "definition"),
             ("RBI vs SEBI", "comparative"),
             ("how do we comply?", "semantic"),
-            ("KYC", "keyword"),
+            ("KYC", "keyword_lookup"),
         ]
         for query, expected_type in test_cases:
             result = self.analyzer.analyze(query)
@@ -760,12 +760,12 @@ class TestEdgeCases:
 
     def test_empty_string(self):
         result = self.analyzer.analyze("")
-        assert result.query_type == "keyword"
+        assert result.query_type == "keyword_lookup"
         assert result.confidence == 1.0
 
     def test_whitespace_only(self):
         result = self.analyzer.analyze("   ")
-        assert result.query_type == "keyword"
+        assert result.query_type == "keyword_lookup"
 
     def test_very_long_query(self):
         long_query = " ".join(["word"] * 100)

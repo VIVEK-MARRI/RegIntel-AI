@@ -157,8 +157,8 @@ class TestQueryClassifierRules:
         ("difference between KYC and CKYC", "comparative"),
         ("How do we comply with AML?", "semantic"),
         ("why did SEBI amend guidelines?", "semantic"),
-        ("KYC", "keyword"),
-        ("AML compliance", "keyword"),
+        ("KYC", "keyword_lookup"),
+        ("AML compliance", "keyword_lookup"),
     ])
     def test_classification_accuracy(self, query, expected_type):
         """Test that various query patterns are classified correctly."""
