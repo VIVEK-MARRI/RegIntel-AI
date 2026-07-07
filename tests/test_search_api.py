@@ -3,6 +3,7 @@ import uuid
 from httpx import AsyncClient
 from app.main import app
 from app.api.dependencies import get_embedding_provider
+from app.core.config import settings
 from app.models.document import Document, SourceEnum, StatusEnum
 from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum
 from app.repositories.embedding import ChunkEmbeddingRepository
@@ -30,6 +31,13 @@ def override_provider():
 
 @pytest.mark.asyncio
 async def test_semantic_search_api_flow(client: AsyncClient, db_session):
+    # Clean up any leftover data from previous tests in the shared session
+    from sqlalchemy import delete as sa_delete
+    await db_session.execute(sa_delete(ChunkEmbedding))
+    await db_session.execute(sa_delete(DocumentChunk))
+    await db_session.execute(sa_delete(Document))
+    await db_session.commit()
+
     # Setup standard document and chunk entries
     doc_rbi = Document(
         title="RBI Circular for KYC",
@@ -167,25 +175,27 @@ async def test_semantic_search_api_flow(client: AsyncClient, db_session):
     assert pytest.approx(res_data["coverage"], abs=1e-5) == 100.0
     assert res_data["status_counts"]["COMPLETED"] == 2
 
-    # ----------------------------------------------------
-    # Test 7: POST /api/v1/index/rebuild
-    # ----------------------------------------------------
-    response = await client.post("/api/v1/index/rebuild", json={})
-    assert response.status_code == 200
-    res_data = response.json()
-    assert res_data["status"] == "success"
-    assert len(res_data["rebuilt_indexes"]) > 0
+    # Tests 7-8 require pgvector (Postgres-only). Skip when running on SQLite.
+    if not settings.USE_PGVECTOR_FALLBACK:
+        # ----------------------------------------------------
+        # Test 7: POST /api/v1/index/rebuild
+        # ----------------------------------------------------
+        response = await client.post("/api/v1/index/rebuild", json={})
+        assert response.status_code == 200
+        res_data = response.json()
+        assert res_data["status"] == "success"
+        assert len(res_data["rebuilt_indexes"]) > 0
 
-    # ----------------------------------------------------
-    # Test 8: GET /api/v1/search/health
-    # ----------------------------------------------------
-    response = await client.get("/api/v1/search/health")
-    assert response.status_code == 200
-    res_data = response.json()
-    assert res_data["status"] == "healthy"
-    assert res_data["is_consistent"] is True
-    assert "index_health" in res_data
-    assert "consistency_details" in res_data
+        # ----------------------------------------------------
+        # Test 8: GET /api/v1/search/health
+        # ----------------------------------------------------
+        response = await client.get("/api/v1/search/health")
+        assert response.status_code == 200
+        res_data = response.json()
+        assert res_data["status"] == "healthy"
+        assert res_data["is_consistent"] is True
+        assert "index_health" in res_data
+        assert "consistency_details" in res_data
 
     # Cleanup database
     await db_session.delete(doc_rbi)
