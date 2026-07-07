@@ -266,6 +266,11 @@ class TestDenseRetrieval:
 
     async def test_vector_index_health(self, db_session):
         """Verify vector index manager reports health."""
+        # pgvector-backed index health queries PostgreSQL system tables
+        # (pg_index, pg_class, pg_stat_user_indexes) which are unavailable
+        # on SQLite and other non-PostgreSQL databases.
+        if db_session.bind and db_session.bind.dialect.name != "postgresql":
+            pytest.skip("pgvector index health requires PostgreSQL system tables")
         from app.services.embedding.index_manager import VectorIndexManager
         mgr = VectorIndexManager(db_session)
         health = await mgr.index_health()

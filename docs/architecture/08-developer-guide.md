@@ -48,6 +48,13 @@ curl http://localhost:8000/api/v1/security/selftest
 
 ## Testing
 
+> **Note on environment constraints:** Some tests require PostgreSQL with the
+> `pgvector` extension and are skipped automatically when running against SQLite
+> (the default local test database). Examples include `test_vector_index_health`
+> and parts of the search API test suite (`index rebuild`, `search health`).
+> To run the full test suite, configure a PostgreSQL test database and set
+> `USE_PGVECTOR_FALLBACK=false` in the test environment.
+
 ### Layout
 
 ```
