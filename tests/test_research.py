@@ -197,19 +197,21 @@ def test_store_reset(tmp_store):
 # ─── Service ────────────────────────────────────────────────────────
 
 
-def test_service_run_generates_report(service):
+@pytest.mark.asyncio
+async def test_service_run_generates_report(service):
     req = ResearchRequest(query="What is the latest KYC rule?")
-    report = service.run(req)
+    report = await service.run(req)
     assert report.report_id
     assert report.summary
     assert len(report.citations) >= 1
 
 
-def test_service_run_timeline(service):
+@pytest.mark.asyncio
+async def test_service_run_timeline(service):
     req = ResearchRequest(
         query="Show all KYC changes between 2020 and 2025"
     )
-    report = service.run(req)
+    report = await service.run(req)
     assert report.kind == ResearchKind.TIMELINE
     assert report.summary
 
@@ -220,8 +222,9 @@ def test_service_plan_only(service):
     assert plan.plan_id
 
 
-def test_service_get(service):
-    report = service.run(ResearchRequest(query="KYC"))
+@pytest.mark.asyncio
+async def test_service_get(service):
+    report = await service.run(ResearchRequest(query="KYC"))
     out = service.get(report.report_id)
     assert out is not None
     assert out.report_id == report.report_id
@@ -231,26 +234,30 @@ def test_service_get_missing(service):
     assert service.get("nope") is None
 
 
-def test_service_search(service):
-    service.run(ResearchRequest(query="KYC"))
+@pytest.mark.asyncio
+async def test_service_search(service):
+    await service.run(ResearchRequest(query="KYC"))
     res = service.search(ResearchFilter(page=1))
     assert res.total >= 1
 
 
-def test_service_search_filter_kind(service):
-    service.run(ResearchRequest(query="KYC", kind=ResearchKind.TIMELINE))
+@pytest.mark.asyncio
+async def test_service_search_filter_kind(service):
+    await service.run(ResearchRequest(query="KYC", kind=ResearchKind.TIMELINE))
     res = service.search(ResearchFilter(kind=ResearchKind.TIMELINE))
     assert all(r.kind == ResearchKind.TIMELINE for r in res.items)
 
 
-def test_service_stats(service):
-    service.run(ResearchRequest(query="KYC"))
+@pytest.mark.asyncio
+async def test_service_stats(service):
+    await service.run(ResearchRequest(query="KYC"))
     s = service.stats()
     assert s.total_reports >= 1
 
 
-def test_service_list_all(service):
-    service.run(ResearchRequest(query="KYC"))
+@pytest.mark.asyncio
+async def test_service_list_all(service):
+    await service.run(ResearchRequest(query="KYC"))
     assert len(service.list_all()) >= 1
 
 
@@ -310,7 +317,7 @@ async def test_api_plan(tmp_store):
 @pytest.mark.asyncio
 async def test_api_list_reports(tmp_store):
     svc = ResearchService(store=tmp_store)
-    svc.run(ResearchRequest(query="KYC"))
+    await svc.run(ResearchRequest(query="KYC"))
     app.dependency_overrides[get_research_service] = lambda: svc
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
