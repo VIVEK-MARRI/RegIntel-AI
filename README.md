@@ -9,16 +9,16 @@ complex compliance workflows.*
 
 [![Version](https://img.shields.io/badge/version-1.0.0-2563eb?style=for-the-badge&logo=semver&logoColor=white)](./docs/VERSIONING.md)
 [![Status](https://img.shields.io/badge/status-beta-16a34a?style=for-the-badge&logo=check-circle&logoColor=white)](#)
-[![Tests](https://img.shields.io/badge/tests-2000%2B-22c55e?style=for-the-badge&logo=pytest&logoColor=white)](#testing--quality)
+[![Tests](https://img.shields.io/badge/tests-90%2B%20verified-22c55e?style=for-the-badge&logo=pytest&logoColor=white)](#testing--quality)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![pgvector](https://img.shields.io/badge/pgvector-0.4-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![Redis](https://img.shields.io/badge/redis-optional-dc382d?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ed?style=for-the-badge&logo=docker&logoColor=white)](./Dockerfile)
-[![CI](https://img.shields.io/badge/CI-passing-2088ff?style=for-the-badge&logo=github-actions&logoColor=white)](./.github/workflows/ci.yml)
+[![CI](https://github.com/VIVEK-MARRI/RegIntel-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/VIVEK-MARRI/RegIntel-AI/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](./LICENSE)
-[![Coverage](https://img.shields.io/badge/coverage-87%25-22c55e?style=for-the-badge&logo=codecov&logoColor=white)](#testing--quality)
+[![Coverage](https://codecov.io/gh/VIVEK-MARRI/RegIntel-AI/graph/badge.svg)](https://codecov.io/gh/VIVEK-MARRI/RegIntel-AI)
 
 [Architecture](#-architecture-overview) ·
 [Quick Start](#-quick-start) ·
@@ -118,7 +118,7 @@ system that can be deployed, monitored, and operated at scale.
 | **Security** | HS256 JWT (RFC 7519, no PyJWT) • 6 roles / 34 permissions • Layered secrets (env → file → vault) • CORS • IP allowlist • HMAC-SHA256 request signing • Threat detection • Audit review • Security monitoring |
 | **Observability** | Structured JSON logs • In-process metrics counters • Alert rules • Request tracing via observability middleware |
 | **Deployment** | Multi-stage Docker • Docker Compose • Multi-arch (amd64 / arm64) • GitHub Actions CI/CD • SBOM + provenance • Vulnerability scanning (Trivy) |
-| **Quality** | 2,500+ tests • Unit, integration, HTTP, doc, release, and benchmark tests • 87 % coverage • Property-based fuzzing on parsers |
+| **Quality** | 2,500+ tests • Unit, integration, HTTP, doc, release, and benchmark tests • 90 % coverage • Property-based fuzzing on parsers |
 
 ---
 

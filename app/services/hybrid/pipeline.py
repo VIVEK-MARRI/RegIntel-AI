@@ -19,12 +19,9 @@ from typing import Any, Dict, List, Optional
 from app.models.document import SourceEnum
 from app.schemas.hybrid import (
     FusionMethod,
-    HybridSearchResponse,
-    RetrievalResult,
     RetrievalStrategy,
 )
-from app.schemas.reranker import RerankResponse
-from app.services.hybrid.service import HybridRetriever, RetrievalTelemetry
+from app.services.hybrid.service import HybridRetriever
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,5 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any
 from app.core.config import settings
 from app.core.database import get_db_session
 from app.services.document import DocumentService
@@ -286,10 +285,7 @@ def get_answer_generator_service(
 # ─── Module 5.2 — Citation Engine ────────────────────────────────────────────
 
 from app.services.citation import (  # noqa: E402
-    CitationBuilder,
-    CitationMapper,
     CitationService,
-    ClaimExtractor,
     build_default_citation_service,
 )
 
@@ -404,7 +400,6 @@ def reset_attribution_service() -> None:
 # ─── Module 5.6 — Response Orchestrator ────────────────────────────────────
 
 from app.services.orchestrator import (  # noqa: E402
-    PipelineCoordinator,
     ResponseOrchestrator,
     build_default_orchestrator,
 )

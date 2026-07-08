@@ -16,11 +16,8 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from app.schemas.confidence import (
     DEFAULT_WEIGHTS,
-    ConfidenceBreakdown,
-    ConfidenceFactor,
     ConfidenceFactorName,
     ConfidenceFlag,
-    ConfidenceLevel,
     ConfidenceRequest,
     ConfidenceResponse,
     level_for,

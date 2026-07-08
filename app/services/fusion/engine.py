@@ -25,9 +25,8 @@ from typing import (
     runtime_checkable,
 )
 
-from app.schemas.fusion import FusedCandidate, FusionConfig, FusionMethod, FusionReport
+from app.schemas.fusion import FusionConfig, FusionMethod, FusionReport
 from app.services.fusion.ranking import (
-    break_ties,
     build_provenance,
     compute_overlap,
     compute_multi_source_overlap,

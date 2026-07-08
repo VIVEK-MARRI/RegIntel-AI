@@ -22,6 +22,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
+from app.security.content_screening import detect_pii, flatten_text
 from app.schemas.governance import (
     ApprovalPolicy,
     ApprovalPolicyCreateRequest,
@@ -80,6 +81,15 @@ class GovernanceEngine:
             endpoint="/api/v1/governance/check",
             strategy="policy_check",
         ):
+            # P0.3 — set the ``contains_pii`` flag by actually scanning the
+            # decision's inputs/outputs. Previously nothing set this, so the
+            # PII_PROHIBITION rule could never fire (dead code).
+            if "contains_pii" not in decision.metadata:
+                decision.metadata["contains_pii"] = detect_pii(
+                    flatten_text(decision.inputs),
+                    flatten_text(decision.outputs),
+                    flatten_text(decision.metadata),
+                )
             violations: List[PolicyViolation] = []
             required_actions: List[PolicyAction] = []
             evaluated = 0

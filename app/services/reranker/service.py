@@ -18,13 +18,12 @@ import logging
 import math
 import statistics
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from app.schemas.reranker import (
     BenchmarkReport,
     BenchmarkResult,
     PrecisionMetrics,
-    RerankCandidate,
     RerankReport,
     RerankResponse,
     RerankResult,

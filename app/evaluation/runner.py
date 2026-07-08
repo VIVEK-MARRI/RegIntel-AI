@@ -12,12 +12,9 @@ import argparse
 import asyncio
 import json
 import logging
-import math
 import random
-import uuid
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from app.evaluation.dataset import DatasetManager
 from app.evaluation.metrics import MetricsEngine

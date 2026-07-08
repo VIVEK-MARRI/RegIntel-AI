@@ -1,7 +1,7 @@
 import uuid
 import math
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.chunk import ChunkEmbedding, DocumentChunk, EmbeddingStatusEnum

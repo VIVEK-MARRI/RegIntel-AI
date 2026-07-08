@@ -47,11 +47,10 @@ networkx==3.6.1
 rank-bm25==0.2.2
 regex==2026.5.9
 
-# Tokenizers / sentence-transformers (heavy; install with --no-deps in slim image)
-# torch==2.12.0
-# transformers==5.9.0
-# sentence-transformers==5.5.1
-# tokenizers==0.22.2
-# safetensors==0.7.0
-# huggingface_hub==1.17.0
-# hf-xet==1.5.0
+# ─── LLM provider SDKs (real providers used outside dev) ───────────────────
+# Required once LLM_PROVIDER is set to a non-mock value (see P0.2).
+openai==2.30.0
+google-genai==2.10.0
+litellm==1.83.7
+# ───────────────────────────────────────────────────────────────────────────
+

@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +22,6 @@ from app.models.analytics import (
     QueryDistributionRecord,
     RerankerGainRecord,
     SystemHealthSnapshot,
-    RetrievalStrategyEnum,
     QueryCategoryEnum,
 )
 

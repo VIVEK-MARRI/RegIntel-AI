@@ -26,10 +26,12 @@ WORKDIR /opt/build
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt ./
-# Install CPU-only. To embed the ML stack, uncomment the bottom of requirements.txt.
+COPY requirements.txt requirements-ml.txt ./
+# Installs the full ML stack by default (torch CPU wheel + transformers +
+# sentence-transformers + reranker) — see requirements-ml.txt for the single
+# source of truth for those versions.
 RUN pip install --upgrade pip wheel \
-    && pip install -r requirements.txt \
+    && pip install -r requirements.txt -r requirements-ml.txt \
     && pip install "uvicorn[standard]==0.32.0" "gunicorn==23.0.0"
 
 # ─── Stage 2: runtime ────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ FROM python:3.11-slim AS runtime
 
 LABEL org.opencontainers.image.title="regintel-ai-backend" \
       org.opencontainers.image.description="RegIntel AI production backend (FastAPI)" \
-      org.opencontainers.image.source="https://github.com/anomalyco/regintel-ai" \
+      org.opencontainers.image.source="https://github.com/VIVEK-MARRI/RegIntel-AI" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

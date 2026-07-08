@@ -60,6 +60,12 @@ def test_strategy_logic():
 
 @pytest.mark.asyncio
 async def test_hybrid_retriever_db(db_session, tmp_path):
+    # Clean up any leftover data from prior tests that pollute BM25 / dense retrieval
+    from sqlalchemy import delete as sa_delete
+    await db_session.execute(sa_delete(ChunkEmbedding).where(ChunkEmbedding.embedding_model == "hybrid-mock-model"))
+    await db_session.execute(sa_delete(DocumentChunk))
+    await db_session.commit()
+
     # Setup test document and chunks (3 chunks total to avoid 0.0 IDF scores)
     doc = Document(
         title="RBI KYC Circular",

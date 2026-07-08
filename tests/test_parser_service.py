@@ -66,6 +66,26 @@ async def test_parser_service_success(db_session, create_test_pdf):
         assert doc.page_count == 3
 
 @pytest.mark.asyncio
+async def test_parser_service_accepts_string_document_id(db_session, create_test_pdf):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        doc_service = DocumentService(db_session)
+        parser_service = ParserService(doc_service, temp_dir)
+        relative_path = "RBI/rbi_circular.pdf"
+        full_path = Path(temp_dir) / relative_path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        create_test_pdf(full_path, ["Test content"])
+        doc = Document(
+            title="String ID Test", source=SourceEnum.RBI,
+            file_name="rbi_circular.pdf", file_path=relative_path,
+            checksum="c" * 64, status=StatusEnum.UPLOADED
+        )
+        db_session.add(doc)
+        await db_session.commit()
+        pages = await parser_service.parse_document(str(doc.id))
+        assert len(pages) == 1
+        assert pages[0]["content"] == "Test content"
+
+@pytest.mark.asyncio
 async def test_parser_service_file_not_found(db_session):
     with tempfile.TemporaryDirectory() as temp_dir:
         doc_service = DocumentService(db_session)

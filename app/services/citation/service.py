@@ -10,8 +10,8 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from app.schemas.answer_generation import RetrievedChunk
 from app.schemas.citation import (

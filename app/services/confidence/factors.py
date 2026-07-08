@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import math
 import statistics
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 logger = logging.getLogger(__name__)
 

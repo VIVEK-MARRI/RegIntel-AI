@@ -30,6 +30,7 @@ REQUIRED_FILES = [
     "07-api-reference.md",
     "08-developer-guide.md",
     "09-operations-guide.md",
+    "copilot-retrieval.md",
 ]
 
 # Sections we expect each architecture file to contain

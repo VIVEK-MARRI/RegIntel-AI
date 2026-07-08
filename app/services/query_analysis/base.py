@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Tuple, List, Optional
+from typing import Tuple
 
 
 class QueryType(str, Enum):

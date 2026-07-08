@@ -40,7 +40,9 @@ from app.schemas.orchestrator import (
     VerificationMethod,
 )
 from app.services.conversation import ConversationService
+from app.services.hybrid.pipeline import HybridRerankPipeline
 from app.services.memory import MemoryService
+from app.models.document import SourceEnum
 from app.services.observability import track_request
 from app.services.orchestrator import ResponseBuilder, ResponseOrchestrator
 
@@ -60,11 +62,14 @@ class CopilotService:
         memory: Optional[MemoryService] = None,
         conversation: Optional[ConversationService] = None,
         analytics: Optional[Any] = None,  # AnswerAnalyticsService (avoid circular import)
+        hybrid_pipeline: Optional[HybridRerankPipeline] = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.memory = memory
         self.conversation = conversation
         self.analytics = analytics
+        self.hybrid_pipeline = hybrid_pipeline
+        self._retrieval_invoked: bool = False
 
     # ── Public API ──────────────────────────────────────────────────────
 
@@ -132,7 +137,7 @@ class CopilotService:
         conv: Any,
         memory_context: Any,
     ) -> CopilotResponse:
-        chunks = self._resolve_chunks(request, memory_context)
+        chunks = await self._resolve_chunks(request, memory_context)
         if not chunks:
             # Build an empty answer (degraded path) without invoking the
             # orchestrator: the orchestrator requires ≥1 chunk.
@@ -193,6 +198,7 @@ class CopilotService:
             model_used="",
             provider_used="",
             warnings=[reason],
+            extra={"retrieval_invoked": self._retrieval_invoked},
         )
         # Still record the user + assistant message in the conversation.
         assistant_text = (
@@ -328,17 +334,22 @@ class CopilotService:
 
     # ── Helpers ─────────────────────────────────────────────────────────
 
-    def _resolve_chunks(
+    async def _resolve_chunks(
         self, request: CopilotRequest, memory_context: Any
     ) -> List[RetrievedChunk]:
         """Resolve chunks: caller-provided first, else synthesise from
-        retrieval memory hits."""
+        retrieval memory hits, else invoke the hybrid retrieval pipeline."""
+        self._retrieval_invoked = False
+        # 1. Caller-supplied chunks.
         if request.chunks:
             return [RetrievedChunk.model_validate(c) for c in request.chunks]
-        # Synthesise from retrieval memory.
-        if memory_context.retrieval:
+        # 2. Memory-based: only use if score is sufficiently relevant.
+        MEMORY_SCORE_THRESHOLD = 0.35
+        mem_hits = memory_context.retrieval or []
+        strong_mem = [h for h in mem_hits if h.score >= MEMORY_SCORE_THRESHOLD]
+        if strong_mem:
             out: List[RetrievedChunk] = []
-            for idx, hit in enumerate(memory_context.retrieval, start=1):
+            for idx, hit in enumerate(strong_mem, start=1):
                 entry = hit.entry
                 out.append(
                     RetrievedChunk(
@@ -355,6 +366,41 @@ class CopilotService:
                     )
                 )
             return out
+        # 3. Hybrid retrieval pipeline (dense + BM25 + RRF + cross-encoder).
+        if self.hybrid_pipeline is not None:
+            self._retrieval_invoked = True
+            hybrid_response = await self.hybrid_pipeline.search(
+                query=request.query,
+                top_k=5,
+                rerank_score_threshold=0.0,
+                fusion_candidate_k=20,
+            )
+            results = hybrid_response.results
+            if results:
+                out = []
+                for idx, r in enumerate(results, start=1):
+                    meta = r.metadata or {}
+                    src = meta.get("source")
+                    if isinstance(src, str):
+                        try:
+                            src = SourceEnum(src)
+                        except ValueError:
+                            src = None
+                    out.append(
+                        RetrievedChunk(
+                            chunk_id=r.chunk_id,
+                            document_id=meta.get("document_id", str(r.chunk_id)),
+                            content=r.content or "",
+                            score=r.rerank_score,
+                            source=src,
+                            page_number=meta.get("page_number"),
+                            section=meta.get("section"),
+                            subsection=meta.get("subsection"),
+                            document_title=meta.get("document_title"),
+                            rank=idx,
+                        )
+                    )
+                return out
         return []
 
     def _resolve_verification_method(self, value: str) -> VerificationMethod:
@@ -380,6 +426,9 @@ class CopilotService:
             )
             for m in conv.messages[-6:]
         ]
+        # Tag metadata with retrieval_invoked flag.
+        if final_response is not None and final_response.metadata is not None:
+            final_response.metadata.extra["retrieval_invoked"] = self._retrieval_invoked
         # Project FinalAnswerResponse to the CopilotResponse shape.
         answer_dict = ResponseBuilder.to_dict(final_response)
         return CopilotResponse(
@@ -456,12 +505,14 @@ def build_default_copilot_service(
     memory: Optional[MemoryService] = None,
     conversation: Optional[ConversationService] = None,
     analytics: Optional[Any] = None,
+    hybrid_pipeline: Optional[HybridRerankPipeline] = None,
 ) -> CopilotService:
     return CopilotService(
         orchestrator=orchestrator,
         memory=memory,
         conversation=conversation,
         analytics=analytics,
+        hybrid_pipeline=hybrid_pipeline,
     )
 
 

@@ -10,29 +10,21 @@ import threading
 import time
 from typing import Any, Dict, List, Optional, Set
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.security.audit_review import (
     AuditQuery,
-    AuditReview,
     get_audit_review,
 )
-from app.security.jwt_auth import (
-    JWTConfig,
-    JWTIssuer,
-    decode_jwt,
-    generate_development_secret,
-)
 from app.security.monitoring import (
-    SecurityMonitor,
     get_security_monitor,
 )
 from app.core.config import settings
 from app.security.rbac import Permission, Principal, Role
-from app.security.secrets import SecretsManager, get_secrets_manager
-from app.security.threat_detection import ThreatDetector, get_threat_detector
+from app.security.secrets import get_secrets_manager
+from app.security.threat_detection import get_threat_detector
 
 # ─── Account lockout tracker ───────────────────────────────────────
 _lockout_lock = threading.Lock()

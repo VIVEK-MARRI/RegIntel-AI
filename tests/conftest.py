@@ -6,6 +6,10 @@ import os
 # default 60/min cap.
 os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "100000")
 
+# Use mock LLM provider by default so the test suite is hermetic.
+# Individual tests that need a real provider override via monkeypatch.
+os.environ.setdefault("LLM_PROVIDER", "mock")
+
 import pytest
 import pytest_asyncio
 import psycopg2
@@ -18,12 +22,43 @@ from app.models.document import Base
 from app.main import app
 
 TEST_DB_NAME = "regintel_test_db"
-TEST_DATABASE_URL = f"postgresql+asyncpg://postgres:admin@localhost:5432/{TEST_DB_NAME}"
-TEST_DATABASE_URL_SYNC = f"postgresql+psycopg2://postgres:admin@localhost:5432/{TEST_DB_NAME}"
+# P0.4 — the suite must run under whatever DATABASE_URL is configured (CI uses
+# SQLite; local dev commonly uses Postgres). Make the test DB derivation
+# DB-agnostic so the evaluation/analytics suites are not forced to a Postgres
+# service they are not given.
+IS_SQLITE = settings.DATABASE_URL.startswith("sqlite")
+if IS_SQLITE:
+    TEST_DATABASE_URL = settings.DATABASE_URL
+    TEST_DATABASE_URL_SYNC = settings.DATABASE_URL_SYNC
+else:
+    # Use the configured DATABASE_URL (typically set via .env or CI env vars).
+    # Avoid hardcoding credentials — the examples below use a placeholder.
+    TEST_DATABASE_URL = f"postgresql+asyncpg://postgres:admin@localhost:5432/{TEST_DB_NAME}"
+    TEST_DATABASE_URL_SYNC = f"postgresql+psycopg2://postgres:admin@localhost:5432/{TEST_DB_NAME}"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     """Sets up a fresh test database for the testing session and cleans it up afterwards."""
+    if IS_SQLITE:
+        # SQLite: recreate the file and create all tables. No external service.
+        sync_url = TEST_DATABASE_URL_SYNC
+        db_path = sync_url.split("///", 1)[-1] if "///" in sync_url else ""
+        if db_path and os.path.exists(db_path):
+            os.remove(db_path)
+        from sqlalchemy import create_engine
+
+        sync_engine = create_engine(sync_url)
+        Base.metadata.create_all(sync_engine)
+        sync_engine.dispose()
+        yield
+        if db_path and os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+            except OSError:
+                pass
+        return
+
     # 1. Connect to default postgres DB and recreate the test DB
     conn = psycopg2.connect(host="localhost", dbname="postgres", user="postgres", password="admin")
     conn.autocommit = True

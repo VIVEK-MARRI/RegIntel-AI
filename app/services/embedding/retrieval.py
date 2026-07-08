@@ -3,7 +3,7 @@ import math
 import uuid
 import logging
 from typing import List, Dict, Any, Optional
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.models.chunk import ChunkEmbedding, DocumentChunk, EmbeddingStatusEnum

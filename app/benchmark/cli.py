@@ -17,7 +17,6 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Dict
 
 from app.benchmark.benchmark_service import (
     BenchmarkService,

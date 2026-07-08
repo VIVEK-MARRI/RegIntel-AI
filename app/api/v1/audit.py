@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.schemas.audit import (
     AuditAction,
@@ -19,7 +19,6 @@ from app.schemas.audit import (
     ComplianceReportCreateRequest,
     DecisionLineage,
     PaginatedAuditRecords,
-    ReportKind,
 )
 from app.services.audit import AuditService
 from app.services.observability import get_audit_metrics

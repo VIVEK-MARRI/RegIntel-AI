@@ -24,7 +24,6 @@ from app.benchmark.metrics_collector import (
 )
 from app.benchmark.models import (
     BenchmarkResponse,
-    BenchmarkSummary,
     OperationResult,
     SystemSnapshot,
 )

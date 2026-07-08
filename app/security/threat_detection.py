@@ -26,7 +26,7 @@ from collections import Counter, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Deque, Dict, List, Mapping, Optional, Sequence, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ class ThreatType(str, Enum):
     SUSPICIOUS_UA = "suspicious_ua"
     HEADER_ABUSE = "header_abuse"
     RATE_ANOMALY = "rate_anomaly"
+    PROMPT_INJECTION = "prompt_injection"
 
 
 @dataclass(frozen=True)
@@ -246,6 +247,20 @@ class ThreatDetector:
     def recent_events(self, limit: int = 50) -> List[ThreatEvent]:
         with self._lock:
             return list(self._events)[-limit:]
+
+    def record_event(
+        self,
+        type_: "ThreatType",
+        level: "ThreatLevel",
+        identity: str,
+        description: str,
+        metadata: Optional[Mapping[str, Any]] = None,
+    ) -> ThreatEvent:
+        """Public helper to record an arbitrary threat event (e.g. one raised
+        by the content-screening layer)."""
+        return self._record(
+            type_, level, identity, description, metadata or {}
+        )
 
     def stats(self) -> Dict[str, Any]:
         with self._lock:

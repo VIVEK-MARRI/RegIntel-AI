@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -51,18 +52,52 @@ from app.middleware import (
 # Configure logging
 setup_logging(level="INFO" if settings.ENV == "production" else "DEBUG")
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version="1.0.0",
-    description="Central document registry for RBI and SEBI documents in RegIntel AI pipeline.",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan context manager (replaces deprecated on_event hooks).
+
+    Everything before ``yield`` runs on startup; everything after runs on shutdown.
+    """
+    # ── Startup ────────────────────────────────────────────────────────
+    required_env = (
+        [v.strip() for v in settings.STARTUP_REQUIRED_ENV.split(",") if v.strip()]
+        if settings.STARTUP_REQUIRED_ENV
+        else None
+    )
+    on_startup(
+        app=app,
+        required_env=required_env,
+        storage_root=Path(settings.STORAGE_ROOT),
+        raise_on_error=settings.STARTUP_RAISE_ON_ERROR,
+    )
+    # Wire cross-module references for the admin dashboard
+    try:
+        from app.api.dependencies import bind_cross_module_services
+        bind_cross_module_services()
+    except Exception:  # pragma: no cover - non-fatal
+        pass
+
+    yield  # application is running
+
+    # ── Shutdown ───────────────────────────────────────────────────────
+    on_shutdown(app=app)
+
+
 
 # Mirror the FastAPI version into a module-level constant so other
 # components (e.g. /api/v1/system/info) can read it without importing
 # the FastAPI instance (which would create a circular import).
 APP_VERSION: str = "1.0.0"
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=APP_VERSION,
+    description="Central document registry for RBI and SEBI documents in RegIntel AI pipeline.",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan,
+)
+
 
 # Register custom exception handlers
 register_exception_handlers(app)
@@ -442,7 +477,6 @@ def _build_security_jwt_issuer() -> JWTIssuer:
         result = None
     if result is None:
         # Dev fallback: a strong random secret. NEVER used in production.
-        import secrets as _secrets
         from app.security.jwt_auth import generate_development_secret
         secret = generate_development_secret()
         import logging
@@ -470,33 +504,6 @@ _api_gateway = APIGateway(
     ip_allow=IPAllowList.from_cidrs(default_allow=True),
 )
 
-
-# ─── Module 6.8 — Startup / shutdown hooks ───────────────────────────────
-
-@app.on_event("startup")
-async def _startup() -> None:
-    required_env = (
-        [v.strip() for v in settings.STARTUP_REQUIRED_ENV.split(",") if v.strip()]
-        if settings.STARTUP_REQUIRED_ENV
-        else None
-    )
-    on_startup(
-        app=app,
-        required_env=required_env,
-        storage_root=Path(settings.STORAGE_ROOT),
-        raise_on_error=settings.STARTUP_RAISE_ON_ERROR,
-    )
-    # Wire cross-module references for the admin dashboard
-    try:
-        from app.api.dependencies import bind_cross_module_services
-        bind_cross_module_services()
-    except Exception:  # pragma: no cover - non-fatal
-        pass
-
-
-@app.on_event("shutdown")
-async def _shutdown() -> None:
-    on_shutdown(app=app)
 
 
 @app.get("/", tags=["health"], include_in_schema=False)

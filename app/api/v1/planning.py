@@ -11,19 +11,15 @@ Endpoints
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import ValidationError
 
 from app.api.dependencies import get_query_planner
 from app.schemas.planning import (
     ExecutionPlan,
-    PlanStepDefinition,
     PlanValidationResult,
     QueryPlanRequest,
     QueryPlanResponse,
-    QueryType,
 )
 from app.services.planning import QueryPlanner
 

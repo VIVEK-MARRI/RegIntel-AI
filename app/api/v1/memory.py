@@ -34,7 +34,6 @@ from app.schemas.memory import (
     MemoryEntry,
     MemoryQuery,
     MemorySearchResult,
-    MemoryType,
 )
 from app.services.memory import MemoryService
 

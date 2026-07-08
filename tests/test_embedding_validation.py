@@ -100,7 +100,8 @@ async def test_embedding_validation_rules(db_session):
         # Run validation
         report = await validator.validate_embeddings(
             expected_dim=3,
-            embedding_model="test-model"
+            embedding_model="test-model",
+            document_id=doc.id
         )
     
     # Assertions

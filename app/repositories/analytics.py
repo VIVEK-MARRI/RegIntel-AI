@@ -5,8 +5,8 @@ Provides CRUD operations and aggregation queries for all analytics models.
 
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Sequence
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import and_, func, select, text, literal
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -22,7 +22,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from app.schemas.answer_generation import (
     AnswerSection,
@@ -43,7 +43,6 @@ from app.services.citation.claim_extractor import ClaimExtractor
 from app.services.hallucination.evaluator import (
     FaithfulnessEvaluator,
     MockFaithfulnessProvider,
-    VerificationResult,
 )
 from app.services.hallucination.lexical import (
     LexicalFaithfulnessChecker,

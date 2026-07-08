@@ -19,7 +19,6 @@ from app.schemas.bm25 import (
     BM25IndexActionResponse,
 )
 from app.services.bm25.bm25_service import BM25Service
-from app.services.bm25.retriever import IndexStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)

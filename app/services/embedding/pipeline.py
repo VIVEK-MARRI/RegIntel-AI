@@ -2,7 +2,7 @@ import time
 import logging
 import asyncio
 import uuid
-from typing import Dict, Any, List
+from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.chunk import EmbeddingStatusEnum
 from app.repositories.embedding import ChunkEmbeddingRepository
@@ -33,6 +33,8 @@ class EmbeddingPipeline:
         backoff_factor: float = 0.5
     ) -> Dict[str, Any]:
         """Loads chunks for a document, generates vector embeddings in batches, and persists status."""
+        if isinstance(document_id, str):
+            document_id = uuid.UUID(document_id)
         logger.info(f"Starting embedding pipeline for document: {document_id}")
         start_time = time.perf_counter()
 

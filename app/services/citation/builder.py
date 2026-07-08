@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from app.schemas.answer_generation import (
     AnswerSection,
-    EvidenceChunk,
     RetrievedChunk,
 )
 from app.schemas.citation import (
@@ -24,7 +23,6 @@ from app.schemas.citation import (
     ReferenceEntry,
     detect_document_type,
     extract_circular_number,
-    format_inline_marker,
 )
 from app.services.citation.mapper import ClaimChunkMatch
 

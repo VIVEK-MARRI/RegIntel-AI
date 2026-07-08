@@ -21,7 +21,7 @@ FROM nginx:1.27-alpine AS runtime
 
 LABEL org.opencontainers.image.title="regintel-ai-frontend" \
       org.opencontainers.image.description="RegIntel AI production frontend (SPA + nginx)" \
-      org.opencontainers.image.source="https://github.com/anomalyco/regintel-ai" \
+      org.opencontainers.image.source="https://github.com/VIVEK-MARRI/RegIntel-AI" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 # Install curl for the healthcheck.

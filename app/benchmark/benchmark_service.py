@@ -8,12 +8,10 @@ produce end-to-end benchmark reports.
 from __future__ import annotations
 
 import asyncio
-import inspect
 import logging
 import os
-import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Mapping, Optional, Sequence
 
@@ -28,12 +26,9 @@ from app.benchmark.models import (
     BenchmarkResponse,
     BenchmarkSuite,
     BenchmarkSummary,
-    CostSummary,
-    LatencyStats,
     OperationKind,
     OperationResult,
     SystemSnapshot,
-    TokenUsage,
 )
 from app.benchmark.performance_runner import PerformanceRunner, PerformanceScenario
 from app.benchmark.reporter import Reporter

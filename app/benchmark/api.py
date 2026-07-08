@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -18,7 +17,6 @@ from app.benchmark.models import (
     BenchmarkRequest,
     BenchmarkResponse,
     BenchmarkSuite,
-    OperationResult,
 )
 
 logger = logging.getLogger(__name__)

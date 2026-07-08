@@ -1,11 +1,12 @@
 import re
 import uuid
 import hashlib
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Tuple
 from app.core.token_utils import BaseTokenizer
 from app.schemas.chunk import ChunkResponse
 from app.services.page import PageService
 from app.services.structure.enricher import MetadataEnricher
+from app.security.content_screening import record_screening_threat
 
 class HierarchicalChunker:
     """Hierarchical chunker that segments documents by regulatory section/subsection,
@@ -205,6 +206,19 @@ class HierarchicalChunker:
             content_hash = hashlib.sha256(chunk_content.encode("utf-8")).hexdigest()
             chunk_uuid = uuid.uuid5(uuid.UUID(str(document_id)), f"{section}:{subsection}:{content_hash}")
 
+            # P0.3 — screen ingested chunk text for prompt-injection / PII
+            # before it is embedded and later retrieved into *other* users'
+            # prompts. Detections are reported via the threat-detection
+            # infrastructure; the chunk text itself is left intact.
+            try:
+                record_screening_threat(
+                    identity=str(document_id),
+                    text=chunk_content,
+                    source="ingestion_chunk",
+                )
+            except Exception:  # pragma: no cover - non-fatal
+                pass
+
             chunks.append(ChunkResponse(
                 chunk_id=str(chunk_uuid),
                 section=section,
@@ -237,6 +251,8 @@ class HierarchicalChunkerService:
         logger = logging.getLogger(__name__)
         
         logger.info("chunk_document_by_id called for document_id=%s", document_id)
+        if isinstance(document_id, str):
+            document_id = uuid.UUID(document_id)
         doc = await self.document_service.get_document_by_id(document_id)
         logger.info("Got document: %s, title=%s", doc.id, doc.title)
         pages = await self.page_service.get_document_pages(document_id, limit=2000)

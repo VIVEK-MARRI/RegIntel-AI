@@ -1,3 +1,4 @@
+import uuid
 import logging
 from typing import Callable, Any, Dict, List
 try:
@@ -43,7 +44,9 @@ class ParserService:
         Returns:
             A list of structured page dictionaries: [{"page_number": int, "content": str}, ...]
         """
-        # 1. Fetch document metadata
+        # 1. Fetch document metadata — coerce string to UUID for SQLAlchemy
+        if isinstance(document_id, str):
+            document_id = uuid.UUID(document_id)
         doc = await self.document_service.get_document_by_id(document_id)
         
         # 2. Update status: UPLOADED -> PARSING

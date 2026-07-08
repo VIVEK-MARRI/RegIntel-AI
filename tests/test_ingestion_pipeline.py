@@ -47,7 +47,7 @@ async def test_phase1_upload_validation(client: AsyncClient, db_session: AsyncSe
     assert response.status_code == 201, f"Upload failed: {response.text}"
     res = response.json()
     assert "document_id" in res
-    assert res["status"] == "uploaded"
+    assert res["status"] == "processing"
     doc_id = res["document_id"]
     
     # 2. Duplicate upload rejection
@@ -60,37 +60,32 @@ async def test_phase1_upload_validation(client: AsyncClient, db_session: AsyncSe
     assert dup_res.status_code == 409, f"Duplicate detection failed: {dup_res.text}"
     assert dup_res.json()["error_code"] == "DUPLICATE_DOCUMENT"
     
-    # 3. Non-PDF file rejection
+    # 3. Unsupported file type rejection
     bad_res = await client.post(
         "/api/v1/documents/upload",
         data={"source": "RBI", "title": "Bad file"},
-        files={"file": ("test.txt", io.BytesIO(b"text"), "text/plain")}
+        files={"file": ("test.exe", io.BytesIO(b"text"), "application/x-msdownload")}
     )
     assert bad_res.status_code == 400
-    assert "Only PDF files" in bad_res.json()["detail"]
+    assert "Unsupported file type" in bad_res.json()["detail"]
     
     # 4. Oversized file rejection
-    import tempfile
-    with tempfile.SpooledTemporaryFile() as big_f:
-        big_f.write(b"x" * (51 * 1024 * 1024))
-        big_f.seek(0)
-        # Need to mock .tell()
-        import unittest.mock
-        with unittest.mock.patch.object(type(big_f), "tell", return_value=51 * 1024 * 1024):
-            size_res = await client.post(
-                "/api/v1/documents/upload",
-                data={"source": "RBI", "title": "Big file"},
-                files={"file": ("big.pdf", big_f, "application/pdf")}
-            )
-            assert size_res.status_code == 400
-            assert "50 MB" in size_res.json()["detail"]
+    import unittest.mock
+    with unittest.mock.patch("app.api.v1.documents.MAX_FILE_SIZE", 1 * 1024 * 1024):
+        size_res = await client.post(
+            "/api/v1/documents/upload",
+            data={"source": "RBI", "title": "Big file"},
+            files={"file": ("big.pdf", io.BytesIO(b"x" * (2 * 1024 * 1024)), "application/pdf")}
+        )
+        assert size_res.status_code == 400, f"Expected 400, got {size_res.status_code}: {size_res.text}"
+        assert "1 MB" in size_res.json()["detail"]
     
     # 5. Document retrievable
     get_res = await client.get(f"/api/v1/documents/{doc_id}")
     assert get_res.status_code == 200
     assert get_res.json()["title"] == "Validation Test Document"
     assert get_res.json()["source"] == "RBI"
-    assert get_res.json()["status"] == "UPLOADED"
+    assert get_res.json()["status"] == "PARSED"
 
 
 @pytest.mark.asyncio
@@ -98,9 +93,9 @@ async def test_phase2_parsing_validation(client: AsyncClient, db_session: AsyncS
     """Phase 2: Parsing Validation — verify page extraction, persistence, ordering"""
     from app.repositories.page import PageRepository
     
-    # Create a PDF with 5 pages of known content
+    # Create a PDF with 5 pages of known content (unique checksum vs phase1)
     pages_content = [
-        "RBI Master Circular on KYC Norms",
+        "RBI Master Circular on KYC Compliance",
         "Section 1. Introduction\nThis circular is issued under Section 35A of the Banking Regulation Act.",
         "Section 2. Applicability\nThese guidelines apply to all Scheduled Commercial Banks.",
         "Section 3. Customer Identification\nBanks must verify identity using Aadhaar, Passport, or Voter ID.",
@@ -118,16 +113,11 @@ async def test_phase2_parsing_validation(client: AsyncClient, db_session: AsyncS
     assert upload_res.status_code == 201
     doc_id = uuid.UUID(upload_res.json()["document_id"])
     
-    # Run parser service directly
-    from app.services.parser_service import ParserService
-    from app.services.document import DocumentService
-    from app.core.config import settings
-    
-    doc_service = DocumentService(db_session)
-    page_service = PageService(db_session, doc_service)
-    parser = ParserService(doc_service, settings.STORAGE_ROOT, page_service=page_service)
-    
-    parsed = await parser.parse_document(doc_id)
+    # Pipeline already parsed via upload endpoint — verify results from DB
+    from app.repositories.page import PageRepository
+    pages_repo = PageRepository(db_session)
+    db_pages = await pages_repo.get_pages_by_document(doc_id)
+    parsed = [{"page_number": p.page_number, "content": p.content} for p in db_pages]
     
     # Verify parsed pages count
     assert len(parsed) == 5, f"Expected 5 pages, got {len(parsed)}"
@@ -139,13 +129,6 @@ async def test_phase2_parsing_validation(client: AsyncClient, db_session: AsyncS
     # Verify content matches
     assert parsed[0]["content"] == pages_content[0].strip(), "Page 1 content mismatch"
     assert parsed[1]["content"] == pages_content[1].strip(), "Page 2 content mismatch"
-    
-    # Verify pages persisted in database
-    pages_repo = PageRepository(db_session)
-    db_pages = await pages_repo.get_pages_by_document(doc_id)
-    assert len(db_pages) == 5, f"Expected 5 stored pages, got {len(db_pages)}"
-    assert db_pages[0].page_number == 1
-    assert db_pages[0].content == pages_content[0].strip()
     
     # Verify document status = PARSED
     doc = await db_session.get(Document, doc_id)
@@ -186,22 +169,15 @@ async def test_phase3_chunking_validation(client: AsyncClient, db_session: Async
     assert upload_res.status_code == 201
     doc_id = uuid.UUID(upload_res.json()["document_id"])
     
-    # Run parser
-    from app.services.parser_service import ParserService
-    from app.services.document import DocumentService
-    from app.services.page import PageService
-    from app.core.config import settings
-    
-    doc_service = DocumentService(db_session)
-    page_service = PageService(db_session, doc_service)
-    parser = ParserService(doc_service, settings.STORAGE_ROOT, page_service=page_service)
-    await parser.parse_document(doc_id)
-    
-    # Run chunker
+    # Pipeline already parsed via upload endpoint — proceed to chunking
     from app.services.structure.chunker import HierarchicalChunkerService, HierarchicalChunker
     from app.core.token_utils import SimpleTokenizer
     from app.services.structure.enricher import MetadataEnricher, MetadataValidator
+    from app.services.document import DocumentService
+    from app.services.page import PageService
     
+    doc_service = DocumentService(db_session)
+    page_service = PageService(db_session, doc_service)
     chunker = HierarchicalChunker(tokenizer=SimpleTokenizer())
     enricher = MetadataEnricher(MetadataValidator())
     chunker_service = HierarchicalChunkerService(
@@ -225,13 +201,8 @@ async def test_phase3_chunking_validation(client: AsyncClient, db_session: Async
         # page number is in metadata.page for enriched chunks
         assert meta.get("page", 0) > 0, f"Invalid page_number in chunk {i}"
     
-    # Register chunks in DB (simulate what pipeline does)
+    # Pipeline already persisted chunks — verify them from DB
     from app.repositories.chunk import ChunkRepository
-    from app.services.chunk_registry import ChunkRegistryService
-    chunk_registry = ChunkRegistryService(db_session, doc_service)
-    persisted = await chunk_registry.register_chunks_bulk(doc_id, chunks)
-    assert len(persisted) == len(chunks)
-
     chunk_repo = ChunkRepository(db_session)
     db_chunks = await chunk_repo.get_document_chunks(doc_id)
     assert len(db_chunks) == len(chunks), f"DB chunks {len(db_chunks)} != returned {len(chunks)}"
@@ -250,8 +221,6 @@ async def test_phase3_chunking_validation(client: AsyncClient, db_session: Async
     assert len(chunk_ids) == len(set(chunk_ids)), "Duplicate chunk IDs"
     
     # Test small/medium document sizing
-    # Small: already testing with 5 pages
-    # Medium: test with 20 pages
     medium_content = [f"Page {i} content with Section {i} details" for i in range(20)]
     medium_pdf = create_test_pdf_bytes(medium_content)
     medium_bytes = io.BytesIO(medium_pdf)
@@ -263,13 +232,46 @@ async def test_phase3_chunking_validation(client: AsyncClient, db_session: Async
     assert med_res.status_code == 201
     med_id = uuid.UUID(med_res.json()["document_id"])
     
-    await parser.parse_document(med_id)
     med_chunks = await chunker_service.chunk_document_by_id(med_id)
     assert len(med_chunks) > 0, "Medium document produced 0 chunks"
     
-    await chunk_registry.register_chunks_bulk(med_id, med_chunks)
     db_med_chunks = await chunk_repo.get_document_chunks(med_id)
     assert len(db_med_chunks) == len(med_chunks)
+
+
+@pytest.mark.asyncio
+async def test_chunker_service_accepts_string_document_id(client: AsyncClient, db_session: AsyncSession):
+    pages_content = [
+        "RBI Master Circular on AML Norms",
+        "Section 1. Introduction\nAnti-Money Laundering guidelines issued under PMLA 2002.",
+    ]
+    pdf_bytes = create_test_pdf_bytes(pages_content)
+    file_bytes = io.BytesIO(pdf_bytes)
+    upload_res = await client.post(
+        "/api/v1/documents/upload",
+        data={"source": "RBI", "title": "AML Norms Circular"},
+        files={"file": ("aml.pdf", file_bytes, "application/pdf")}
+    )
+    assert upload_res.status_code == 201
+    doc_id = uuid.UUID(upload_res.json()["document_id"])
+
+    from app.services.structure.chunker import HierarchicalChunkerService, HierarchicalChunker
+    from app.core.token_utils import SimpleTokenizer
+    from app.services.structure.enricher import MetadataEnricher, MetadataValidator
+    from app.services.document import DocumentService
+    from app.services.page import PageService
+
+    doc_service = DocumentService(db_session)
+    page_service = PageService(db_session, doc_service)
+    chunker = HierarchicalChunker(tokenizer=SimpleTokenizer())
+    enricher = MetadataEnricher(MetadataValidator())
+    chunker_service = HierarchicalChunkerService(
+        document_service=doc_service, page_service=page_service,
+        chunker=chunker, enricher=enricher,
+    )
+
+    chunks = await chunker_service.chunk_document_by_id(str(doc_id))
+    assert len(chunks) > 0
 
 
 @pytest.mark.asyncio
@@ -293,38 +295,18 @@ async def test_phase4_embedding_validation(client: AsyncClient, db_session: Asyn
     assert upload_res.status_code == 201
     doc_id = uuid.UUID(upload_res.json()["document_id"])
     
-    # Parse
-    from app.services.parser_service import ParserService
+    # Pipeline already parsed + chunked via upload endpoint
+    # Get existing chunks from DB
+    from app.repositories.chunk import ChunkRepository
+    from app.services.chunk_registry import ChunkRegistryService
     from app.services.document import DocumentService
-    from app.services.page import PageService
-    from app.core.config import settings
+    chunk_repo = ChunkRepository(db_session)
+    db_chunks = await chunk_repo.get_document_chunks(doc_id)
+    assert len(db_chunks) > 0, "No chunks found in DB"
+    chunk_ids_in_db = {c.id for c in db_chunks}
     
     doc_service = DocumentService(db_session)
-    page_service = PageService(db_session, doc_service)
-    parser = ParserService(doc_service, settings.STORAGE_ROOT, page_service=page_service)
-    await parser.parse_document(doc_id)
-    
-    # Chunk
-    from app.services.structure.chunker import HierarchicalChunkerService, HierarchicalChunker
-    from app.core.token_utils import SimpleTokenizer
-    from app.services.structure.enricher import MetadataEnricher, MetadataValidator
-    from app.services.chunk_registry import ChunkRegistryService
-    
-    chunker = HierarchicalChunker(tokenizer=SimpleTokenizer())
-    enricher = MetadataEnricher(MetadataValidator())
-    chunker_service = HierarchicalChunkerService(
-        document_service=doc_service,
-        page_service=page_service,
-        chunker=chunker,
-        enricher=enricher,
-    )
-    chunks = await chunker_service.chunk_document_by_id(doc_id)
-    assert len(chunks) > 0, "No chunks produced for embedding test"
-    
-    # Register chunks in DB (simulate what pipeline does)
     chunk_registry = ChunkRegistryService(db_session, doc_service)
-    persisted = await chunk_registry.register_chunks_bulk(doc_id, chunks)
-    assert len(persisted) == len(chunks)
     
     # Embed using mock provider
     from typing import List
@@ -354,7 +336,6 @@ async def test_phase4_embedding_validation(client: AsyncClient, db_session: Asyn
     assert len(all_embeddings) > 0, "No embeddings found in DB"
     
     # Verify each embedding references a valid chunk
-    chunk_ids_in_db = {c.id for c in persisted}
     for emb in all_embeddings:
         assert emb.chunk_id in chunk_ids_in_db, f"Orphan embedding for chunk {emb.chunk_id}"
         assert emb.status == EmbeddingStatusEnum.COMPLETED, f"Embedding {emb.id} status = {emb.status}"
@@ -369,7 +350,14 @@ async def test_phase4_embedding_validation(client: AsyncClient, db_session: Asyn
     for c in db_chunks:
         assert c.id in embedded_chunk_ids, f"Chunk {c.id} has no embedding"
     
-    # Index health check
+    # Index health check — SQLite doesn't have pg_index
+    from sqlalchemy.exc import OperationalError
     index_mgr = VectorIndexManager(db_session)
-    health = await index_mgr.index_health()
-    assert health is not None
+    try:
+        health = await index_mgr.index_health()
+        assert health is not None
+    except OperationalError as exc:
+        if "no such table: pg_index" in str(exc):
+            pass
+        else:
+            raise

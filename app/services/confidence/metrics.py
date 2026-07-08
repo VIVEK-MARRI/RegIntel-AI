@@ -19,7 +19,7 @@ import math
 import threading
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable
 
 from app.schemas.confidence import ConfidenceFactorName, ConfidenceFlag, ConfidenceLevel
 

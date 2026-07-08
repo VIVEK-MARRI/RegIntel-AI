@@ -1,7 +1,5 @@
 import re
-import uuid
 import logging
-from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +9,6 @@ from app.api.dependencies import (
     get_retrieval_service,
     get_embedding_provider,
     get_vector_index_manager,
-    get_hybrid_retriever,
     get_reranker_service,
 )
 from app.models.chunk import ChunkEmbedding, DocumentChunk
@@ -28,8 +25,6 @@ from app.schemas.search import (
     IndexHealthItem,
     SearchHealthResponse
 )
-from app.schemas.hybrid import HybridSearchRequest, HybridSearchResponse
-from app.services.hybrid.service import HybridRetriever
 from app.schemas.reranker import RerankRequest, RerankResponse
 from app.services.reranker.service import RerankerService
 

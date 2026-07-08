@@ -5,20 +5,12 @@ performance summaries, and report generation.
 """
 
 import logging
-import math
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analytics import (
-    AggregatedMetricsSnapshot,
-    QueryDistributionRecord,
-    RetrievalMetricsRecord,
-    RerankerGainRecord,
-    SystemHealthSnapshot,
-)
 from app.repositories.analytics import (
     AggregatedMetricsRepository,
     QueryDistributionRepository,

@@ -8,8 +8,7 @@ Provides the main API for the rest of the application to interact with BM25.
 from __future__ import annotations
 
 import logging
-import time
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,10 +18,8 @@ from app.services.bm25.retriever import (
     BM25Document,
     BM25SearchRequest,
     BM25SearchResponse,
-    BM25SearchResult,
     BM25IndexStats,
     IndexStatus,
-    InMemoryBM25Retriever,
 )
 from app.services.bm25.index_manager import BM25IndexManager, IndexManagerConfig
 

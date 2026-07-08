@@ -4,7 +4,6 @@ Defines the data models for fusion configuration, individual fused candidates,
 and diagnostic reports used for evaluation and observability.
 """
 
-import uuid
 from typing import List, Optional, Dict, Any
 from enum import Enum
 

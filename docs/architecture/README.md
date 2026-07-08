@@ -16,6 +16,7 @@
 | 07 | [API Reference](./07-api-reference.md) | REST surface, auth, error model, rate limits |
 | 08 | [Developer Guide](./08-developer-guide.md) | Local dev, testing, contributing, code style |
 | 09 | [Operations Guide](./09-operations-guide.md) | Runbooks, metrics, log/metric/trace conventions |
+| 10 | [Copilot Retrieval ADR](./copilot-retrieval.md) | Copilot retrieval wiring decision and rationale |
 
 ## Audience
 

@@ -1,0 +1,14 @@
+# ML / Embeddings stack — ONE canonical version set
+# Both Dockerfiles install both requirements.txt and requirements-ml.txt:
+#   pip install -r requirements.txt && pip install -r requirements-ml.txt
+#
+# NOTE: torch installs the default PyPI build (CUDA-enabled). To shrink to CPU,
+# install torch from the CPU index first:
+#   pip install torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu
+
+torch==2.12.0
+transformers==5.9.0
+sentence-transformers==5.5.1
+tokenizers==0.22.2
+safetensors==0.7.0
+huggingface_hub==1.16.1

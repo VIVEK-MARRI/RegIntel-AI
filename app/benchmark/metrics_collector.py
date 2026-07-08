@@ -14,8 +14,8 @@ import statistics
 import sys
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from typing import Callable, Dict, Iterable, List, Optional, Sequence
+from dataclasses import dataclass
+from typing import Dict, Iterable, List, Optional, Sequence
 
 from app.benchmark.models import (
     CostSummary,

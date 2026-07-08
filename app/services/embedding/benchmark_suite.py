@@ -4,7 +4,7 @@ import json
 import uuid
 import logging
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from app.core.config import settings
 from app.schemas.evaluation import (
     GoldenEvaluationItem,

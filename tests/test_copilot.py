@@ -63,10 +63,12 @@ from app.services.conversation import (
     ConversationService,
     InMemoryConversationStore,
 )
+from app.services.hybrid.pipeline import HybridRerankResponse
 from app.services.memory import (
     InMemoryMemoryStore,
     MemoryService,
 )
+from app.schemas.reranker import RerankResult
 
 
 # ─── Fixtures ───────────────────────────────────────────────────────────────
@@ -133,6 +135,42 @@ def fake_orchestrator() -> _FakeOrchestrator:
     return _FakeOrchestrator()
 
 
+class _FakeHybridPipeline:
+    """Records calls and returns a deterministic hybrid rerank response.
+
+    Stands in for the real HybridRerankPipeline so the regression test can
+    assert the copilot actually reaches retrieval instead of the degraded
+    empty-answer path.
+    """
+
+    def __init__(self) -> None:
+        self.calls: List[Dict[str, Any]] = []
+
+    async def search(self, query: str, **kwargs: Any) -> HybridRerankResponse:
+        self.calls.append({"query": query, **kwargs})
+        return HybridRerankResponse(
+            query=query,
+            results=[
+                RerankResult(
+                    chunk_id="chunk-abc",
+                    rerank_score=0.91,
+                    original_score=0.8,
+                    original_rank=1,
+                    new_rank=1,
+                    content="KYC means Know Your Customer; banks must verify identity.",
+                    metadata={
+                        "document_id": "doc-1",
+                        "source": "RBI",
+                        "page_number": 3,
+                        "section": "Customer Due Diligence",
+                        "subsection": "Identification",
+                        "document_title": "KYC Master Direction",
+                    },
+                )
+            ],
+        )
+
+
 @pytest.fixture
 def memory_service() -> MemoryService:
     return MemoryService(store=InMemoryMemoryStore())
@@ -164,6 +202,32 @@ def controller(
 
 
 @pytest.fixture
+def copilot_service_with_hybrid(
+    fake_orchestrator: _FakeOrchestrator,
+    memory_service: MemoryService,
+    conversation_service: ConversationService,
+) -> CopilotService:
+    """Service wired to a fake hybrid pipeline (P0.0 regression fixture)."""
+    fake_pipeline = _FakeHybridPipeline()
+    svc = build_default_copilot_service(
+        orchestrator=fake_orchestrator,
+        memory=memory_service,
+        conversation=conversation_service,
+        hybrid_pipeline=fake_pipeline,
+    )
+    # expose the spy for assertions
+    svc._fake_pipeline = fake_pipeline  # type: ignore[attr-defined]
+    return svc
+
+
+@pytest.fixture
+def controller_with_hybrid(
+    copilot_service_with_hybrid: CopilotService,
+) -> CopilotController:
+    return CopilotController(service=copilot_service_with_hybrid)
+
+
+@pytest.fixture
 def app(
     fake_orchestrator: _FakeOrchestrator,
     memory_service: MemoryService,
@@ -175,6 +239,30 @@ def app(
         orchestrator=fake_orchestrator,
         memory=memory_service,
         conversation=conversation_service,
+    )
+    app.dependency_overrides[get_copilot_service] = lambda: service
+    app.dependency_overrides[get_memory_service] = lambda: memory_service
+    app.dependency_overrides[get_conversation_service] = lambda: conversation_service
+    app.dependency_overrides[get_response_orchestrator] = lambda: fake_orchestrator
+    yield app
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def app_with_hybrid(
+    fake_orchestrator: _FakeOrchestrator,
+    memory_service: MemoryService,
+    conversation_service: ConversationService,
+):
+    """App whose copilot service is wired to a fake hybrid pipeline (P0.0)."""
+    app = FastAPI()
+    app.include_router(copilot_router, prefix="/api/v1")
+    fake_pipeline = _FakeHybridPipeline()
+    service = build_default_copilot_service(
+        orchestrator=fake_orchestrator,
+        memory=memory_service,
+        conversation=conversation_service,
+        hybrid_pipeline=fake_pipeline,
     )
     app.dependency_overrides[get_copilot_service] = lambda: service
     app.dependency_overrides[get_memory_service] = lambda: memory_service
@@ -464,3 +552,63 @@ class TestAPI:
         )
         assert r.status_code == 200
         assert r.json()["mode"] == "search"
+
+
+# ─── P0.0 regression: copilot must reach real retrieval ────────────────────
+
+
+@pytest_asyncio.fixture
+async def client_with_hybrid(app_with_hybrid):
+    transport = ASGITransport(app=app_with_hybrid)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        yield c
+
+
+class TestP00HybridRetrieval:
+    """Regression tests for P0.0 — the copilot must invoke the real hybrid
+    retrieval pipeline for a new question instead of the degraded
+    empty-answer path."""
+
+    @pytest.mark.asyncio
+    async def test_new_question_invokes_hybrid_pipeline(
+        self,
+        controller_with_hybrid: CopilotController,
+        fake_orchestrator: _FakeOrchestrator,
+    ):
+        req = CopilotRequest(query="What is KYC?", use_memory=True)
+        resp = await controller_with_hybrid.handle(req)
+
+        svc = controller_with_hybrid.service
+        # (a) hybrid pipeline was actually invoked
+        assert getattr(svc, "_fake_pipeline").calls, (
+            "hybrid pipeline was never invoked"
+        )
+        assert svc._fake_pipeline.calls[0]["query"] == "What is KYC?"
+
+        # (b) orchestrator received real chunks from retrieval
+        assert len(fake_orchestrator.calls) == 1
+        chunks = fake_orchestrator.calls[0].chunks
+        assert len(chunks) == 1
+        assert chunks[0].chunk_id == "chunk-abc"
+
+        # (b) answer is real, not the degraded empty-answer path
+        assert resp.answer is not None
+        assert "No grounded information" not in resp.answer["executive_summary"]
+        assert resp.confidence_score > 0
+
+        # (a) retrieval_invoked flag is set in response metadata
+        assert resp.metadata.extra.get("retrieval_invoked") is True
+
+    @pytest.mark.asyncio
+    async def test_query_without_chunks_invokes_hybrid_pipeline(
+        self, client_with_hybrid: AsyncClient
+    ):
+        r = await client_with_hybrid.post(
+            "/api/v1/copilot/query",
+            json={"query": "What is KYC?", "use_memory": True},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["answer"] is not None
+        assert "No grounded information" not in body["answer"]["executive_summary"]
+        assert body["metadata"]["extra"]["retrieval_invoked"] is True

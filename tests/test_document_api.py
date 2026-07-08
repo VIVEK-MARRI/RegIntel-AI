@@ -5,7 +5,7 @@ from httpx import AsyncClient
 async def test_health_check(client: AsyncClient):
     response = await client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy", "project": "RegIntel AI Document Registry"}
+    assert response.json() == {"status": "ok"}
 
 @pytest.mark.asyncio
 async def test_register_and_get_document(client: AsyncClient):
@@ -135,16 +135,21 @@ async def test_document_lifecycle_transitions(client: AsyncClient):
     assert ok_transition2.status_code == 200
     assert ok_transition2.json()["status"] == "FAILED"
     
-    # 5. Valid transition: FAILED -> PARSING (returns 200 OK for retry)
-    ok_transition3 = await client.patch(f"/api/v1/documents/{doc_id}/status", json={"status": "PARSING"})
+    # 5. Valid transition: FAILED -> PROCESSING (returns 200 OK for retry)
+    ok_transition3 = await client.patch(f"/api/v1/documents/{doc_id}/status", json={"status": "PROCESSING"})
     assert ok_transition3.status_code == 200
     
-    # 6. Valid transition: PARSING -> PARSED (returns 200 OK)
-    ok_transition4 = await client.patch(f"/api/v1/documents/{doc_id}/status", json={"status": "PARSED"})
+    # 6. Valid transition: PROCESSING -> PARSING (returns 200 OK)
+    ok_transition4 = await client.patch(f"/api/v1/documents/{doc_id}/status", json={"status": "PARSING"})
     assert ok_transition4.status_code == 200
-    assert ok_transition4.json()["status"] == "PARSED"
+    assert ok_transition4.json()["status"] == "PARSING"
     
-    # 7. Invalid transition: PARSED -> PARSING (returns 400 Bad Request since PARSED is terminal)
+    # 7. Invalid transition: PARSING -> PARSED (this is valid, not a terminal check)
+    ok_transition5 = await client.patch(f"/api/v1/documents/{doc_id}/status", json={"status": "PARSED"})
+    assert ok_transition5.status_code == 200
+    assert ok_transition5.json()["status"] == "PARSED"
+    
+    # 8. Invalid transition: PARSED -> PARSING (returns 400 since PARSED is terminal after success)
     bad_transition3 = await client.patch(f"/api/v1/documents/{doc_id}/status", json={"status": "PARSING"})
     assert bad_transition3.status_code == 400
 
@@ -203,7 +208,7 @@ async def test_upload_document_api(client: AsyncClient):
     assert response.status_code == 201
     res_data = response.json()
     assert "document_id" in res_data
-    assert res_data["status"] == "uploaded"
+    assert res_data["status"] == "processing"
     
     doc_id = res_data["document_id"]
     
@@ -228,36 +233,37 @@ async def test_upload_document_api(client: AsyncClient):
     assert dup_response.status_code == 409
     assert dup_response.json()["error_code"] == "DUPLICATE_DOCUMENT"
 
-    # 3. Invalid file type (Only PDF allowed)
+    # 3. Invalid file type (unsupported extension)
     bad_file = io.BytesIO(b"some text data")
     type_response = await client.post(
         "/api/v1/documents/upload",
         data={
             "source": "SEBI",
-            "title": "Text File Upload"
+            "title": "Bad Extension Upload"
         },
         files={
-            "file": ("sebi_text.txt", bad_file, "text/plain")
+            "file": ("sebi_bad.exe", bad_file, "application/x-msdownload")
         }
     )
     assert type_response.status_code == 400
-    assert "Only PDF files are allowed" in type_response.json()["detail"]
+    assert "Unsupported file type" in type_response.json()["detail"]
 
-    # 4. File size limit exceeded (> 50 MB)
+    # 4. File size limit exceeded
     large_file = io.BytesIO(b"dummy pdf content")
-    with patch("tempfile.SpooledTemporaryFile.tell", return_value=51 * 1024 * 1024):
-        size_response = await client.post(
-            "/api/v1/documents/upload",
-            data={
-                "source": "SEBI",
-                "title": "Large File Upload"
-            },
-            files={
-                "file": ("large_doc.pdf", large_file, "application/pdf")
-            }
-        )
+    with patch("app.api.v1.documents.MAX_FILE_SIZE", 50 * 1024 * 1024):
+        with patch("tempfile.SpooledTemporaryFile.tell", return_value=51 * 1024 * 1024):
+            size_response = await client.post(
+                "/api/v1/documents/upload",
+                data={
+                    "source": "SEBI",
+                    "title": "Large File Upload"
+                },
+                files={
+                    "file": ("large_doc.pdf", large_file, "application/pdf")
+                }
+            )
     assert size_response.status_code == 400
-    assert "File size exceeds the maximum limit of 50 MB" in size_response.json()["detail"]
+    assert "File size exceeds" in size_response.json()["detail"]
 
 @pytest.mark.asyncio
 async def test_list_documents_sorting(client: AsyncClient, db_session):

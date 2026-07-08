@@ -18,7 +18,7 @@ from __future__ import annotations
 import functools
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Set, Tuple
+from typing import Any, Callable, List, Mapping, Set, Tuple
 
 from app.security.jwt_auth import JWTPrincipal
 

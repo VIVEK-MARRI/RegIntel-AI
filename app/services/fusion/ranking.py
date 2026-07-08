@@ -5,7 +5,7 @@ merging, and provenance tracking.  Kept separate from the engine itself
 so they can be unit-tested and reused independently.
 """
 
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Tuple
 
 from app.services.hybrid.strategy import min_max_normalize as _min_max_normalize
 

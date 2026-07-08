@@ -15,20 +15,21 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies import (
     get_conversation_service,
+    get_hybrid_rerank_pipeline,
     get_memory_service,
     get_response_orchestrator,
-    get_retrieval_service,
 )
-from app.schemas.copilot import CopilotMode, CopilotRequest, CopilotResponse
+from app.schemas.copilot import CopilotRequest, CopilotResponse
 from app.services.answer_analytics import (
     AnswerAnalyticsService,
     build_default_answer_analytics_service,
 )
 from app.services.conversation import ConversationService
 from app.services.copilot import CopilotController, CopilotService
-from app.services.embedding.retrieval import RetrievalService
+from app.services.hybrid.pipeline import HybridRerankPipeline
 from app.services.memory import MemoryService
 from app.services.orchestrator import ResponseOrchestrator
+from app.security.content_screening import record_screening_threat
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +41,14 @@ def _build_copilot_service(
     memory: Optional[MemoryService] = None,
     conversation: Optional[ConversationService] = None,
     analytics: Optional[AnswerAnalyticsService] = None,
+    hybrid_pipeline: Optional[HybridRerankPipeline] = None,
 ) -> CopilotService:
     return CopilotService(
         orchestrator=orchestrator,
         memory=memory,
         conversation=conversation,
         analytics=analytics,
+        hybrid_pipeline=hybrid_pipeline,
     )
 
 
@@ -56,6 +59,7 @@ def _copilot_service_singleton(
     orchestrator: ResponseOrchestrator,
     memory: MemoryService,
     conversation: ConversationService,
+    hybrid_pipeline: Optional[HybridRerankPipeline] = None,
 ) -> "CopilotService":
     global _copilot_service
     if _copilot_service is None:
@@ -71,6 +75,7 @@ def _copilot_service_singleton(
             memory=memory,
             conversation=conversation,
             analytics=analytics,
+            hybrid_pipeline=hybrid_pipeline,
         )
     return _copilot_service
 
@@ -79,9 +84,10 @@ def get_copilot_service(
     orchestrator: ResponseOrchestrator = Depends(get_response_orchestrator),
     memory: MemoryService = Depends(get_memory_service),
     conversation: ConversationService = Depends(get_conversation_service),
+    hybrid_pipeline: Optional[HybridRerankPipeline] = Depends(get_hybrid_rerank_pipeline),
 ) -> CopilotService:
     """Dependency injection provider for CopilotService (singleton)."""
-    return _copilot_service_singleton(orchestrator, memory, conversation)
+    return _copilot_service_singleton(orchestrator, memory, conversation, hybrid_pipeline)
 
 
 def reset_copilot_service() -> None:
@@ -98,38 +104,25 @@ def reset_copilot_service() -> None:
 async def copilot_query(
     request: CopilotRequest,
     service: CopilotService = Depends(get_copilot_service),
-    retrieval_service: RetrievalService = Depends(get_retrieval_service),
 ) -> CopilotResponse:
     if not request.query.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="`query` must be a non-empty string",
         )
-    # Auto-retrieve chunks when in answer mode and no chunks provided.
-    if request.mode == CopilotMode.ANSWER and not request.chunks:
-        search_res = await retrieval_service.retrieve(
-            query=request.query,
-            top_k=5,
-            score_threshold=0.5,
+    # P0.3 — screen the user query for embedded prompt-injection before it
+    # reaches the prompt builder. Flagged queries are rejected and reported
+    # via the threat-detection infrastructure (never silently passed through).
+    inj_hits = record_screening_threat(
+        identity=request.user_id or "anonymous",
+        text=request.query,
+        source="copilot_query",
+    )
+    if any(h.kind != "pii" for h in inj_hits):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Query rejected: potential prompt-injection detected.",
         )
-        results = search_res.get("results", [])
-        if results:
-            request.chunks = []
-            for i, r in enumerate(results):
-                meta = r.get("metadata", {})
-                meta_json = meta.get("metadata_json") or {}
-                request.chunks.append({
-                    "chunk_id": r["chunk_id"],
-                    "document_id": meta["document_id"],
-                    "content": r["content"],
-                    "score": r["score"],
-                    "source": meta_json.get("source") if isinstance(meta_json, dict) else None,
-                    "page_number": meta.get("page_number"),
-                    "section": meta.get("section"),
-                    "subsection": meta.get("subsection"),
-                    "document_title": meta_json.get("title") if isinstance(meta_json, dict) else None,
-                    "rank": i + 1,
-                })
     controller = CopilotController(service=service)
     try:
         return await controller.handle(request)

@@ -2,7 +2,6 @@ import uuid
 import mimetypes
 import logging
 from typing import Optional, Sequence
-from datetime import datetime, date
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
 from app.api.dependencies import (
     get_document_service,
@@ -13,7 +12,6 @@ from app.api.dependencies import (
     get_hierarchy_validator,
     get_chunk_registry_service,
     get_ingestion_service,
-    get_knowledge_graph_service,
 )
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
@@ -38,7 +36,6 @@ from app.services.structure.hierarchy import HierarchyBuilder
 from app.services.structure.validator import HierarchyValidator
 from app.services.chunk_registry import ChunkRegistryService
 from app.services.ingestion import AutoIngestionService
-from app.services.knowledge_graph import KnowledgeGraphService
 
 logger = logging.getLogger(__name__)
 

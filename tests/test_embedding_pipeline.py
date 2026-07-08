@@ -88,6 +88,27 @@ async def test_embedding_pipeline_success(db_session):
     await db_session.commit()
 
 @pytest.mark.asyncio
+async def test_embedding_pipeline_accepts_string_document_id(db_session):
+    doc_service = DocumentService(db_session)
+    chunk_service = ChunkRegistryService(db_session, doc_service)
+    mock_provider = MockEmbeddingProvider(dimension=384, fail_until=0)
+    pipeline = EmbeddingPipeline(db_session, chunk_service, mock_provider)
+    doc = Document(
+        title="String ID Test", source=SourceEnum.RBI,
+        file_name="test.pdf", file_path="RBI/test.pdf",
+        checksum="q" * 64, status=StatusEnum.UPLOADED
+    )
+    db_session.add(doc)
+    await db_session.commit()
+    chunks_data = [{"content": "Test content", "section": "Sec 1", "subsection": "", "page_number": 1, "token_count": 10}]
+    await chunk_service.register_chunks_bulk(doc.id, chunks_data)
+    metrics = await pipeline.process_document_embeddings(document_id=str(doc.id), batch_size=2, max_retries=2)
+    assert metrics["total_chunks"] == 1
+    assert metrics["processed_chunks"] == 1
+    await doc_service.repository.delete(doc)
+    await db_session.commit()
+
+@pytest.mark.asyncio
 async def test_embedding_pipeline_transient_retry(db_session):
     doc_service = DocumentService(db_session)
     chunk_service = ChunkRegistryService(db_session, doc_service)

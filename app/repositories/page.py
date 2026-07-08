@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, Sequence, List
+from typing import Sequence, List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.page import DocumentPage

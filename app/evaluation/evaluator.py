@@ -3,10 +3,8 @@
 Coordinates evaluation of retrieval strategies against golden datasets.
 """
 
-import asyncio
 import logging
 import time
-import uuid
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession

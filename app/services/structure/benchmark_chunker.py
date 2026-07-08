@@ -1,7 +1,6 @@
 import time
 import uuid
 import statistics
-from typing import List
 from app.core.token_utils import SimpleTokenizer
 from app.services.structure.chunker import HierarchicalChunker
 

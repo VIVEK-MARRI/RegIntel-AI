@@ -1,0 +1,5 @@
+[tool.ruff.lint]
+# Package __init__.py files re-export their public API surface; "unused"
+# imports there are intentional and should not be flagged as F401.
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]

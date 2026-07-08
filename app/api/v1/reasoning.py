@@ -15,21 +15,15 @@ Endpoints
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.api.dependencies import get_multi_document_reasoner
 from app.schemas.reasoning import (
-    ChangeReport,
-    ContradictionReport,
-    CrossDocumentSummary,
-    DocumentDiff,
-    ReasoningMode,
     ReasoningRequest,
     ReasoningResponse,
-    Timeline,
 )
 from app.services.reasoning import MultiDocumentReasoner
 

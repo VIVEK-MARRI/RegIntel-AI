@@ -1,10 +1,13 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from sqlalchemy import text
+from app.core.config import settings
 from app.services.embedding.index_manager import VectorIndexManager
 
 @pytest.mark.asyncio
 async def test_create_rebuild_drop_index(db_session):
+    if settings.DATABASE_URL.startswith("sqlite"):
+        pytest.skip("pgvector index management requires PostgreSQL system tables")
     manager = VectorIndexManager(db_session)
     model_name = "BAAI/bge-small-en-v1.5"
     metric = "cosine"
@@ -55,6 +58,8 @@ async def test_invalid_distance_metric(db_session):
 
 @pytest.mark.asyncio
 async def test_validate_consistency(db_session):
+    if settings.DATABASE_URL.startswith("sqlite"):
+        pytest.skip("pgvector index management requires PostgreSQL system tables")
     manager = VectorIndexManager(db_session)
     report = await manager.validate_consistency("BAAI/bge-small-en-v1.5")
     
@@ -69,6 +74,8 @@ async def test_validate_consistency(db_session):
 
 @pytest.mark.asyncio
 async def test_auto_rebuild_check(db_session):
+    if settings.DATABASE_URL.startswith("sqlite"):
+        pytest.skip("pgvector index management requires PostgreSQL system tables")
     manager = VectorIndexManager(db_session)
     
     # Check on non-existent index should return False

@@ -13,7 +13,6 @@ retrieved chunks that already grounded the answer.
 from __future__ import annotations
 
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -21,7 +20,6 @@ from app.api.dependencies import get_citation_service
 from app.schemas.citation import (
     CitationRequest,
     CitationResponse,
-    ReferenceEntry,
 )
 from app.services.citation import CitationService
 from app.services.observability import track_request

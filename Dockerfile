@@ -18,12 +18,9 @@ WORKDIR /app
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt ./
+COPY requirements.txt requirements-ml.txt ./
 RUN pip install --upgrade pip wheel \
-    && pip install -r requirements.txt \
-    && pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu \
-    && pip install transformers==4.49.0 sentence-transformers==3.4.1 tokenizers==0.21.1 safetensors==0.5.3 huggingface_hub==0.29.3 \
-    && pip install openai google-genai litellm
+    && pip install -r requirements.txt -r requirements-ml.txt
 
 FROM python:3.11-slim AS runtime
 

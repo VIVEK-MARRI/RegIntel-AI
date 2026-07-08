@@ -4,8 +4,8 @@ import time
 import pickle
 import uuid
 import logging
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy import select, func, and_
+from typing import List, Dict, Any, Optional
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 try:

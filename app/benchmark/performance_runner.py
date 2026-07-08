@@ -12,7 +12,7 @@ import inspect
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional
 
 from app.benchmark.metrics_collector import MetricsCollector
 from app.benchmark.models import (

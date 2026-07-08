@@ -19,7 +19,7 @@ import math
 import re
 from collections import Counter
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 from app.schemas.answer_generation import RetrievedChunk
 from app.schemas.citation import Claim

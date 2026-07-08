@@ -9,12 +9,11 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from collections import Counter, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Deque, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Deque, Dict, List, Mapping, Optional
 
 logger = logging.getLogger(__name__)
 

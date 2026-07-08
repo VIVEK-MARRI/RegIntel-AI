@@ -1,6 +1,6 @@
 import uuid
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List
 from app.schemas.structure import StructureElement
 from app.schemas.hierarchy import HierarchyNode
 

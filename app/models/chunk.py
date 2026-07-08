@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
-from sqlalchemy import ForeignKey, Integer, Text, DateTime, Index, Float
+from sqlalchemy import ForeignKey, Integer, Text, DateTime, Index
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.document import Base

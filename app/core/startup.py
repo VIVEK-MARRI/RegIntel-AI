@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import logging
 import os
-import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -154,6 +153,56 @@ def register_default_health_checks(
         health_checker.register("database", _db_check)
         registered.append("database")
 
+    # Embedding backend — reports which backend is active (bge / tfidf_fallback).
+    def _embedding_check() -> ComponentHealth:
+        try:
+            from app.services.embedding import EMBEDDING_BACKEND_NAME, embedding_provider
+            ok = embedding_provider.health_check()
+            status = HealthStatus.HEALTHY if ok else HealthStatus.DEGRADED
+            return ComponentHealth(
+                name="embedding_backend",
+                status=status,
+                message=EMBEDDING_BACKEND_NAME if ok else f"{EMBEDDING_BACKEND_NAME} health_check failed",
+                details={"backend": EMBEDDING_BACKEND_NAME},
+            )
+        except Exception as exc:
+            return ComponentHealth(
+                name="embedding_backend",
+                status=HealthStatus.DEGRADED,
+                message=str(exc),
+            )
+    health_checker.register("embedding_backend", _embedding_check)
+    registered.append("embedding_backend")
+
+    # LLM provider — simple reachability check (mock provider always healthy).
+    def _llm_check() -> ComponentHealth:
+        try:
+            from app.core.config import settings as _s
+            provider_name = _s.LLM_PROVIDER
+            if provider_name == "mock":
+                return ComponentHealth(
+                    name="llm_provider",
+                    status=HealthStatus.HEALTHY,
+                    message="mock provider (no external dependency)",
+                    details={"provider": provider_name},
+                )
+            # For real providers, check that the API key is set.
+            has_key = bool(_s.LLM_API_KEY)
+            return ComponentHealth(
+                name="llm_provider",
+                status=HealthStatus.HEALTHY if has_key else HealthStatus.DEGRADED,
+                message=("api_key configured" if has_key else "LLM_API_KEY not set"),
+                details={"provider": provider_name, "api_key_set": has_key},
+            )
+        except Exception as exc:
+            return ComponentHealth(
+                name="llm_provider",
+                status=HealthStatus.DEGRADED,
+                message=str(exc),
+            )
+    health_checker.register("llm_provider", _llm_check)
+    registered.append("llm_provider")
+
     return registered
 
 
@@ -182,6 +231,20 @@ def on_startup(
     report.errors.extend(env_errors)
     if storage_root is not None:
         report.errors.extend(validate_storage_root(storage_root))
+
+    # P0.2 — Hard fail in production if the resolved LLM provider is the
+    # mock. The mock provider returns templated, rule-based pseudo-answers
+    # that are indistinguishable at a glance from real generated answers;
+    # serving them in production would silently mislead users. Refuse to
+    # start instead of degrading silently.
+    if settings.ENV == "production" and settings.LLM_PROVIDER.strip().lower() == "mock":
+        msg = (
+            "Refusing to start: LLM_PROVIDER is 'mock' in a production "
+            "environment. Set LLM_PROVIDER to a real provider "
+            "(openai | gemini | litellm) with a valid LLM_API_KEY."
+        )
+        logger.error(msg)
+        raise EnvironmentValidationError(msg)
     # Development convenience: create all tables if using SQLite
     if settings.ENV == "development" and settings.DATABASE_URL.startswith("sqlite"):
         try:

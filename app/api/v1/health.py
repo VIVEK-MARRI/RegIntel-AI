@@ -13,13 +13,12 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
 from app.core.health import (
     HealthChecker,
     HealthStatus,
-    always_healthy,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,7 +70,10 @@ async def readiness() -> JSONResponse:
     # Critical = liveness + registered "critical" components.
     critical_checks = [
         name for name in checker.checks()
-        if name in {"liveness", "storage", "config", "environment", "database"}
+        if name in {
+            "liveness", "storage", "config", "environment", "database",
+            "embedding_backend", "llm_provider",
+        }
     ]
     report = checker.run(names=critical_checks)
     if report.status == HealthStatus.UNHEALTHY:

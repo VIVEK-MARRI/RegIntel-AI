@@ -28,14 +28,13 @@ import logging
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
-    get_bm25_retriever,
     get_bm25_service,
     get_hybrid_retriever,
     get_query_analyzer,
@@ -43,9 +42,6 @@ from app.api.dependencies import (
     get_retrieval_service,
 )
 from app.core.database import get_db_session
-from app.models.chunk import ChunkEmbedding
-from app.models.document import SourceEnum
-from app.schemas.analytics import RetrievalMetricsCreate
 from app.schemas.hybrid_search import (
     BM25SearchRequest,
     DenseSearchRequest,
@@ -60,13 +56,11 @@ from app.schemas.hybrid_search import (
     SearchStrategy,
 )
 from app.services.analytics.service import AnalyticsService
-from app.services.bm25.base import BM25Retriever
 from app.services.bm25.bm25_service import BM25Service
 from app.services.bm25.retriever import IndexStatus
 from app.services.embedding.retrieval import RetrievalService
 from app.services.hybrid.service import HybridRetriever
 from app.services.observability import (
-    RequestContext,
     get_metrics,
     log_search_event,
     track_request,

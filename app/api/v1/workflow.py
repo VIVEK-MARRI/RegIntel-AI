@@ -14,7 +14,6 @@ from app.schemas.workflow import (
     TaskAssignmentRequest,
     TaskCompletionRequest,
     TaskCreateRequest,
-    TaskStatus,
     Workflow,
     WorkflowCreateRequest,
     WorkflowFilter,
