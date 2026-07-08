@@ -20,19 +20,24 @@ from app.schemas.hybrid import RetrievalStrategy, FusionMethod
 class CustomMockEmbeddingProvider:
     def get_model_name(self) -> str:
         return "hybrid-mock-model"
+
     def get_dimension(self) -> int:
         return 3
+
     def encode_query(self, query: str) -> list[float]:
         if "KYC" in query:
             return [1.0, 0.0, 0.0]
         return [0.0, 1.0, 0.0]
+
     def encode_batch(self, texts: list[str]) -> list[list[float]]:
         return [[1.0, 0.0, 0.0]] * len(texts)
 
 
 @pytest.fixture(autouse=True)
 def override_provider():
-    app.dependency_overrides[get_embedding_provider] = lambda: CustomMockEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = (
+        lambda: CustomMockEmbeddingProvider()
+    )
     yield
     app.dependency_overrides.pop(get_embedding_provider, None)
 
@@ -42,7 +47,7 @@ def test_strategy_logic():
     assert min_max_normalize([]) == []
     assert min_max_normalize([5.0]) == [1.0]
     assert min_max_normalize([5.0, 5.0]) == [1.0, 1.0]
-    
+
     normalized = min_max_normalize([1.0, 2.0, 3.0])
     assert pytest.approx(normalized[0]) == 0.0
     assert pytest.approx(normalized[1]) == 0.5
@@ -52,7 +57,7 @@ def test_strategy_logic():
     assert RetrievalStrategyManager.balance_weights(0.0, 0.0) == (0.5, 0.5)
     assert RetrievalStrategyManager.balance_weights(-1.0, 2.0) == (0.0, 1.0)
     assert RetrievalStrategyManager.balance_weights(0.7, 0.3) == (0.7, 0.3)
-    
+
     d, b = RetrievalStrategyManager.balance_weights(1.0, 1.0)
     assert pytest.approx(d) == 0.5
     assert pytest.approx(b) == 0.5
@@ -62,7 +67,12 @@ def test_strategy_logic():
 async def test_hybrid_retriever_db(db_session, tmp_path):
     # Clean up any leftover data from prior tests that pollute BM25 / dense retrieval
     from sqlalchemy import delete as sa_delete
-    await db_session.execute(sa_delete(ChunkEmbedding).where(ChunkEmbedding.embedding_model == "hybrid-mock-model"))
+
+    await db_session.execute(
+        sa_delete(ChunkEmbedding).where(
+            ChunkEmbedding.embedding_model == "hybrid-mock-model"
+        )
+    )
     await db_session.execute(sa_delete(DocumentChunk))
     await db_session.commit()
 
@@ -73,7 +83,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
         file_name="rbi_kyc.pdf",
         file_path="rbi_kyc.pdf",
         checksum="z" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     db_session.add(doc)
     await db_session.commit()
@@ -85,7 +95,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
             section="Sec 1",
             subsection="KYC Details",
             content="KYC guidelines detail customer due diligence.",
-            token_count=10
+            token_count=10,
         )
         chunk_other = DocumentChunk(
             document_id=doc.id,
@@ -93,7 +103,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
             section="Sec 2",
             subsection="General Details",
             content="This is general information about compliance.",
-            token_count=10
+            token_count=10,
         )
         chunk_dummy = DocumentChunk(
             document_id=doc.id,
@@ -101,7 +111,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
             section="Sec 3",
             subsection="Dummy Details",
             content="Nothing here.",
-            token_count=10
+            token_count=10,
         )
         db_session.add_all([chunk_kyc, chunk_other, chunk_dummy])
         await db_session.commit()
@@ -112,19 +122,19 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
             chunk_id=chunk_kyc.id,
             embedding=[1.0, 0.0, 0.0],
             embedding_model="hybrid-mock-model",
-            embedding_dimension=3
+            embedding_dimension=3,
         )
         await repo.save_embedding(
             chunk_id=chunk_other.id,
             embedding=[0.0, 1.0, 0.0],
             embedding_model="hybrid-mock-model",
-            embedding_dimension=3
+            embedding_dimension=3,
         )
         await repo.save_embedding(
             chunk_id=chunk_dummy.id,
             embedding=[0.0, 0.0, 1.0],
             embedding_model="hybrid-mock-model",
-            embedding_dimension=3
+            embedding_dimension=3,
         )
         await db_session.commit()
 
@@ -135,7 +145,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
         # Initialize Retrievers
         bm25_retriever = BM25RetrieverService(db_session)
         dense_retriever = RetrievalService(db_session, CustomMockEmbeddingProvider())
-        
+
         orchestrator = HybridRetriever(dense_retriever, bm25_retriever)
 
         # 1. Test retrieve_dense
@@ -150,9 +160,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
 
         # 3. Test retrieve_hybrid with Strategy: DENSE
         resp_dense_only = await orchestrator.retrieve_hybrid(
-            query="KYC",
-            top_n=2,
-            strategy=RetrievalStrategy.DENSE
+            query="KYC", top_n=2, strategy=RetrievalStrategy.DENSE
         )
         assert len(resp_dense_only.results) == 2
         assert resp_dense_only.results[0].chunk_id == str(chunk_kyc.id)
@@ -161,9 +169,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
 
         # 4. Test retrieve_hybrid with Strategy: KEYWORD (BM25)
         resp_keyword_only = await orchestrator.retrieve_hybrid(
-            query="compliance",
-            top_n=2,
-            strategy=RetrievalStrategy.KEYWORD
+            query="compliance", top_n=2, strategy=RetrievalStrategy.KEYWORD
         )
         assert len(resp_keyword_only.results) >= 1
         assert resp_keyword_only.results[0].chunk_id == str(chunk_other.id)
@@ -175,7 +181,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
             query="KYC diligence compliance",
             top_n=2,
             strategy=RetrievalStrategy.HYBRID,
-            fusion_method=FusionMethod.RRF
+            fusion_method=FusionMethod.RRF,
         )
         assert len(resp_rrf.results) == 2
         assert "overall_latency_ms" in resp_rrf.metrics
@@ -186,7 +192,7 @@ async def test_hybrid_retriever_db(db_session, tmp_path):
             query="KYC diligence compliance",
             top_n=2,
             strategy=RetrievalStrategy.HYBRID,
-            fusion_method=FusionMethod.WEIGHTED_SUM
+            fusion_method=FusionMethod.WEIGHTED_SUM,
         )
         assert len(resp_wsum.results) == 2
 
@@ -205,7 +211,7 @@ async def test_hybrid_search_api_flow(client: AsyncClient, db_session, tmp_path)
         file_name="sebi.pdf",
         file_path="sebi.pdf",
         checksum="w" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     db_session.add(doc)
     await db_session.commit()
@@ -217,7 +223,7 @@ async def test_hybrid_search_api_flow(client: AsyncClient, db_session, tmp_path)
             section="Sec A",
             subsection="Sub A",
             content="Guidelines for mutual fund schemes equity allocation details.",
-            token_count=10
+            token_count=10,
         )
         chunk_dummy1 = DocumentChunk(
             document_id=doc.id,
@@ -225,7 +231,7 @@ async def test_hybrid_search_api_flow(client: AsyncClient, db_session, tmp_path)
             section="Sec B",
             subsection="Sub B",
             content="Standard text.",
-            token_count=10
+            token_count=10,
         )
         chunk_dummy2 = DocumentChunk(
             document_id=doc.id,
@@ -233,7 +239,7 @@ async def test_hybrid_search_api_flow(client: AsyncClient, db_session, tmp_path)
             section="Sec C",
             subsection="Sub C",
             content="Empty details.",
-            token_count=10
+            token_count=10,
         )
         db_session.add_all([chunk, chunk_dummy1, chunk_dummy2])
         await db_session.commit()
@@ -244,19 +250,19 @@ async def test_hybrid_search_api_flow(client: AsyncClient, db_session, tmp_path)
             chunk_id=chunk.id,
             embedding=[1.0, 0.0, 0.0],
             embedding_model="hybrid-mock-model",
-            embedding_dimension=3
+            embedding_dimension=3,
         )
         await repo.save_embedding(
             chunk_id=chunk_dummy1.id,
             embedding=[0.0, 1.0, 0.0],
             embedding_model="hybrid-mock-model",
-            embedding_dimension=3
+            embedding_dimension=3,
         )
         await repo.save_embedding(
             chunk_id=chunk_dummy2.id,
             embedding=[0.0, 0.0, 1.0],
             embedding_model="hybrid-mock-model",
-            embedding_dimension=3
+            embedding_dimension=3,
         )
         await db_session.commit()
 

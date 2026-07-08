@@ -122,7 +122,9 @@ class AnswerAnalyticsService:
         citation_coverage = (cited_claims / total_claims) if total_claims else 0.0
 
         # Source count: unique document_ids across attributions.
-        source_ids = {a.document_id for a in response.source_attributions if a.document_id}
+        source_ids = {
+            a.document_id for a in response.source_attributions if a.document_id
+        }
 
         event = AnswerAnalyticsEvent(
             request_id=response.metadata.request_id,
@@ -139,7 +141,9 @@ class AnswerAnalyticsService:
             total_tokens=total_tokens,
             model_used=response.metadata.model_used,
             provider_used=response.metadata.provider_used,
-            step_results=[s.model_dump(mode="json") for s in response.metadata.step_results],
+            step_results=[
+                s.model_dump(mode="json") for s in response.metadata.step_results
+            ],
             warnings=list(response.metadata.warnings),
         )
         self.repository.add(event)
@@ -147,12 +151,14 @@ class AnswerAnalyticsService:
 
     # ── Aggregations ─────────────────────────────────────────────────────
 
-    def snapshot(self, window: AnalyticsWindow = AnalyticsWindow.ALL) -> AnswerAnalyticsSnapshot:
+    def snapshot(
+        self, window: AnalyticsWindow = AnalyticsWindow.ALL
+    ) -> AnswerAnalyticsSnapshot:
         events = self.repository.window(window)
         with track_request(
             endpoint=f"/api/v1/answers/analytics?window={window.value}",
             strategy="answer_analytics",
-        ) as ctx:
+        ):
             snap = self._compute_snapshot(events, window)
         return snap
 
@@ -267,7 +273,9 @@ class AnswerAnalyticsService:
         status = (
             HealthStatus.HEALTHY
             if not reasons
-            else (HealthStatus.DEGRADED if len(reasons) <= 2 else HealthStatus.UNHEALTHY)
+            else (
+                HealthStatus.DEGRADED if len(reasons) <= 2 else HealthStatus.UNHEALTHY
+            )
         )
         return AnswerHealthReport(
             status=status,

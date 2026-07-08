@@ -28,6 +28,7 @@ from app.services.query_analysis.service import (
 # Individual Rule Tests
 # =============================================================================
 
+
 class TestCircularSearchRule:
     """Tests for CircularSearchRule."""
 
@@ -367,12 +368,16 @@ class TestKeywordLookupRule:
         assert self.rule.evaluate("KYC Aadhaar PAN") > 0.5
 
     def test_long_query_low_score(self):
-        assert self.rule.evaluate("this is a very long keyword query that is not standard") < 0.4
+        assert (
+            self.rule.evaluate("this is a very long keyword query that is not standard")
+            < 0.4
+        )
 
 
 # =============================================================================
 # Classifier Tests
 # =============================================================================
+
 
 class TestRuleBasedQueryClassifier:
     """Tests for RuleBasedQueryClassifier."""
@@ -473,6 +478,7 @@ class TestMLQueryClassifier:
 # Strategy Recommender Tests
 # =============================================================================
 
+
 class TestRuleBasedStrategyRecommender:
     """Tests for RuleBasedStrategyRecommender."""
 
@@ -480,7 +486,9 @@ class TestRuleBasedStrategyRecommender:
         self.recommender = RuleBasedStrategyRecommender()
 
     def test_circular_recommends_bm25(self):
-        strategy = self.recommender.recommend(QueryType.CIRCULAR, 0.95, "RBI Circular 17/2024")
+        strategy = self.recommender.recommend(
+            QueryType.CIRCULAR, 0.95, "RBI Circular 17/2024"
+        )
         assert strategy == RetrievalStrategy.BM25
 
     def test_regulation_recommends_bm25(self):
@@ -492,7 +500,9 @@ class TestRuleBasedStrategyRecommender:
         assert strategy == RetrievalStrategy.BM25
 
     def test_semantic_recommends_dense(self):
-        strategy = self.recommender.recommend(QueryType.SEMANTIC, 0.85, "how to comply?")
+        strategy = self.recommender.recommend(
+            QueryType.SEMANTIC, 0.85, "how to comply?"
+        )
         assert strategy == RetrievalStrategy.DENSE
 
     def test_definition_recommends_dense(self):
@@ -500,17 +510,23 @@ class TestRuleBasedStrategyRecommender:
         assert strategy == RetrievalStrategy.DENSE
 
     def test_comparative_recommends_hybrid(self):
-        strategy = self.recommender.recommend(QueryType.COMPARATIVE, 0.95, "RBI vs SEBI")
+        strategy = self.recommender.recommend(
+            QueryType.COMPARATIVE, 0.95, "RBI vs SEBI"
+        )
         assert strategy == RetrievalStrategy.HYBRID
 
     def test_low_confidence_recommends_hybrid(self):
         """Low confidence should always recommend hybrid."""
-        strategy = self.recommender.recommend(QueryType.CIRCULAR, 0.3, "something vague")
+        strategy = self.recommender.recommend(
+            QueryType.CIRCULAR, 0.3, "something vague"
+        )
         assert strategy == RetrievalStrategy.HYBRID
 
     def test_medium_confidence_type_based(self):
         """Medium confidence should still use type-based routing."""
-        strategy = self.recommender.recommend(QueryType.CIRCULAR, 0.6, "circular on KYC")
+        strategy = self.recommender.recommend(
+            QueryType.CIRCULAR, 0.6, "circular on KYC"
+        )
         assert strategy == RetrievalStrategy.BM25
 
     def test_boundary_confidence(self):
@@ -528,6 +544,7 @@ class TestRuleBasedStrategyRecommender:
 # Analytics Manager Tests
 # =============================================================================
 
+
 class TestAnalyticsManager:
     """Tests for AnalyticsManager."""
 
@@ -535,6 +552,7 @@ class TestAnalyticsManager:
         analytics = AnalyticsManager(analytics_dir=str(tmp_path))
 
         from app.schemas.query_analysis import QueryAnalysisResult
+
         result = QueryAnalysisResult(
             query="RBI Circular 17/2024",
             query_type="circular",
@@ -555,6 +573,7 @@ class TestAnalyticsManager:
         analytics = AnalyticsManager(analytics_dir=str(tmp_path))
 
         from app.schemas.query_analysis import QueryAnalysisResult
+
         for i in range(5):
             result = QueryAnalysisResult(
                 query=f"query {i}",
@@ -571,6 +590,7 @@ class TestAnalyticsManager:
         analytics = AnalyticsManager(analytics_dir=str(tmp_path))
 
         from app.schemas.query_analysis import QueryAnalysisResult
+
         for i in range(10):
             result = QueryAnalysisResult(
                 query=f"query {i}",
@@ -592,6 +612,7 @@ class TestAnalyticsManager:
         analytics = AnalyticsManager(analytics_dir=str(tmp_path))
 
         from app.schemas.query_analysis import QueryAnalysisResult
+
         result = QueryAnalysisResult(
             query="test query",
             query_type="definition",
@@ -615,6 +636,7 @@ class TestAnalyticsManager:
 # =============================================================================
 # Query Analyzer Integration Tests
 # =============================================================================
+
 
 class TestQueryAnalyzer:
     """Integration tests for QueryAnalyzer."""
@@ -749,6 +771,7 @@ class TestQueryAnalyzer:
 # =============================================================================
 # Edge Case Tests
 # =============================================================================
+
 
 class TestEdgeCases:
     """Edge case tests for the query analysis engine."""

@@ -22,7 +22,16 @@ import secrets
 import threading
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Protocol,
+    runtime_checkable,
+)
 
 from app.core.config import settings
 from app.schemas.alerts import (
@@ -81,9 +90,7 @@ class InMemoryEmailSender:
         with self._lock:
             if self._fail_next > 0:
                 self._fail_next -= 1
-                self._log.append(
-                    {"to": to, "subject": subject, "status": "failed"}
-                )
+                self._log.append({"to": to, "subject": subject, "status": "failed"})
                 return False
             self._log.append(
                 {"to": to, "subject": subject, "body_len": len(body), "status": "sent"}
@@ -150,7 +157,9 @@ class AlertStore(ABC):
     def add_delivery(self, d: NotificationDelivery) -> None: ...
 
     @abstractmethod
-    def list_deliveries(self, alert_id: Optional[str] = None) -> List[NotificationDelivery]: ...
+    def list_deliveries(
+        self, alert_id: Optional[str] = None
+    ) -> List[NotificationDelivery]: ...
 
     @abstractmethod
     def add_digest(self, d: Digest) -> None: ...
@@ -248,7 +257,9 @@ class InMemoryAlertStore(AlertStore):
             self._deliveries[d.delivery_id] = d
         self._persist("delivery", d.model_dump(mode="json"))
 
-    def list_deliveries(self, alert_id: Optional[str] = None) -> List[NotificationDelivery]:
+    def list_deliveries(
+        self, alert_id: Optional[str] = None
+    ) -> List[NotificationDelivery]:
         with self._lock:
             if alert_id is None:
                 return list(self._deliveries.values())
@@ -336,8 +347,10 @@ class NotificationDispatcher:
             d.last_attempt_at = time.time()
             d.latency_ms = round((time.time() - start) * 1000.0, 3)
             d.status = (
-                AlertStatus.DELIVERED if ok else AlertStatus.FAILED
-            ) if ch != AlertChannel.IN_APP else AlertStatus.DELIVERED
+                (AlertStatus.DELIVERED if ok else AlertStatus.FAILED)
+                if ch != AlertChannel.IN_APP
+                else AlertStatus.DELIVERED
+            )
             self._store.add_delivery(d)
             get_alert_metrics().record_delivery(
                 ch.value, success=ok, latency_ms=d.latency_ms
@@ -500,9 +513,7 @@ class DigestGenerator:
         for sev, count in sorted(summary.items()):
             lines.append(f"  - {sev}: {count}")
         for i in items[:10]:
-            lines.append(
-                f"  • [{i.severity.value}] {i.title} (source={i.source})"
-            )
+            lines.append(f"  • [{i.severity.value}] {i.title} (source={i.source})")
         if len(items) > 10:
             lines.append(f"  ... and {len(items) - 10} more")
         return "\n".join(lines)

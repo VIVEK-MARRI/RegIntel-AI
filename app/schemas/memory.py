@@ -72,9 +72,7 @@ class MemoryEntry(BaseModel):
     relevance_score: float = Field(
         0.0, ge=0.0, description="Last computed relevance to the active query."
     )
-    pinned: bool = Field(
-        False, description="Pinned memories are never auto-expired."
-    )
+    pinned: bool = Field(False, description="Pinned memories are never auto-expired.")
 
 
 # ─── Search & filter ──────────────────────────────────────────────────────
@@ -91,9 +89,7 @@ class MemoryQuery(BaseModel):
         None, description="Restrict to these memory types (None = all)."
     )
     tags: Optional[List[str]] = None
-    query: Optional[str] = Field(
-        None, description="Free-text query for ranking."
-    )
+    query: Optional[str] = Field(None, description="Free-text query for ranking.")
     top_k: int = Field(5, ge=1, le=50)
     min_relevance: float = Field(0.0, ge=0.0, le=1.0)
     include_expired: bool = False

@@ -43,7 +43,7 @@ class CitationStyle(str, Enum):
     """Supported inline-citation styles."""
 
     BRACKETED_SOURCE = "bracketed_source"  # [RBI Circular 12/2024 | Page 8]
-    NUMERIC_BRACKET = "numeric_bracket"    # [1] [2] [3]  (with separate ref list)
+    NUMERIC_BRACKET = "numeric_bracket"  # [1] [2] [3]  (with separate ref list)
 
 
 # ─── Reference / Citation Models ─────────────────────────────────────────────
@@ -102,7 +102,9 @@ class InlineCitation(BaseModel):
     citation_id: str = Field(..., description="Matches ReferenceEntry.citation_id.")
     chunk_id: str = Field(..., description="Source chunk UUID.")
     claim_id: str = Field(..., description="The claim this citation supports.")
-    marker: str = Field(..., description="Inline marker text, e.g. '[RBI ... | Page 8]'.")
+    marker: str = Field(
+        ..., description="Inline marker text, e.g. '[RBI ... | Page 8]'."
+    )
     similarity: float = Field(
         0.0,
         ge=0.0,
@@ -122,7 +124,8 @@ class Claim(BaseModel):
     )
     text: str = Field(..., min_length=1, description="The claim sentence.")
     section: str = Field(
-        ..., description="Which answer section the claim came from (executive_summary / detailed_explanation)."
+        ...,
+        description="Which answer section the claim came from (executive_summary / detailed_explanation).",
     )
 
 
@@ -134,11 +137,15 @@ class AnnotatedText(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    text: str = Field(..., description="Annotated text with inline markers appended per claim.")
+    text: str = Field(
+        ..., description="Annotated text with inline markers appended per claim."
+    )
     citations: List[InlineCitation] = Field(
         default_factory=list, description="Inline citations attached to the text."
     )
-    claim_count: int = Field(0, ge=0, description="Number of claims detected in the original text.")
+    claim_count: int = Field(
+        0, ge=0, description="Number of claims detected in the original text."
+    )
     cited_claim_count: int = Field(
         0, ge=0, description="Number of claims that received at least one citation."
     )
@@ -206,7 +213,9 @@ class CitationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     query: str = Field(..., min_length=1, max_length=2048)
-    answer: AnswerSection = Field(..., description="Structured answer (from Module 5.1).")
+    answer: AnswerSection = Field(
+        ..., description="Structured answer (from Module 5.1)."
+    )
     chunks: List[RetrievedChunk] = Field(
         ...,
         min_length=1,

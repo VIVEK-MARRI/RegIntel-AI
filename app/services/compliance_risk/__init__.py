@@ -58,7 +58,12 @@ logger = logging.getLogger(__name__)
 
 _AREA_KEYWORDS: Dict[AffectedArea, Tuple[str, ...]] = {
     AffectedArea.KYC: ("kyc", "know your customer", "customer identification", "cid"),
-    AffectedArea.AML: ("aml", "anti-money laundering", "pmla", "suspicious transaction"),
+    AffectedArea.AML: (
+        "aml",
+        "anti-money laundering",
+        "pmla",
+        "suspicious transaction",
+    ),
     AffectedArea.CAPITAL_ADEQUACY: (
         "capital adequacy",
         "car",
@@ -340,7 +345,9 @@ class RiskAnalyzer:
                 ComplianceGap(
                     area=gap_categories[category],
                     severity=RiskScorer()._to_level(
-                        0.6 if severity in (ChangeSeverity.HIGH, ChangeSeverity.CRITICAL) else 0.3
+                        0.6
+                        if severity in (ChangeSeverity.HIGH, ChangeSeverity.CRITICAL)
+                        else 0.3
                     ),
                     description=(
                         f"Compliance gap detected for category "
@@ -636,9 +643,7 @@ class RiskRepository:
         items.sort(key=lambda a: a.generated_at)
         return items
 
-    def trend_for(
-        self, document_id: Optional[str] = None
-    ) -> RiskTrend:
+    def trend_for(self, document_id: Optional[str] = None) -> RiskTrend:
         items = self.history_for(document_id=document_id)
         points = [
             RiskTrendPoint(
@@ -696,15 +701,11 @@ class ComplianceRiskService:
                 if request.diff_id:
                     change_result = self._fetch_change_result(request.diff_id)
                 if request.impact_report_id:
-                    impact_report = self._fetch_impact_report(
-                        request.impact_report_id
-                    )
+                    impact_report = self._fetch_impact_report(request.impact_report_id)
             severity = self._resolve_severity(change_result, impact_report)
             category = self._resolve_category(change_result)
             impact_level = self._resolve_impact_level(impact_report)
-            change_count = (
-                len(change_result.diff.changes) if change_result else 1
-            )
+            change_count = len(change_result.diff.changes) if change_result else 1
             text = self._gather_text(change_result, impact_report)
             analysis = self.analyzer.analyze(
                 text,
@@ -797,9 +798,7 @@ class ComplianceRiskService:
                 ImpactLevel.LOW: ChangeSeverity.LOW,
                 ImpactLevel.NEGLIGIBLE: ChangeSeverity.LOW,
             }
-            return mapping.get(
-                impact_report.impact_level, ChangeSeverity.LOW
-            )
+            return mapping.get(impact_report.impact_level, ChangeSeverity.LOW)
         return ChangeSeverity.MEDIUM
 
     @staticmethod
@@ -825,12 +824,8 @@ class ComplianceRiskService:
     ) -> str:
         bits: List[str] = []
         if change_result is not None:
-            bits.extend(
-                c.new_text or "" for c in change_result.diff.changes
-            )
-            bits.extend(
-                c.old_text or "" for c in change_result.diff.changes
-            )
+            bits.extend(c.new_text or "" for c in change_result.diff.changes)
+            bits.extend(c.old_text or "" for c in change_result.diff.changes)
         if impact_report is not None:
             for a in impact_report.affected_entities:
                 bits.append(a.name)
@@ -882,9 +877,7 @@ class ComplianceRiskService:
     ) -> List[RiskAssessment]:
         return self.repository.history_for(document_id, source)
 
-    def trend_for(
-        self, document_id: Optional[str] = None
-    ) -> RiskTrend:
+    def trend_for(self, document_id: Optional[str] = None) -> RiskTrend:
         return self.repository.trend_for(document_id)
 
 
@@ -892,9 +885,7 @@ class ComplianceRiskService:
 
 
 def build_default_compliance_risk_service() -> ComplianceRiskService:
-    persist = os.path.join(
-        settings.STORAGE_ROOT, "compliance_risk", "risk.jsonl"
-    )
+    persist = os.path.join(settings.STORAGE_ROOT, "compliance_risk", "risk.jsonl")
     store = InMemoryRiskStore(persist_path=persist)
     return ComplianceRiskService(store=store)
 

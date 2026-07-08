@@ -68,9 +68,7 @@ class RiskForecast(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    forecast_id: str = Field(
-        default_factory=lambda: f"fcast-{uuid.uuid4().hex[:12]}"
-    )
+    forecast_id: str = Field(default_factory=lambda: f"fcast-{uuid.uuid4().hex[:12]}")
     horizon_days: int = Field(ge=1, le=365)
     predicted_risk_score: float = Field(ge=0.0, le=1.0)
     predicted_risk_level: RiskLevel

@@ -109,12 +109,14 @@ class RerankerService:
 
         scored: List[Dict[str, Any]] = []
         for idx, candidate in enumerate(candidates):
-            scored.append({
-                **candidate,
-                "rerank_score": scoring_result.scores[idx],
-                "original_rank": idx + 1,
-                "scoring_latency_ms": scoring_result.scoring_latency_ms,
-            })
+            scored.append(
+                {
+                    **candidate,
+                    "rerank_score": scoring_result.scores[idx],
+                    "original_rank": idx + 1,
+                    "scoring_latency_ms": scoring_result.scoring_latency_ms,
+                }
+            )
         return scored
 
     def score_candidates_minimal(
@@ -180,7 +182,9 @@ class RerankerService:
         """
         effective_top_k = top_k if top_k is not None else self.default_top_k
         effective_threshold = (
-            score_threshold if score_threshold is not None else self.default_score_threshold
+            score_threshold
+            if score_threshold is not None
+            else self.default_score_threshold
         )
 
         start = time.perf_counter()
@@ -266,7 +270,9 @@ class RerankerService:
         """
         effective_top_k = top_k if top_k is not None else self.default_top_k
         effective_threshold = (
-            score_threshold if score_threshold is not None else self.default_score_threshold
+            score_threshold
+            if score_threshold is not None
+            else self.default_score_threshold
         )
 
         start = time.perf_counter()
@@ -403,7 +409,9 @@ class RerankerService:
         """
         effective_top_k = top_k if top_k is not None else self.default_top_k
         effective_threshold = (
-            score_threshold if score_threshold is not None else self.default_score_threshold
+            score_threshold
+            if score_threshold is not None
+            else self.default_score_threshold
         )
 
         results: List[BenchmarkResult] = []
@@ -411,21 +419,24 @@ class RerankerService:
 
         for query, candidates in zip(queries, candidates_per_query):
             resp = self.rerank(
-                query, candidates,
+                query,
+                candidates,
                 top_k=effective_top_k,
                 score_threshold=effective_threshold,
             )
             top_score = resp.results[0].rerank_score if resp.results else 0.0
-            results.append(BenchmarkResult(
-                query=query,
-                num_candidates=len(candidates),
-                latency_ms=resp.report.latency_ms,
-                scoring_latency_ms=resp.report.scoring_latency_ms,
-                top_k=effective_top_k,
-                score_threshold=effective_threshold,
-                top_score=top_score,
-                candidates_returned=resp.report.candidates_returned,
-            ))
+            results.append(
+                BenchmarkResult(
+                    query=query,
+                    num_candidates=len(candidates),
+                    latency_ms=resp.report.latency_ms,
+                    scoring_latency_ms=resp.report.scoring_latency_ms,
+                    top_k=effective_top_k,
+                    score_threshold=effective_threshold,
+                    top_score=top_score,
+                    candidates_returned=resp.report.candidates_returned,
+                )
+            )
 
         total_elapsed_ms = (time.perf_counter() - total_start) * 1000
         latencies = [r.latency_ms for r in results]
@@ -440,10 +451,18 @@ class RerankerService:
             p50_latency_ms=self._percentile(latencies, 50) if latencies else 0.0,
             p95_latency_ms=self._percentile(latencies, 95) if latencies else 0.0,
             p99_latency_ms=self._percentile(latencies, 99) if latencies else 0.0,
-            avg_scoring_latency_ms=statistics.mean(scoring_latencies) if scoring_latencies else 0.0,
-            throughput_qps=(len(queries) / total_elapsed_ms * 1000) if total_elapsed_ms > 0 else 0.0,
-            avg_candidates_per_query=total_candidates / len(queries) if queries else 0.0,
-            avg_top_score=statistics.mean([r.top_score for r in results]) if results else 0.0,
+            avg_scoring_latency_ms=statistics.mean(scoring_latencies)
+            if scoring_latencies
+            else 0.0,
+            throughput_qps=(len(queries) / total_elapsed_ms * 1000)
+            if total_elapsed_ms > 0
+            else 0.0,
+            avg_candidates_per_query=total_candidates / len(queries)
+            if queries
+            else 0.0,
+            avg_top_score=statistics.mean([r.top_score for r in results])
+            if results
+            else 0.0,
             results=results,
         )
 
@@ -485,7 +504,10 @@ class RerankerService:
             for r in fusion_results
         ]
         return self.rerank(
-            query, candidates, top_k=top_k, score_threshold=score_threshold,
+            query,
+            candidates,
+            top_k=top_k,
+            score_threshold=score_threshold,
         )
 
     # ------------------------------------------------------------------
@@ -608,7 +630,7 @@ class RerankerService:
         rank_y = _ranks(y)
 
         d_squared = sum((rx - ry) ** 2 for rx, ry in zip(rank_x, rank_y))
-        denominator = n * (n ** 2 - 1)
+        denominator = n * (n**2 - 1)
         if denominator == 0:
             return 0.0
         return 1.0 - (6.0 * d_squared) / denominator

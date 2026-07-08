@@ -121,7 +121,9 @@ async def find_contradictions(
     request: _ModeRequest,
     reasoner: MultiDocumentReasoner = Depends(get_multi_document_reasoner),
 ) -> ReasoningResponse:
-    return reasoner.contradictions(request.query, request.chunks, metadata=request.metadata)
+    return reasoner.contradictions(
+        request.query, request.chunks, metadata=request.metadata
+    )
 
 
 @router.post(
@@ -133,7 +135,9 @@ async def summarise_cross(
     request: _ModeRequest,
     reasoner: MultiDocumentReasoner = Depends(get_multi_document_reasoner),
 ) -> ReasoningResponse:
-    return reasoner.cross_summary(request.query, request.chunks, metadata=request.metadata)
+    return reasoner.cross_summary(
+        request.query, request.chunks, metadata=request.metadata
+    )
 
 
 __all__ = ["router"]

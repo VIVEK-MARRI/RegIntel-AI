@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 # Evaluation hook type
 # ======================================================================
 
+
 @runtime_checkable
 class FusionHook(Protocol):
     """Callable invoked before/after fusion for evaluation & monitoring."""
@@ -63,6 +64,7 @@ class FusionHook(Protocol):
 # Strategy ABC
 # ======================================================================
 
+
 class BaseFusionStrategy(abc.ABC):
     """Abstract base class for fusion strategies."""
 
@@ -80,6 +82,7 @@ class BaseFusionStrategy(abc.ABC):
 # ======================================================================
 # RRF Strategy
 # ======================================================================
+
 
 class RRFStrategy(BaseFusionStrategy):
     """Reciprocal Rank Fusion (RRF).
@@ -149,18 +152,20 @@ class RRFStrategy(BaseFusionStrategy):
             content, meta = merge_metadata(cid, dense_map, bm25_map)
             sources = build_provenance(cid, dense_map, bm25_map)
 
-            merged.append({
-                "chunk_id": cid,
-                "score": score,
-                "rrf_score": score,
-                "dense_score": dense_score,
-                "bm25_score": bm25_score,
-                "dense_rank": dense_rank,
-                "bm25_rank": bm25_rank,
-                "sources": sources,
-                "content": content,
-                "metadata": meta,
-            })
+            merged.append(
+                {
+                    "chunk_id": cid,
+                    "score": score,
+                    "rrf_score": score,
+                    "dense_score": dense_score,
+                    "bm25_score": bm25_score,
+                    "dense_rank": dense_rank,
+                    "bm25_rank": bm25_rank,
+                    "sources": sources,
+                    "content": content,
+                    "metadata": meta,
+                }
+            )
 
         merged = sort_candidates(merged)
         merged = resolve_rank_conflicts(merged)
@@ -170,6 +175,7 @@ class RRFStrategy(BaseFusionStrategy):
 # ======================================================================
 # Weighted Sum Strategy
 # ======================================================================
+
 
 class WeightedSumStrategy(BaseFusionStrategy):
     """Min-Max Normalized Weighted Sum.
@@ -224,18 +230,20 @@ class WeightedSumStrategy(BaseFusionStrategy):
             content, meta = merge_metadata(cid, dense_map, bm25_map)
             sources = build_provenance(cid, dense_map, bm25_map)
 
-            merged.append({
-                "chunk_id": cid,
-                "score": score,
-                "rrf_score": None,
-                "dense_score": dense_score,
-                "bm25_score": bm25_score,
-                "dense_rank": dense_rank,
-                "bm25_rank": bm25_rank,
-                "sources": sources,
-                "content": content,
-                "metadata": meta,
-            })
+            merged.append(
+                {
+                    "chunk_id": cid,
+                    "score": score,
+                    "rrf_score": None,
+                    "dense_score": dense_score,
+                    "bm25_score": bm25_score,
+                    "dense_rank": dense_rank,
+                    "bm25_rank": bm25_rank,
+                    "sources": sources,
+                    "content": content,
+                    "metadata": meta,
+                }
+            )
 
         merged = sort_candidates(merged)
         merged = resolve_rank_conflicts(merged)
@@ -245,6 +253,7 @@ class WeightedSumStrategy(BaseFusionStrategy):
 # ======================================================================
 # Score Fusion Strategy
 # ======================================================================
+
 
 class ScoreFusionStrategy(BaseFusionStrategy):
     """Direct score interpolation using calibrated raw scores.
@@ -296,18 +305,20 @@ class ScoreFusionStrategy(BaseFusionStrategy):
             content, meta = merge_metadata(cid, dense_map, bm25_map)
             sources = build_provenance(cid, dense_map, bm25_map)
 
-            merged.append({
-                "chunk_id": cid,
-                "score": score,
-                "rrf_score": None,
-                "dense_score": dense_score,
-                "bm25_score": bm25_score,
-                "dense_rank": dense_rank,
-                "bm25_rank": bm25_rank,
-                "sources": sources,
-                "content": content,
-                "metadata": meta,
-            })
+            merged.append(
+                {
+                    "chunk_id": cid,
+                    "score": score,
+                    "rrf_score": None,
+                    "dense_score": dense_score,
+                    "bm25_score": bm25_score,
+                    "dense_rank": dense_rank,
+                    "bm25_rank": bm25_rank,
+                    "sources": sources,
+                    "content": content,
+                    "metadata": meta,
+                }
+            )
 
         merged = sort_candidates(merged)
         merged = resolve_rank_conflicts(merged)
@@ -317,6 +328,7 @@ class ScoreFusionStrategy(BaseFusionStrategy):
 # ======================================================================
 # Learning-to-Rank Strategy (extensible placeholder)
 # ======================================================================
+
 
 class LearningToRankStrategy(BaseFusionStrategy):
     """Learning-to-Rank (LTR) fusion strategy.
@@ -381,19 +393,21 @@ class LearningToRankStrategy(BaseFusionStrategy):
             content, meta = merge_metadata(cid, dense_map, bm25_map)
             sources = build_provenance(cid, dense_map, bm25_map)
 
-            merged.append({
-                "chunk_id": cid,
-                "score": score,
-                "rrf_score": None,
-                "dense_score": dense_score,
-                "bm25_score": bm25_score,
-                "dense_rank": dense_rank,
-                "bm25_rank": bm25_rank,
-                "sources": sources,
-                "content": content,
-                "metadata": meta,
-                "ltr_fallback": True,  # signals that LTR model was not used
-            })
+            merged.append(
+                {
+                    "chunk_id": cid,
+                    "score": score,
+                    "rrf_score": None,
+                    "dense_score": dense_score,
+                    "bm25_score": bm25_score,
+                    "dense_rank": dense_rank,
+                    "bm25_rank": bm25_rank,
+                    "sources": sources,
+                    "content": content,
+                    "metadata": meta,
+                    "ltr_fallback": True,  # signals that LTR model was not used
+                }
+            )
 
         merged = sort_candidates(merged)
         merged = resolve_rank_conflicts(merged)
@@ -403,6 +417,7 @@ class LearningToRankStrategy(BaseFusionStrategy):
 # ======================================================================
 # FusionEngine – orchestrator
 # ======================================================================
+
 
 class FusionEngine:
     """Orchestrates retrieval fusion using pluggable strategies.
@@ -434,17 +449,23 @@ class FusionEngine:
     # ------------------------------------------------------------------
 
     @classmethod
-    def register_strategy(cls, method: FusionMethod, strategy: BaseFusionStrategy) -> None:
+    def register_strategy(
+        cls, method: FusionMethod, strategy: BaseFusionStrategy
+    ) -> None:
         """Register (or replace) a strategy for the given ``FusionMethod``."""
         cls._strategy_registry[method] = strategy
-        logger.info("Registered fusion strategy %s → %s", method.value, type(strategy).__name__)
+        logger.info(
+            "Registered fusion strategy %s → %s", method.value, type(strategy).__name__
+        )
 
     @classmethod
     def get_strategy(cls, method: FusionMethod) -> BaseFusionStrategy:
         """Look up the strategy for *method*, raising if not registered."""
         strategy = cls._strategy_registry.get(method)
         if strategy is None:
-            raise ValueError(f"No fusion strategy registered for method '{method.value}'.")
+            raise ValueError(
+                f"No fusion strategy registered for method '{method.value}'."
+            )
         return strategy
 
     # ------------------------------------------------------------------
@@ -467,7 +488,11 @@ class FusionEngine:
     ) -> None:
         for hook in self._before_hooks:
             try:
-                hook(dense_results=dense_results, bm25_results=bm25_results, config=config)
+                hook(
+                    dense_results=dense_results,
+                    bm25_results=bm25_results,
+                    config=config,
+                )
             except Exception:
                 logger.exception("Before-fusion hook %s raised an error", hook)
 

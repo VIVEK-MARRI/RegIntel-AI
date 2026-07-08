@@ -110,13 +110,9 @@ class GovernanceEngine:
                         if violation.action not in required_actions:
                             required_actions.append(violation.action)
                         if violation.action == PolicyAction.BLOCK:
-                            notes.append(
-                                f"blocked by {policy.name} :: {rule.name}"
-                            )
+                            notes.append(f"blocked by {policy.name} :: {rule.name}")
 
-            blocking = any(
-                v.action == PolicyAction.BLOCK for v in violations
-            )
+            blocking = any(v.action == PolicyAction.BLOCK for v in violations)
             compliant = not blocking
 
             result = PolicyCheckResult(
@@ -132,9 +128,7 @@ class GovernanceEngine:
             metrics = get_governance_metrics()
             metrics.record_check(compliant=compliant, violation_count=len(violations))
             for v in violations:
-                metrics.record_violation(
-                    severity=v.severity, action=v.action
-                )
+                metrics.record_violation(severity=v.severity, action=v.action)
             return result
 
     # ─── rule evaluators ─────────────────────────────────────────
@@ -227,9 +221,7 @@ class GovernanceEngine:
                     )
 
         elif kind == PolicyRuleKind.DATA_RESIDENCY:
-            allowed = {
-                r.lower() for r in params.get("allowed_regions", []) or []
-            }
+            allowed = {r.lower() for r in params.get("allowed_regions", []) or []}
             region = str(params.get("region_key", "region")).lower()
             actual = str(decision.metadata.get(region, "")).lower()
             if allowed and actual and actual not in allowed:
@@ -294,9 +286,7 @@ class PolicyManager:
 
     # ─── GovernancePolicy ─────────────────────────────────────
 
-    def create_policy(
-        self, request: GovernancePolicyCreateRequest
-    ) -> GovernancePolicy:
+    def create_policy(self, request: GovernancePolicyCreateRequest) -> GovernancePolicy:
         with track_request(
             endpoint="/api/v1/governance/policies/create",
             strategy="policy_create",
@@ -312,9 +302,7 @@ class PolicyManager:
                 tags=request.tags,
             )
             self._store.add_policy(policy)
-            get_governance_metrics().record_policy_created(
-                rule_count=len(policy.rules)
-            )
+            get_governance_metrics().record_policy_created(rule_count=len(policy.rules))
             return policy
 
     def get_policy(self, policy_id: str) -> Optional[GovernancePolicy]:
@@ -367,9 +355,7 @@ class PolicyManager:
         return out
 
     @staticmethod
-    def _policy_applies(
-        policy: GovernancePolicy, decision: GovernanceDecision
-    ) -> bool:
+    def _policy_applies(policy: GovernancePolicy, decision: GovernanceDecision) -> bool:
         if policy.scope == PolicyScope.GLOBAL:
             return True
         if policy.scope == PolicyScope.MODEL and policy.scope_value:
@@ -403,9 +389,7 @@ class PolicyManager:
         self._store.add_approval_policy(policy)
         return policy
 
-    def get_approval_policy(
-        self, policy_id: str
-    ) -> Optional[ApprovalPolicy]:
+    def get_approval_policy(self, policy_id: str) -> Optional[ApprovalPolicy]:
         return self._store.get_approval_policy(policy_id)
 
     def list_approval_policies(self) -> List[ApprovalPolicy]:
@@ -424,12 +408,8 @@ class PolicyManager:
             ):
                 continue
             if policy.min_risk_level:
-                min_rank = _RISK_LEVEL_ORDER.get(
-                    policy.min_risk_level.lower(), 0
-                )
-                actual_rank = _RISK_LEVEL_ORDER.get(
-                    decision.risk_level.lower(), 0
-                )
+                min_rank = _RISK_LEVEL_ORDER.get(policy.min_risk_level.lower(), 0)
+                actual_rank = _RISK_LEVEL_ORDER.get(decision.risk_level.lower(), 0)
                 if actual_rank < min_rank:
                     continue
             out.append(policy)
@@ -485,9 +465,7 @@ class DecisionRegistry:
     def get(self, decision_id: str) -> Optional[GovernanceDecision]:
         return self._store.get_decision(decision_id)
 
-    def search(
-        self, flt: DecisionRegistryFilter
-    ) -> PaginatedDecisions:
+    def search(self, flt: DecisionRegistryFilter) -> PaginatedDecisions:
         items = self._store.list_decisions(flt)
         total = len(items)
         start = (flt.page - 1) * flt.page_size
@@ -502,7 +480,9 @@ class DecisionRegistry:
         )
 
     def list_all(self) -> List[GovernanceDecision]:
-        return self._store.list_decisions(DecisionRegistryFilter(page=1, page_size=10000))
+        return self._store.list_decisions(
+            DecisionRegistryFilter(page=1, page_size=10000)
+        )
 
 
 # ─── GovernanceRepository ────────────────────────────────────────
@@ -542,9 +522,7 @@ class GovernanceRepository:
                     blocking += 1
                 by_sev[v.severity.value] = by_sev.get(v.severity.value, 0) + 1
                 by_act[v.action.value] = by_act.get(v.action.value, 0) + 1
-        rate = (
-            compliant / max(1, compliant + non_compliant)
-        )
+        rate = compliant / max(1, compliant + non_compliant)
         avg_v = total_violations / max(1, len(decisions))
         return GovernanceStats(
             total_policies=len(policies),
@@ -560,9 +538,7 @@ class GovernanceRepository:
             by_severity=by_sev,
             by_action=by_act,
             by_model=by_model,
-            last_decision_at=max(
-                (d.timestamp for d in decisions), default=None
-            ),
+            last_decision_at=max((d.timestamp for d in decisions), default=None),
         )
 
 
@@ -591,9 +567,7 @@ class GovernanceStore(ABC):
     @abstractmethod
     def add_approval_policy(self, policy: ApprovalPolicy) -> None: ...
     @abstractmethod
-    def get_approval_policy(
-        self, policy_id: str
-    ) -> Optional[ApprovalPolicy]: ...
+    def get_approval_policy(self, policy_id: str) -> Optional[ApprovalPolicy]: ...
     @abstractmethod
     def list_approval_policies(self) -> List[ApprovalPolicy]: ...
     @abstractmethod
@@ -602,9 +576,7 @@ class GovernanceStore(ABC):
     @abstractmethod
     def add_decision(self, decision: GovernanceDecision) -> None: ...
     @abstractmethod
-    def get_decision(
-        self, decision_id: str
-    ) -> Optional[GovernanceDecision]: ...
+    def get_decision(self, decision_id: str) -> Optional[GovernanceDecision]: ...
     @abstractmethod
     def list_decisions(
         self, flt: DecisionRegistryFilter
@@ -632,9 +604,7 @@ class InMemoryGovernanceStore(GovernanceStore):
             self._policies[policy.policy_id] = policy
             self._persist()
 
-    def get_policy(
-        self, policy_id: str
-    ) -> Optional[GovernancePolicy]:
+    def get_policy(self, policy_id: str) -> Optional[GovernancePolicy]:
         with self._lock:
             return self._policies.get(policy_id)
 
@@ -671,9 +641,7 @@ class InMemoryGovernanceStore(GovernanceStore):
             self._approval_policies[policy.policy_id] = policy
             self._persist()
 
-    def get_approval_policy(
-        self, policy_id: str
-    ) -> Optional[ApprovalPolicy]:
+    def get_approval_policy(self, policy_id: str) -> Optional[ApprovalPolicy]:
         with self._lock:
             return self._approval_policies.get(policy_id)
 
@@ -698,15 +666,11 @@ class InMemoryGovernanceStore(GovernanceStore):
             self._decisions[decision.decision_id] = decision
             self._persist()
 
-    def get_decision(
-        self, decision_id: str
-    ) -> Optional[GovernanceDecision]:
+    def get_decision(self, decision_id: str) -> Optional[GovernanceDecision]:
         with self._lock:
             return self._decisions.get(decision_id)
 
-    def list_decisions(
-        self, flt: DecisionRegistryFilter
-    ) -> List[GovernanceDecision]:
+    def list_decisions(self, flt: DecisionRegistryFilter) -> List[GovernanceDecision]:
         with self._lock:
             items = list(self._decisions.values())
         if flt.decision_type is not None:
@@ -723,7 +687,8 @@ class InMemoryGovernanceStore(GovernanceStore):
             items = [d for d in items if d.actor == flt.actor]
         if flt.policy_compliant is not None:
             items = [
-                d for d in items
+                d
+                for d in items
                 if d.policy_result is not None
                 and d.policy_result.policy_compliant == flt.policy_compliant
             ]
@@ -747,16 +712,14 @@ class InMemoryGovernanceStore(GovernanceStore):
             os.makedirs(os.path.dirname(self._persist_path), exist_ok=True)
             payload = {
                 "policies": [
-                    json.loads(p.model_dump_json())
-                    for p in self._policies.values()
+                    json.loads(p.model_dump_json()) for p in self._policies.values()
                 ],
                 "approval_policies": [
                     json.loads(p.model_dump_json())
                     for p in self._approval_policies.values()
                 ],
                 "decisions": [
-                    json.loads(d.model_dump_json())
-                    for d in self._decisions.values()
+                    json.loads(d.model_dump_json()) for d in self._decisions.values()
                 ],
             }
             with open(self._persist_path, "w", encoding="utf-8") as f:
@@ -790,9 +753,7 @@ def _seed_default_policies(
     seeds: List[GovernancePolicy] = [
         GovernancePolicy(
             name="High-Confidence Baseline",
-            description=(
-                "All AI decisions must meet a minimum confidence threshold."
-            ),
+            description=("All AI decisions must meet a minimum confidence threshold."),
             scope=PolicyScope.GLOBAL,
             rules=[
                 PolicyRule(
@@ -823,9 +784,7 @@ def _seed_default_policies(
         ),
         GovernancePolicy(
             name="Explainability Required",
-            description=(
-                "All decisions must include a human-readable explanation."
-            ),
+            description=("All decisions must include a human-readable explanation."),
             scope=PolicyScope.GLOBAL,
             rules=[
                 PolicyRule(
@@ -861,14 +820,10 @@ class GovernanceService:
 
     # ─── policies ─────────────────────────────────────────────
 
-    def create_policy(
-        self, request: GovernancePolicyCreateRequest
-    ) -> GovernancePolicy:
+    def create_policy(self, request: GovernancePolicyCreateRequest) -> GovernancePolicy:
         return self.policy_manager.create_policy(request)
 
-    def get_policy(
-        self, policy_id: str
-    ) -> Optional[GovernancePolicy]:
+    def get_policy(self, policy_id: str) -> Optional[GovernancePolicy]:
         return self.policy_manager.get_policy(policy_id)
 
     def list_policies(
@@ -876,9 +831,7 @@ class GovernanceService:
         scope: Optional[PolicyScope] = None,
         enabled_only: bool = False,
     ) -> List[GovernancePolicy]:
-        return self.policy_manager.list_policies(
-            scope=scope, enabled_only=enabled_only
-        )
+        return self.policy_manager.list_policies(scope=scope, enabled_only=enabled_only)
 
     def update_policy(
         self,
@@ -908,9 +861,7 @@ class GovernanceService:
     def list_approval_policies(self) -> List[ApprovalPolicy]:
         return self.policy_manager.list_approval_policies()
 
-    def get_approval_policy(
-        self, policy_id: str
-    ) -> Optional[ApprovalPolicy]:
+    def get_approval_policy(self, policy_id: str) -> Optional[ApprovalPolicy]:
         return self.policy_manager.get_approval_policy(policy_id)
 
     def delete_approval_policy(self, policy_id: str) -> bool:
@@ -926,17 +877,21 @@ class GovernanceService:
     def register_decision(
         self, request: GovernanceDecisionCreateRequest
     ) -> GovernanceDecision:
-        policies = self.policy_manager.policies_for_decision(
-            GovernanceDecision(
-                decision_type=request.decision_type,
-                subject_type=request.subject_type,
-                subject_id=request.subject_id,
-                model_id=request.model_id,
-                risk_level=request.risk_level,
-                categories=request.categories,
-                metadata=request.metadata,
+        policies = (
+            self.policy_manager.policies_for_decision(
+                GovernanceDecision(
+                    decision_type=request.decision_type,
+                    subject_type=request.subject_type,
+                    subject_id=request.subject_id,
+                    model_id=request.model_id,
+                    risk_level=request.risk_level,
+                    categories=request.categories,
+                    metadata=request.metadata,
+                )
             )
-        ) if request.check_policies else []
+            if request.check_policies
+            else []
+        )
         return self.registry.register(
             request,
             check_policies=request.check_policies,
@@ -950,14 +905,10 @@ class GovernanceService:
         policies = self.policy_manager.policies_for_decision(decision)
         return self.engine.check(decision, policies)
 
-    def get_decision(
-        self, decision_id: str
-    ) -> Optional[GovernanceDecision]:
+    def get_decision(self, decision_id: str) -> Optional[GovernanceDecision]:
         return self.registry.get(decision_id)
 
-    def search_decisions(
-        self, flt: DecisionRegistryFilter
-    ) -> PaginatedDecisions:
+    def search_decisions(self, flt: DecisionRegistryFilter) -> PaginatedDecisions:
         return self.registry.search(flt)
 
     # ─── stats ───────────────────────────────────────────────
@@ -1003,9 +954,7 @@ class GovernanceService:
 
 def build_default_governance_service() -> GovernanceService:
     """Build a default :class:`GovernanceService` with a JSONL-backed store."""
-    persist_path = os.path.join(
-        settings.STORAGE_ROOT, "governance", "governance.jsonl"
-    )
+    persist_path = os.path.join(settings.STORAGE_ROOT, "governance", "governance.jsonl")
     store = InMemoryGovernanceStore(persist_path=persist_path)
     return GovernanceService(store)
 

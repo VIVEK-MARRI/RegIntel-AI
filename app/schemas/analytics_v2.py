@@ -125,11 +125,15 @@ class AnswerAnalyticsSnapshot(BaseModel):
     average_citation_coverage: float = 0.0
     hallucination_rate: float = 0.0
     answer_quality: float = 0.0
-    confidence_distribution: ConfidenceDistribution = Field(default_factory=ConfidenceDistribution)
+    confidence_distribution: ConfidenceDistribution = Field(
+        default_factory=ConfidenceDistribution
+    )
     faithfulness_distribution: FaithfulnessDistribution = Field(
         default_factory=FaithfulnessDistribution
     )
-    hallucination_buckets: HallucinationBuckets = Field(default_factory=HallucinationBuckets)
+    hallucination_buckets: HallucinationBuckets = Field(
+        default_factory=HallucinationBuckets
+    )
     latency: LatencyStats = Field(default_factory=LatencyStats)
     token_usage: TokenUsageStats = Field(default_factory=TokenUsageStats)
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

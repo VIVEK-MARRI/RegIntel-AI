@@ -7,8 +7,9 @@ from app.services.validation.rules import (
     MissingSectionRule,
     DuplicateChunkRule,
     MalformedHierarchyRule,
-    _get_chunk_field
+    _get_chunk_field,
 )
+
 
 class ChunkQualityValidator:
     """Orchestrates quality validation rules on chunks and calculates size and distribution metrics."""
@@ -23,7 +24,7 @@ class ChunkQualityValidator:
                 TokenThresholdRule(min_tokens=500, max_tokens=800),
                 MissingSectionRule(invalid_sections={"General"}),
                 DuplicateChunkRule(),
-                MalformedHierarchyRule()
+                MalformedHierarchyRule(),
             ]
 
     def validate_chunks(self, chunks: List[Dict[str, Any]]) -> ValidationReport:
@@ -68,7 +69,7 @@ class ChunkQualityValidator:
             if idx not in invalid_indices:
                 tokens = _get_chunk_field(c, "token_count")
                 content = _get_chunk_field(c, "content")
-                
+
                 if tokens is not None:
                     try:
                         valid_tokens.append(int(tokens))
@@ -77,8 +78,12 @@ class ChunkQualityValidator:
                 if content is not None:
                     valid_chars.append(len(str(content)))
 
-        average_token_count = (sum(valid_tokens) / len(valid_tokens)) if valid_tokens else 0.0
-        average_char_count = (sum(valid_chars) / len(valid_chars)) if valid_chars else 0.0
+        average_token_count = (
+            (sum(valid_tokens) / len(valid_tokens)) if valid_tokens else 0.0
+        )
+        average_char_count = (
+            (sum(valid_chars) / len(valid_chars)) if valid_chars else 0.0
+        )
 
         # Compute chunk token distribution across all chunks with a token_count
         chunk_distribution = {
@@ -86,7 +91,7 @@ class ChunkQualityValidator:
             "100 - 300": 0,
             "300 - 500": 0,
             "500 - 800": 0,
-            "> 800": 0
+            "> 800": 0,
         }
         for c in chunks:
             tokens = _get_chunk_field(c, "token_count")
@@ -113,12 +118,12 @@ class ChunkQualityValidator:
             invalid_chunk_count=invalid_chunk_count,
             average_token_count=average_token_count,
             average_char_count=average_char_count,
-            chunk_distribution=chunk_distribution
+            chunk_distribution=chunk_distribution,
         )
 
         # Determine overall validity
-        valid = (len(all_issues) == 0)
-        
+        valid = len(all_issues) == 0
+
         summary = (
             f"Validated {total_chunks} chunks. "
             f"{valid_chunk_count} passed validation, "
@@ -126,8 +131,5 @@ class ChunkQualityValidator:
         )
 
         return ValidationReport(
-            valid=valid,
-            issues=all_issues,
-            metrics=metrics,
-            summary=summary
+            valid=valid, issues=all_issues, metrics=metrics, summary=summary
         )

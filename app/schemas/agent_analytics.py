@@ -163,9 +163,7 @@ class ExecutionSummary(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    execution_id: str = Field(
-        default_factory=lambda: f"exec-{uuid.uuid4().hex[:12]}"
-    )
+    execution_id: str = Field(default_factory=lambda: f"exec-{uuid.uuid4().hex[:12]}")
     query: str = ""
     status: str = "succeeded"
     mode: str = "sequential"
@@ -217,18 +215,10 @@ class AgentAnalyticsOverview(BaseModel):
     total_cost_units: float = 0.0
     health: HealthSummary = Field(default_factory=HealthSummary)
     leaderboard: List[LeaderboardEntry] = Field(default_factory=list)
-    collaborations: List[CollaborationStats] = Field(
-        default_factory=list
-    )
-    recent_executions: List[ExecutionSummary] = Field(
-        default_factory=list
-    )
-    forecast_accuracy: List[ForecastAccuracy] = Field(
-        default_factory=list
-    )
-    recommendation_accuracy: List[RecommendationAccuracy] = Field(
-        default_factory=list
-    )
+    collaborations: List[CollaborationStats] = Field(default_factory=list)
+    recent_executions: List[ExecutionSummary] = Field(default_factory=list)
+    forecast_accuracy: List[ForecastAccuracy] = Field(default_factory=list)
+    recommendation_accuracy: List[RecommendationAccuracy] = Field(default_factory=list)
     cost: CostEstimate = Field(default_factory=CostEstimate)
     generated_at: float = Field(default_factory=time.time)
 

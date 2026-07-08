@@ -93,18 +93,30 @@ def _make_chunk(
 @pytest.fixture
 def two_chunks() -> List[RetrievedChunk]:
     return [
-        _make_chunk(cid="c-1", doc="d-1", content="RBI KYC obligations apply to all banks." * 5,
-                    source="RBI", page=12, section="KYC", title="Master Direction 2016"),
-        _make_chunk(cid="c-2", doc="d-2", content="SEBI mandates portfolio disclosure of holdings." * 5,
-                    source="SEBI", page=4, section="Disclosure", title="SEBI Circular 2020"),
+        _make_chunk(
+            cid="c-1",
+            doc="d-1",
+            content="RBI KYC obligations apply to all banks." * 5,
+            source="RBI",
+            page=12,
+            section="KYC",
+            title="Master Direction 2016",
+        ),
+        _make_chunk(
+            cid="c-2",
+            doc="d-2",
+            content="SEBI mandates portfolio disclosure of holdings." * 5,
+            source="SEBI",
+            page=4,
+            section="Disclosure",
+            title="SEBI Circular 2020",
+        ),
     ]
 
 
 @pytest.fixture
 def mock_service() -> AnswerGeneratorService:
-    return build_default_service(
-        provider=LLMProviderName.MOCK, model="mock-default"
-    )
+    return build_default_service(provider=LLMProviderName.MOCK, model="mock-default")
 
 
 # ─── Schema validation ──────────────────────────────────────────────────────
@@ -121,7 +133,13 @@ class TestSchemas:
     def test_chunk_rejects_extra_fields(self):
         with pytest.raises(Exception):
             RetrievedChunk.model_validate(
-                {"chunk_id": "x", "document_id": "y", "content": "z", "score": 0.1, "unknown": 1}
+                {
+                    "chunk_id": "x",
+                    "document_id": "y",
+                    "content": "z",
+                    "score": 0.1,
+                    "unknown": 1,
+                }
             )
 
     def test_request_requires_chunks(self):
@@ -129,9 +147,7 @@ class TestSchemas:
             AnswerGenerationRequest(query="hi", chunks=[])
 
     def test_request_default_provider(self):
-        req = AnswerGenerationRequest(
-            query="hi", chunks=[_make_chunk()]
-        )
+        req = AnswerGenerationRequest(query="hi", chunks=[_make_chunk()])
         assert req.provider == LLMProviderName.MOCK
         assert req.tone == AnswerTone.REGULATORY
         assert req.stream is False
@@ -139,13 +155,9 @@ class TestSchemas:
 
     def test_request_bounds(self):
         with pytest.raises(Exception):
-            AnswerGenerationRequest(
-                query="hi", chunks=[_make_chunk()], max_tokens=10
-            )
+            AnswerGenerationRequest(query="hi", chunks=[_make_chunk()], max_tokens=10)
         with pytest.raises(Exception):
-            AnswerGenerationRequest(
-                query="hi", chunks=[_make_chunk()], temperature=3.0
-            )
+            AnswerGenerationRequest(query="hi", chunks=[_make_chunk()], temperature=3.0)
         with pytest.raises(Exception):
             AnswerGenerationRequest(query="", chunks=[_make_chunk()])
 
@@ -184,14 +196,10 @@ class TestPromptBuilder:
         assert bundle.chunk_ids == ["c-1", "c-2"]
 
     def test_build_truncates_excerpt(self, two_chunks):
-        builder = PromptBuilder(
-            tone=AnswerTone.REGULATORY, max_excerpt_chars=20
-        )
+        builder = PromptBuilder(tone=AnswerTone.REGULATORY, max_excerpt_chars=20)
         bundle = builder.build("q?", two_chunks)
         for cid in bundle.chunk_ids:
-            assert any(
-                cid in line for line in bundle.user_prompt.splitlines()
-            )
+            assert any(cid in line for line in bundle.user_prompt.splitlines())
 
     def test_build_respects_token_budget(self):
         huge = [
@@ -313,7 +321,8 @@ class TestProviders:
     async def test_mock_provider_records_prompts(self):
         mock = MockLLMProvider()
         out = await mock.generate(
-            system_prompt="sys", user_prompt="Question:\nWhat is KYC?\n\n[1] Chunk ID: abc-1\nContent: text",
+            system_prompt="sys",
+            user_prompt="Question:\nWhat is KYC?\n\n[1] Chunk ID: abc-1\nContent: text",
             max_tokens=200,
             temperature=0.1,
         )
@@ -343,9 +352,7 @@ class TestProviders:
 
 class TestAnswerGeneratorService:
     @pytest.mark.asyncio
-    async def test_generate_returns_structured_answer(
-        self, mock_service, two_chunks
-    ):
+    async def test_generate_returns_structured_answer(self, mock_service, two_chunks):
         req = AnswerGenerationRequest(
             query="What are KYC obligations?", chunks=two_chunks
         )
@@ -364,12 +371,8 @@ class TestAnswerGeneratorService:
         assert res.metadata.request_id
 
     @pytest.mark.asyncio
-    async def test_generate_includes_raw_when_requested(
-        self, mock_service, two_chunks
-    ):
-        req = AnswerGenerationRequest(
-            query="q", chunks=two_chunks, include_raw=True
-        )
+    async def test_generate_includes_raw_when_requested(self, mock_service, two_chunks):
+        req = AnswerGenerationRequest(query="q", chunks=two_chunks, include_raw=True)
         res = await mock_service.generate(req)
         assert res.raw_response is not None
         assert "Executive Summary" in res.raw_response
@@ -381,12 +384,8 @@ class TestAnswerGeneratorService:
             await mock_service.generate_from_chunks(query="q", chunks=[])
 
     @pytest.mark.asyncio
-    async def test_stream_emits_event_sequence(
-        self, mock_service, two_chunks
-    ):
-        req = AnswerGenerationRequest(
-            query="q", chunks=two_chunks, stream=True
-        )
+    async def test_stream_emits_event_sequence(self, mock_service, two_chunks):
+        req = AnswerGenerationRequest(query="q", chunks=two_chunks, stream=True)
         events: List[AnswerStreamChunk] = []
         async for ev in mock_service.stream(req):
             events.append(ev)
@@ -406,18 +405,12 @@ class TestAnswerGeneratorService:
         assert section_evt.section.executive_summary
 
     @pytest.mark.asyncio
-    async def test_generate_from_chunks_convenience(
-        self, mock_service, two_chunks
-    ):
-        res = await mock_service.generate_from_chunks(
-            query="q?", chunks=two_chunks
-        )
+    async def test_generate_from_chunks_convenience(self, mock_service, two_chunks):
+        res = await mock_service.generate_from_chunks(query="q?", chunks=two_chunks)
         assert res.answer.executive_summary
 
     @pytest.mark.asyncio
-    async def test_provider_error_propagates(
-        self, two_chunks
-    ):
+    async def test_provider_error_propagates(self, two_chunks):
         class FailingProvider(BaseLLMProvider):
             name = LLMProviderName.MOCK
 
@@ -480,9 +473,7 @@ class TestAnswerGenerationAPI:
     @pytest.mark.asyncio
     async def test_generate_endpoint_validation_error(self, api_client):
         # Missing chunks
-        r = await api_client.post(
-            "/api/v1/answer/generate", json={"query": "hi"}
-        )
+        r = await api_client.post("/api/v1/answer/generate", json={"query": "hi"})
         assert r.status_code == 422
 
     @pytest.mark.asyncio
@@ -521,7 +512,7 @@ class TestAnswerGenerationAPI:
         async for line in r.aiter_lines():
             if not line or not line.startswith("data:"):
                 continue
-            data = line[len("data:"):].strip()
+            data = line[len("data:") :].strip()
             if data == "[DONE]":
                 continue
             events.append(json.loads(data))

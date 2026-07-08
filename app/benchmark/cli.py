@@ -88,7 +88,11 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--iterations", type=int, default=None)
     run.add_argument("--concurrency", type=int, default=None)
     run.add_argument("--output", default=None, help="Where to write the run JSON")
-    run.add_argument("--persist", action="store_true", help="Persist via BenchmarkRequest.persist_path")
+    run.add_argument(
+        "--persist",
+        action="store_true",
+        help="Persist via BenchmarkRequest.persist_path",
+    )
     run.add_argument("--reports", default=None, help="Optional directory for reports")
     run.set_defaults(handler=_run, _parser=run)
 
@@ -110,7 +114,11 @@ def main(argv: list[str] | None = None) -> int:
     if handler is None:
         parser.print_help()
         return 1
-    return asyncio.run(handler(args)) if inspect.iscoroutinefunction(handler) else handler(args)
+    return (
+        asyncio.run(handler(args))
+        if inspect.iscoroutinefunction(handler)
+        else handler(args)
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover

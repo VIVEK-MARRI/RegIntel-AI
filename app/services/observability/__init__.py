@@ -315,9 +315,7 @@ class IngestionMetrics:
         self.last_run_at = time.time()
 
     def record_step_latency(self, step: str, latency_ms: float) -> None:
-        self.step_latency_ms[step] = (
-            self.step_latency_ms.get(step, 0.0) + latency_ms
-        )
+        self.step_latency_ms[step] = self.step_latency_ms.get(step, 0.0) + latency_ms
 
     def snapshot(self) -> Dict[str, Any]:
         avg_latency = (
@@ -555,9 +553,8 @@ class AlertMetrics:
         self.digests_generated += 1
 
     def snapshot(self) -> Dict[str, Any]:
-        avg_lat = (
-            self.total_delivery_latency_ms
-            / max(1, self.alerts_delivered + self.alerts_failed)
+        avg_lat = self.total_delivery_latency_ms / max(
+            1, self.alerts_delivered + self.alerts_failed
         )
         delivery_rate = (
             self.alerts_delivered / self.alerts_raised
@@ -987,21 +984,15 @@ class WorkflowMetrics:
 
     def record_task_completed(self, status: str = "completed") -> None:
         self.tasks_completed += 1
-        self.by_task_status[status] = (
-            self.by_task_status.get(status, 0) + 1
-        )
+        self.by_task_status[status] = self.by_task_status.get(status, 0) + 1
 
     def record_escalation(self, action: str = "escalate") -> None:
         self.escalations_triggered += 1
-        self.by_escalation_action[action] = (
-            self.by_escalation_action.get(action, 0) + 1
-        )
+        self.by_escalation_action[action] = self.by_escalation_action.get(action, 0) + 1
 
     def _recompute_rate(self) -> None:
         if self.total_terminal > 0:
-            self.success_rate = round(
-                self.total_completed / self.total_terminal, 4
-            )
+            self.success_rate = round(self.total_completed / self.total_terminal, 4)
 
     def snapshot(self) -> Dict[str, Any]:
         return {
@@ -1101,9 +1092,7 @@ class ReviewMetrics:
 
     def _recompute_rate(self) -> None:
         if self.total_decided > 0:
-            self.approval_rate = round(
-                self.reviews_approved / self.total_decided, 4
-            )
+            self.approval_rate = round(self.reviews_approved / self.total_decided, 4)
 
     def snapshot(self) -> Dict[str, Any]:
         return {
@@ -1296,9 +1285,7 @@ class GovernanceMetrics:
         )
         self.last_check_at = time.time()
 
-    def record_violation(
-        self, *, severity: Any = None, action: Any = None
-    ) -> None:
+    def record_violation(self, *, severity: Any = None, action: Any = None) -> None:
         self.violations_total += 1
         try:
             if severity is not None:
@@ -1491,9 +1478,7 @@ class AdminMetrics:
 
     def snapshot(self) -> Dict[str, Any]:
         denial_rate = (
-            round(self.rbac_denied / self.rbac_checks, 4)
-            if self.rbac_checks
-            else 0.0
+            round(self.rbac_denied / self.rbac_checks, 4) if self.rbac_checks else 0.0
         )
         return {
             "users_created": self.users_created,
@@ -1610,9 +1595,7 @@ class AgentMetrics:
         else:
             self.invocations_failed += 1
         self.by_status[status] = self.by_status.get(status, 0) + 1
-        self.by_capability[capability] = (
-            self.by_capability.get(capability, 0) + 1
-        )
+        self.by_capability[capability] = self.by_capability.get(capability, 0) + 1
         self.total_duration_ms += duration_ms
         self.average_duration_ms = round(
             self.total_duration_ms / self.invocations_total, 3
@@ -1845,9 +1828,7 @@ class IntelligenceAgentMetrics:
         self.total_collaborations += 1
         self.evidence_items_shared += evidence_items
         key = f"{from_agent}->{to_agent}"
-        self.by_collaboration_pair[key] = (
-            self.by_collaboration_pair.get(key, 0) + 1
-        )
+        self.by_collaboration_pair[key] = self.by_collaboration_pair.get(key, 0) + 1
 
     def record_recommendation_generated(self, count: int = 1) -> None:
         self.recommendations_generated += count
@@ -1874,8 +1855,7 @@ class IntelligenceAgentMetrics:
                 "failed": self.research_failed,
                 "average_duration_ms": (
                     round(
-                        self.research_total_duration_ms
-                        / self.research_invocations,
+                        self.research_total_duration_ms / self.research_invocations,
                         3,
                     )
                     if self.research_invocations
@@ -1883,8 +1863,7 @@ class IntelligenceAgentMetrics:
                 ),
                 "average_confidence": (
                     round(
-                        self.research_confidence_total
-                        / self.research_invocations,
+                        self.research_confidence_total / self.research_invocations,
                         3,
                     )
                     if self.research_invocations
@@ -1899,8 +1878,7 @@ class IntelligenceAgentMetrics:
                 "failed": self.compliance_failed,
                 "average_duration_ms": (
                     round(
-                        self.compliance_total_duration_ms
-                        / self.compliance_invocations,
+                        self.compliance_total_duration_ms / self.compliance_invocations,
                         3,
                     )
                     if self.compliance_invocations
@@ -1908,8 +1886,7 @@ class IntelligenceAgentMetrics:
                 ),
                 "average_confidence": (
                     round(
-                        self.compliance_confidence_total
-                        / self.compliance_invocations,
+                        self.compliance_confidence_total / self.compliance_invocations,
                         3,
                     )
                     if self.compliance_invocations
@@ -1924,8 +1901,7 @@ class IntelligenceAgentMetrics:
                 "failed": self.risk_failed,
                 "average_duration_ms": (
                     round(
-                        self.risk_total_duration_ms
-                        / self.risk_invocations,
+                        self.risk_total_duration_ms / self.risk_invocations,
                         3,
                     )
                     if self.risk_invocations
@@ -1933,8 +1909,7 @@ class IntelligenceAgentMetrics:
                 ),
                 "average_confidence": (
                     round(
-                        self.risk_confidence_total
-                        / self.risk_invocations,
+                        self.risk_confidence_total / self.risk_invocations,
                         3,
                     )
                     if self.risk_invocations

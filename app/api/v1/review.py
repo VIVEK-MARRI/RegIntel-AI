@@ -121,9 +121,7 @@ async def list_review_tasks(
 
 
 @router.get("/{review_id}", response_model=Review)
-async def get_review(
-    review_id: str, svc: ReviewService = _service_dep()
-) -> Review:
+async def get_review(review_id: str, svc: ReviewService = _service_dep()) -> Review:
     r = svc.get(review_id)
     if r is None:
         raise HTTPException(status_code=404, detail="not found")
@@ -256,9 +254,7 @@ async def add_comment(
     request: ReviewCommentRequest,
     svc: ReviewService = _service_dep(),
 ) -> ReviewComment:
-    c = svc.add_comment(
-        review_id, request.text, request.author, role=request.role
-    )
+    c = svc.add_comment(review_id, request.text, request.author, role=request.role)
     if c is None:
         raise HTTPException(status_code=404, detail="not found")
     return c
@@ -314,9 +310,7 @@ async def record_approval(
     return r
 
 
-@router.post(
-    "/{review_id}/approvals/{approver}/reject", response_model=Review
-)
+@router.post("/{review_id}/approvals/{approver}/reject", response_model=Review)
 async def record_rejection(
     review_id: str,
     approver: str,
@@ -325,9 +319,7 @@ async def record_rejection(
     actor: str = "system",
     svc: ReviewService = _service_dep(),
 ) -> Review:
-    r = svc.record_rejection(
-        review_id, approver, reason, role, actor=actor
-    )
+    r = svc.record_rejection(review_id, approver, reason, role, actor=actor)
     if r is None:
         raise HTTPException(status_code=404, detail="not found")
     return r
@@ -362,9 +354,7 @@ async def history(
 
 
 @router.get("/queue/{assignee}", response_model=List[Review])
-async def queue(
-    assignee: str, svc: ReviewService = _service_dep()
-) -> List[Review]:
+async def queue(assignee: str, svc: ReviewService = _service_dep()) -> List[Review]:
     return svc.queue_for(assignee)
 
 
@@ -382,9 +372,7 @@ async def from_workflow(
     actor: str = "system",
     svc: ReviewService = _service_dep(),
 ) -> Review:
-    r = svc.create_for_workflow(
-        workflow_id, assigned_to=assigned_to, actor=actor
-    )
+    r = svc.create_for_workflow(workflow_id, assigned_to=assigned_to, actor=actor)
     if r is None:
         raise HTTPException(
             status_code=404,

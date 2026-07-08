@@ -44,35 +44,27 @@ def service(store: InMemoryAdminStore) -> AdminService:
 
 
 class TestBuiltInRoles:
-    def test_all_seven_built_in_roles_present(
-        self, service: AdminService
-    ) -> None:
+    def test_all_seven_built_in_roles_present(self, service: AdminService) -> None:
         flt = RoleFilter(page=1, page_size=100)
         out = service.list_roles(flt)
         names = {r.name for r in out.items}
         for r in BuiltInRole:
             assert r.value in names
 
-    def test_admin_role_has_wildcard(
-        self, service: AdminService
-    ) -> None:
+    def test_admin_role_has_wildcard(self, service: AdminService) -> None:
         admin = service.get_role_by_name(BuiltInRole.ADMIN.value)
         assert admin is not None
         codes = [p.code for p in admin.permissions]
         assert "*" in codes
 
-    def test_viewer_role_lacks_write(
-        self, service: AdminService
-    ) -> None:
+    def test_viewer_role_lacks_write(self, service: AdminService) -> None:
         viewer = service.get_role_by_name(BuiltInRole.VIEWER.value)
         assert viewer is not None
         codes = [p.code for p in viewer.permissions]
         assert "dashboard.read" in codes
         assert "compliance.write" not in codes
 
-    def test_built_in_roles_cannot_be_deleted(
-        self, service: AdminService
-    ) -> None:
+    def test_built_in_roles_cannot_be_deleted(self, service: AdminService) -> None:
         admin = service.get_role_by_name(BuiltInRole.ADMIN.value)
         assert service.delete_role(admin.role_id) is False
 
@@ -83,23 +75,17 @@ class TestBuiltInRoles:
 class TestUserManagement:
     def test_create_and_get(self, service: AdminService) -> None:
         u = service.create_user(
-            UserCreateRequest(
-                username="alice", email="alice@example.com"
-            )
+            UserCreateRequest(username="alice", email="alice@example.com")
         )
         assert u.username == "alice"
         assert service.get_user(u.user_id).email == "alice@example.com"
 
     def test_get_by_username(self, service: AdminService) -> None:
-        u = service.create_user(
-            UserCreateRequest(username="bob", email="bob@x.com")
-        )
+        u = service.create_user(UserCreateRequest(username="bob", email="bob@x.com"))
         assert service.store.get_user_by_username("bob").user_id == u.user_id
 
     def test_update(self, service: AdminService) -> None:
-        u = service.create_user(
-            UserCreateRequest(username="u1", email="u1@x.com")
-        )
+        u = service.create_user(UserCreateRequest(username="u1", email="u1@x.com"))
         upd = service.update_user(
             u.user_id,
             UserUpdateRequest(
@@ -110,37 +96,30 @@ class TestUserManagement:
         assert upd.email == "new@x.com"
         assert upd.status == UserStatus.SUSPENDED
 
-    def test_update_missing_returns_none(
-        self, service: AdminService
-    ) -> None:
-        assert service.update_user(
-            "missing",
-            UserUpdateRequest(email="x@x.com"),
-        ) is None
+    def test_update_missing_returns_none(self, service: AdminService) -> None:
+        assert (
+            service.update_user(
+                "missing",
+                UserUpdateRequest(email="x@x.com"),
+            )
+            is None
+        )
 
     def test_delete(self, service: AdminService) -> None:
-        u = service.create_user(
-            UserCreateRequest(username="u", email="u@x.com")
-        )
+        u = service.create_user(UserCreateRequest(username="u", email="u@x.com"))
         assert service.delete_user(u.user_id) is True
         assert service.delete_user(u.user_id) is False
 
     def test_record_login(self, service: AdminService) -> None:
-        u = service.create_user(
-            UserCreateRequest(username="u", email="u@x.com")
-        )
+        u = service.create_user(UserCreateRequest(username="u", email="u@x.com"))
         u2 = service.record_login(u.user_id)
         assert u2 is not None
         assert u2.last_login_at is not None
 
     def test_list_filter(self, service: AdminService) -> None:
         for n in ["alice", "bob", "carol"]:
-            service.create_user(
-                UserCreateRequest(username=n, email=f"{n}@x.com")
-            )
-        out = service.list_users(
-            UserFilter(text_query="alice", page=1, page_size=10)
-        )
+            service.create_user(UserCreateRequest(username=n, email=f"{n}@x.com"))
+        out = service.list_users(UserFilter(text_query="alice", page=1, page_size=10))
         assert out.total == 1
         assert out.items[0].username == "alice"
 
@@ -163,28 +142,18 @@ class TestRoleManagement:
         assert not r.built_in
 
     def test_update_permissions(self, service: AdminService) -> None:
-        r = service.create_role(
-            RoleCreateRequest(name="x", permissions=[])
-        )
-        upd = service.update_role_permissions(
-            r.role_id, [Permission(code="x.read")]
-        )
+        r = service.create_role(RoleCreateRequest(name="x", permissions=[]))
+        upd = service.update_role_permissions(r.role_id, [Permission(code="x.read")])
         assert upd is not None
         assert len(upd.permissions) == 1
 
     def test_delete_custom_role(self, service: AdminService) -> None:
-        r = service.create_role(
-            RoleCreateRequest(name="custom", permissions=[])
-        )
+        r = service.create_role(RoleCreateRequest(name="custom", permissions=[]))
         assert service.delete_role(r.role_id) is True
 
     def test_grant_and_revoke(self, service: AdminService) -> None:
-        u = service.create_user(
-            UserCreateRequest(username="u", email="u@x.com")
-        )
-        r = service.create_role(
-            RoleCreateRequest(name="r", permissions=[])
-        )
+        u = service.create_user(UserCreateRequest(username="u", email="u@x.com"))
+        r = service.create_role(RoleCreateRequest(name="r", permissions=[]))
         u2 = service.grant_role(u.user_id, r.role_id)
         assert r.role_id in u2.role_ids
         u3 = service.revoke_role(u.user_id, r.role_id)
@@ -199,33 +168,32 @@ class TestRBAC:
         admin_role = service.get_role_by_name(BuiltInRole.ADMIN.value)
         u = service.create_user(
             UserCreateRequest(
-                username="u", email="u@x.com",
+                username="u",
+                email="u@x.com",
                 role_ids=[admin_role.role_id],
             )
         )
         check = service.rbac_check(u.user_id, "anything.at_all")
         assert check.allowed is True
 
-    def test_viewer_cannot_audit(
-        self, service: AdminService
-    ) -> None:
+    def test_viewer_cannot_audit(self, service: AdminService) -> None:
         viewer = service.get_role_by_name(BuiltInRole.VIEWER.value)
         u = service.create_user(
             UserCreateRequest(
-                username="v", email="v@x.com",
+                username="v",
+                email="v@x.com",
                 role_ids=[viewer.role_id],
             )
         )
         check = service.rbac_check(u.user_id, "audit.read")
         assert check.allowed is False
 
-    def test_inactive_user_denied(
-        self, service: AdminService
-    ) -> None:
+    def test_inactive_user_denied(self, service: AdminService) -> None:
         admin_role = service.get_role_by_name(BuiltInRole.ADMIN.value)
         u = service.create_user(
             UserCreateRequest(
-                username="s", email="s@x.com",
+                username="s",
+                email="s@x.com",
                 role_ids=[admin_role.role_id],
                 status=UserStatus.SUSPENDED,
             )
@@ -234,9 +202,7 @@ class TestRBAC:
         assert check.allowed is False
         assert "suspended" in check.reason
 
-    def test_unknown_user_denied(
-        self, service: AdminService
-    ) -> None:
+    def test_unknown_user_denied(self, service: AdminService) -> None:
         check = service.rbac_check("missing-user", "x.read")
         assert check.allowed is False
         assert "not found" in check.reason
@@ -249,9 +215,7 @@ class TestPlatformSettings:
     def test_set_and_get(self, service: AdminService) -> None:
         s = service.set_setting(
             "rate_limit",
-            PlatformSettingUpdateRequest(
-                value=100, description="per minute"
-            ),
+            PlatformSettingUpdateRequest(value=100, description="per minute"),
         )
         assert s.value == 100
         assert s.value_type == "int"
@@ -259,49 +223,33 @@ class TestPlatformSettings:
         assert got is not None
 
     def test_set_updates_existing(self, service: AdminService) -> None:
-        service.set_setting(
-            "x", PlatformSettingUpdateRequest(value=1)
-        )
-        s2 = service.set_setting(
-            "x", PlatformSettingUpdateRequest(value=2)
-        )
+        service.set_setting("x", PlatformSettingUpdateRequest(value=1))
+        s2 = service.set_setting("x", PlatformSettingUpdateRequest(value=2))
         assert s2.value == 2
 
     def test_set_string_type(self, service: AdminService) -> None:
-        s = service.set_setting(
-            "name", PlatformSettingUpdateRequest(value="acme")
-        )
+        s = service.set_setting("name", PlatformSettingUpdateRequest(value="acme"))
         assert s.value_type == "string"
 
     def test_set_bool_type(self, service: AdminService) -> None:
-        s = service.set_setting(
-            "enabled", PlatformSettingUpdateRequest(value=True)
-        )
+        s = service.set_setting("enabled", PlatformSettingUpdateRequest(value=True))
         assert s.value_type == "bool"
 
     def test_set_json_type(self, service: AdminService) -> None:
-        s = service.set_setting(
-            "config", PlatformSettingUpdateRequest(value={"a": 1})
-        )
+        s = service.set_setting("config", PlatformSettingUpdateRequest(value={"a": 1}))
         assert s.value_type == "json"
 
     def test_delete_setting(self, service: AdminService) -> None:
-        service.set_setting(
-            "x", PlatformSettingUpdateRequest(value=1)
-        )
+        service.set_setting("x", PlatformSettingUpdateRequest(value=1))
         assert service.delete_setting("x") is True
         assert service.delete_setting("x") is False
 
     def test_list_by_category(self, service: AdminService) -> None:
         service.set_setting(
             "x",
-            PlatformSettingUpdateRequest(
-                value=1, category="security"
-            ),
+            PlatformSettingUpdateRequest(value=1, category="security"),
         )
-        items = service.settings_manager.list_by_category(
-            "security"
-        )
+        items = service.settings_manager.list_by_category("security")
         assert any(s.key == "x" for s in items)
 
 
@@ -335,15 +283,11 @@ class TestDashboards:
         assert d.chain_integrity is True
         assert d.last_chain_hash != ""
 
-    def test_compliance_dashboard_no_audit(
-        self, service: AdminService
-    ) -> None:
+    def test_compliance_dashboard_no_audit(self, service: AdminService) -> None:
         c = service.compliance_dashboard()
         assert c.total_reports == 0
 
-    def test_compliance_dashboard_with_reports(
-        self, service: AdminService
-    ) -> None:
+    def test_compliance_dashboard_with_reports(self, service: AdminService) -> None:
         from app.services.audit import AuditService, InMemoryAuditStore
         from app.schemas.audit import (
             AuditRecordCreateRequest,
@@ -355,9 +299,7 @@ class TestDashboards:
         aus.create_record(
             AuditRecordCreateRequest(actor="x", action=AuditAction.CREATE)
         )
-        aus.generate_report(
-            ComplianceReportCreateRequest(title="R1")
-        )
+        aus.generate_report(ComplianceReportCreateRequest(title="R1"))
         service.dashboard.bind(audit_service=aus)
         c = service.compliance_dashboard()
         assert c.total_reports == 1
@@ -376,9 +318,7 @@ class TestDashboards:
 @pytest_asyncio.fixture
 async def client() -> AsyncClient:
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
@@ -507,9 +447,7 @@ async def test_api_rbac_check(
 ) -> None:
     # Create a user with the viewer role
     r = await client.get("/api/v1/admin/roles")
-    viewer = next(
-        i for i in r.json()["items"] if i["name"] == "viewer"
-    )
+    viewer = next(i for i in r.json()["items"] if i["name"] == "viewer")
     r2 = await client.post(
         "/api/v1/admin/users",
         json={
@@ -519,14 +457,10 @@ async def test_api_rbac_check(
         },
     )
     uid = r2.json()["user_id"]
-    r3 = await client.get(
-        f"/api/v1/admin/rbac/{uid}?permission=audit.read"
-    )
+    r3 = await client.get(f"/api/v1/admin/rbac/{uid}?permission=audit.read")
     assert r3.status_code == 200
     assert r3.json()["allowed"] is False
-    r4 = await client.get(
-        f"/api/v1/admin/rbac/{uid}?permission=dashboard.read"
-    )
+    r4 = await client.get(f"/api/v1/admin/rbac/{uid}?permission=dashboard.read")
     assert r4.status_code == 200
     assert r4.json()["allowed"] is True
 
@@ -552,9 +486,7 @@ async def test_api_grant_and_revoke_role(
     assert r3.status_code == 200
     assert rid in r3.json()["role_ids"]
     # Revoke
-    r4 = await client.delete(
-        f"/api/v1/admin/users/{uid}/roles/{rid}"
-    )
+    r4 = await client.delete(f"/api/v1/admin/users/{uid}/roles/{rid}")
     assert r4.status_code == 204
 
 
@@ -602,8 +534,6 @@ async def test_api_built_in_role_cannot_be_deleted(
     client: AsyncClient,
 ) -> None:
     r = await client.get("/api/v1/admin/roles?built_in=true")
-    admin = next(
-        i for i in r.json()["items"] if i["name"] == "admin"
-    )
+    admin = next(i for i in r.json()["items"] if i["name"] == "admin")
     r2 = await client.delete(f"/api/v1/admin/roles/{admin['role_id']}")
     assert r2.status_code == 404

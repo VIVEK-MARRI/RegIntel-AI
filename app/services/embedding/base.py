@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+
 class EmbeddingProvider(ABC):
     """Abstract Base Class (interface) for vector embedding providers."""
 

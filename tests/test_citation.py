@@ -82,23 +82,29 @@ def _chunk(
 def rbi_chunks() -> List[RetrievedChunk]:
     return [
         _chunk(
-            cid="c-1", doc="d-1",
+            cid="c-1",
+            doc="d-1",
             content=(
                 "Banks must follow RBI KYC norms under Master Direction "
                 "MD/2016/1. Customer identification procedure requires "
                 "PAN for transactions above fifty thousand rupees. Banks "
                 "shall verify identity of beneficial owners."
             ),
-            source=SourceEnum.RBI, page=12, section="KYC",
+            source=SourceEnum.RBI,
+            page=12,
+            section="KYC",
             title="RBI Master Direction MD/2016/1 on KYC",
         ),
         _chunk(
-            cid="c-2", doc="d-2",
+            cid="c-2",
+            doc="d-2",
             content=(
                 "SEBI mandates monthly portfolio disclosure of scheme-wise "
                 "holdings within seven days of the close of the month."
             ),
-            source=SourceEnum.SEBI, page=4, section="Disclosure",
+            source=SourceEnum.SEBI,
+            page=4,
+            section="Disclosure",
             title="SEBI Circular 12/2024",
         ),
     ]
@@ -118,7 +124,9 @@ def sample_answer() -> AnswerSection:
         ),
         supporting_evidence=[
             EvidenceChunk(
-                chunk_id="c-1", document_id="d-1", source="RBI",
+                chunk_id="c-1",
+                document_id="d-1",
+                source="RBI",
                 excerpt="Banks must follow RBI KYC norms.",
             ),
         ],
@@ -137,6 +145,7 @@ def citation_service() -> CitationService:
 class TestMarkerFormatting:
     def test_marker_with_circular_and_page(self):
         from app.schemas.citation import format_inline_marker
+
         m = format_inline_marker(
             source="RBI",
             document_type="Circular",
@@ -148,6 +157,7 @@ class TestMarkerFormatting:
 
     def test_marker_without_page(self):
         from app.schemas.citation import format_inline_marker
+
         m = format_inline_marker(
             source="RBI",
             document_type="Act",
@@ -159,6 +169,7 @@ class TestMarkerFormatting:
 
     def test_marker_strips_source_prefix_in_title(self):
         from app.schemas.citation import format_inline_marker
+
         m = format_inline_marker(
             source="SEBI",
             document_type="Master Direction",
@@ -170,22 +181,31 @@ class TestMarkerFormatting:
 
     def test_marker_falls_back_to_unknown(self):
         from app.schemas.citation import format_inline_marker
+
         m = format_inline_marker(
-            source=None, document_type=None,
-            document_title=None, circular_number=None, page_number=None,
+            source=None,
+            document_type=None,
+            document_title=None,
+            circular_number=None,
+            page_number=None,
         )
         assert m == "[Unknown Source]"
 
     def test_extract_circular_variants(self):
         from app.schemas.citation import extract_circular_number
+
         assert extract_circular_number("RBI Circular 12/2024") == "12/2024"
         assert extract_circular_number("MD/2016/1") == "MD/2016/1"
         assert extract_circular_number("RBI/2024-25/123") == "RBI/2024-25/123"
-        assert extract_circular_number("SEBI/HO/MIRSD-SEC-1/2024") == "SEBI/HO/MIRSD-SEC-1/2024"
+        assert (
+            extract_circular_number("SEBI/HO/MIRSD-SEC-1/2024")
+            == "SEBI/HO/MIRSD-SEC-1/2024"
+        )
         assert extract_circular_number("No number here") is None
 
     def test_detect_document_type(self):
         from app.schemas.citation import detect_document_type
+
         assert detect_document_type("RBI Master Direction 2016") == "Master Direction"
         assert detect_document_type("SEBI Circular 12/2024") == "Circular"
         assert detect_document_type("Master Circular on KYC") == "Master Circular"
@@ -230,7 +250,9 @@ class TestClaimExtractor:
             "Banks must follow KYC.\n\nSEBI mandates portfolio disclosure."
         )
         assert any(s.startswith("Banks must follow KYC") for s in sentences)
-        assert any(s.startswith("SEBI mandates portfolio disclosure") for s in sentences)
+        assert any(
+            s.startswith("SEBI mandates portfolio disclosure") for s in sentences
+        )
         assert len(sentences) == 2
 
     def test_split_drops_short_fragments(self):
@@ -241,21 +263,19 @@ class TestClaimExtractor:
 
     def test_extract_drops_questions(self):
         ex = ClaimExtractor()
-        claims = ex.extract(
-            "Banks must follow KYC. What about SEBI?", "x"
-        )
+        claims = ex.extract("Banks must follow KYC. What about SEBI?", "x")
         assert all(not c.text.endswith("?") for c in claims)
 
     def test_extract_deduplicates(self):
         ex = ClaimExtractor()
-        claims = ex.extract(
-            "Banks must follow KYC. Banks must follow KYC.", "x"
-        )
+        claims = ex.extract("Banks must follow KYC. Banks must follow KYC.", "x")
         assert len(claims) == 1
 
     def test_extract_assigns_section(self):
         ex = ClaimExtractor()
-        claims = ex.extract("Banks must follow KYC under RBI norms.", "executive_summary")
+        claims = ex.extract(
+            "Banks must follow KYC under RBI norms.", "executive_summary"
+        )
         assert all(c.section == "executive_summary" for c in claims)
 
 
@@ -319,9 +339,15 @@ class TestCitationBuilder:
     def test_build_references_dedupes_by_document(self, rbi_chunks):
         # Add a second chunk from d-1 to test dedup.
         rbi_chunks.append(
-            _chunk(cid="c-3", doc="d-1", content="Another KYC rule.",
-                   source=SourceEnum.RBI, page=13, section="KYC",
-                   title="RBI Master Direction MD/2016/1 on KYC")
+            _chunk(
+                cid="c-3",
+                doc="d-1",
+                content="Another KYC rule.",
+                source=SourceEnum.RBI,
+                page=13,
+                section="KYC",
+                title="RBI Master Direction MD/2016/1 on KYC",
+            )
         )
         builder = CitationBuilder()
         refs = builder.build_references(rbi_chunks, include_paragraph=True)
@@ -349,8 +375,11 @@ class TestCitationBuilder:
         mapper = CitationMapper(min_similarity=0.05)
         matches_by_claim = {c.claim_id: mapper.map_claim(c, rbi_chunks) for c in claims}
         annotated = builder.annotate_text(
-            sample_answer.executive_summary, "executive_summary",
-            claims, matches_by_claim, refs,
+            sample_answer.executive_summary,
+            "executive_summary",
+            claims,
+            matches_by_claim,
+            refs,
         )
         assert annotated.cited_claim_count == len(claims)
         assert annotated.claim_count == len(claims)
@@ -366,8 +395,11 @@ class TestCitationBuilder:
         mapper = CitationMapper(min_similarity=0.05)
         matches_by_claim = {c.claim_id: mapper.map_claim(c, rbi_chunks) for c in claims}
         annotated = builder.annotate_text(
-            sample_answer.executive_summary, "executive_summary",
-            claims, matches_by_claim, refs,
+            sample_answer.executive_summary,
+            "executive_summary",
+            claims,
+            matches_by_claim,
+            refs,
         )
         # Numeric style → "[1]" or "[2]" markers.
         assert "[1]" in annotated.text or "[2]" in annotated.text
@@ -397,15 +429,15 @@ class TestCitationService:
         # Citation map populated.
         assert res.annotated_answer.citation_map
 
-    def test_cite_partial_coverage_reports_uncited(
-        self, citation_service, rbi_chunks
-    ):
+    def test_cite_partial_coverage_reports_uncited(self, citation_service, rbi_chunks):
         answer = AnswerSection(
             executive_summary="This is unrelated text without overlap.",
             detailed_explanation="Completely alien content with no matching keywords.",
         )
         req = CitationRequest(
-            query="Q", answer=answer, chunks=rbi_chunks,
+            query="Q",
+            answer=answer,
+            chunks=rbi_chunks,
             min_similarity=0.5,  # very high threshold
         )
         res = citation_service.cite(req)
@@ -425,7 +457,9 @@ class TestCitationService:
         self, citation_service, rbi_chunks, sample_answer
     ):
         req = CitationRequest(
-            query="q", answer=sample_answer, chunks=rbi_chunks,
+            query="q",
+            answer=sample_answer,
+            chunks=rbi_chunks,
             style=CitationStyle.NUMERIC_BRACKET,
         )
         res = citation_service.cite(req)
@@ -435,9 +469,12 @@ class TestCitationService:
 
     def test_cite_includes_paragraph_locator(self, citation_service, rbi_chunks):
         chunk_with_para = _chunk(
-            cid="c-99", doc="d-99",
+            cid="c-99",
+            doc="d-99",
             content="Refer to clause (a) of section 4.1 for details on KYC.",
-            source=SourceEnum.RBI, page=20, section="KYC",
+            source=SourceEnum.RBI,
+            page=20,
+            section="KYC",
             title="RBI Master Direction 2016",
         )
         chunks = [*rbi_chunks, chunk_with_para]
@@ -447,7 +484,9 @@ class TestCitationService:
             supporting_evidence=[],
             key_regulatory_references=[],
         )
-        req = CitationRequest(query="q", answer=answer, chunks=chunks, include_paragraph=True)
+        req = CitationRequest(
+            query="q", answer=answer, chunks=chunks, include_paragraph=True
+        )
         res = citation_service.cite(req)
         refs = res.annotated_answer.references
         c99_ref = next((r for r in refs if r.chunk_id == "c-99"), None)
@@ -513,7 +552,9 @@ class TestCitationAPI:
         assert body["module"] == "5.2-citation-engine"
 
     @pytest.mark.asyncio
-    async def test_cite_endpoint_inlines_markers(self, api_client, rbi_chunks, sample_answer):
+    async def test_cite_endpoint_inlines_markers(
+        self, api_client, rbi_chunks, sample_answer
+    ):
         payload = {
             "query": "q",
             "answer": sample_answer.model_dump(),

@@ -29,8 +29,16 @@ from app.security.audit_review import (
     set_audit_review,
 )
 from app.security.jwt_auth import JWTConfig, JWTIssuer
-from app.security.monitoring import SecurityMonitor, reset_security_monitor, set_security_monitor
-from app.security.secrets import SecretsManager, reset_secrets_manager, set_secrets_manager
+from app.security.monitoring import (
+    SecurityMonitor,
+    reset_security_monitor,
+    set_security_monitor,
+)
+from app.security.secrets import (
+    SecretsManager,
+    reset_secrets_manager,
+    set_secrets_manager,
+)
 from app.security.threat_detection import (
     ThreatDetector,
     get_threat_detector,
@@ -49,6 +57,7 @@ def client() -> TestClient:
     os.environ.setdefault("REGINTEL_JWT_SECRET", "x" * 48)
 
     import app.main as main_module
+
     importlib.reload(main_module)
 
     # Replace the module-level JWT issuer with one whose secret we know.
@@ -284,8 +293,12 @@ class TestAudit:
         assert body["count"] == 2  # req-3 (403) and req-4 (500)
 
     def test_records_pagination(self, client: TestClient) -> None:
-        r1 = client.get("/api/v1/security/audit/records", params={"limit": 2, "offset": 0})
-        r2 = client.get("/api/v1/security/audit/records", params={"limit": 2, "offset": 2})
+        r1 = client.get(
+            "/api/v1/security/audit/records", params={"limit": 2, "offset": 0}
+        )
+        r2 = client.get(
+            "/api/v1/security/audit/records", params={"limit": 2, "offset": 2}
+        )
         assert r1.status_code == 200
         assert r2.status_code == 200
         ids_1 = [rec["request_id"] for rec in r1.json()["records"]]
@@ -301,7 +314,10 @@ class TestAudit:
         assert r.status_code == 200, r.text
         body = r.json()
         assert body["record"]["review_status"] == "approved"
-        assert body["record"]["reviewed_by"] in {"system", "alice"}  # no auth → "system"
+        assert body["record"]["reviewed_by"] in {
+            "system",
+            "alice",
+        }  # no auth → "system"
 
     def test_review_rejects_bad_status(self, client: TestClient) -> None:
         r = client.post(

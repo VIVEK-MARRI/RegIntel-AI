@@ -52,15 +52,11 @@ class UpdateMemoryRequest(BaseModel):
     content: Optional[str] = Field(
         default=None, max_length=8192, description="Replacement content"
     )
-    tags: Optional[List[str]] = Field(
-        default=None, description="Replacement tag list"
-    )
+    tags: Optional[List[str]] = Field(default=None, description="Replacement tag list")
     metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Replacement metadata"
     )
-    pinned: Optional[bool] = Field(
-        default=None, description="Pin or unpin the entry"
-    )
+    pinned: Optional[bool] = Field(default=None, description="Pin or unpin the entry")
 
 
 class RecordMessageRequest(BaseModel):

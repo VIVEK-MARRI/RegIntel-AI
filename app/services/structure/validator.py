@@ -1,6 +1,7 @@
 from typing import List, Set, Optional
 from app.schemas.hierarchy import HierarchyNode
 
+
 class HierarchyValidator:
     """Validator class ensuring structural and metadata integrity of the hierarchy tree."""
 
@@ -11,20 +12,22 @@ class HierarchyValidator:
         """
         errors: List[str] = []
         seen_ids: Set[str] = set()
-        
+
         self._traverse_and_validate(root, None, seen_ids, errors)
         return errors
 
     def _traverse_and_validate(
-        self, 
-        node: HierarchyNode, 
-        parent: Optional[HierarchyNode], 
-        seen_ids: Set[str], 
-        errors: List[str]
+        self,
+        node: HierarchyNode,
+        parent: Optional[HierarchyNode],
+        seen_ids: Set[str],
+        errors: List[str],
     ) -> None:
         # 1. Title completeness check
         if not node.title or not node.title.strip():
-            errors.append(f"Node '{node.node_id}' has an empty or whitespace-only title.")
+            errors.append(
+                f"Node '{node.node_id}' has an empty or whitespace-only title."
+            )
 
         # 2. Duplicate Node ID check
         if node.node_id in seen_ids:
@@ -40,7 +43,7 @@ class HierarchyValidator:
                     f"Level violation: Child node '{node.title}' (level {node.level}) "
                     f"must have a level greater than its parent '{parent.title}' (level {parent.level})."
                 )
-            
+
             # Page progression check
             if node.page < parent.page:
                 errors.append(

@@ -232,7 +232,9 @@ async def seeded_corpus(db_session, tmp_path):
                 doc_rbi.title if c.document_id == doc_rbi.id else doc_sebi.title
             ),
             source=(
-                SourceEnum.RBI.value if c.document_id == doc_rbi.id else SourceEnum.SEBI.value
+                SourceEnum.RBI.value
+                if c.document_id == doc_rbi.id
+                else SourceEnum.SEBI.value
             ),
             document_id=str(c.document_id),
             page_number=c.page_number or 0,
@@ -253,9 +255,7 @@ async def seeded_corpus(db_session, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_dense_search_success(
-    client: AsyncClient, seeded_corpus
-) -> None:
+async def test_dense_search_success(client: AsyncClient, seeded_corpus) -> None:
     response = await client.post(
         "/api/v1/search/dense",
         json={"query": "KYC diligence", "top_k": 3},
@@ -277,9 +277,7 @@ async def test_dense_search_success(
 @pytest.mark.asyncio
 async def test_dense_search_validation_errors(client: AsyncClient) -> None:
     # Empty query
-    response = await client.post(
-        "/api/v1/search/dense", json={"query": "", "top_k": 5}
-    )
+    response = await client.post("/api/v1/search/dense", json={"query": "", "top_k": 5})
     assert response.status_code == 422
 
     # top_k out of range
@@ -302,9 +300,7 @@ async def test_dense_search_validation_errors(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_dense_search_empty_results(
-    client: AsyncClient, seeded_corpus
-) -> None:
+async def test_dense_search_empty_results(client: AsyncClient, seeded_corpus) -> None:
     # "completely unrelated search string" → [0.0, 0.0, 1.0] via the mock.
     # No seeded chunk shares this vector, so the max similarity is 0.0
     # and a min_score of 0.5 filters out everything.
@@ -343,9 +339,7 @@ async def test_dense_search_pagination_top_k(
 
 
 @pytest.mark.asyncio
-async def test_dense_search_source_filter(
-    client: AsyncClient, seeded_corpus
-) -> None:
+async def test_dense_search_source_filter(client: AsyncClient, seeded_corpus) -> None:
     response = await client.post(
         "/api/v1/search/dense",
         json={"query": "kyc", "top_k": 5, "filters": {"source": "RBI"}},
@@ -360,9 +354,7 @@ async def test_dense_search_source_filter(
 
 
 @pytest.mark.asyncio
-async def test_bm25_search_success(
-    client: AsyncClient, seeded_corpus
-) -> None:
+async def test_bm25_search_success(client: AsyncClient, seeded_corpus) -> None:
     response = await client.post(
         "/api/v1/search/bm25", json={"query": "diligence Aadhaar", "top_k": 5}
     )
@@ -381,7 +373,8 @@ async def test_bm25_search_threshold_filtering(
 ) -> None:
     # Threshold = 0.0 (default) — should return matches.
     response = await client.post(
-        "/api/v1/search/bm25", json={"query": "diligence", "top_k": 10, "score_threshold": 0.0}
+        "/api/v1/search/bm25",
+        json={"query": "diligence", "top_k": 10, "score_threshold": 0.0},
     )
     baseline = response.json()["total_results"]
     assert baseline >= 1
@@ -397,9 +390,7 @@ async def test_bm25_search_threshold_filtering(
 
 
 @pytest.mark.asyncio
-async def test_bm25_search_source_filters(
-    client: AsyncClient, seeded_corpus
-) -> None:
+async def test_bm25_search_source_filters(client: AsyncClient, seeded_corpus) -> None:
     # Query that matches both sources; restrict to RBI only.
     response = await client.post(
         "/api/v1/search/bm25",
@@ -417,9 +408,7 @@ async def test_bm25_search_source_filters(
 
 
 @pytest.mark.asyncio
-async def test_bm25_search_pagination_top_k(
-    client: AsyncClient, seeded_corpus
-) -> None:
+async def test_bm25_search_pagination_top_k(client: AsyncClient, seeded_corpus) -> None:
     response = await client.post(
         "/api/v1/search/bm25", json={"query": "diligence", "top_k": 1}
     )
@@ -435,9 +424,7 @@ async def test_bm25_search_pagination_top_k(
 
 @pytest.mark.asyncio
 async def test_bm25_search_validation(client: AsyncClient) -> None:
-    response = await client.post(
-        "/api/v1/search/bm25", json={"query": "", "top_k": 5}
-    )
+    response = await client.post("/api/v1/search/bm25", json={"query": "", "top_k": 5})
     assert response.status_code == 422
 
     response = await client.post(
@@ -677,9 +664,7 @@ async def test_metrics_empty(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_metrics_window_selection(
-    client: AsyncClient, seeded_metrics
-) -> None:
+async def test_metrics_window_selection(client: AsyncClient, seeded_metrics) -> None:
     dataset_name = seeded_metrics["dataset_name"]
     for window in ("hourly", "daily", "weekly", "monthly"):
         response = await client.get(
@@ -694,14 +679,14 @@ async def test_metrics_window_selection(
         assert data["total_queries"] >= 4
 
     # Invalid window value → 422 (pattern validation).
-    response = await client.get("/api/v1/retrieval/metrics", params={"window": "yearly"})
+    response = await client.get(
+        "/api/v1/retrieval/metrics", params={"window": "yearly"}
+    )
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_metrics_response_contract(
-    client: AsyncClient, seeded_metrics
-) -> None:
+async def test_metrics_response_contract(client: AsyncClient, seeded_metrics) -> None:
     dataset_name = seeded_metrics["dataset_name"]
     response = await client.get(
         "/api/v1/retrieval/metrics",
@@ -727,9 +712,7 @@ async def test_metrics_response_contract(
 
 
 @pytest.mark.asyncio
-async def test_health_healthy_state(
-    client: AsyncClient, seeded_corpus
-) -> None:
+async def test_health_healthy_state(client: AsyncClient, seeded_corpus) -> None:
     response = await client.get("/api/v1/retrieval/health")
     assert response.status_code == 200
     data = response.json()
@@ -738,9 +721,13 @@ async def test_health_healthy_state(
     assert data["checks"]["database"] is True
     # Each component is reported
     component_names = {c["name"] for c in data["components"]}
-    assert {"database", "bm25_service", "hybrid_retriever", "analytics_layer", "reranker"}.issubset(
-        component_names
-    )
+    assert {
+        "database",
+        "bm25_service",
+        "hybrid_retriever",
+        "analytics_layer",
+        "reranker",
+    }.issubset(component_names)
 
 
 @pytest.mark.asyncio
@@ -799,9 +786,7 @@ async def test_observability_counters_increment(
     metrics = get_metrics()
     metrics.reset()
 
-    r1 = await client.post(
-        "/api/v1/search/dense", json={"query": "KYC", "top_k": 3}
-    )
+    r1 = await client.post("/api/v1/search/dense", json={"query": "KYC", "top_k": 3})
     r2 = await client.post(
         "/api/v1/search/bm25", json={"query": "diligence", "top_k": 3}
     )
@@ -844,20 +829,17 @@ def test_openapi_schema_generation() -> None:
     assert "/api/v1/retrieval/health" in paths
 
     # Confirm the response model references the Pydantic contracts.
-    dense_resp_ref = (
-        paths["/api/v1/search/dense"]["post"]["responses"]["200"]["content"]
-        ["application/json"]["schema"]["$ref"]
-    )
+    dense_resp_ref = paths["/api/v1/search/dense"]["post"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]["$ref"]
     assert "SearchResponse" in dense_resp_ref
 
-    hybrid_resp_ref = (
-        paths["/api/v1/search/hybrid"]["post"]["responses"]["200"]["content"]
-        ["application/json"]["schema"]["$ref"]
-    )
+    hybrid_resp_ref = paths["/api/v1/search/hybrid"]["post"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]["$ref"]
     assert "HybridSearchResponse" in hybrid_resp_ref
 
-    health_resp_ref = (
-        paths["/api/v1/retrieval/health"]["get"]["responses"]["200"]["content"]
-        ["application/json"]["schema"]["$ref"]
-    )
+    health_resp_ref = paths["/api/v1/retrieval/health"]["get"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]["$ref"]
     assert "RetrievalHealthResponse" in health_resp_ref

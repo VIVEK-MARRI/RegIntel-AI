@@ -36,9 +36,7 @@ _SENTENCE_SPLIT_RE = re.compile(
 
 
 _TRIM_RE = re.compile(
-    r"^[\s\-\u2013\u2014\*\u2022\"'`\(\)\[\]]+"
-    r"|"
-    r"[\s\u2013\u2014\"'`\(\)\[\]]+$"
+    r"^[\s\-\u2013\u2014\*\u2022\"'`\(\)\[\]]+" r"|" r"[\s\u2013\u2014\"'`\(\)\[\]]+$"
 )
 
 
@@ -109,9 +107,7 @@ class ClaimExtractor:
                 break
         return claims
 
-    def extract_all(
-        self, sections: Iterable[tuple[str, str]]
-    ) -> List[Claim]:
+    def extract_all(self, sections: Iterable[tuple[str, str]]) -> List[Claim]:
         """Extract from an iterable of ``(section_name, text)`` tuples."""
         out: List[Claim] = []
         for section_name, text in sections:

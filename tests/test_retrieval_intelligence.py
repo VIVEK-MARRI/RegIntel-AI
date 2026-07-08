@@ -54,6 +54,7 @@ from app.schemas.fusion import FusionConfig
 # MODULE 1: QUERY UNDERSTANDING ENGINE
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestQueryType:
     """Test QueryType enum values."""
 
@@ -61,7 +62,15 @@ class TestQueryType:
         assert QueryType.KEYWORD_LOOKUP.value == "keyword_lookup"
 
     def test_all_types_present(self):
-        expected = {"keyword", "keyword_lookup", "semantic", "regulation", "circular", "comparative", "definition"}
+        expected = {
+            "keyword",
+            "keyword_lookup",
+            "semantic",
+            "regulation",
+            "circular",
+            "comparative",
+            "definition",
+        }
         actual = {qt.value for qt in QueryType}
         assert expected == actual
 
@@ -85,7 +94,10 @@ class TestKeywordLookupRule:
         assert self.rule.evaluate("RBI KYC requirements") == 0.65
 
     def test_long_query_low_score(self):
-        assert self.rule.evaluate("What are the KYC requirements for banks in India") == 0.30
+        assert (
+            self.rule.evaluate("What are the KYC requirements for banks in India")
+            == 0.30
+        )
 
     def test_whitespace_only(self):
         assert self.rule.evaluate("   ") == 0.30
@@ -245,25 +257,46 @@ class TestRuleBasedStrategyRecommender:
         self.recommender = RuleBasedStrategyRecommender()
 
     def test_keyword_lookup_recommends_bm25(self):
-        assert self.recommender.recommend(QueryType.KEYWORD_LOOKUP, 0.9, "KYC") == RetrievalStrategy.BM25
+        assert (
+            self.recommender.recommend(QueryType.KEYWORD_LOOKUP, 0.9, "KYC")
+            == RetrievalStrategy.BM25
+        )
 
     def test_circular_recommends_bm25(self):
-        assert self.recommender.recommend(QueryType.CIRCULAR, 0.95, "RBI 17/2024") == RetrievalStrategy.BM25
+        assert (
+            self.recommender.recommend(QueryType.CIRCULAR, 0.95, "RBI 17/2024")
+            == RetrievalStrategy.BM25
+        )
 
     def test_regulation_recommends_bm25(self):
-        assert self.recommender.recommend(QueryType.REGULATION, 0.9, "section 45") == RetrievalStrategy.BM25
+        assert (
+            self.recommender.recommend(QueryType.REGULATION, 0.9, "section 45")
+            == RetrievalStrategy.BM25
+        )
 
     def test_semantic_recommends_dense(self):
-        assert self.recommender.recommend(QueryType.SEMANTIC, 0.9, "how to comply") == RetrievalStrategy.DENSE
+        assert (
+            self.recommender.recommend(QueryType.SEMANTIC, 0.9, "how to comply")
+            == RetrievalStrategy.DENSE
+        )
 
     def test_definition_recommends_dense(self):
-        assert self.recommender.recommend(QueryType.DEFINITION, 0.9, "what is KYC") == RetrievalStrategy.DENSE
+        assert (
+            self.recommender.recommend(QueryType.DEFINITION, 0.9, "what is KYC")
+            == RetrievalStrategy.DENSE
+        )
 
     def test_comparative_recommends_hybrid(self):
-        assert self.recommender.recommend(QueryType.COMPARATIVE, 0.9, "RBI vs SEBI") == RetrievalStrategy.HYBRID
+        assert (
+            self.recommender.recommend(QueryType.COMPARATIVE, 0.9, "RBI vs SEBI")
+            == RetrievalStrategy.HYBRID
+        )
 
     def test_low_confidence_defaults_hybrid(self):
-        assert self.recommender.recommend(QueryType.KEYWORD, 0.3, "xyz") == RetrievalStrategy.HYBRID
+        assert (
+            self.recommender.recommend(QueryType.KEYWORD, 0.3, "xyz")
+            == RetrievalStrategy.HYBRID
+        )
 
 
 class TestQueryAnalyzerEndToEnd:
@@ -272,23 +305,30 @@ class TestQueryAnalyzerEndToEnd:
     def setup_method(self):
         self.analyzer = QueryAnalyzer()
 
-    @pytest.mark.parametrize("query,expected_type,expected_strategy", [
-        ("RBI Circular 17/2024", "circular", "bm25"),
-        ("SEBI/HO/DDHS/P/CIR/2024/123", "circular", "bm25"),
-        ("section 45 of RBI Act", "regulation", "bm25"),
-        ("sec. 12", "regulation", "bm25"),
-        ("KYC", "keyword_lookup", "bm25"),
-        ("AML compliance", "keyword_lookup", "bm25"),
-        ("What is KYC?", "definition", "dense"),
-        ("define mutual fund", "definition", "dense"),
-        ("How do we comply with AML?", "semantic", "dense"),
-        ("why did SEBI amend guidelines?", "semantic", "dense"),
-        ("RBI vs SEBI", "comparative", "hybrid"),
-        ("difference between KYC and CKYC", "comparative", "hybrid"),
-    ])
-    def test_classification_and_recommendation(self, query, expected_type, expected_strategy):
+    @pytest.mark.parametrize(
+        "query,expected_type,expected_strategy",
+        [
+            ("RBI Circular 17/2024", "circular", "bm25"),
+            ("SEBI/HO/DDHS/P/CIR/2024/123", "circular", "bm25"),
+            ("section 45 of RBI Act", "regulation", "bm25"),
+            ("sec. 12", "regulation", "bm25"),
+            ("KYC", "keyword_lookup", "bm25"),
+            ("AML compliance", "keyword_lookup", "bm25"),
+            ("What is KYC?", "definition", "dense"),
+            ("define mutual fund", "definition", "dense"),
+            ("How do we comply with AML?", "semantic", "dense"),
+            ("why did SEBI amend guidelines?", "semantic", "dense"),
+            ("RBI vs SEBI", "comparative", "hybrid"),
+            ("difference between KYC and CKYC", "comparative", "hybrid"),
+        ],
+    )
+    def test_classification_and_recommendation(
+        self, query, expected_type, expected_strategy
+    ):
         result = self.analyzer.analyze(query)
-        assert result.query_type == expected_type, f"Query '{query}' -> {result.query_type}, expected {expected_type}"
+        assert (
+            result.query_type == expected_type
+        ), f"Query '{query}' -> {result.query_type}, expected {expected_type}"
         assert result.optimal_strategy == expected_strategy
         assert 0.0 < result.confidence <= 1.0
 
@@ -316,11 +356,13 @@ class TestQueryAnalyzerEndToEnd:
 # MODULE 2: BM25 RETRIEVAL ENGINE
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestBM25Document:
     """Test BM25Document model."""
 
     def test_to_indexable_text_combines_all_fields(self):
         from app.services.bm25.retriever import BM25Document
+
         doc = BM25Document(
             chunk_id="c1",
             content="KYC requirements for banks",
@@ -338,6 +380,7 @@ class TestBM25Document:
 
     def test_to_indexable_text_omits_empty_fields(self):
         from app.services.bm25.retriever import BM25Document
+
         doc = BM25Document(chunk_id="c1", content="some content")
         text = doc.to_indexable_text()
         assert text == "some content"
@@ -351,14 +394,19 @@ class TestBM25InMemoryRetriever:
             InMemoryBM25Retriever,
             BM25Document,
         )
+
         self.BM25Document = BM25Document
         self.retriever = InMemoryBM25Retriever(k1=1.5, b=0.75)
 
     def test_build_index(self):
         docs = [
-            self.BM25Document(chunk_id="c1", content="KYC requirements for customer identification"),
+            self.BM25Document(
+                chunk_id="c1", content="KYC requirements for customer identification"
+            ),
             self.BM25Document(chunk_id="c2", content="SEBI mutual fund regulations"),
-            self.BM25Document(chunk_id="c3", content="RBI circular on non-performing assets"),
+            self.BM25Document(
+                chunk_id="c3", content="RBI circular on non-performing assets"
+            ),
         ]
         self.retriever.build_index(docs)
         assert self.retriever.get_index_stats().status.value == "ready"
@@ -366,15 +414,36 @@ class TestBM25InMemoryRetriever:
 
     def test_search_returns_relevant_results(self):
         docs = [
-            self.BM25Document(chunk_id="c1", content="KYC requirements for customer identification and verification procedures"),
-            self.BM25Document(chunk_id="c2", content="SEBI mutual fund regulations and investment guidelines"),
-            self.BM25Document(chunk_id="c3", content="RBI circular on non-performing assets classification and provisioning norms"),
-            self.BM25Document(chunk_id="c4", content="AML compliance requirements for financial institutions and banks"),
-            self.BM25Document(chunk_id="c5", content="Corporate governance guidelines for listed companies and boards"),
+            self.BM25Document(
+                chunk_id="c1",
+                content="KYC requirements for customer identification and verification procedures",
+            ),
+            self.BM25Document(
+                chunk_id="c2",
+                content="SEBI mutual fund regulations and investment guidelines",
+            ),
+            self.BM25Document(
+                chunk_id="c3",
+                content="RBI circular on non-performing assets classification and provisioning norms",
+            ),
+            self.BM25Document(
+                chunk_id="c4",
+                content="AML compliance requirements for financial institutions and banks",
+            ),
+            self.BM25Document(
+                chunk_id="c5",
+                content="Corporate governance guidelines for listed companies and boards",
+            ),
         ]
         self.retriever.build_index(docs)
         response = self.retriever.search(
-            MagicMock(query="KYC customer identification", top_k=5, source_filter=None, document_filter=None, score_threshold=0.0)
+            MagicMock(
+                query="KYC customer identification",
+                top_k=5,
+                source_filter=None,
+                document_filter=None,
+                score_threshold=0.0,
+            )
         )
         assert response.query == "KYC customer identification"
         assert len(response.results) >= 1
@@ -384,23 +453,42 @@ class TestBM25InMemoryRetriever:
 
     def test_search_with_source_filter(self):
         from app.services.bm25.retriever import BM25SearchRequest
+
         docs = [
             self.BM25Document(chunk_id="c1", content="KYC requirements", source="RBI"),
-            self.BM25Document(chunk_id="c2", content="mutual fund rules", source="SEBI"),
+            self.BM25Document(
+                chunk_id="c2", content="mutual fund rules", source="SEBI"
+            ),
         ]
         self.retriever.build_index(docs)
-        req = BM25SearchRequest(query="KYC", top_k=5, source_filter=["RBI"], document_filter=None, score_threshold=0.0)
+        req = BM25SearchRequest(
+            query="KYC",
+            top_k=5,
+            source_filter=["RBI"],
+            document_filter=None,
+            score_threshold=0.0,
+        )
         response = self.retriever.search(req)
         assert all(r.source == "RBI" for r in response.results)
 
     def test_search_with_score_threshold(self):
         from app.services.bm25.retriever import BM25SearchRequest
+
         docs = [
-            self.BM25Document(chunk_id="c1", content="KYC KYC KYC requirements customer identification"),
+            self.BM25Document(
+                chunk_id="c1",
+                content="KYC KYC KYC requirements customer identification",
+            ),
             self.BM25Document(chunk_id="c2", content="mutual fund"),
         ]
         self.retriever.build_index(docs)
-        req = BM25SearchRequest(query="KYC", top_k=5, source_filter=None, document_filter=None, score_threshold=1.0)
+        req = BM25SearchRequest(
+            query="KYC",
+            top_k=5,
+            source_filter=None,
+            document_filter=None,
+            score_threshold=1.0,
+        )
         response = self.retriever.search(req)
         assert all(r.bm25_score >= 1.0 for r in response.results)
 
@@ -409,9 +497,11 @@ class TestBM25InMemoryRetriever:
             self.BM25Document(chunk_id="c1", content="initial document"),
         ]
         self.retriever.build_index(docs)
-        self.retriever.update_index([
-            self.BM25Document(chunk_id="c2", content="new document"),
-        ])
+        self.retriever.update_index(
+            [
+                self.BM25Document(chunk_id="c2", content="new document"),
+            ]
+        )
         stats = self.retriever.get_index_stats()
         assert stats.total_documents == 2
 
@@ -457,17 +547,31 @@ class TestBM25InMemoryRetriever:
         ]
         self.retriever.build_index(docs)
         from app.services.bm25.retriever import BM25SearchRequest
+
         # Search for section title
-        req = BM25SearchRequest(query="Capital Adequacy Requirements", top_k=5, source_filter=None, document_filter=None, score_threshold=0.0)
+        req = BM25SearchRequest(
+            query="Capital Adequacy Requirements",
+            top_k=5,
+            source_filter=None,
+            document_filter=None,
+            score_threshold=0.0,
+        )
         response = self.retriever.search(req)
         assert len(response.results) >= 1
         assert response.results[0].chunk_id == "c1"
 
     def test_empty_search_returns_empty(self):
         from app.services.bm25.retriever import BM25SearchRequest
+
         docs = [self.BM25Document(chunk_id="c1", content="KYC")]
         self.retriever.build_index(docs)
-        req = BM25SearchRequest(query="", top_k=5, source_filter=None, document_filter=None, score_threshold=0.0)
+        req = BM25SearchRequest(
+            query="",
+            top_k=5,
+            source_filter=None,
+            document_filter=None,
+            score_threshold=0.0,
+        )
         response = self.retriever.search(req)
         assert len(response.results) == 0
 
@@ -475,6 +579,7 @@ class TestBM25InMemoryRetriever:
 # ═══════════════════════════════════════════════════════════════════════════
 # MODULE 3: HYBRID RETRIEVAL ORCHESTRATOR
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestRetrievalStrategyManager:
     """Test RetrievalStrategyManager."""
@@ -532,7 +637,9 @@ class TestHybridRetrieverConcurrent:
         self.mock_retrieval_service.retrieve.return_value = {"results": []}
         self.mock_bm25_retriever.retrieve.return_value = []
 
-        await self.retriever.retrieve_hybrid("test", strategy=HybridStrategy.HYBRID, use_query_analysis=False)
+        await self.retriever.retrieve_hybrid(
+            "test", strategy=HybridStrategy.HYBRID, use_query_analysis=False
+        )
 
         self.mock_retrieval_service.retrieve.assert_called_once()
         self.mock_bm25_retriever.retrieve.assert_called_once()
@@ -545,7 +652,11 @@ class TestHybridRetrieverConcurrent:
         async def slow_retrieve(*a, **kw):
             await asyncio.sleep(0.05)
             delays["dense"] = time.perf_counter()
-            return {"results": [{"chunk_id": "d1", "score": 0.9, "content": "a", "metadata": {}}]}
+            return {
+                "results": [
+                    {"chunk_id": "d1", "score": 0.9, "content": "a", "metadata": {}}
+                ]
+            }
 
         async def slow_bm25(*a, **kw):
             await asyncio.sleep(0.05)
@@ -556,7 +667,9 @@ class TestHybridRetrieverConcurrent:
         self.mock_bm25_retriever.retrieve.side_effect = slow_bm25
 
         start = time.perf_counter()
-        result = await self.retriever.retrieve_hybrid("test", strategy=HybridStrategy.HYBRID, use_query_analysis=False)
+        result = await self.retriever.retrieve_hybrid(
+            "test", strategy=HybridStrategy.HYBRID, use_query_analysis=False
+        )
         elapsed = time.perf_counter() - start
 
         # Concurrent: ~50ms, Sequential: ~100ms
@@ -617,7 +730,9 @@ class TestHybridRetrieverConcurrent:
             {"chunk_id": "c3", "score": 12.0, "content": "bm25 2", "metadata": {}},
         ]
 
-        result = await self.retriever.retrieve_hybrid("test", top_n=10, use_query_analysis=False)
+        result = await self.retriever.retrieve_hybrid(
+            "test", top_n=10, use_query_analysis=False
+        )
 
         assert len(result.results) == 3
         ids = {r.chunk_id for r in result.results}
@@ -626,7 +741,9 @@ class TestHybridRetrieverConcurrent:
     @pytest.mark.asyncio
     async def test_metrics_include_overlap(self):
         self.mock_retrieval_service.retrieve.return_value = {
-            "results": [{"chunk_id": "c1", "score": 0.9, "content": "a", "metadata": {}}]
+            "results": [
+                {"chunk_id": "c1", "score": 0.9, "content": "a", "metadata": {}}
+            ]
         }
         self.mock_bm25_retriever.retrieve.return_value = [
             {"chunk_id": "c1", "score": 15.0, "content": "a", "metadata": {}},
@@ -641,10 +758,14 @@ class TestHybridRetrieverConcurrent:
     @pytest.mark.asyncio
     async def test_dense_only_no_bm25(self):
         self.mock_retrieval_service.retrieve.return_value = {
-            "results": [{"chunk_id": "d1", "score": 0.9, "content": "a", "metadata": {}}]
+            "results": [
+                {"chunk_id": "d1", "score": 0.9, "content": "a", "metadata": {}}
+            ]
         }
 
-        result = await self.retriever.retrieve_hybrid("test", strategy=HybridStrategy.DENSE, use_query_analysis=False)
+        result = await self.retriever.retrieve_hybrid(
+            "test", strategy=HybridStrategy.DENSE, use_query_analysis=False
+        )
 
         self.mock_retrieval_service.retrieve.assert_called_once()
         self.mock_bm25_retriever.retrieve.assert_not_called()
@@ -656,7 +777,9 @@ class TestHybridRetrieverConcurrent:
             {"chunk_id": "b1", "score": 15.0, "content": "a", "metadata": {}}
         ]
 
-        result = await self.retriever.retrieve_hybrid("test", strategy=HybridStrategy.KEYWORD, use_query_analysis=False)
+        result = await self.retriever.retrieve_hybrid(
+            "test", strategy=HybridStrategy.KEYWORD, use_query_analysis=False
+        )
 
         self.mock_bm25_retriever.retrieve.assert_called_once()
         self.mock_retrieval_service.retrieve.assert_not_called()
@@ -690,6 +813,7 @@ class TestRetrievalTelemetry:
 # MODULE 4: RRF FUSION ENGINE
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestRRFStrategy:
     """Test RRF fusion strategy."""
 
@@ -714,7 +838,8 @@ class TestRRFStrategy:
         ]
 
         result = engine.fuse_results(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -730,7 +855,8 @@ class TestRRFStrategy:
         bm25 = [{"chunk_id": "c1", "score": 15.0, "content": "a", "metadata": {}}]
 
         result = engine.fuse_results(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -743,7 +869,8 @@ class TestRRFStrategy:
         bm25 = [{"chunk_id": "c2", "score": 15.0, "content": "b", "metadata": {}}]
 
         result = engine.fuse_results(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -755,16 +882,30 @@ class TestRRFStrategy:
     def test_rrf_deterministic(self):
         engine = FusionEngine()
         dense = [
-            {"chunk_id": f"d{i}", "score": 1.0 - i * 0.01, "content": str(i), "metadata": {}}
+            {
+                "chunk_id": f"d{i}",
+                "score": 1.0 - i * 0.01,
+                "content": str(i),
+                "metadata": {},
+            }
             for i in range(10)
         ]
         bm25 = [
-            {"chunk_id": f"b{i}", "score": 20.0 - i, "content": str(i + 10), "metadata": {}}
+            {
+                "chunk_id": f"b{i}",
+                "score": 20.0 - i,
+                "content": str(i + 10),
+                "metadata": {},
+            }
             for i in range(10)
         ]
 
-        r1 = engine.fuse_results(dense, bm25, config=FusionConfig(method=FusionMethod.RRF))
-        r2 = engine.fuse_results(dense, bm25, config=FusionConfig(method=FusionMethod.RRF))
+        r1 = engine.fuse_results(
+            dense, bm25, config=FusionConfig(method=FusionMethod.RRF)
+        )
+        r2 = engine.fuse_results(
+            dense, bm25, config=FusionConfig(method=FusionMethod.RRF)
+        )
 
         ids1 = [r["chunk_id"] for r in r1]
         ids2 = [r["chunk_id"] for r in r2]
@@ -777,7 +918,8 @@ class TestRRFStrategy:
         bm25 = [{"chunk_id": "c1", "score": 15.0, "content": "a", "metadata": {}}]
 
         result = engine.fuse_results(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -795,7 +937,9 @@ class TestRRFStrategy:
 
     def test_rrf_with_empty_inputs(self):
         engine = FusionEngine()
-        result = engine.fuse_results([], [], config=FusionConfig(method=FusionMethod.RRF))
+        result = engine.fuse_results(
+            [], [], config=FusionConfig(method=FusionMethod.RRF)
+        )
         assert result == []
 
     def test_rrf_single_source_only(self):
@@ -806,7 +950,8 @@ class TestRRFStrategy:
         ]
 
         result = engine.fuse_results(
-            dense, [],
+            dense,
+            [],
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -819,7 +964,8 @@ class TestRRFStrategy:
         bm25 = [{"chunk_id": "b1", "score": 15.0, "content": "b", "metadata": {}}]
 
         fused, report = engine.fuse_results_with_report(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -918,11 +1064,13 @@ class TestRankingUtilities:
 # BENCHMARKS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestBM25Benchmarks:
     """BM25 retrieval performance benchmarks."""
 
     def setup_method(self):
         from app.services.bm25.retriever import InMemoryBM25Retriever, BM25Document
+
         self.BM25Document = BM25Document
         self.retriever = InMemoryBM25Retriever()
 
@@ -946,7 +1094,13 @@ class TestBM25Benchmarks:
         latencies = []
         for _ in range(100):
             start = time.perf_counter()
-            req = BM25SearchRequest(query="KYC compliance", top_k=10, source_filter=None, document_filter=None, score_threshold=0.0)
+            req = BM25SearchRequest(
+                query="KYC compliance",
+                top_k=10,
+                source_filter=None,
+                document_filter=None,
+                score_threshold=0.0,
+            )
             self.retriever.search(req)
             latencies.append((time.perf_counter() - start) * 1000)
 
@@ -962,7 +1116,13 @@ class TestBM25Benchmarks:
         latencies = []
         for _ in range(50):
             start = time.perf_counter()
-            req = BM25SearchRequest(query="KYC compliance", top_k=10, source_filter=None, document_filter=None, score_threshold=0.0)
+            req = BM25SearchRequest(
+                query="KYC compliance",
+                top_k=10,
+                source_filter=None,
+                document_filter=None,
+                score_threshold=0.0,
+            )
             self.retriever.search(req)
             latencies.append((time.perf_counter() - start) * 1000)
 
@@ -1027,7 +1187,9 @@ class TestHybridRetrievalBenchmarks:
 
         avg_seq = sum(seq_durations) / len(seq_durations)
         avg_conc = sum(conc_durations) / len(conc_durations)
-        assert avg_conc < avg_seq, f"Concurrent {avg_conc:.4f}s >= Sequential {avg_seq:.4f}s"
+        assert (
+            avg_conc < avg_seq
+        ), f"Concurrent {avg_conc:.4f}s >= Sequential {avg_seq:.4f}s"
 
 
 class TestFusionBenchmarks:
@@ -1037,18 +1199,30 @@ class TestFusionBenchmarks:
         """RRF fusion < 1ms for 100 candidates."""
         engine = FusionEngine()
         dense = [
-            {"chunk_id": f"d{i}", "score": 1.0 - i * 0.01, "content": str(i), "metadata": {}}
+            {
+                "chunk_id": f"d{i}",
+                "score": 1.0 - i * 0.01,
+                "content": str(i),
+                "metadata": {},
+            }
             for i in range(50)
         ]
         bm25 = [
-            {"chunk_id": f"b{i}", "score": 20.0 - i, "content": str(i + 50), "metadata": {}}
+            {
+                "chunk_id": f"b{i}",
+                "score": 20.0 - i,
+                "content": str(i + 50),
+                "metadata": {},
+            }
             for i in range(50)
         ]
 
         latencies = []
         for _ in range(100):
             start = time.perf_counter()
-            engine.fuse_results(dense, bm25, config=FusionConfig(method=FusionMethod.RRF))
+            engine.fuse_results(
+                dense, bm25, config=FusionConfig(method=FusionMethod.RRF)
+            )
             latencies.append((time.perf_counter() - start) * 1000)
 
         avg = sum(latencies) / len(latencies)
@@ -1058,6 +1232,7 @@ class TestFusionBenchmarks:
 # ═══════════════════════════════════════════════════════════════════════════
 # INTEGRATION: FULL PIPELINE
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestFullRetrievalPipeline:
     """Integration tests for the full retrieval pipeline."""
@@ -1077,7 +1252,12 @@ class TestFullRetrievalPipeline:
     async def test_circular_query_uses_bm25(self):
         """Circular query should be routed to BM25."""
         self.mock_bm25_retriever.retrieve.return_value = [
-            {"chunk_id": "c1", "score": 15.0, "content": "RBI Circular 17/2024 content", "metadata": {}}
+            {
+                "chunk_id": "c1",
+                "score": 15.0,
+                "content": "RBI Circular 17/2024 content",
+                "metadata": {},
+            }
         ]
 
         mock_analysis = MagicMock()
@@ -1100,7 +1280,14 @@ class TestFullRetrievalPipeline:
     async def test_semantic_query_uses_dense(self):
         """Semantic question should be routed to dense."""
         self.mock_retrieval_service.retrieve.return_value = {
-            "results": [{"chunk_id": "c1", "score": 0.9, "content": "KYC explanation", "metadata": {}}]
+            "results": [
+                {
+                    "chunk_id": "c1",
+                    "score": 0.9,
+                    "content": "KYC explanation",
+                    "metadata": {},
+                }
+            ]
         }
 
         mock_analysis = MagicMock()
@@ -1121,7 +1308,14 @@ class TestFullRetrievalPipeline:
     async def test_comparative_query_uses_hybrid(self):
         """Comparative query should use hybrid."""
         self.mock_retrieval_service.retrieve.return_value = {
-            "results": [{"chunk_id": "c1", "score": 0.9, "content": "KYC details", "metadata": {}}]
+            "results": [
+                {
+                    "chunk_id": "c1",
+                    "score": 0.9,
+                    "content": "KYC details",
+                    "metadata": {},
+                }
+            ]
         }
         self.mock_bm25_retriever.retrieve.return_value = [
             {"chunk_id": "c2", "score": 15.0, "content": "CKYC details", "metadata": {}}
@@ -1148,7 +1342,12 @@ class TestFullRetrievalPipeline:
         self.mock_retrieval_service.retrieve.return_value = {
             "results": [
                 {"chunk_id": "shared", "score": 0.9, "content": "a", "metadata": {}},
-                {"chunk_id": "dense_only", "score": 0.8, "content": "b", "metadata": {}},
+                {
+                    "chunk_id": "dense_only",
+                    "score": 0.8,
+                    "content": "b",
+                    "metadata": {},
+                },
             ]
         }
         self.mock_bm25_retriever.retrieve.return_value = [
@@ -1158,13 +1357,17 @@ class TestFullRetrievalPipeline:
 
         # Hybrid result
         hybrid_result = await self.retriever.retrieve_hybrid(
-            "test", top_n=10, use_query_analysis=False,
+            "test",
+            top_n=10,
+            use_query_analysis=False,
         )
         hybrid_ids = {r.chunk_id for r in hybrid_result.results}
 
         # Dense-only result
         dense_result = await self.retriever.retrieve_hybrid(
-            "test", strategy=HybridStrategy.DENSE, use_query_analysis=False,
+            "test",
+            strategy=HybridStrategy.DENSE,
+            use_query_analysis=False,
         )
         dense_ids = {r.chunk_id for r in dense_result.results}
 
@@ -1179,7 +1382,12 @@ class TestFullRetrievalPipeline:
         self.mock_retrieval_service.retrieve.return_value = {
             "results": [
                 {"chunk_id": "shared", "score": 0.9, "content": "a", "metadata": {}},
-                {"chunk_id": "dense_only", "score": 0.8, "content": "b", "metadata": {}},
+                {
+                    "chunk_id": "dense_only",
+                    "score": 0.8,
+                    "content": "b",
+                    "metadata": {},
+                },
             ]
         }
         self.mock_bm25_retriever.retrieve.return_value = [
@@ -1188,10 +1396,14 @@ class TestFullRetrievalPipeline:
         ]
 
         hybrid_result = await self.retriever.retrieve_hybrid(
-            "test", top_n=10, use_query_analysis=False,
+            "test",
+            top_n=10,
+            use_query_analysis=False,
         )
         bm25_result = await self.retriever.retrieve_hybrid(
-            "test", strategy=HybridStrategy.KEYWORD, use_query_analysis=False,
+            "test",
+            strategy=HybridStrategy.KEYWORD,
+            use_query_analysis=False,
         )
 
         hybrid_ids = {r.chunk_id for r in hybrid_result.results}

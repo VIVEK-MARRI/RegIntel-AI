@@ -147,9 +147,7 @@ class TestSchemas:
 
     def test_execution_plan_step_lookup(self):
         s1 = PlanStepDefinition(step_type=PlanStepType.RETRIEVE)
-        s2 = PlanStepDefinition(
-            step_type=PlanStepType.ANSWER, depends_on=[s1.step_id]
-        )
+        s2 = PlanStepDefinition(step_type=PlanStepType.ANSWER, depends_on=[s1.step_id])
         plan = ExecutionPlan(
             query="x",
             query_type=QueryType.FACTUAL,
@@ -176,22 +174,38 @@ class TestSchemas:
 
 class TestIntentClassifier:
     def test_comparison(self, classifier: IntentClassifier):
-        assert classifier.classify("Compare RBI vs SEBI KYC rules") == QueryType.COMPARISON
-        assert classifier.classify("What is the difference between them?") == QueryType.COMPARISON
+        assert (
+            classifier.classify("Compare RBI vs SEBI KYC rules") == QueryType.COMPARISON
+        )
+        assert (
+            classifier.classify("What is the difference between them?")
+            == QueryType.COMPARISON
+        )
 
     def test_timeline(self, classifier: IntentClassifier):
         assert classifier.classify("Timeline of KYC evolution") == QueryType.TIMELINE
-        assert classifier.classify("Show the chronology of changes") == QueryType.TIMELINE
+        assert (
+            classifier.classify("Show the chronology of changes") == QueryType.TIMELINE
+        )
 
     def test_change(self, classifier: IntentClassifier):
-        assert classifier.classify("What changed in 2023?") == QueryType.REGULATORY_CHANGE
-        assert classifier.classify("Show me the amendment") == QueryType.REGULATORY_CHANGE
+        assert (
+            classifier.classify("What changed in 2023?") == QueryType.REGULATORY_CHANGE
+        )
+        assert (
+            classifier.classify("Show me the amendment") == QueryType.REGULATORY_CHANGE
+        )
 
     def test_cross_document(self, classifier: IntentClassifier):
-        assert classifier.classify("Across both RBI and SEBI") == QueryType.CROSS_DOCUMENT
+        assert (
+            classifier.classify("Across both RBI and SEBI") == QueryType.CROSS_DOCUMENT
+        )
 
     def test_multi_step(self, classifier: IntentClassifier):
-        assert classifier.classify("First find X, then compare with Y") == QueryType.MULTI_STEP
+        assert (
+            classifier.classify("First find X, then compare with Y")
+            == QueryType.MULTI_STEP
+        )
 
     def test_definition(self, classifier: IntentClassifier):
         assert classifier.classify("What is KYC?") == QueryType.DEFINITION
@@ -201,7 +215,10 @@ class TestIntentClassifier:
         assert classifier.classify("How to file a complaint?") == QueryType.PROCEDURAL
 
     def test_factual(self, classifier: IntentClassifier):
-        assert classifier.classify("When was the RBI circular issued?") == QueryType.FACTUAL
+        assert (
+            classifier.classify("When was the RBI circular issued?")
+            == QueryType.FACTUAL
+        )
 
     def test_unknown(self, classifier: IntentClassifier):
         assert classifier.classify("zxcvbnm random gibberish") == QueryType.UNKNOWN
@@ -235,7 +252,9 @@ class TestTaskDecomposer:
         assert PlanStepType.AGGREGATE in types
 
     def test_change_decomposition(self, decomposer: TaskDecomposer):
-        steps = decomposer.decompose("What changed in 2023?", QueryType.REGULATORY_CHANGE)
+        steps = decomposer.decompose(
+            "What changed in 2023?", QueryType.REGULATORY_CHANGE
+        )
         types = [s.step_type for s in steps]
         assert PlanStepType.DETECT_CHANGE in types
 
@@ -245,7 +264,9 @@ class TestTaskDecomposer:
         assert PlanStepType.DETECT_CONTRADICTION in types
 
     def test_multi_step_decomposition(self, decomposer: TaskDecomposer):
-        steps = decomposer.decompose("First find X, then compare with Y", QueryType.MULTI_STEP)
+        steps = decomposer.decompose(
+            "First find X, then compare with Y", QueryType.MULTI_STEP
+        )
         # Should produce multiple steps.
         assert len(steps) >= 3
 
@@ -281,12 +302,8 @@ class TestPlanValidator:
         assert result.errors == []
 
     def test_duplicate_step_ids(self, validator: PlanValidator):
-        s1 = PlanStepDefinition(
-            step_id="dup", step_type=PlanStepType.RETRIEVE
-        )
-        s2 = PlanStepDefinition(
-            step_id="dup", step_type=PlanStepType.ANSWER
-        )
+        s1 = PlanStepDefinition(step_id="dup", step_type=PlanStepType.RETRIEVE)
+        s2 = PlanStepDefinition(step_id="dup", step_type=PlanStepType.ANSWER)
         plan = ExecutionPlan(
             query="x",
             query_type=QueryType.FACTUAL,
@@ -313,8 +330,12 @@ class TestPlanValidator:
         assert any("missing" in e.lower() for e in result.errors)
 
     def test_cycle_detected(self, validator: PlanValidator):
-        a = PlanStepDefinition(step_id="a", step_type=PlanStepType.RETRIEVE, depends_on=["b"])
-        b = PlanStepDefinition(step_id="b", step_type=PlanStepType.ANSWER, depends_on=["a"])
+        a = PlanStepDefinition(
+            step_id="a", step_type=PlanStepType.RETRIEVE, depends_on=["b"]
+        )
+        b = PlanStepDefinition(
+            step_id="b", step_type=PlanStepType.ANSWER, depends_on=["a"]
+        )
         plan = ExecutionPlan(
             query="x",
             query_type=QueryType.FACTUAL,
@@ -348,7 +369,14 @@ class TestPlanValidator:
             expected_documents=1,  # mismatch → warning
         )
         result = validator.validate(plan)
-        assert any("2 expected" in w or "raising" in s for w in result.warnings for s in [result.suggestions[0] if result.suggestions else ""]) or len(result.warnings) > 0
+        assert (
+            any(
+                "2 expected" in w or "raising" in s
+                for w in result.warnings
+                for s in [result.suggestions[0] if result.suggestions else ""]
+            )
+            or len(result.warnings) > 0
+        )
 
 
 # ─── PlanExplainer tests ──────────────────────────────────────────────────
@@ -373,7 +401,8 @@ class TestPlanGenerator:
         assert plan.query_type == QueryType.FACTUAL
         assert plan.strategy == PlanStrategy.SINGLE_DOC
         assert plan.estimated_complexity in (
-            PlanComplexity.SIMPLE, PlanComplexity.MODERATE
+            PlanComplexity.SIMPLE,
+            PlanComplexity.MODERATE,
         )
 
     def test_generate_comparison(self, generator: PlanGenerator):
@@ -397,7 +426,9 @@ class TestPlanGenerator:
 
 class TestPlanExecutor:
     @pytest.mark.asyncio
-    async def test_execute_simple(self, executor: PlanExecutor, generator: PlanGenerator):
+    async def test_execute_simple(
+        self, executor: PlanExecutor, generator: PlanGenerator
+    ):
         plan = generator.generate(QueryPlanRequest(query="What is KYC?"))
         result = await executor.execute(plan)
         assert result.plan_id == plan.plan_id
@@ -405,9 +436,7 @@ class TestPlanExecutor:
         assert len(result.step_results) == len(plan.steps)
 
     @pytest.mark.asyncio
-    async def test_execute_uses_pre_supplied_chunks(
-        self, generator: PlanGenerator
-    ):
+    async def test_execute_uses_pre_supplied_chunks(self, generator: PlanGenerator):
         executor = PlanExecutor(
             pre_supplied_chunks=[
                 {
@@ -425,9 +454,7 @@ class TestPlanExecutor:
         assert "pre-1" in first_result.output.get("citations", [])
 
     @pytest.mark.asyncio
-    async def test_execute_missing_dependency_skipped(
-        self, executor: PlanExecutor
-    ):
+    async def test_execute_missing_dependency_skipped(self, executor: PlanExecutor):
         # Manually craft a plan with a missing dep.
         s1 = PlanStepDefinition(
             step_id="a",
@@ -505,7 +532,14 @@ class TestQueryPlanner:
     async def test_plan_and_execute(self, planner: QueryPlanner):
         req = QueryPlanRequest(
             query="What is KYC?",
-            chunks=[{"chunk_id": "c1", "document_id": "d1", "content": "KYC info", "score": 0.9}],
+            chunks=[
+                {
+                    "chunk_id": "c1",
+                    "document_id": "d1",
+                    "content": "KYC info",
+                    "score": 0.9,
+                }
+            ],
             execute=True,
         )
         plan, validation, explanation, execution = await planner.plan_and_execute(req)
@@ -550,7 +584,12 @@ class TestAPI:
             json={
                 "query": "What is KYC?",
                 "chunks": [
-                    {"chunk_id": "c1", "document_id": "d1", "content": "KYC", "score": 0.9}
+                    {
+                        "chunk_id": "c1",
+                        "document_id": "d1",
+                        "content": "KYC",
+                        "score": 0.9,
+                    }
                 ],
                 "execute": True,
             },

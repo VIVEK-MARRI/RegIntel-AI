@@ -273,9 +273,7 @@ class TestSearch:
         assert response.latency_ms > 0
 
     def test_search_returns_results(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="KYC")
-        )
+        response = built_retriever.search(BM25SearchRequest(query="KYC"))
         assert len(response.results) > 0
         for result in response.results:
             assert result.chunk_id != ""
@@ -299,35 +297,25 @@ class TestSearch:
         assert scores == sorted(scores, reverse=True)
 
     def test_search_ranking(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="KYC", top_k=5)
-        )
+        response = built_retriever.search(BM25SearchRequest(query="KYC", top_k=5))
         for i, result in enumerate(response.results):
             assert result.rank == i + 1
 
     def test_search_latency_tracked(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="KYC")
-        )
+        response = built_retriever.search(BM25SearchRequest(query="KYC"))
         assert response.latency_ms > 0
 
     def test_search_average_score(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="KYC")
-        )
+        response = built_retriever.search(BM25SearchRequest(query="KYC"))
         if response.results:
             assert response.average_score > 0
 
     def test_search_empty_query(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="")
-        )
+        response = built_retriever.search(BM25SearchRequest(query=""))
         assert response.total_results == 0
 
     def test_search_no_match(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="xyznonexistent123")
-        )
+        response = built_retriever.search(BM25SearchRequest(query="xyznonexistent123"))
         # BM25 returns all docs with 0.0 scores for non-matching queries
         assert all(r.bm25_score == 0.0 for r in response.results)
         # With a threshold > 0, results should be filtered out
@@ -337,17 +325,13 @@ class TestSearch:
         assert response_filtered.total_results == 0
 
     def test_search_content_preview(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="KYC", top_k=1)
-        )
+        response = built_retriever.search(BM25SearchRequest(query="KYC", top_k=1))
         if response.results:
             assert len(response.results[0].content_preview) > 0
             assert len(response.results[0].content_preview) <= 203  # 200 + "..."
 
     def test_search_result_fields(self, built_retriever):
-        response = built_retriever.search(
-            BM25SearchRequest(query="KYC", top_k=1)
-        )
+        response = built_retriever.search(BM25SearchRequest(query="KYC", top_k=1))
         if response.results:
             r = response.results[0]
             assert r.chunk_id != ""
@@ -391,9 +375,7 @@ class TestSourceFiltering:
         assert response.total_results == 0
 
     def test_filter_reduces_results(self, built_retriever):
-        unfiltered = built_retriever.search(
-            BM25SearchRequest(query="compliance")
-        )
+        unfiltered = built_retriever.search(BM25SearchRequest(query="compliance"))
         filtered = built_retriever.search(
             BM25SearchRequest(query="compliance", source_filter=["RBI"])
         )
@@ -486,7 +468,10 @@ class TestUpdateIndex:
         )
         stats = built_retriever.update_index([updated_doc])
         assert stats.total_documents == 5  # No new docs, just replacement
-        assert built_retriever._documents["chunk-1"].content == "Updated KYC content with new requirements"
+        assert (
+            built_retriever._documents["chunk-1"].content
+            == "Updated KYC content with new requirements"
+        )
 
     def test_update_increments_version(self, built_retriever):
         old_version = built_retriever.get_index_stats().index_version
@@ -667,7 +652,9 @@ class TestPersistence:
     def test_persist_creates_metadata(self, index_manager, sample_documents):
         index_manager.build_index(sample_documents)
         index_manager.save_index()
-        metadata_path = os.path.join(index_manager._config.storage_dir, "bm25_metadata.json")
+        metadata_path = os.path.join(
+            index_manager._config.storage_dir, "bm25_metadata.json"
+        )
         assert os.path.exists(metadata_path)
 
     def test_auto_persist_on_build(self, tmp_storage, sample_documents):
@@ -776,9 +763,7 @@ class TestIntegration:
         assert stats.total_documents == 5
 
         # Search
-        response = index_manager.retriever.search(
-            BM25SearchRequest(query="KYC")
-        )
+        response = index_manager.retriever.search(BM25SearchRequest(query="KYC"))
         assert response.total_results > 0
 
         # Update
@@ -804,9 +789,7 @@ class TestIntegration:
         assert stats.total_documents == 5
 
         # Search after rebuild
-        response = index_manager.retriever.search(
-            BM25SearchRequest(query="KYC")
-        )
+        response = index_manager.retriever.search(BM25SearchRequest(query="KYC"))
         assert response.total_results > 0
 
         # Clear

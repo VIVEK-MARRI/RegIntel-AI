@@ -125,9 +125,7 @@ class RiskInsight(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    insight_id: str = Field(
-        default_factory=lambda: f"ins-{secrets.token_hex(6)}"
-    )
+    insight_id: str = Field(default_factory=lambda: f"ins-{secrets.token_hex(6)}")
     title: str
     description: str
     severity: InsightSeverity
@@ -145,9 +143,7 @@ class DashboardSnapshot(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    snapshot_id: str = Field(
-        default_factory=lambda: f"dash-{secrets.token_hex(6)}"
-    )
+    snapshot_id: str = Field(default_factory=lambda: f"dash-{secrets.token_hex(6)}")
     title: str = "RegIntel Executive Dashboard"
     generated_at: float = 0.0
     risk_level: RiskLevel = RiskLevel.LOW

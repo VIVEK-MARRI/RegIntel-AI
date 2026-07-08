@@ -119,9 +119,7 @@ class ParserProtocol(Protocol):
 
 @runtime_checkable
 class ChunkerProtocol(Protocol):
-    async def chunk(
-        self, document_id: Any
-    ) -> List[Dict[str, Any]]: ...
+    async def chunk(self, document_id: Any) -> List[Dict[str, Any]]: ...
 
 
 @runtime_checkable
@@ -384,7 +382,9 @@ class IngestionRepository:
         incrementals = 0
         total_duration = 0.0
         for r in runs:
-            by_source[r.source or "unknown"] = by_source.get(r.source or "unknown", 0) + 1
+            by_source[r.source or "unknown"] = (
+                by_source.get(r.source or "unknown", 0) + 1
+            )
             by_status[r.status] = by_status.get(r.status, 0) + 1
             chunks += r.chunks_created
             embs += r.embeddings_created
@@ -549,7 +549,9 @@ class DocumentPipelineCoordinator:
         download_step = IngestionStep(step=IngestionStepName.DOWNLOAD)
         run.steps.append(download_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/download", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/download", strategy="ingestion"
+            ):
                 download_step.start()
                 run.status = IngestionStatus.DOWNLOADING
                 if not request.url:
@@ -598,8 +600,11 @@ class DocumentPipelineCoordinator:
 
         # ── 1b. Save downloaded content to file ─────────────────────────
         from pathlib import Path as _Path
+
         file_name = _Path(request.url or "").name or "document.pdf"
-        file_path = _Path(settings.STORAGE_ROOT) / "documents" / f"{checksum[:8]}_{file_name}"
+        file_path = (
+            _Path(settings.STORAGE_ROOT) / "documents" / f"{checksum[:8]}_{file_name}"
+        )
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_bytes(content)
 
@@ -619,7 +624,9 @@ class DocumentPipelineCoordinator:
                     },
                 }
             )
-            run.document_id = str(doc.get("document_id")) if isinstance(doc, dict) else str(doc)
+            run.document_id = (
+                str(doc.get("document_id")) if isinstance(doc, dict) else str(doc)
+            )
         except Exception as exc:
             logger.exception("registry register failed: %s", exc)
             run.status = IngestionStatus.FAILED
@@ -636,7 +643,9 @@ class DocumentPipelineCoordinator:
         parse_step = IngestionStep(step=IngestionStepName.PARSE)
         run.steps.append(parse_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/parse", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/parse", strategy="ingestion"
+            ):
                 parse_step.start()
                 run.status = IngestionStatus.PARSING
                 pages = await self.recovery.run(
@@ -673,7 +682,9 @@ class DocumentPipelineCoordinator:
         chunk_step = IngestionStep(step=IngestionStepName.CHUNK)
         run.steps.append(chunk_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/chunk", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/chunk", strategy="ingestion"
+            ):
                 chunk_step.start()
                 run.status = IngestionStatus.CHUNKING
                 logger.info("Calling chunker.chunk for document_id=%s", run.document_id)
@@ -687,8 +698,11 @@ class DocumentPipelineCoordinator:
                 if self.chunk_persister is not None and run.document_id is not None:
                     try:
                         from uuid import UUID as _UUID
+
                         doc_id_uuid = _UUID(str(run.document_id))
-                        persisted = await self.chunk_persister.register_chunks_bulk(doc_id_uuid, chunks)
+                        persisted = await self.chunk_persister.register_chunks_bulk(
+                            doc_id_uuid, chunks
+                        )
                         logger.info("Persisted %d chunks to database", len(persisted))
                     except Exception as persist_exc:
                         logger.error("Failed to persist chunks: %s", persist_exc)
@@ -721,7 +735,9 @@ class DocumentPipelineCoordinator:
         embed_step = IngestionStep(step=IngestionStepName.EMBED)
         run.steps.append(embed_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/embed", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/embed", strategy="ingestion"
+            ):
                 embed_step.start()
                 run.status = IngestionStatus.EMBEDDING
                 result = await self.recovery.run(
@@ -762,7 +778,9 @@ class DocumentPipelineCoordinator:
         index_step = IngestionStep(step=IngestionStepName.INDEX)
         run.steps.append(index_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/index", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/index", strategy="ingestion"
+            ):
                 index_step.start()
                 run.status = IngestionStatus.INDEXING
                 index_name = await self.recovery.run(
@@ -827,9 +845,7 @@ class RegistrySynchronizer:
         self.registry = registry
         self.duplicate_detector = duplicate_detector
 
-    async def sync(
-        self, discoveries: List[DiscoveredDocument]
-    ) -> RegistrySyncResult:
+    async def sync(self, discoveries: List[DiscoveredDocument]) -> RegistrySyncResult:
         start = time.perf_counter()
         result = RegistrySyncResult()
         for d in discoveries:
@@ -1018,6 +1034,7 @@ class AutoIngestionService:
         The document must already exist in the document registry with a saved file.
         """
         from uuid import UUID as _UUID
+
         document_id = _UUID(document_id_str)
         run = IngestionRun(
             document_id=document_id_str,
@@ -1025,7 +1042,8 @@ class AutoIngestionService:
         )
         self.repository.add_run(run)
         self.audit_service.record(
-            run.run_id, "user_upload_ingestion_started",
+            run.run_id,
+            "user_upload_ingestion_started",
             document_id=document_id_str,
         )
         metrics = get_ingestion_metrics()
@@ -1038,7 +1056,8 @@ class AutoIngestionService:
             run.title = getattr(doc, "title", None) or str(document_id)
             run.status = IngestionStatus.DOWNLOADED
             self.audit_service.record(
-                run.run_id, "document_found",
+                run.run_id,
+                "document_found",
                 document_id=document_id_str,
             )
         except Exception as exc:
@@ -1050,7 +1069,9 @@ class AutoIngestionService:
         parse_step = IngestionStep(step=IngestionStepName.PARSE)
         run.steps.append(parse_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/parse", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/parse", strategy="ingestion"
+            ):
                 parse_step.start()
                 run.status = IngestionStatus.PARSING
                 pages = await self.recovery.run(
@@ -1063,7 +1084,8 @@ class AutoIngestionService:
                     metadata={"page_count": len(pages)},
                 )
                 self.audit_service.record(
-                    run.run_id, "parse_succeeded",
+                    run.run_id,
+                    "parse_succeeded",
                     step=IngestionStepName.PARSE,
                     document_id=document_id_str,
                     metadata={"page_count": len(pages)},
@@ -1073,14 +1095,22 @@ class AutoIngestionService:
             parse_step.finish(IngestionStepStatus.FAILED, error=str(exc))
             run.finish(IngestionStatus.FAILED, failure_reason=f"parse: {exc}")
             self.repository.add_run(run)
-            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            metrics.record_run(
+                "user_upload",
+                success=False,
+                chunks=0,
+                embeddings=0,
+                latency_ms=run.duration_ms,
+            )
             return IngestionRunResponse.from_run(run)
 
         # ── 3. Chunk ───────────────────────────────────────────────────
         chunk_step = IngestionStep(step=IngestionStepName.CHUNK)
         run.steps.append(chunk_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/chunk", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/chunk", strategy="ingestion"
+            ):
                 chunk_step.start()
                 run.status = IngestionStatus.CHUNKING
                 chunks = await self.recovery.run(
@@ -1090,14 +1120,18 @@ class AutoIngestionService:
                 run.chunks_created = len(chunks)
                 if self.coordinator.chunk_persister is not None:
                     from uuid import UUID as _UUID
+
                     doc_id_uuid = _UUID(str(document_id))
-                    await self.coordinator.chunk_persister.register_chunks_bulk(doc_id_uuid, chunks)
+                    await self.coordinator.chunk_persister.register_chunks_bulk(
+                        doc_id_uuid, chunks
+                    )
                 chunk_step.finish(
                     IngestionStepStatus.SUCCEEDED,
                     metadata={"chunk_count": len(chunks)},
                 )
                 self.audit_service.record(
-                    run.run_id, "chunk_succeeded",
+                    run.run_id,
+                    "chunk_succeeded",
                     step=IngestionStepName.CHUNK,
                     document_id=document_id_str,
                 )
@@ -1106,14 +1140,22 @@ class AutoIngestionService:
             chunk_step.finish(IngestionStepStatus.FAILED, error=str(exc))
             run.finish(IngestionStatus.FAILED, failure_reason=f"chunk: {exc}")
             self.repository.add_run(run)
-            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            metrics.record_run(
+                "user_upload",
+                success=False,
+                chunks=0,
+                embeddings=0,
+                latency_ms=run.duration_ms,
+            )
             return IngestionRunResponse.from_run(run)
 
         # ── 4. Embed ───────────────────────────────────────────────────
         embed_step = IngestionStep(step=IngestionStepName.EMBED)
         run.steps.append(embed_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/embed", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/embed", strategy="ingestion"
+            ):
                 embed_step.start()
                 run.status = IngestionStatus.EMBEDDING
                 result = await self.recovery.run(
@@ -1129,7 +1171,8 @@ class AutoIngestionService:
                     },
                 )
                 self.audit_service.record(
-                    run.run_id, "embed_succeeded",
+                    run.run_id,
+                    "embed_succeeded",
                     step=IngestionStepName.EMBED,
                     document_id=document_id_str,
                 )
@@ -1138,14 +1181,22 @@ class AutoIngestionService:
             embed_step.finish(IngestionStepStatus.FAILED, error=str(exc))
             run.finish(IngestionStatus.FAILED, failure_reason=f"embed: {exc}")
             self.repository.add_run(run)
-            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            metrics.record_run(
+                "user_upload",
+                success=False,
+                chunks=0,
+                embeddings=0,
+                latency_ms=run.duration_ms,
+            )
             return IngestionRunResponse.from_run(run)
 
         # ── 5. Index ───────────────────────────────────────────────────
         index_step = IngestionStep(step=IngestionStepName.INDEX)
         run.steps.append(index_step)
         try:
-            with track_request(endpoint="/api/v1/ingestion/index", strategy="ingestion"):
+            with track_request(
+                endpoint="/api/v1/ingestion/index", strategy="ingestion"
+            ):
                 index_step.start()
                 run.status = IngestionStatus.INDEXING
                 index_name = await self.recovery.run(
@@ -1157,7 +1208,8 @@ class AutoIngestionService:
                     metadata={"index_name": index_name},
                 )
                 self.audit_service.record(
-                    run.run_id, "index_succeeded",
+                    run.run_id,
+                    "index_succeeded",
                     step=IngestionStepName.INDEX,
                     document_id=document_id_str,
                 )
@@ -1166,7 +1218,13 @@ class AutoIngestionService:
             index_step.finish(IngestionStepStatus.FAILED, error=str(exc))
             run.finish(IngestionStatus.FAILED, failure_reason=f"index: {exc}")
             self.repository.add_run(run)
-            metrics.record_run("user_upload", success=False, chunks=0, embeddings=0, latency_ms=run.duration_ms)
+            metrics.record_run(
+                "user_upload",
+                success=False,
+                chunks=0,
+                embeddings=0,
+                latency_ms=run.duration_ms,
+            )
             return IngestionRunResponse.from_run(run)
 
         # ── 6. Knowledge Graph Extraction ──────────────────────────────
@@ -1174,12 +1232,17 @@ class AutoIngestionService:
         try:
             content_parts = []
             for step in run.steps:
-                if step.step == IngestionStepName.PARSE and step.status == IngestionStepStatus.SUCCEEDED:
+                if (
+                    step.step == IngestionStepName.PARSE
+                    and step.status == IngestionStepStatus.SUCCEEDED
+                ):
                     from app.services.page import PageService
                     from app.api.dependencies import get_page_service
+
                     # Get pages from page store for KG extraction
                     from app.core.database import async_session_factory
                     from app.services.document import DocumentService
+
                     session = async_session_factory()
                     try:
                         page_service = PageService(session, DocumentService(session))
@@ -1192,21 +1255,25 @@ class AutoIngestionService:
             if content_parts:
                 full_text = "\n\n".join(content_parts)
                 from app.api.dependencies import get_knowledge_graph_service
+
                 kg_service = get_knowledge_graph_service()
                 from app.schemas.knowledge_graph import NodeSource
+
                 kg_service.build_from_text(
                     full_text,
                     source=NodeSource.USER_UPLOAD,
                 )
                 kg_extracted = True
                 self.audit_service.record(
-                    run.run_id, "kg_extraction_succeeded",
+                    run.run_id,
+                    "kg_extraction_succeeded",
                     document_id=document_id_str,
                 )
         except Exception as exc:
             logger.warning("KG extraction failed for upload %s: %s", document_id, exc)
             self.audit_service.record(
-                run.run_id, "kg_extraction_failed",
+                run.run_id,
+                "kg_extraction_failed",
                 level="warning",
                 document_id=document_id_str,
                 message=str(exc),
@@ -1217,7 +1284,8 @@ class AutoIngestionService:
         run.finish(IngestionStatus.COMPLETED)
         self.repository.add_run(run)
         self.audit_service.record(
-            run.run_id, "user_upload_ingestion_completed",
+            run.run_id,
+            "user_upload_ingestion_completed",
             document_id=document_id_str,
             metadata={
                 "chunks_created": run.chunks_created,
@@ -1240,17 +1308,20 @@ class AutoIngestionService:
         try:
             from app.schemas.document import DocumentStatusUpdate
             from app.models.document import StatusEnum as _StatusEnum
-            if hasattr(self.registry, "service") and hasattr(self.registry.service, "update_document_status"):
+
+            if hasattr(self.registry, "service") and hasattr(
+                self.registry.service, "update_document_status"
+            ):
                 doc_id_uuid = uuid.UUID(document_id)
-                await self.registry.service.update_document_status(doc_id_uuid, _StatusEnum.INDEXED)
+                await self.registry.service.update_document_status(
+                    doc_id_uuid, _StatusEnum.INDEXED
+                )
         except Exception as exc:
             logger.warning("Failed to update document status to INDEXED: %s", exc)
 
         return IngestionRunResponse.from_run(run)
 
-    async def ingest(
-        self, request: IngestionTriggerRequest
-    ) -> IngestionRunResponse:
+    async def ingest(self, request: IngestionTriggerRequest) -> IngestionRunResponse:
         run = IngestionRun(
             document_url=request.url,
             source=request.source,
@@ -1370,12 +1441,15 @@ class DiscoveryFilter_All:
 class _RealDownloader:
     """Real HTTP/HTTPS downloader with size limits and timeout."""
 
-    def __init__(self, timeout_seconds: int = 30, max_bytes: int = 50 * 1024 * 1024) -> None:
+    def __init__(
+        self, timeout_seconds: int = 30, max_bytes: int = 50 * 1024 * 1024
+    ) -> None:
         self._timeout = timeout_seconds
         self._max_bytes = max_bytes
 
     async def download(self, url: str) -> bytes:
         import aiohttp
+
         timeout = aiohttp.ClientTimeout(total=self._timeout)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as resp:
@@ -1384,7 +1458,9 @@ class _RealDownloader:
                 async for chunk in resp.content.iter_chunked(8192):
                     content.extend(chunk)
                     if len(content) > self._max_bytes:
-                        raise ValueError(f"Download exceeds {self._max_bytes} byte limit")
+                        raise ValueError(
+                            f"Download exceeds {self._max_bytes} byte limit"
+                        )
                 return bytes(content)
 
 
@@ -1411,7 +1487,9 @@ class _ChunkerAdapter:
             logger.info("ChunkerAdapter.chunk returned %d chunks", len(result))
             return result
         except Exception as e:
-            logger.exception("ChunkerAdapter.chunk failed for document_id=%s: %s", document_id, e)
+            logger.exception(
+                "ChunkerAdapter.chunk failed for document_id=%s: %s", document_id, e
+            )
             raise
 
 
@@ -1443,6 +1521,7 @@ class _RegistryAdapter:
 
     async def register(self, payload: Dict[str, Any]) -> Any:
         from app.schemas.document import DocumentCreate
+
         doc_create = DocumentCreate(
             title=payload.get("title", "(untitled)"),
             source=payload.get("source", "UNKNOWN"),
@@ -1460,10 +1539,13 @@ class _RegistryAdapter:
     async def get_by_id(self, document_id: Any) -> Optional[Any]:
         try:
             from uuid import UUID as _UUID
+
             doc_id = _UUID(str(document_id))
             return await self._service.get_document_by_id(doc_id)
         except Exception as exc:
-            logger.warning("get_by_id failed for %s: %s: %s", document_id, type(exc).__name__, exc)
+            logger.warning(
+                "get_by_id failed for %s: %s: %s", document_id, type(exc).__name__, exc
+            )
             return None
 
 
@@ -1494,7 +1576,10 @@ def build_default_auto_ingestion_service(
     * ``registry``   → app.services.document.DocumentService
     """
     from app.services.parser_service import ParserService
-    from app.services.structure.chunker import HierarchicalChunkerService, HierarchicalChunker
+    from app.services.structure.chunker import (
+        HierarchicalChunkerService,
+        HierarchicalChunker,
+    )
     from app.services.embedding.pipeline import EmbeddingPipeline
     from app.services.embedding.index_manager import VectorIndexManager
     from app.services.document import DocumentService
@@ -1505,6 +1590,7 @@ def build_default_auto_ingestion_service(
 
     if db_session is None:
         from app.core.database import async_session_factory
+
         db_session = async_session_factory()
 
     if downloader is None:
@@ -1512,6 +1598,7 @@ def build_default_auto_ingestion_service(
 
     if embedding_provider is None:
         from app.services.embedding import embedding_provider as _default_embedder
+
         embedding_provider = _default_embedder
 
     store = InMemoryIngestionStore(
@@ -1523,7 +1610,9 @@ def build_default_auto_ingestion_service(
     # Real service instances
     document_service = DocumentService(db_session)
     page_service = PageService(db_session, document_service)
-    parser_service = ParserService(document_service, settings.STORAGE_ROOT, page_service=page_service)
+    parser_service = ParserService(
+        document_service, settings.STORAGE_ROOT, page_service=page_service
+    )
     chunker = HierarchicalChunker(tokenizer=SimpleTokenizer())
     enricher = MetadataEnricher(MetadataValidator())
     chunker_service = HierarchicalChunkerService(

@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HybridRerankTelemetry:
     """Full-pipeline telemetry for a hybrid retrieval + reranking operation."""
+
     # Query analysis
     query: str = ""
     query_type: str = "unknown"
@@ -247,11 +248,12 @@ class HybridRerankPipeline:
 # Response schema (defined here to avoid circular imports)
 # ---------------------------------------------------------------------------
 
-from pydantic import BaseModel as PydanticBaseModel
+from pydantic import BaseModel as PydanticBaseModel  # noqa: E402
 
 
 class HybridRerankResponse(PydanticBaseModel):
     """Full response from the hybrid retrieval + reranking pipeline."""
+
     query: str
     results: List  # List[RerankResult]
     rerank_report: Optional[Dict[str, Any]] = None

@@ -55,19 +55,23 @@ async def run(
         resp = await hybrid.search(query=request.query, top_k=5)
         for r in resp.results:
             meta = r.metadata or {}
-            knowledge_items.append({
-                "id": r.chunk_id,
-                "title": meta.get("title", ""),
-                "content": r.content,
-                "body": r.content,
-                "score": r.rerank_score,
-                "document_id": meta.get("document_id", ""),
-                "section": meta.get("section", ""),
-                "page_number": meta.get("page_number"),
-            })
+            knowledge_items.append(
+                {
+                    "id": r.chunk_id,
+                    "title": meta.get("title", ""),
+                    "content": r.content,
+                    "body": r.content,
+                    "score": r.rerank_score,
+                    "document_id": meta.get("document_id", ""),
+                    "section": meta.get("section", ""),
+                    "page_number": meta.get("page_number"),
+                }
+            )
     except Exception as exc:
         logger.warning("Hybrid search failed for query '%s': %s", request.query, exc)
-    return (await service.run(request, knowledge_items=knowledge_items)).model_dump(mode="json")
+    return (await service.run(request, knowledge_items=knowledge_items)).model_dump(
+        mode="json"
+    )
 
 
 @router.post(

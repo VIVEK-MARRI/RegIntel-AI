@@ -9,6 +9,7 @@ from app.core.exceptions import ChunkNotFoundError
 
 logger = logging.getLogger(__name__)
 
+
 class ChunkRegistryService:
     """Service class managing business workflows for DocumentChunks."""
 
@@ -24,14 +25,18 @@ class ChunkRegistryService:
         await self.document_service.get_document_by_id(doc_id)
 
         chunk = DocumentChunk(
-            id=uuid.UUID(str(chunk_data["chunk_id"])) if "chunk_id" in chunk_data else uuid.uuid4(),
+            id=uuid.UUID(str(chunk_data["chunk_id"]))
+            if "chunk_id" in chunk_data
+            else uuid.uuid4(),
             document_id=doc_id,
-            page_number=chunk_data["page"] if "page" in chunk_data else chunk_data.get("page_number", 1),
+            page_number=chunk_data["page"]
+            if "page" in chunk_data
+            else chunk_data.get("page_number", 1),
             section=chunk_data["section"],
             subsection=chunk_data.get("subsection", ""),
             content=chunk_data["content"],
             token_count=chunk_data["token_count"],
-            metadata_json=chunk_data.get("metadata", {})
+            metadata_json=chunk_data.get("metadata", {}),
         )
 
         created = await self.repository.create_chunk(chunk)
@@ -50,7 +55,11 @@ class ChunkRegistryService:
                 serialized[k] = ChunkRegistryService._serialize_metadata(v)
             elif isinstance(v, list):
                 serialized[k] = [
-                    ChunkRegistryService._serialize_metadata(item) if isinstance(item, dict) else str(item) if isinstance(item, uuid.UUID) else item
+                    ChunkRegistryService._serialize_metadata(item)
+                    if isinstance(item, dict)
+                    else str(item)
+                    if isinstance(item, uuid.UUID)
+                    else item
                     for item in v
                 ]
             else:
@@ -58,9 +67,7 @@ class ChunkRegistryService:
         return serialized
 
     async def register_chunks_bulk(
-        self, 
-        document_id: uuid.UUID, 
-        chunks_data: List[Dict[str, Any]]
+        self, document_id: uuid.UUID, chunks_data: List[Dict[str, Any]]
     ) -> List[DocumentChunk]:
         """Registers multiple document chunks in bulk within a single transaction block."""
         # Verify parent document exists
@@ -72,7 +79,7 @@ class ChunkRegistryService:
             # Handle both raw chunks and enriched chunks layout
             is_enriched = "metadata" in c and isinstance(c["metadata"], dict)
             meta = c["metadata"] if is_enriched else {}
-            
+
             page_num = meta.get("page", c.get("page_number", 1))
             sec = meta.get("section", c.get("section", ""))
             subsec = meta.get("subsection", c.get("subsection", ""))
@@ -80,20 +87,24 @@ class ChunkRegistryService:
 
             chunk_objs.append(
                 DocumentChunk(
-                    id=uuid.UUID(str(c["chunk_id"])) if "chunk_id" in c else uuid.uuid4(),
+                    id=uuid.UUID(str(c["chunk_id"]))
+                    if "chunk_id" in c
+                    else uuid.uuid4(),
                     document_id=doc.id,
                     page_number=page_num,
                     section=sec,
                     subsection=subsec,
                     content=c["content"],
                     token_count=toks,
-                    metadata_json=ChunkRegistryService._serialize_metadata(meta)
+                    metadata_json=ChunkRegistryService._serialize_metadata(meta),
                 )
             )
 
         await self.repository.create_chunks_bulk(chunk_objs)
         await self.db_session.commit()
-        logger.info(f"Successfully bulk registered {len(chunks_data)} chunks for document {doc.id}")
+        logger.info(
+            f"Successfully bulk registered {len(chunks_data)} chunks for document {doc.id}"
+        )
         return chunk_objs
 
     async def get_chunk_by_id(self, chunk_id: uuid.UUID) -> DocumentChunk:
@@ -111,7 +122,7 @@ class ChunkRegistryService:
         sort_by: str = "page_number",
         sort_order: str = "asc",
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
     ) -> Sequence[DocumentChunk]:
         """Retrieves a list of chunks across documents with optional filtering/searching/sorting."""
         # If document_id is provided, verify it exists (raising DocumentNotFoundError if missing)
@@ -124,26 +135,27 @@ class ChunkRegistryService:
             sort_by=sort_by,
             sort_order=sort_order,
             skip=skip,
-            limit=limit
+            limit=limit,
         )
 
     async def get_chunk_embeddings(self, chunk_id: uuid.UUID) -> Sequence[Any]:
         """Retrieves embeddings for a given chunk."""
         from app.models.chunk import ChunkEmbedding
         from sqlalchemy import select
+
         stmt = select(ChunkEmbedding).where(ChunkEmbedding.chunk_id == chunk_id)
         result = await self.db_session.execute(stmt)
         return result.scalars().all()
 
     async def get_document_chunks(
-        self, 
-        document_id: uuid.UUID, 
+        self,
+        document_id: uuid.UUID,
         section: Optional[str] = None,
         subsection: Optional[str] = None,
         sort_by: str = "page_number",
         sort_order: str = "asc",
-        skip: int = 0, 
-        limit: int = 100
+        skip: int = 0,
+        limit: int = 100,
     ) -> Sequence[DocumentChunk]:
         """Retrieves a paginated list of chunks for a document, after verifying document exists."""
         # Verify document exists (raises DocumentNotFoundError if missing)
@@ -155,5 +167,5 @@ class ChunkRegistryService:
             sort_by=sort_by,
             sort_order=sort_order,
             skip=skip,
-            limit=limit
+            limit=limit,
         )

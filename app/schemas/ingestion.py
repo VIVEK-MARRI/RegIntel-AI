@@ -133,9 +133,7 @@ class IngestionRun(BaseModel):
         self.finished_at = datetime.now(timezone.utc)
         self.status = status
         self.failure_reason = failure_reason
-        self.duration_ms = (
-            self.finished_at - self.started_at
-        ).total_seconds() * 1000.0
+        self.duration_ms = (self.finished_at - self.started_at).total_seconds() * 1000.0
 
 
 # ─── Triggers / responses ───────────────────────────────────────────────
@@ -157,9 +155,7 @@ class IngestionTriggerRequest(BaseModel):
     url: Optional[str] = None
     source: Optional[str] = None
     title: Optional[str] = None
-    force: bool = Field(
-        False, description="Re-ingest even if checksum already exists."
-    )
+    force: bool = Field(False, description="Re-ingest even if checksum already exists.")
 
 
 class IngestionRunResponse(BaseModel):

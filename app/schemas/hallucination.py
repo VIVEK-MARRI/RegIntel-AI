@@ -38,19 +38,19 @@ from app.schemas.answer_generation import (
 class HallucinationRiskLevel(str, Enum):
     """Discrete risk bands derived from the faithfulness score."""
 
-    NONE = "none"        # >= 0.9
-    LOW = "low"          # 0.7 - 0.9
-    MEDIUM = "medium"    # 0.4 - 0.7
-    HIGH = "high"        # < 0.4
+    NONE = "none"  # >= 0.9
+    LOW = "low"  # 0.7 - 0.9
+    MEDIUM = "medium"  # 0.4 - 0.7
+    HIGH = "high"  # < 0.4
 
 
 class VerificationMethod(str, Enum):
     """How the verdicts were produced."""
 
-    LLM = "llm"          # LLM-based evaluator (primary)
+    LLM = "llm"  # LLM-based evaluator (primary)
     LEXICAL = "lexical"  # Token-overlap fallback (offline)
-    HYBRID = "hybrid"    # Both — union of unsupported claims
-    MOCK = "mock"        # Deterministic offline evaluator
+    HYBRID = "hybrid"  # Both — union of unsupported claims
+    MOCK = "mock"  # Deterministic offline evaluator
 
 
 # ─── Claim verdict ──────────────────────────────────────────────────────────
@@ -63,10 +63,10 @@ class ClaimVerdict(BaseModel):
 
     claim_id: str = Field(default_factory=lambda: f"clm-{uuid.uuid4().hex[:8]}")
     claim: str = Field(..., min_length=1, description="The claim text.")
-    section: str = Field(
-        ..., description="Which answer section the claim came from."
+    section: str = Field(..., description="Which answer section the claim came from.")
+    supported: bool = Field(
+        ..., description="True if the claim is grounded in the sources."
     )
-    supported: bool = Field(..., description="True if the claim is grounded in the sources.")
     confidence: float = Field(
         1.0,
         ge=0.0,
@@ -125,7 +125,9 @@ class FaithfulnessRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     query: str = Field(..., min_length=1, max_length=2048)
-    answer: AnswerSection = Field(..., description="Structured answer (from Module 5.1).")
+    answer: AnswerSection = Field(
+        ..., description="Structured answer (from Module 5.1)."
+    )
     chunks: List[RetrievedChunk] = Field(
         ...,
         min_length=0,
@@ -163,7 +165,8 @@ class FaithfulnessMetadata(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     latency_ms: float = Field(0.0, ge=0.0)
     provider_used: Optional[str] = Field(
-        None, description="Provider that produced the LLM verdicts (None if lexical-only)."
+        None,
+        description="Provider that produced the LLM verdicts (None if lexical-only).",
     )
     chunks_used: int = Field(0, ge=0)
 

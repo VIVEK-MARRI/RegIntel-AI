@@ -12,11 +12,14 @@ from app.services.embedding.base import EmbeddingProvider
 
 logger = logging.getLogger(__name__)
 
+
 def dot_product(v1: List[float], v2: List[float]) -> float:
     return sum(x * y for x, y in zip(v1, v2))
 
+
 def norm(v: List[float]) -> float:
     return math.sqrt(sum(x * x for x in v))
+
 
 def cosine_similarity(v1: List[float], v2: List[float]) -> float:
     d = dot_product(v1, v2)
@@ -26,9 +29,11 @@ def cosine_similarity(v1: List[float], v2: List[float]) -> float:
         return d / (n1 * n2)
     return 0.0
 
+
 def l2_similarity(v1: List[float], v2: List[float]) -> float:
     dist = math.sqrt(sum((x - y) ** 2 for x, y in zip(v1, v2)))
     return 1.0 / (1.0 + dist)
+
 
 class RetrievalService:
     """Service responsible for dense vector semantic search over regulatory document chunks."""
@@ -44,7 +49,7 @@ class RetrievalService:
         score_threshold: float = 0.0,
         distance_metric: str = "cosine",
         source: Optional[SourceEnum] = None,
-        document_id: Optional[uuid.UUID] = None
+        document_id: Optional[uuid.UUID] = None,
     ) -> Dict[str, Any]:
         """Performs semantic search over chunk embeddings and returns top-K results with traces."""
         start_time = time.perf_counter()
@@ -65,8 +70,8 @@ class RetrievalService:
                     "top_k": top_k,
                     "score_threshold": score_threshold,
                     "duration_ms": duration_ms,
-                    "candidates_scanned": 0
-                }
+                    "candidates_scanned": 0,
+                },
             }
 
         # 1. Generate query embedding
@@ -86,7 +91,7 @@ class RetrievalService:
                 .where(
                     and_(
                         ChunkEmbedding.embedding_model == model_name,
-                        ChunkEmbedding.status == EmbeddingStatusEnum.COMPLETED
+                        ChunkEmbedding.status == EmbeddingStatusEnum.COMPLETED,
                     )
                 )
             )
@@ -121,19 +126,21 @@ class RetrievalService:
             top_candidates = scored_candidates[:top_k]
 
             for chunk, score in top_candidates:
-                results.append({
-                    "chunk_id": str(chunk.id),
-                    "score": score,
-                    "content": chunk.content,
-                    "metadata": {
-                        "document_id": str(chunk.document_id),
-                        "page_number": chunk.page_number,
-                        "section": chunk.section,
-                        "subsection": chunk.subsection,
-                        "token_count": chunk.token_count,
-                        "metadata_json": chunk.metadata_json
+                results.append(
+                    {
+                        "chunk_id": str(chunk.id),
+                        "score": score,
+                        "content": chunk.content,
+                        "metadata": {
+                            "document_id": str(chunk.document_id),
+                            "page_number": chunk.page_number,
+                            "section": chunk.section,
+                            "subsection": chunk.subsection,
+                            "token_count": chunk.token_count,
+                            "metadata_json": chunk.metadata_json,
+                        },
                     }
-                })
+                )
 
         # 4. Native pgvector Mode
         else:
@@ -142,7 +149,7 @@ class RetrievalService:
             # - cosine_distance: ChunkEmbedding.embedding.cosine_distance(query_vector)
             # - negative inner product: ChunkEmbedding.embedding.max_inner_product(query_vector)
             # - l2_distance: ChunkEmbedding.embedding.l2_distance(query_vector)
-            
+
             # To perform filtering, sorting, and score threshold, we select from subquery:
             if metric == "cosine":
                 distance_expr = ChunkEmbedding.embedding.cosine_distance(query_vector)
@@ -164,14 +171,14 @@ class RetrievalService:
                     DocumentChunk.subsection.label("subsection"),
                     DocumentChunk.token_count.label("token_count"),
                     DocumentChunk.metadata_json.label("metadata_json"),
-                    score_expr
+                    score_expr,
                 )
                 .join(ChunkEmbedding, ChunkEmbedding.chunk_id == DocumentChunk.id)
                 .join(Document, Document.id == DocumentChunk.document_id)
                 .where(
                     and_(
                         ChunkEmbedding.embedding_model == model_name,
-                        ChunkEmbedding.status == EmbeddingStatusEnum.COMPLETED
+                        ChunkEmbedding.status == EmbeddingStatusEnum.COMPLETED,
                     )
                 )
             )
@@ -193,22 +200,26 @@ class RetrievalService:
 
             db_results = await self.db_session.execute(final_stmt)
             rows = db_results.all()
-            candidates_scanned = len(rows)  # In native mode, scanned matches returning row count
+            candidates_scanned = len(
+                rows
+            )  # In native mode, scanned matches returning row count
 
             for row in rows:
-                results.append({
-                    "chunk_id": str(row.chunk_id),
-                    "score": float(row.score),
-                    "content": row.content,
-                    "metadata": {
-                        "document_id": str(row.document_id),
-                        "page_number": row.page_number,
-                        "section": row.section,
-                        "subsection": row.subsection,
-                        "token_count": row.token_count,
-                        "metadata_json": row.metadata_json
+                results.append(
+                    {
+                        "chunk_id": str(row.chunk_id),
+                        "score": float(row.score),
+                        "content": row.content,
+                        "metadata": {
+                            "document_id": str(row.document_id),
+                            "page_number": row.page_number,
+                            "section": row.section,
+                            "subsection": row.subsection,
+                            "token_count": row.token_count,
+                            "metadata_json": row.metadata_json,
+                        },
                     }
-                })
+                )
 
         duration_ms = (time.perf_counter() - start_time) * 1000
         logger.info(
@@ -227,7 +238,7 @@ class RetrievalService:
                 "candidates_scanned": candidates_scanned,
                 "filters": {
                     "source": source.value if source else None,
-                    "document_id": str(document_id) if document_id else None
-                }
-            }
+                    "document_id": str(document_id) if document_id else None,
+                },
+            },
         }

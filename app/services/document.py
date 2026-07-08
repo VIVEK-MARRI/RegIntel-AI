@@ -8,10 +8,11 @@ from app.repositories.document import DocumentRepository
 from app.core.exceptions import (
     DocumentNotFoundError,
     DuplicateDocumentError,
-    InvalidStateTransitionError
+    InvalidStateTransitionError,
 )
 
 logger = logging.getLogger(__name__)
+
 
 class DocumentService:
     def __init__(self, db_session: AsyncSession):
@@ -21,7 +22,7 @@ class DocumentService:
     async def register_document(self, doc_create: DocumentCreate) -> Document:
         """Registers a new document in the system after checking for duplicates."""
         logger.info(f"Registering document with checksum: {doc_create.checksum}")
-        
+
         # Check for duplication
         existing = await self.repository.get_document_by_checksum(doc_create.checksum)
         if existing:
@@ -37,7 +38,7 @@ class DocumentService:
             publication_date=doc_create.publication_date,
             status=StatusEnum.UPLOADED,
             checksum=doc_create.checksum,
-            page_count=doc_create.page_count
+            page_count=doc_create.page_count,
         )
 
         created_doc = await self.repository.create_document(doc)
@@ -59,7 +60,7 @@ class DocumentService:
         sort_by: str = "uploaded_at",
         sort_order: str = "desc",
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
     ) -> Sequence[Document]:
         """Lists documents using repository layer filters and sorting."""
         return await self.repository.list_documents(
@@ -68,13 +69,15 @@ class DocumentService:
             sort_by=sort_by,
             sort_order=sort_order,
             skip=skip,
-            limit=limit
+            limit=limit,
         )
 
-    async def update_document_status(self, document_id: uuid.UUID, new_status: StatusEnum) -> Document:
+    async def update_document_status(
+        self, document_id: uuid.UUID, new_status: StatusEnum
+    ) -> Document:
         """Updates document status after validating state transition rules."""
         logger.info(f"Updating status for document {document_id} to {new_status}")
-        
+
         doc = await self.get_document_by_id(document_id)
         current_status = doc.status
 
@@ -85,22 +88,26 @@ class DocumentService:
         # Execute update
         updated_doc = await self.repository.update_status(document_id, new_status)
         await self.db_session.commit()
-        
+
         # Refresh session to get updated_at value
         await self.db_session.refresh(updated_doc)
-        logger.info(f"Document {document_id} status updated successfully to {new_status}")
+        logger.info(
+            f"Document {document_id} status updated successfully to {new_status}"
+        )
         return updated_doc
 
-    async def update_document_metadata(self, document_id: uuid.UUID, doc_update: DocumentUpdate) -> Document:
+    async def update_document_metadata(
+        self, document_id: uuid.UUID, doc_update: DocumentUpdate
+    ) -> Document:
         """Updates document metadata fields (title, document_type, publication_date, page_count)."""
         logger.info(f"Updating metadata for document {document_id}")
-        
+
         doc = await self.get_document_by_id(document_id)
-        
+
         update_data = doc_update.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(doc, key, value)
-            
+
         await self.db_session.commit()
         await self.db_session.refresh(doc)
         logger.info(f"Document {document_id} metadata updated successfully.")
@@ -121,7 +128,11 @@ class DocumentService:
             return True
 
         transitions = {
-            StatusEnum.UPLOADED: {StatusEnum.PROCESSING, StatusEnum.PARSING, StatusEnum.FAILED},
+            StatusEnum.UPLOADED: {
+                StatusEnum.PROCESSING,
+                StatusEnum.PARSING,
+                StatusEnum.FAILED,
+            },
             StatusEnum.PROCESSING: {StatusEnum.PARSING, StatusEnum.FAILED},
             StatusEnum.PARSING: {StatusEnum.PARSED, StatusEnum.FAILED},
             StatusEnum.PARSED: {StatusEnum.INDEXED, StatusEnum.FAILED},

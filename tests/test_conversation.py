@@ -87,9 +87,7 @@ def manager(
     session: SessionManager,
     history: ConversationHistoryManager,
 ) -> ConversationManager:
-    return ConversationManager(
-        repository=repository, session=session, history=history
-    )
+    return ConversationManager(repository=repository, session=session, history=history)
 
 
 @pytest.fixture
@@ -251,12 +249,8 @@ class TestRepository:
         assert result.items[0].user_id == "alice"
 
     def test_search_by_tag(self, repository: ConversationRepository):
-        c1 = repository.create(
-            CreateConversationRequest(user_id="u", tags=["kyc"])
-        )
-        repository.create(
-            CreateConversationRequest(user_id="u", tags=["sebi"])
-        )
+        c1 = repository.create(CreateConversationRequest(user_id="u", tags=["kyc"]))
+        repository.create(CreateConversationRequest(user_id="u", tags=["sebi"]))
         flt = ConversationFilter(tag="kyc", page=1, page_size=10)
         result = repository.search(flt)
         assert result.total == 1
@@ -266,9 +260,7 @@ class TestRepository:
         c = repository.create(CreateConversationRequest(user_id="u"))
         repository.append_message(
             c.conversation_id,
-            AppendMessageRequest(
-                role=Role.USER, content="KYC requirements for banks"
-            ),
+            AppendMessageRequest(role=Role.USER, content="KYC requirements for banks"),
         )
         flt = ConversationFilter(query="kyc", page=1, page_size=10)
         result = repository.search(flt)
@@ -287,9 +279,7 @@ class TestRepository:
 
     def test_purge_expired(self, repository: ConversationRepository):
         # Manually create a conversation whose expires_at is in the past.
-        c = repository.create(
-            CreateConversationRequest(user_id="u", ttl_seconds=60)
-        )
+        c = repository.create(CreateConversationRequest(user_id="u", ttl_seconds=60))
         past = datetime.now(timezone.utc).replace(year=2000)
         c.expires_at = past
         repository.update(c)
@@ -301,9 +291,7 @@ class TestRepository:
 
 
 class TestSessionManager:
-    def test_build_context_includes_recent(
-        self, manager: ConversationManager
-    ):
+    def test_build_context_includes_recent(self, manager: ConversationManager):
         c = manager.create(CreateConversationRequest(user_id="u"))
         for i in range(3):
             manager.append_user(c.conversation_id, f"msg {i}")
@@ -359,9 +347,7 @@ class TestHistoryManager:
         s = history.summarise(c)
         assert len(s) <= history.MAX_SUMMARY_LENGTH
 
-    def test_trim_keeps_recent_and_updates_summary(
-        self, manager: ConversationManager
-    ):
+    def test_trim_keeps_recent_and_updates_summary(self, manager: ConversationManager):
         c = manager.create(CreateConversationRequest(user_id="u"))
         for i in range(10):
             manager.append_user(c.conversation_id, f"msg-{i}")
@@ -374,15 +360,11 @@ class TestHistoryManager:
 
 
 class TestManager:
-    def test_get_or_create_creates_when_missing(
-        self, manager: ConversationManager
-    ):
+    def test_get_or_create_creates_when_missing(self, manager: ConversationManager):
         c = manager.get_or_create(None, user_id="u-1")
         assert c.conversation_id.startswith("conv-")
 
-    def test_get_or_create_returns_existing(
-        self, manager: ConversationManager
-    ):
+    def test_get_or_create_returns_existing(self, manager: ConversationManager):
         c1 = manager.create(CreateConversationRequest(user_id="u-1"))
         c2 = manager.get_or_create(c1.conversation_id, user_id="u-1")
         assert c2.conversation_id == c1.conversation_id
@@ -450,9 +432,7 @@ class TestAPI:
 
     @pytest.mark.asyncio
     async def test_append_message(self, client: AsyncClient):
-        r = await client.post(
-            "/api/v1/conversations", json={"user_id": "u-1"}
-        )
+        r = await client.post("/api/v1/conversations", json={"user_id": "u-1"})
         cid = r.json()["conversation_id"]
         r2 = await client.post(
             f"/api/v1/conversations/{cid}/messages",
@@ -464,9 +444,7 @@ class TestAPI:
     @pytest.mark.asyncio
     async def test_list_with_pagination(self, client: AsyncClient):
         for i in range(5):
-            await client.post(
-                "/api/v1/conversations", json={"user_id": f"u{i}"}
-            )
+            await client.post("/api/v1/conversations", json={"user_id": f"u{i}"})
         r = await client.get("/api/v1/conversations?page=1&page_size=2")
         assert r.status_code == 200
         body = r.json()
@@ -484,9 +462,7 @@ class TestAPI:
 
     @pytest.mark.asyncio
     async def test_soft_delete(self, client: AsyncClient):
-        r = await client.post(
-            "/api/v1/conversations", json={"user_id": "u-1"}
-        )
+        r = await client.post("/api/v1/conversations", json={"user_id": "u-1"})
         cid = r.json()["conversation_id"]
         r2 = await client.delete(f"/api/v1/conversations/{cid}")
         assert r2.status_code == 200
@@ -494,9 +470,7 @@ class TestAPI:
 
     @pytest.mark.asyncio
     async def test_hard_delete(self, client: AsyncClient):
-        r = await client.post(
-            "/api/v1/conversations", json={"user_id": "u-1"}
-        )
+        r = await client.post("/api/v1/conversations", json={"user_id": "u-1"})
         cid = r.json()["conversation_id"]
         r2 = await client.delete(f"/api/v1/conversations/{cid}?hard=true")
         assert r2.status_code == 200
@@ -506,50 +480,38 @@ class TestAPI:
 
     @pytest.mark.asyncio
     async def test_get_context(self, client: AsyncClient):
-        r = await client.post(
-            "/api/v1/conversations", json={"user_id": "u-1"}
-        )
+        r = await client.post("/api/v1/conversations", json={"user_id": "u-1"})
         cid = r.json()["conversation_id"]
         await client.post(
             f"/api/v1/conversations/{cid}/messages",
             json={"role": "user", "content": "hi"},
         )
-        r2 = await client.get(
-            f"/api/v1/conversations/{cid}/context?token_budget=500"
-        )
+        r2 = await client.get(f"/api/v1/conversations/{cid}/context?token_budget=500")
         assert r2.status_code == 200
         assert r2.json()["conversation_id"] == cid
 
     @pytest.mark.asyncio
     async def test_refresh_summary(self, client: AsyncClient):
-        r = await client.post(
-            "/api/v1/conversations", json={"user_id": "u-1"}
-        )
+        r = await client.post("/api/v1/conversations", json={"user_id": "u-1"})
         cid = r.json()["conversation_id"]
         await client.post(
             f"/api/v1/conversations/{cid}/messages",
             json={"role": "user", "content": "Tell me about KYC"},
         )
-        r2 = await client.post(
-            f"/api/v1/conversations/{cid}/refresh-summary"
-        )
+        r2 = await client.post(f"/api/v1/conversations/{cid}/refresh-summary")
         assert r2.status_code == 200
         assert "KYC" in r2.json()["summary"]
 
     @pytest.mark.asyncio
     async def test_trim(self, client: AsyncClient):
-        r = await client.post(
-            "/api/v1/conversations", json={"user_id": "u-1"}
-        )
+        r = await client.post("/api/v1/conversations", json={"user_id": "u-1"})
         cid = r.json()["conversation_id"]
         for i in range(8):
             await client.post(
                 f"/api/v1/conversations/{cid}/messages",
                 json={"role": "user", "content": f"msg {i}"},
             )
-        r2 = await client.post(
-            f"/api/v1/conversations/{cid}/trim?keep_last=2"
-        )
+        r2 = await client.post(f"/api/v1/conversations/{cid}/trim?keep_last=2")
         assert r2.status_code == 200
         assert len(r2.json()["messages"]) == 2
 

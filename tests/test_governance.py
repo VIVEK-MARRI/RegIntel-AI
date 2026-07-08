@@ -61,9 +61,7 @@ class TestGovernanceEngine:
         assert result.violations == []
         assert result.evaluated_rules == 0
 
-    def test_confidence_threshold_below_blocks(
-        self, engine: GovernanceEngine
-    ) -> None:
+    def test_confidence_threshold_below_blocks(self, engine: GovernanceEngine) -> None:
         from app.schemas.governance import GovernanceDecision, GovernancePolicy
 
         policy = GovernancePolicy(
@@ -77,18 +75,14 @@ class TestGovernanceEngine:
                 )
             ],
         )
-        d = GovernanceDecision(
-            decision_type=DecisionType.ANSWER, confidence=0.3
-        )
+        d = GovernanceDecision(decision_type=DecisionType.ANSWER, confidence=0.3)
         r = engine.check(d, policies=[policy])
         assert r.policy_compliant is False
         assert len(r.violations) == 1
         assert r.violations[0].action == PolicyAction.BLOCK
         assert r.has_blocking_violation is True
 
-    def test_confidence_threshold_above_passes(
-        self, engine: GovernanceEngine
-    ) -> None:
+    def test_confidence_threshold_above_passes(self, engine: GovernanceEngine) -> None:
         from app.schemas.governance import GovernanceDecision, GovernancePolicy
 
         policy = GovernancePolicy(
@@ -102,9 +96,7 @@ class TestGovernanceEngine:
                 )
             ],
         )
-        d = GovernanceDecision(
-            decision_type=DecisionType.ANSWER, confidence=0.95
-        )
+        d = GovernanceDecision(decision_type=DecisionType.ANSWER, confidence=0.95)
         r = engine.check(d, policies=[policy])
         assert r.policy_compliant is True
 
@@ -268,9 +260,7 @@ class TestGovernanceEngine:
         )
         assert engine.check(d, [policy]).policy_compliant is False
 
-    def test_disabled_rule_is_ignored(
-        self, engine: GovernanceEngine
-    ) -> None:
+    def test_disabled_rule_is_ignored(self, engine: GovernanceEngine) -> None:
         from app.schemas.governance import GovernanceDecision, GovernancePolicy
 
         policy = GovernancePolicy(
@@ -285,14 +275,10 @@ class TestGovernanceEngine:
                 )
             ],
         )
-        d = GovernanceDecision(
-            decision_type=DecisionType.ANSWER, confidence=0.1
-        )
+        d = GovernanceDecision(decision_type=DecisionType.ANSWER, confidence=0.1)
         assert engine.check(d, [policy]).policy_compliant is True
 
-    def test_disabled_policy_is_ignored(
-        self, engine: GovernanceEngine
-    ) -> None:
+    def test_disabled_policy_is_ignored(self, engine: GovernanceEngine) -> None:
         from app.schemas.governance import GovernanceDecision, GovernancePolicy
 
         policy = GovernancePolicy(
@@ -307,14 +293,10 @@ class TestGovernanceEngine:
                 )
             ],
         )
-        d = GovernanceDecision(
-            decision_type=DecisionType.ANSWER, confidence=0.1
-        )
+        d = GovernanceDecision(decision_type=DecisionType.ANSWER, confidence=0.1)
         assert engine.check(d, [policy]).policy_compliant is True
 
-    def test_required_actions_dedup(
-        self, engine: GovernanceEngine
-    ) -> None:
+    def test_required_actions_dedup(self, engine: GovernanceEngine) -> None:
         from app.schemas.governance import GovernanceDecision, GovernancePolicy
 
         policy = GovernancePolicy(
@@ -334,9 +316,7 @@ class TestGovernanceEngine:
                 ),
             ],
         )
-        d = GovernanceDecision(
-            decision_type=DecisionType.ANSWER, confidence=0.1
-        )
+        d = GovernanceDecision(decision_type=DecisionType.ANSWER, confidence=0.1)
         r = engine.check(d, [policy])
         # Both rules emit REQUIRE_APPROVAL but the dedup should keep one
         assert r.required_actions.count(PolicyAction.REQUIRE_APPROVAL) == 1
@@ -400,31 +380,23 @@ class TestPolicyManagement:
         assert service.get_policy(p.policy_id) is not None
 
     def test_update(self, service: GovernanceService) -> None:
-        p = service.create_policy(
-            GovernancePolicyCreateRequest(name="X")
-        )
+        p = service.create_policy(GovernancePolicyCreateRequest(name="X"))
         upd = service.update_policy(p.policy_id, enabled=False, name="Y")
         assert upd is not None
         assert upd.enabled is False
         assert upd.name == "Y"
 
     def test_delete(self, service: GovernanceService) -> None:
-        p = service.create_policy(
-            GovernancePolicyCreateRequest(name="X")
-        )
+        p = service.create_policy(GovernancePolicyCreateRequest(name="X"))
         assert service.delete_policy(p.policy_id) is True
         assert service.get_policy(p.policy_id) is None
         assert service.delete_policy("missing") is False
 
-    def test_default_policies_seeded(
-        self, service: GovernanceService
-    ) -> None:
+    def test_default_policies_seeded(self, service: GovernanceService) -> None:
         enabled = service.list_policies(enabled_only=True)
         assert len(enabled) >= 3
 
-    def test_approval_policy_matching(
-        self, service: GovernanceService
-    ) -> None:
+    def test_approval_policy_matching(self, service: GovernanceService) -> None:
         ap = service.create_approval_policy(
             ApprovalPolicyCreateRequest(
                 name="high-risk-approval",
@@ -456,9 +428,7 @@ class TestPolicyManagement:
 
 
 class TestDecisionRegistry:
-    def test_register_with_policies(
-        self, service: GovernanceService
-    ) -> None:
+    def test_register_with_policies(self, service: GovernanceService) -> None:
         d = service.register_decision(
             GovernanceDecisionCreateRequest(
                 decision_type=DecisionType.ANSWER,
@@ -469,9 +439,7 @@ class TestDecisionRegistry:
         assert d.policy_result is not None
         assert d.policy_result.policy_compliant is False  # blocked by 0.7 rule
 
-    def test_register_without_policies(
-        self, service: GovernanceService
-    ) -> None:
+    def test_register_without_policies(self, service: GovernanceService) -> None:
         d = service.register_decision(
             GovernanceDecisionCreateRequest(
                 decision_type=DecisionType.ANSWER,
@@ -481,9 +449,7 @@ class TestDecisionRegistry:
         )
         assert d.policy_result is None
 
-    def test_get_and_search(
-        self, service: GovernanceService
-    ) -> None:
+    def test_get_and_search(self, service: GovernanceService) -> None:
         service.register_decision(
             GovernanceDecisionCreateRequest(
                 decision_type=DecisionType.ANSWER,
@@ -508,9 +474,7 @@ class TestDecisionRegistry:
         assert out.total == 1
         assert out.items[0].decision_id == d2.decision_id
 
-    def test_search_filter_by_compliance(
-        self, service: GovernanceService
-    ) -> None:
+    def test_search_filter_by_compliance(self, service: GovernanceService) -> None:
         service.register_decision(
             GovernanceDecisionCreateRequest(
                 decision_type=DecisionType.ANSWER,
@@ -526,14 +490,10 @@ class TestDecisionRegistry:
             )
         )
         ok = service.search_decisions(
-            DecisionRegistryFilter(
-                policy_compliant=True, page=1, page_size=10
-            )
+            DecisionRegistryFilter(policy_compliant=True, page=1, page_size=10)
         )
         bad = service.search_decisions(
-            DecisionRegistryFilter(
-                policy_compliant=False, page=1, page_size=10
-            )
+            DecisionRegistryFilter(policy_compliant=False, page=1, page_size=10)
         )
         assert ok.total >= 1
         assert bad.total >= 1
@@ -543,9 +503,7 @@ class TestDecisionRegistry:
 
 
 class TestGovernanceStats:
-    def test_stats_after_activity(
-        self, service: GovernanceService
-    ) -> None:
+    def test_stats_after_activity(self, service: GovernanceService) -> None:
         service.create_policy(
             GovernancePolicyCreateRequest(
                 name="X",
@@ -579,9 +537,7 @@ class TestGovernanceStats:
         assert s.compliance_rate > 0
         assert "answer" in s.by_decision_type
 
-    def test_policy_scope_filtering(
-        self, service: GovernanceService
-    ) -> None:
+    def test_policy_scope_filtering(self, service: GovernanceService) -> None:
         p = service.create_policy(
             GovernancePolicyCreateRequest(
                 name="scoped",
@@ -589,9 +545,7 @@ class TestGovernanceStats:
                 scope_value="gpt-4",
             )
         )
-        service.create_policy(
-            GovernancePolicyCreateRequest(name="global")
-        )
+        service.create_policy(GovernancePolicyCreateRequest(name="global"))
         scoped = service.list_policies(scope=PolicyScope.MODEL)
         assert any(x.policy_id == p.policy_id for x in scoped)
         assert all(x.scope == PolicyScope.MODEL for x in scoped)
@@ -603,9 +557,7 @@ class TestGovernanceStats:
 @pytest_asyncio.fixture
 async def client() -> AsyncClient:
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
@@ -724,9 +676,7 @@ async def test_api_get_unknown_returns_404(
 async def test_api_update_and_delete_policy(
     client: AsyncClient,
 ) -> None:
-    r = await client.post(
-        "/api/v1/governance/policies", json={"name": "upd"}
-    )
+    r = await client.post("/api/v1/governance/policies", json={"name": "upd"})
     pid = r.json()["policy_id"]
     r2 = await client.patch(
         f"/api/v1/governance/policies/{pid}?enabled=false&name=renamed"
@@ -778,9 +728,7 @@ async def test_api_list_decisions_pagination(
                 "check_policies": False,
             },
         )
-    r = await client.get(
-        "/api/v1/governance/decisions?page=1&page_size=2"
-    )
+    r = await client.get("/api/v1/governance/decisions?page=1&page_size=2")
     assert r.status_code == 200
     body = r.json()
     assert len(body["items"]) == 2

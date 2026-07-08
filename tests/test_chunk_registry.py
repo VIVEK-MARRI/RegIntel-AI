@@ -10,6 +10,7 @@ from app.services.document import DocumentService
 from app.services.chunk_registry import ChunkRegistryService
 from app.core.exceptions import ChunkNotFoundError, register_exception_handlers
 
+
 @pytest.mark.asyncio
 async def test_chunk_registry_lifecycle(db_session):
     # 1. Setup services
@@ -23,7 +24,7 @@ async def test_chunk_registry_lifecycle(db_session):
         file_name="sebi_icdr.pdf",
         file_path="SEBI/sebi_icdr.pdf",
         checksum="h" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     db_session.add(doc)
     await db_session.commit()
@@ -38,7 +39,7 @@ async def test_chunk_registry_lifecycle(db_session):
         "subsection": "Pricing",
         "content": "The pricing of rights issue shall be decided by the issuer.",
         "token_count": 120,
-        "metadata": {"custom_tag": "test"}
+        "metadata": {"custom_tag": "test"},
     }
 
     chunk = await chunk_service.register_chunk(chunk_data)
@@ -47,7 +48,9 @@ async def test_chunk_registry_lifecycle(db_session):
     assert chunk.page_number == 4
     assert chunk.section == "Chapter II - Rights Issue"
     assert chunk.subsection == "Pricing"
-    assert chunk.content == "The pricing of rights issue shall be decided by the issuer."
+    assert (
+        chunk.content == "The pricing of rights issue shall be decided by the issuer."
+    )
     assert chunk.token_count == 120
     assert chunk.metadata_json == {"custom_tag": "test"}
 
@@ -73,8 +76,8 @@ async def test_chunk_registry_lifecycle(db_session):
                 "section": "Sec A",
                 "subsection": "Sub A1",
                 "token_count": 50,
-                "tag": "first"
-            }
+                "tag": "first",
+            },
         },
         # Flat style (Milestone 8)
         {
@@ -83,7 +86,7 @@ async def test_chunk_registry_lifecycle(db_session):
             "section": "Sec B",
             "subsection": "Sub B1",
             "content": "Bulk chunk 2 content.",
-            "token_count": 80
+            "token_count": 80,
         },
         # Extra chunk on page 2 to test sort order within the same page (by ID/secondary sort)
         {
@@ -93,9 +96,9 @@ async def test_chunk_registry_lifecycle(db_session):
                 "page": 2,
                 "section": "Sec A",
                 "subsection": "Sub A2",
-                "token_count": 60
-            }
-        }
+                "token_count": 60,
+            },
+        },
     ]
 
     bulk_chunks = await chunk_service.register_chunks_bulk(doc.id, bulk_data)
@@ -106,7 +109,7 @@ async def test_chunk_registry_lifecycle(db_session):
     # Expected ordering: Page 2 chunks first, then Page 3, then Page 4.
     all_chunks = await chunk_service.get_document_chunks(doc.id, skip=0, limit=10)
     assert len(all_chunks) == 4
-    
+
     # Verify sorting order: page 2, page 2, page 3, page 4
     assert all_chunks[0].page_number == 2
     assert all_chunks[1].page_number == 2

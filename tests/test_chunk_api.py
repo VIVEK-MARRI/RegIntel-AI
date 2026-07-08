@@ -4,6 +4,7 @@ from httpx import AsyncClient
 from app.models.document import Document, SourceEnum, StatusEnum
 from app.models.chunk import DocumentChunk
 
+
 @pytest.mark.asyncio
 async def test_chunk_management_apis(client: AsyncClient, db_session):
     # 1. Setup mock data
@@ -14,7 +15,7 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
         file_name="rbi_credit.pdf",
         file_path="RBI/rbi_credit.pdf",
         checksum="x" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     doc2 = Document(
         title="SEBI Disclosure Rules",
@@ -22,7 +23,7 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
         file_name="sebi_disclosure.pdf",
         file_path="SEBI/sebi_disclosure.pdf",
         checksum="y" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     db_session.add_all([doc1, doc2])
     await db_session.commit()
@@ -37,7 +38,7 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
         subsection="Role of Board",
         content="Board of directors is responsible for overseeing risk management frameworks.",
         token_count=520,
-        metadata_json={"page": 2, "section": "Chapter I - Governance"}
+        metadata_json={"page": 2, "section": "Chapter I - Governance"},
     )
     c2_id = uuid.uuid4()
     c2 = DocumentChunk(
@@ -48,9 +49,9 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
         subsection="Verification Controls",
         content="Verification controls must be established to monitor transactions.",
         token_count=600,
-        metadata_json={"page": 4, "section": "Chapter II - Core Controls"}
+        metadata_json={"page": 4, "section": "Chapter II - Core Controls"},
     )
-    
+
     # Create chunk for Doc 2
     c3_id = uuid.uuid4()
     c3 = DocumentChunk(
@@ -61,9 +62,9 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
         subsection="Annual Reports",
         content="Annual reports must outline security disclosures.",
         token_count=480,
-        metadata_json={"page": 1, "section": "Section 3 - Disclosure Guidelines"}
+        metadata_json={"page": 1, "section": "Section 3 - Disclosure Guidelines"},
     )
-    
+
     db_session.add_all([c1, c2, c3])
     await db_session.commit()
 
@@ -74,7 +75,7 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
     assert response.status_code == 200
     res_data = response.json()
     assert len(res_data) == 3
-    
+
     # Sorting default: page_number asc (c3 (1) -> c1 (2) -> c2 (4))
     assert res_data[0]["id"] == str(c3_id)
     assert res_data[1]["id"] == str(c1_id)
@@ -119,7 +120,7 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
     res_data = response.json()
     assert len(res_data) == 1
     assert res_data[0]["id"] == str(c2_id)
-    
+
     # Search subsection: "board"
     response = await client.get("/api/v1/chunks?subsection=board")
     assert response.status_code == 200
@@ -151,13 +152,15 @@ async def test_chunk_management_apis(client: AsyncClient, db_session):
     assert response.status_code == 200
     res_data = response.json()
     assert len(res_data) == 2
-    
+
     # Page sorting check
     assert res_data[0]["id"] == str(c1_id)
     assert res_data[1]["id"] == str(c2_id)
 
     # Filtering/Searching on document chunks endpoint
-    response = await client.get(f"/api/v1/documents/{doc1.id}/chunks?section=governance")
+    response = await client.get(
+        f"/api/v1/documents/{doc1.id}/chunks?section=governance"
+    )
     assert response.status_code == 200
     res_data = response.json()
     assert len(res_data) == 1

@@ -136,7 +136,8 @@ class AuditEngine:
     def verify_chain(self, store: "InMemoryAuditStore") -> Tuple[bool, str]:
         """Verify the integrity of the hash chain from genesis to head."""
         records = sorted(
-            store._records.values(), key=lambda r: r.sequence  # type: ignore[attr-defined]
+            store._records.values(),
+            key=lambda r: r.sequence,  # type: ignore[attr-defined]
         )
         prev = _GENESIS_HASH
         for r in records:
@@ -197,12 +198,8 @@ class AuditRepository:
             chain_length=self._store._sequence,
             last_chain_hash=self._store._last_hash,
             chain_integrity=chain_intact,
-            last_record_at=max(
-                (r.timestamp for r in records), default=None
-            ),
-            oldest_record_at=min(
-                (r.timestamp for r in records), default=None
-            ),
+            last_record_at=max((r.timestamp for r in records), default=None),
+            oldest_record_at=min((r.timestamp for r in records), default=None),
         )
 
 
@@ -233,9 +230,7 @@ class AuditTrailManager:
         ):
             # Find every record whose subject_id == root_decision_id
             all_records = self._store.list_records_unfiltered()
-            root_records = [
-                r for r in all_records if r.subject_id == root_decision_id
-            ]
+            root_records = [r for r in all_records if r.subject_id == root_decision_id]
             if not root_records:
                 return DecisionLineage(
                     root_decision_id=root_decision_id,
@@ -272,9 +267,7 @@ class AuditTrailManager:
                 for n in frontier:
                     target = n.attributes.get("actor", "")
                     all_recs = self._store.list_records_unfiltered()
-                    candidates = [
-                        r for r in all_recs if r.subject_id == target
-                    ]
+                    candidates = [r for r in all_recs if r.subject_id == target]
                     for c in candidates:
                         if c.audit_id in seen:
                             continue
@@ -306,8 +299,7 @@ class AuditTrailManager:
             nodes.sort(key=lambda x: x.timestamp)
             depth = max(
                 (
-                    1
-                    + max((len(p) for p in [n.parent_ids] or [[]]), default=0)
+                    1 + max((len(p) for p in [n.parent_ids] or [[]]), default=0)
                     for n in nodes
                 ),
                 default=0,
@@ -348,9 +340,7 @@ class ComplianceReporter:
     def __init__(self, store: "InMemoryAuditStore") -> None:
         self._store = store
 
-    def generate(
-        self, request: ComplianceReportCreateRequest
-    ) -> ComplianceReport:
+    def generate(self, request: ComplianceReportCreateRequest) -> ComplianceReport:
         with track_request(
             endpoint="/api/v1/audit/report/generate",
             strategy="report_generate",
@@ -407,9 +397,7 @@ class ComplianceReporter:
         action_counts: Dict[str, int] = {}
         severity_counts: Dict[str, int] = {}
         for r in records:
-            action_counts[r.action.value] = (
-                action_counts.get(r.action.value, 0) + 1
-            )
+            action_counts[r.action.value] = action_counts.get(r.action.value, 0) + 1
             severity_counts[r.severity.value] = (
                 severity_counts.get(r.severity.value, 0) + 1
             )
@@ -428,18 +416,14 @@ class ComplianceReporter:
             findings = [
                 f"Most common action: {max(action_counts, key=action_counts.get, default='n/a')}"
             ]
-            recommendations = [
-                "Continue to monitor high-severity events."
-            ]
+            recommendations = ["Continue to monitor high-severity events."]
         elif "volume" in title.lower():
             summary = f"Total audit volume: {len(records)} records."
             metrics = {"total_records": len(records), "actions": action_counts}
             findings = []
             recommendations = []
         elif "compliance" in title.lower():
-            policy_checks = [
-                r for r in records if r.action == AuditAction.POLICY_CHECK
-            ]
+            policy_checks = [r for r in records if r.action == AuditAction.POLICY_CHECK]
             summary = (
                 f"{len(policy_checks)} policy-check events recorded in the period."
             )
@@ -448,7 +432,8 @@ class ComplianceReporter:
             recommendations = []
         elif "approval" in title.lower() or "decision" in title.lower():
             approvals = [
-                r for r in records
+                r
+                for r in records
                 if r.action in (AuditAction.APPROVE, AuditAction.REJECT)
             ]
             summary = f"{len(approvals)} approval/rejection events recorded."
@@ -464,13 +449,10 @@ class ComplianceReporter:
             recommendations = []
         elif "find" in title.lower() or "observation" in title.lower():
             critical = [r for r in records if r.severity == AuditSeverity.CRITICAL]
-            summary = (
-                f"{len(critical)} critical events require investigation."
-            )
+            summary = f"{len(critical)} critical events require investigation."
             metrics = {"critical_events": len(critical)}
             findings = [
-                f"audit_id={r.audit_id} subject={r.subject_id}"
-                for r in critical[:5]
+                f"audit_id={r.audit_id} subject={r.subject_id}" for r in critical[:5]
             ]
             recommendations = []
         else:
@@ -571,7 +553,8 @@ class InMemoryAuditStore(AuditStore):
         if flt.text_query:
             q = flt.text_query.lower()
             items = [
-                r for r in items
+                r
+                for r in items
                 if q in r.description.lower()
                 or q in str(r.details).lower()
                 or q in r.subject_id.lower()
@@ -630,16 +613,13 @@ class InMemoryAuditStore(AuditStore):
                 "sequence": self._sequence,
                 "last_hash": self._last_hash,
                 "records": [
-                    json.loads(r.model_dump_json())
-                    for r in self._records.values()
+                    json.loads(r.model_dump_json()) for r in self._records.values()
                 ],
                 "evidence": [
-                    json.loads(e.model_dump_json())
-                    for e in self._evidence.values()
+                    json.loads(e.model_dump_json()) for e in self._evidence.values()
                 ],
                 "reports": [
-                    json.loads(p.model_dump_json())
-                    for p in self._reports.values()
+                    json.loads(p.model_dump_json()) for p in self._reports.values()
                 ],
             }
             with open(self._persist_path, "w", encoding="utf-8") as f:
@@ -680,9 +660,7 @@ class AuditService:
 
     # ─── records ───────────────────────────────────────────
 
-    def create_record(
-        self, request: AuditRecordCreateRequest
-    ) -> AuditRecord:
+    def create_record(self, request: AuditRecordCreateRequest) -> AuditRecord:
         return self.engine.append(request, store=self.store)
 
     def get_record(self, audit_id: str) -> Optional[AuditRecord]:
@@ -693,13 +671,9 @@ class AuditService:
 
     # ─── evidence ──────────────────────────────────────────
 
-    def add_evidence(
-        self, request: AuditEvidenceCreateRequest
-    ) -> AuditEvidence:
+    def add_evidence(self, request: AuditEvidenceCreateRequest) -> AuditEvidence:
         content_hash = hashlib.sha256(
-            json.dumps(
-                request.content, sort_keys=True, default=str
-            ).encode("utf-8")
+            json.dumps(request.content, sort_keys=True, default=str).encode("utf-8")
         ).hexdigest()
         evidence = AuditEvidence(
             record_id=request.record_id,
@@ -716,9 +690,7 @@ class AuditService:
         get_audit_metrics().record_evidence(request.kind)
         return evidence
 
-    def get_evidence(
-        self, evidence_id: str
-    ) -> Optional[AuditEvidence]:
+    def get_evidence(self, evidence_id: str) -> Optional[AuditEvidence]:
         return self.store.get_evidence(evidence_id)
 
     def list_evidence(self, record_id: str = "") -> List[AuditEvidence]:
@@ -749,9 +721,7 @@ class AuditService:
     def list_reports(self) -> List[ComplianceReport]:
         return self.reporter.list_reports()
 
-    def get_report(
-        self, report_id: str
-    ) -> Optional[ComplianceReport]:
+    def get_report(self, report_id: str) -> Optional[ComplianceReport]:
         return self.reporter.get_report(report_id)
 
     # ─── integrity / stats ────────────────────────────────
@@ -811,9 +781,7 @@ class AuditService:
 
 def build_default_audit_service() -> AuditService:
     """Build a default :class:`AuditService` with a JSONL-backed store."""
-    persist_path = os.path.join(
-        settings.STORAGE_ROOT, "audit", "audit.jsonl"
-    )
+    persist_path = os.path.join(settings.STORAGE_ROOT, "audit", "audit.jsonl")
     store = InMemoryAuditStore(persist_path=persist_path)
     return AuditService(store)
 

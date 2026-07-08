@@ -43,10 +43,10 @@ class AttributionSection(str, Enum):
 class AttributionConfidence(str, Enum):
     """Bucketed attribution confidence."""
 
-    HIGH = "high"        # score >= 0.7 and at least one cited chunk
-    MEDIUM = "medium"    # 0.4 <= score < 0.7 OR multiple weak chunks
-    LOW = "low"          # 0.15 <= score < 0.4
-    NONE = "none"        # score < 0.15 (or no matching chunk)
+    HIGH = "high"  # score >= 0.7 and at least one cited chunk
+    MEDIUM = "medium"  # 0.4 <= score < 0.7 OR multiple weak chunks
+    LOW = "low"  # 0.15 <= score < 0.4
+    NONE = "none"  # score < 0.15 (or no matching chunk)
 
 
 # ─── Core models ────────────────────────────────────────────────────────────
@@ -93,7 +93,8 @@ class SourceAttribution(BaseModel):
         None, description="Regulator source (RBI / SEBI / ...)."
     )
     excerpt: str = Field(
-        "", description="Short excerpt of the matching chunk (may be empty when no chunk was matched)."
+        "",
+        description="Short excerpt of the matching chunk (may be empty when no chunk was matched).",
     )
     similarity: float = Field(
         ...,

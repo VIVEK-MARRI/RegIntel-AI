@@ -30,6 +30,7 @@ from app.services.forecasting import (
 @pytest.fixture(autouse=True)
 def _reset_singletons():
     from app.api import dependencies as deps
+
     deps.reset_forecasting_service()
     deps.reset_compliance_risk_service()
     yield
@@ -219,19 +220,13 @@ class TestStoreAndService:
         assert f.forecast_id.startswith("fcast-")
         assert service.get(f.forecast_id) is f
 
-    def test_service_scenario_simulation(
-        self, service: ForecastingService
-    ) -> None:
-        out = service.scenario_simulation(
-            ScenarioRequest(baseline_score=0.5)
-        )
+    def test_service_scenario_simulation(self, service: ForecastingService) -> None:
+        out = service.scenario_simulation(ScenarioRequest(baseline_score=0.5))
         assert len(out) == 3
 
     def test_service_accuracy(self, service: ForecastingService) -> None:
         service.forecast(
-            ForecastRequest(
-                horizon_days=3, history=[HistoryPoint(value=0.4)]
-            )
+            ForecastRequest(horizon_days=3, history=[HistoryPoint(value=0.4)])
         )
         m = service.accuracy_metrics()
         assert m["total_forecasts"] == 1
@@ -290,9 +285,7 @@ class TestForecastingAPI:
     @pytest.mark.asyncio
     async def test_stats(self) -> None:
         svc = ForecastingService(store=InMemoryForecastingStore())
-        svc.forecast(
-            ForecastRequest(horizon_days=5, history=[HistoryPoint(value=0.5)])
-        )
+        svc.forecast(ForecastRequest(horizon_days=5, history=[HistoryPoint(value=0.5)]))
         _override(svc)
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -315,9 +308,7 @@ class TestForecastingAPI:
     @pytest.mark.asyncio
     async def test_list(self) -> None:
         svc = ForecastingService(store=InMemoryForecastingStore())
-        svc.forecast(
-            ForecastRequest(horizon_days=3, history=[HistoryPoint(value=0.4)])
-        )
+        svc.forecast(ForecastRequest(horizon_days=3, history=[HistoryPoint(value=0.4)]))
         _override(svc)
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -349,9 +340,7 @@ class TestForecastingAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            r = await client.get(
-                "/api/v1/forecasting/trend/DOC-NONE"
-            )
+            r = await client.get("/api/v1/forecasting/trend/DOC-NONE")
             assert r.status_code == 200
             body = r.json()
             assert body["direction"] in {"up", "down", "flat"}

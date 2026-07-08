@@ -53,19 +53,13 @@ Reporting Requirements under PMLA are mandatory.
 def setup_graph(service: KnowledgeGraphService) -> tuple[str, str, str, str, str]:
     """Build a 5-node graph for traversal/dependency tests."""
     reg = service.add_node(
-        NodeCreateRequest(
-            entity_type=EntityType.REGULATION, name="RBI Act 1934"
-        )
+        NodeCreateRequest(entity_type=EntityType.REGULATION, name="RBI Act 1934")
     )
     circ = service.add_node(
-        NodeCreateRequest(
-            entity_type=EntityType.CIRCULAR, name="Master Circular KYC"
-        )
+        NodeCreateRequest(entity_type=EntityType.CIRCULAR, name="Master Circular KYC")
     )
     inst = service.add_node(
-        NodeCreateRequest(
-            entity_type=EntityType.INSTITUTION, name="NBFCs"
-        )
+        NodeCreateRequest(entity_type=EntityType.INSTITUTION, name="NBFCs")
     )
     topic = service.add_node(
         NodeCreateRequest(entity_type=EntityType.TOPIC, name="KYC")
@@ -233,10 +227,12 @@ class TestRelationshipMapping:
             store.add_node(n)
         rels = RelationshipMapper().map_from_text(nodes, REGULATORY_TEXT)
         for r in rels:
-            assert store.get_node(r.source_id) is not None, \
-                f"Orphan relationship: source {r.source_id} not found"
-            assert store.get_node(r.target_id) is not None, \
-                f"Orphan relationship: target {r.target_id} not found"
+            assert (
+                store.get_node(r.source_id) is not None
+            ), f"Orphan relationship: source {r.source_id} not found"
+            assert (
+                store.get_node(r.target_id) is not None
+            ), f"Orphan relationship: target {r.target_id} not found"
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -278,6 +274,7 @@ class TestGraphPersistence:
         s1 = InMemoryGraphStore(persist_path=p)
         n = s1._nodes  # create node directly to test
         from app.schemas.knowledge_graph import GraphNode
+
         n1 = GraphNode(
             entity_type=EntityType.TOPIC,
             name="KYC",
@@ -327,10 +324,12 @@ class TestGraphGrowth:
             assert resp.status_code == 200, resp.text
 
             after = service.stats()
-            assert after.total_nodes > before_nodes, \
-                f"Nodes did not increase: {before_nodes} -> {after.total_nodes}"
-            assert after.total_relationships > before_rels, \
-                f"Relationships did not increase: {before_rels} -> {after.total_relationships}"
+            assert (
+                after.total_nodes > before_nodes
+            ), f"Nodes did not increase: {before_nodes} -> {after.total_nodes}"
+            assert (
+                after.total_relationships > before_rels
+            ), f"Relationships did not increase: {before_rels} -> {after.total_relationships}"
         finally:
             app.dependency_overrides.pop(get_knowledge_graph_service, None)
 
@@ -349,15 +348,17 @@ class TestImpactTraversal:
         result = service.impact_traversal(reg_id, max_depth=1)
         assert result.total_paths > 0, "No paths found for single hop"
         # paths from reg -> circ and reg -> req
-        assert circ_id in result.affected_node_ids, \
-            f"Circ not reached in single hop from reg"
+        assert (
+            circ_id in result.affected_node_ids
+        ), "Circ not reached in single hop from reg"
 
     def test_multi_hop_traversal(self, service):
         """Validate multi-hop traversal."""
         reg_id, circ_id, inst_id, *_ = setup_graph(service)
         result = service.impact_traversal(reg_id, max_depth=3)
-        assert inst_id in result.affected_node_ids, \
-            f"Inst not reached in multi-hop traversal"
+        assert (
+            inst_id in result.affected_node_ids
+        ), "Inst not reached in multi-hop traversal"
         assert result.max_depth_reached >= 2
 
     def test_maximum_depth_traversal(self, service):
@@ -407,8 +408,9 @@ class TestDependencyAnalysis:
         result = service.dependency_analysis(inst_id, max_depth=5)
         # inst is downstream of circ, which is downstream of reg
         upstream_ids = {n.node_id for n in result.upstream}
-        assert circ_id in upstream_ids or reg_id in upstream_ids, \
-            "No upstream dependencies found"
+        assert (
+            circ_id in upstream_ids or reg_id in upstream_ids
+        ), "No upstream dependencies found"
 
     def test_downstream_dependencies(self, service):
         """Validate downstream dependency detection."""
@@ -463,28 +465,19 @@ class TestRetrievalGraphIntegration:
     """Phase 5.7 — Retrieval + Graph Integration Validation"""
 
     @pytest.mark.asyncio
-    async def test_graph_contributes_beyond_chunks(
-        self, service, client: AsyncClient
-    ):
+    async def test_graph_contributes_beyond_chunks(self, service, client: AsyncClient):
         """Verify graph contributes context beyond chunks for a query."""
         _ = setup_graph(service)
         app.dependency_overrides[get_knowledge_graph_service] = lambda: service
         try:
             # Query via search_nodes with a name filter
-            res = service.search_nodes(
-                NodeFilter(name_contains="KYC")
-            )
+            res = service.search_nodes(NodeFilter(name_contains="KYC"))
             assert res.total >= 1, "No nodes found matching 'KYC'"
 
             # Verify impact traversal enriches context
-            kyc_nodes = [
-                n for n in service.list_all()[0]
-                if "KYC" in n.name
-            ]
+            kyc_nodes = [n for n in service.list_all()[0] if "KYC" in n.name]
             if kyc_nodes:
-                impact = service.impact_traversal(
-                    kyc_nodes[0].node_id, max_depth=3
-                )
+                impact = service.impact_traversal(kyc_nodes[0].node_id, max_depth=3)
                 assert impact.total_paths >= 0
 
             # Verify graph stats include entity type breakdown
@@ -509,10 +502,12 @@ class TestDataIntegrity:
         nodes, rels = service.list_all()
         node_ids = {n.node_id for n in nodes}
         for r in rels:
-            assert r.source_id in node_ids, \
-                f"Relationship {r.relationship_id} has invalid source {r.source_id}"
-            assert r.target_id in node_ids, \
-                f"Relationship {r.relationship_id} has invalid target {r.target_id}"
+            assert (
+                r.source_id in node_ids
+            ), f"Relationship {r.relationship_id} has invalid source {r.source_id}"
+            assert (
+                r.target_id in node_ids
+            ), f"Relationship {r.relationship_id} has invalid target {r.target_id}"
 
     def test_every_node_has_valid_metadata(self, service):
         """Verify every node has valid metadata."""

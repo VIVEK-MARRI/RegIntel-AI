@@ -5,6 +5,7 @@ from app.models.document import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 
+
 class BaseRepository(Generic[ModelType]):
     def __init__(self, model: Type[ModelType], db_session: AsyncSession):
         self.model = model

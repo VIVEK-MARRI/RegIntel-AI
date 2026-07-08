@@ -10,6 +10,7 @@ class QueryAnalysisResult(BaseModel):
         confidence: Classification confidence score between 0.0 and 1.0.
         optimal_strategy: Recommended retrieval strategy (bm25, dense, hybrid).
     """
+
     query: str = Field(
         ...,
         description="The original user query text analyzed.",

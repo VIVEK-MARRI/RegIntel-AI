@@ -108,17 +108,22 @@ def register_default_health_checks(
 
     registered: List[str] = []
 
-    health_checker.register("liveness", lambda: ComponentHealth(
-        name="liveness",
-        status=HealthStatus.HEALTHY,
-        message="process alive",
-    ))
+    health_checker.register(
+        "liveness",
+        lambda: ComponentHealth(
+            name="liveness",
+            status=HealthStatus.HEALTHY,
+            message="process alive",
+        ),
+    )
     registered.append("liveness")
 
     if required_env:
         for var in required_env:
+
             def _make_check(v=var):  # type: ignore[no-untyped-def]
                 return lambda: env_present(name=f"env:{v}", env_var=v)
+
             name = f"env:{var}"
             health_checker.register(name, _make_check())
             registered.append(name)
@@ -131,38 +136,63 @@ def register_default_health_checks(
         registered.append("storage")
 
     if settings.DATABASE_URL and not settings.DATABASE_URL.startswith("sqlite"):
+
         def _db_check() -> ComponentHealth:
             try:
                 import anyio
+
                 async def _probe() -> bool:
                     try:
                         from sqlalchemy.ext.asyncio import create_async_engine
-                        engine = create_async_engine(settings.DATABASE_URL, pool_size=1, max_overflow=0)
+
+                        engine = create_async_engine(
+                            settings.DATABASE_URL, pool_size=1, max_overflow=0
+                        )
                         async with engine.connect() as conn:
-                            await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+                            await conn.execute(
+                                __import__("sqlalchemy").text("SELECT 1")
+                            )
                         await engine.dispose()
                         return True
                     except Exception:
                         return False
+
                 ok = anyio.run(_probe)
                 if ok:
-                    return ComponentHealth(name="database", status=HealthStatus.HEALTHY, message="database reachable")
-                return ComponentHealth(name="database", status=HealthStatus.UNHEALTHY, message="database unreachable")
+                    return ComponentHealth(
+                        name="database",
+                        status=HealthStatus.HEALTHY,
+                        message="database reachable",
+                    )
+                return ComponentHealth(
+                    name="database",
+                    status=HealthStatus.UNHEALTHY,
+                    message="database unreachable",
+                )
             except Exception as exc:
-                return ComponentHealth(name="database", status=HealthStatus.UNHEALTHY, message=str(exc))
+                return ComponentHealth(
+                    name="database", status=HealthStatus.UNHEALTHY, message=str(exc)
+                )
+
         health_checker.register("database", _db_check)
         registered.append("database")
 
     # Embedding backend — reports which backend is active (bge / tfidf_fallback).
     def _embedding_check() -> ComponentHealth:
         try:
-            from app.services.embedding import EMBEDDING_BACKEND_NAME, embedding_provider
+            from app.services.embedding import (
+                EMBEDDING_BACKEND_NAME,
+                embedding_provider,
+            )
+
             ok = embedding_provider.health_check()
             status = HealthStatus.HEALTHY if ok else HealthStatus.DEGRADED
             return ComponentHealth(
                 name="embedding_backend",
                 status=status,
-                message=EMBEDDING_BACKEND_NAME if ok else f"{EMBEDDING_BACKEND_NAME} health_check failed",
+                message=EMBEDDING_BACKEND_NAME
+                if ok
+                else f"{EMBEDDING_BACKEND_NAME} health_check failed",
                 details={"backend": EMBEDDING_BACKEND_NAME},
             )
         except Exception as exc:
@@ -171,6 +201,7 @@ def register_default_health_checks(
                 status=HealthStatus.DEGRADED,
                 message=str(exc),
             )
+
     health_checker.register("embedding_backend", _embedding_check)
     registered.append("embedding_backend")
 
@@ -178,6 +209,7 @@ def register_default_health_checks(
     def _llm_check() -> ComponentHealth:
         try:
             from app.core.config import settings as _s
+
             provider_name = _s.LLM_PROVIDER
             if provider_name == "mock":
                 return ComponentHealth(
@@ -200,6 +232,7 @@ def register_default_health_checks(
                 status=HealthStatus.DEGRADED,
                 message=str(exc),
             )
+
     health_checker.register("llm_provider", _llm_check)
     registered.append("llm_provider")
 
@@ -250,6 +283,7 @@ def on_startup(
         try:
             from sqlalchemy import create_engine
             from app.models.document import Base
+
             sync_url = settings.DATABASE_URL.replace("+aiosqlite", "+pysqlite")
             sync_engine = create_engine(sync_url)
             Base.metadata.create_all(sync_engine)
@@ -281,7 +315,9 @@ def on_startup(
 
 def on_shutdown(app=None) -> None:  # type: ignore[no-untyped-def]
     """Hook for graceful shutdown logging."""
-    logger.info("RegIntel-AI shutting down at %s", datetime.now(timezone.utc).isoformat())
+    logger.info(
+        "RegIntel-AI shutting down at %s", datetime.now(timezone.utc).isoformat()
+    )
 
 
 __all__ = [

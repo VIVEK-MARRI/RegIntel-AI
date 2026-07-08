@@ -59,9 +59,7 @@ class Permission(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    permission_id: str = Field(
-        default_factory=lambda: f"prm-{secrets.token_hex(4)}"
-    )
+    permission_id: str = Field(default_factory=lambda: f"prm-{secrets.token_hex(4)}")
     code: str = Field(..., min_length=1, max_length=120)
     description: str = ""
     resource: str = ""
@@ -73,9 +71,7 @@ class Role(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    role_id: str = Field(
-        default_factory=lambda: f"role-{uuid.uuid4().hex[:12]}"
-    )
+    role_id: str = Field(default_factory=lambda: f"role-{uuid.uuid4().hex[:12]}")
     name: str = Field(..., min_length=1, max_length=120)
     description: str = ""
     built_in: bool = False
@@ -94,9 +90,7 @@ class User(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    user_id: str = Field(
-        default_factory=lambda: f"usr-{uuid.uuid4().hex[:12]}"
-    )
+    user_id: str = Field(default_factory=lambda: f"usr-{uuid.uuid4().hex[:12]}")
     username: str = Field(..., min_length=1, max_length=120)
     email: str = Field(..., min_length=3, max_length=300)
     password_hash: str = ""
@@ -340,9 +334,7 @@ class RBACCheck(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    check_id: str = Field(
-        default_factory=lambda: f"rbac-{secrets.token_hex(4)}"
-    )
+    check_id: str = Field(default_factory=lambda: f"rbac-{secrets.token_hex(4)}")
     user_id: str
     permission_code: str
     allowed: bool = False

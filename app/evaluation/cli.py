@@ -122,7 +122,15 @@ Examples:
         "--metric",
         type=str,
         default="recall_at_5",
-        choices=["recall_at_5", "recall_at_10", "mrr", "precision_at_5", "hit_rate", "ndcg_at_5", "ndcg_at_10"],
+        choices=[
+            "recall_at_5",
+            "recall_at_10",
+            "mrr",
+            "precision_at_5",
+            "hit_rate",
+            "ndcg_at_5",
+            "ndcg_at_10",
+        ],
         help="Metric to compare (default: recall_at_5)",
     )
 
@@ -166,7 +174,7 @@ async def cmd_run(args):
     print(f"Store results: {config.store_results}")
     print("=" * 60)
 
-    report = await run_standalone_evaluation(
+    await run_standalone_evaluation(
         dataset_name=args.dataset,
         strategies=args.strategies,
         mode=args.mode,
@@ -257,7 +265,9 @@ def cmd_trend(args):
     print("=" * 60)
 
     for point in trend:
-        print(f"  {point['timestamp'][:19]} | {point['value']:.4f} | {point['dataset']}")
+        print(
+            f"  {point['timestamp'][:19]} | {point['value']:.4f} | {point['dataset']}"
+        )
 
     print("\n" + "=" * 60)
 

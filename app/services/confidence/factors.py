@@ -30,7 +30,9 @@ def _clamp01(x: float) -> float:
 
 
 def _safe_mean(values: Sequence[float]) -> float:
-    values = [v for v in values if v is not None and not math.isnan(v) and not math.isinf(v)]
+    values = [
+        v for v in values if v is not None and not math.isnan(v) and not math.isinf(v)
+    ]
     if not values:
         return 0.0
     return _clamp01(statistics.fmean(values))
@@ -60,7 +62,10 @@ def retrieval_relevance_factor(
     elif chunk_scores is not None and len(chunk_scores) > 0:
         values = list(chunk_scores)
     else:
-        return {"score": 0.0, "details": {"count": 0, "mean": 0.0, "max": 0.0, "min": 0.0}}
+        return {
+            "score": 0.0,
+            "details": {"count": 0, "mean": 0.0, "max": 0.0, "min": 0.0},
+        }
 
     score = _safe_mean(values)
     return {
@@ -206,13 +211,25 @@ def citation_coverage_factor(
         if isinstance(answer.get(k), str) and answer[k].strip()
     )
     if fields_filled == 0:
-        return {"score": 0.0, "details": {"source": "heuristic", "supporting": len(supporting), "fields_filled": 0}}
+        return {
+            "score": 0.0,
+            "details": {
+                "source": "heuristic",
+                "supporting": len(supporting),
+                "fields_filled": 0,
+            },
+        }
 
     # Each supporting evidence roughly corresponds to one answer field.
     ratio = min(1.0, len(supporting) / float(fields_filled))
     return {
         "score": ratio,
-        "details": {"source": "heuristic", "supporting": len(supporting), "fields_filled": fields_filled, "ratio": ratio},
+        "details": {
+            "source": "heuristic",
+            "supporting": len(supporting),
+            "fields_filled": fields_filled,
+            "ratio": ratio,
+        },
     }
 
 

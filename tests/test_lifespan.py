@@ -21,9 +21,9 @@ def test_startup_registers_health_checks():
     with TestClient(app) as client:
         checker = get_health_checker()
         registered = list(checker.checks().keys())
-        assert "liveness" in registered, (
-            f"Expected 'liveness' check to be registered after startup; got: {registered}"
-        )
+        assert (
+            "liveness" in registered
+        ), f"Expected 'liveness' check to be registered after startup; got: {registered}"
 
 
 def test_liveness_endpoint_returns_200():
@@ -46,9 +46,9 @@ def test_readiness_endpoint_includes_embedding_backend():
         assert resp.status_code in (200, 503), f"Unexpected status: {resp.status_code}"
         body = resp.json()
         component_names = [c["name"] for c in body.get("components", [])]
-        assert "embedding_backend" in component_names, (
-            f"embedding_backend missing from /health/ready components: {component_names}"
-        )
+        assert (
+            "embedding_backend" in component_names
+        ), f"embedding_backend missing from /health/ready components: {component_names}"
 
 
 def test_shutdown_hook_does_not_raise():
@@ -73,10 +73,11 @@ def test_embedding_backend_name_in_readiness_details():
         components = {c["name"]: c for c in body.get("components", [])}
         if "embedding_backend" in components:
             details = components["embedding_backend"].get("details", {})
-            assert "backend" in details, (
-                f"embedding_backend component missing 'backend' key in details: {details}"
-            )
+            assert (
+                "backend" in details
+            ), f"embedding_backend component missing 'backend' key in details: {details}"
             backend_name = details["backend"]
-            assert backend_name in ("bge", "tfidf_fallback"), (
-                f"Unexpected backend name: {backend_name!r}"
-            )
+            assert backend_name in (
+                "bge",
+                "tfidf_fallback",
+            ), f"Unexpected backend name: {backend_name!r}"

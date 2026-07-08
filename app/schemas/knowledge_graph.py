@@ -71,9 +71,7 @@ class GraphRelationship(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    relationship_id: str = Field(
-        default_factory=lambda: f"rel-{secrets.token_hex(6)}"
-    )
+    relationship_id: str = Field(default_factory=lambda: f"rel-{secrets.token_hex(6)}")
     source_id: str = Field(..., min_length=1)
     target_id: str = Field(..., min_length=1)
     relationship_type: RelationshipType

@@ -36,7 +36,14 @@ class CORSConfig:
     """
 
     allowed_origins: Sequence[str] = ()
-    allowed_methods: Sequence[str] = ("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+    allowed_methods: Sequence[str] = (
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    )
     allowed_headers: Sequence[str] = (
         "Authorization",
         "Content-Type",
@@ -76,7 +83,9 @@ class CORSConfig:
         return False
 
 
-def cors_headers_for(origin: Optional[str], config: Optional[CORSConfig] = None) -> Dict[str, str]:
+def cors_headers_for(
+    origin: Optional[str], config: Optional[CORSConfig] = None
+) -> Dict[str, str]:
     """Convenience wrapper used by middleware."""
     return (config or CORSConfig()).headers_for(origin)
 
@@ -104,7 +113,11 @@ class IPAllowList:
     ) -> "IPAllowList":
         allowed_networks = [_parse_cidr(c) for c in allowed_cidrs if c.strip()]
         denied_networks = [_parse_cidr(c) for c in denied_cidrs if c.strip()]
-        return cls(allowed=set(allowed_networks), denied=set(denied_networks), default_allow=default_allow)
+        return cls(
+            allowed=set(allowed_networks),
+            denied=set(denied_networks),
+            default_allow=default_allow,
+        )
 
     def decide(self, ip: str) -> Tuple[bool, str]:
         """Return ``(allowed, reason)`` for the given client IP."""
@@ -172,12 +185,16 @@ class RequestSigner:
         body_bytes = body.encode("utf-8") if isinstance(body, str) else body
         body_hash = hashlib.sha256(body_bytes).hexdigest()
         signing_string = f"{method.upper()}\n{path}\n{ts}\n{body_hash}"
-        digest = hmac.new(self._secret, signing_string.encode("utf-8"), hashlib.sha256).digest()
+        digest = hmac.new(
+            self._secret, signing_string.encode("utf-8"), hashlib.sha256
+        ).digest()
         import base64
 
         return {
             "X-Signature-Timestamp": str(ts),
-            "X-Signature": base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii"),
+            "X-Signature": base64.urlsafe_b64encode(digest)
+            .rstrip(b"=")
+            .decode("ascii"),
         }
 
     def verify(

@@ -254,7 +254,9 @@ def require_role(*roles: Role) -> Callable[[Callable[..., Any]], Callable[..., A
     return decorator
 
 
-def require_permission(*permissions: Permission) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def require_permission(
+    *permissions: Permission,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator: reject the call unless the principal has all listed permissions."""
     required = set(permissions)
 

@@ -77,7 +77,9 @@ class DenseSearchRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    query: str = Field(..., min_length=1, max_length=2048, description="User search query.")
+    query: str = Field(
+        ..., min_length=1, max_length=2048, description="User search query."
+    )
     top_k: int = Field(5, ge=1, le=100, description="Number of results to return.")
     filters: SearchFilters = Field(
         default_factory=SearchFilters, description="Optional result filters."
@@ -93,7 +95,9 @@ class BM25SearchRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    query: str = Field(..., min_length=1, max_length=2048, description="User search query.")
+    query: str = Field(
+        ..., min_length=1, max_length=2048, description="User search query."
+    )
     top_k: int = Field(5, ge=1, le=100, description="Number of results to return.")
     filters: SearchFilters = Field(
         default_factory=SearchFilters, description="Optional result filters."
@@ -114,8 +118,12 @@ class HybridSearchRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    query: str = Field(..., min_length=1, max_length=2048, description="User search query.")
-    top_k: int = Field(5, ge=1, le=100, description="Final number of results to return.")
+    query: str = Field(
+        ..., min_length=1, max_length=2048, description="User search query."
+    )
+    top_k: int = Field(
+        5, ge=1, le=100, description="Final number of results to return."
+    )
     filters: SearchFilters = Field(
         default_factory=SearchFilters, description="Optional result filters."
     )
@@ -175,13 +183,16 @@ class SearchResponse(BaseModel):
 
     query: str = Field(..., description="The original query string.")
     strategy: str = Field(..., description="The strategy that produced these results.")
-    latency_ms: float = Field(..., description="End-to-end request latency in milliseconds.")
+    latency_ms: float = Field(
+        ..., description="End-to-end request latency in milliseconds."
+    )
     total_results: int = Field(..., ge=0, description="Number of results returned.")
     results: List[SearchResultItem] = Field(
         default_factory=list, description="Ranked list of result items."
     )
     request_id: Optional[str] = Field(
-        None, description="Server-generated ID correlating logs and metrics for this request."
+        None,
+        description="Server-generated ID correlating logs and metrics for this request.",
     )
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -194,17 +205,25 @@ class HybridSearchDiagnostics(BaseModel):
 
     query_type: str = Field("unknown", description="Classified query type.")
     query_confidence: float = Field(0.0, description="Query classification confidence.")
-    recommended_strategy: str = Field("hybrid", description="Strategy recommended by analyzer.")
+    recommended_strategy: str = Field(
+        "hybrid", description="Strategy recommended by analyzer."
+    )
     dense_count: int = Field(0, description="Dense candidates fetched.")
     bm25_count: int = Field(0, description="BM25 candidates fetched.")
     fused_count: int = Field(0, description="Fused candidates produced.")
     overlap_count: int = Field(0, description="Chunks returned by both dense and BM25.")
-    overlap_pct: float = Field(0.0, description="Overlap as percentage of total candidates.")
+    overlap_pct: float = Field(
+        0.0, description="Overlap as percentage of total candidates."
+    )
     dense_latency_ms: float = Field(0.0, description="Dense retrieval latency in ms.")
     bm25_latency_ms: float = Field(0.0, description="BM25 retrieval latency in ms.")
     fusion_latency_ms: float = Field(0.0, description="Score fusion latency in ms.")
-    rerank_latency_ms: float = Field(0.0, description="Cross-encoder rerank latency in ms.")
-    rerank_used: bool = Field(False, description="True if reranking was actually applied.")
+    rerank_latency_ms: float = Field(
+        0.0, description="Cross-encoder rerank latency in ms."
+    )
+    rerank_used: bool = Field(
+        False, description="True if reranking was actually applied."
+    )
     rerank_model: Optional[str] = Field(None, description="Reranker model name.")
     fusion_method: str = Field("rrf", description="Fusion method that was used.")
 
@@ -236,13 +255,15 @@ class RetrievalMetricsResponse(BaseModel):
         None, description="Recall@10 for BM25 retrieval (averaged over recent window)."
     )
     hybrid_recall: Optional[float] = Field(
-        None, description="Recall@10 for hybrid retrieval (averaged over recent window)."
+        None,
+        description="Recall@10 for hybrid retrieval (averaged over recent window).",
     )
     reranker_gain: Optional[float] = Field(
         None, description="Average recall improvement after BGE reranking."
     )
     retrieval_success_rate: Optional[float] = Field(
-        None, description="Fraction of queries that returned at least one relevant chunk."
+        None,
+        description="Fraction of queries that returned at least one relevant chunk.",
     )
     average_latency: Optional[float] = Field(
         None, description="Average end-to-end retrieval latency in ms."
@@ -251,7 +272,9 @@ class RetrievalMetricsResponse(BaseModel):
     window_start: Optional[datetime] = Field(
         None, description="Start of the metrics window."
     )
-    window_end: Optional[datetime] = Field(None, description="End of the metrics window.")
+    window_end: Optional[datetime] = Field(
+        None, description="End of the metrics window."
+    )
 
 
 class HealthCheck(BaseModel):
@@ -268,7 +291,9 @@ class HealthCheck(BaseModel):
 class RetrievalHealthResponse(BaseModel):
     """Response model for the retrieval system health endpoint."""
 
-    status: str = Field(..., description="Overall status: healthy | degraded | unhealthy.")
+    status: str = Field(
+        ..., description="Overall status: healthy | degraded | unhealthy."
+    )
     checks: Dict[str, bool] = Field(
         ..., description="Map of component name to boolean health flag."
     )

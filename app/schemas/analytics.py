@@ -13,13 +13,17 @@ from pydantic import BaseModel, Field
 
 # ─── Metric Record Schemas ───────────────────────────────────────────────────
 
+
 class RetrievalMetricsCreate(BaseModel):
     """Schema for recording a single query's retrieval metrics."""
+
     query_id: str = Field(..., description="Unique query identifier.")
     query_text: str = Field(..., description="The search query text.")
     query_category: str = Field(default="unknown", description="Query category.")
     strategy: str = Field(..., description="Retrieval strategy used.")
-    dataset_name: Optional[str] = Field(None, description="Dataset name if from evaluation.")
+    dataset_name: Optional[str] = Field(
+        None, description="Dataset name if from evaluation."
+    )
     dense_recall_at_5: Optional[float] = Field(None, ge=0.0, le=1.0)
     dense_recall_at_10: Optional[float] = Field(None, ge=0.0, le=1.0)
     bm25_recall_at_5: Optional[float] = Field(None, ge=0.0, le=1.0)
@@ -41,6 +45,7 @@ class RetrievalMetricsCreate(BaseModel):
 
 class RetrievalMetricsResponse(BaseModel):
     """Response schema for a retrieval metrics record."""
+
     id: uuid.UUID | str
     timestamp: datetime
     query_id: str
@@ -71,8 +76,10 @@ class RetrievalMetricsResponse(BaseModel):
 
 # ─── Aggregated Metrics Schemas ──────────────────────────────────────────────
 
+
 class AggregatedMetricsResponse(BaseModel):
     """Response schema for aggregated metrics snapshot."""
+
     id: str
     timestamp: datetime
     window_start: datetime
@@ -106,8 +113,10 @@ class AggregatedMetricsResponse(BaseModel):
 
 # ─── Query Distribution Schemas ──────────────────────────────────────────────
 
+
 class QueryDistributionResponse(BaseModel):
     """Response schema for query distribution record."""
+
     id: str
     timestamp: datetime
     window_start: datetime
@@ -134,6 +143,7 @@ class QueryDistributionResponse(BaseModel):
 
 class QueryDistributionSummary(BaseModel):
     """Summary of query distribution across categories and strategies."""
+
     window_type: str
     window_start: datetime
     window_end: datetime
@@ -156,8 +166,10 @@ class QueryDistributionSummary(BaseModel):
 
 # ─── Reranker Gain Schemas ───────────────────────────────────────────────────
 
+
 class RerankerGainResponse(BaseModel):
     """Response schema for reranker gain record."""
+
     # Accept UUID (DB) or str (API). We always serialize back to str.
     id: uuid.UUID | str
 
@@ -181,8 +193,10 @@ class RerankerGainResponse(BaseModel):
 
 # ─── System Health Schemas ───────────────────────────────────────────────────
 
+
 class SystemHealthResponse(BaseModel):
     """Response schema for system health snapshot."""
+
     # Accept UUID (DB) or str (API). Serialized back to str on output.
     id: uuid.UUID | str
     timestamp: datetime
@@ -204,8 +218,10 @@ class SystemHealthResponse(BaseModel):
 
 # ─── Trend Analysis Schemas ──────────────────────────────────────────────────
 
+
 class TrendDataPoint(BaseModel):
     """Single data point in a trend series."""
+
     timestamp: datetime
     value: float
     label: Optional[str] = None
@@ -213,6 +229,7 @@ class TrendDataPoint(BaseModel):
 
 class TrendSeries(BaseModel):
     """A named trend series with data points."""
+
     metric_name: str
     strategy: Optional[str] = None
     data_points: List[TrendDataPoint]
@@ -226,6 +243,7 @@ class TrendSeries(BaseModel):
 
 class TrendAnalysisResponse(BaseModel):
     """Response schema for trend analysis."""
+
     metric_name: str
     window_type: str
     start_time: datetime
@@ -238,8 +256,10 @@ class TrendAnalysisResponse(BaseModel):
 
 # ─── Performance Summary Schemas ─────────────────────────────────────────────
 
+
 class StrategyPerformance(BaseModel):
     """Performance summary for a single retrieval strategy."""
+
     strategy: str
     avg_dense_recall_at_5: Optional[float] = None
     avg_dense_recall_at_10: Optional[float] = None
@@ -260,6 +280,7 @@ class StrategyPerformance(BaseModel):
 
 class PerformanceSummaryResponse(BaseModel):
     """Comprehensive performance summary across all strategies."""
+
     window_type: str
     window_start: datetime
     window_end: datetime
@@ -275,8 +296,10 @@ class PerformanceSummaryResponse(BaseModel):
 
 # ─── Query Filter Schemas ────────────────────────────────────────────────────
 
+
 class MetricsQueryFilter(BaseModel):
     """Filter parameters for querying metrics."""
+
     strategy: Optional[str] = None
     dataset_name: Optional[str] = None
     query_category: Optional[str] = None
@@ -291,6 +314,7 @@ class MetricsQueryFilter(BaseModel):
 
 class PaginatedResponse(BaseModel):
     """Generic paginated response wrapper."""
+
     total: int
     limit: int
     offset: int
@@ -299,8 +323,10 @@ class PaginatedResponse(BaseModel):
 
 # ─── Comparison Schemas ──────────────────────────────────────────────────────
 
+
 class StrategyComparisonResponse(BaseModel):
     """Comparison of metrics across strategies."""
+
     metric_name: str
     window_type: str
     start_time: datetime
@@ -315,9 +341,13 @@ class StrategyComparisonResponse(BaseModel):
 
 # ─── Report Schemas ──────────────────────────────────────────────────────────
 
+
 class ReportRequest(BaseModel):
     """Request schema for generating analytics reports."""
-    window_type: str = Field(default="daily", description="Time window for aggregation.")
+
+    window_type: str = Field(
+        default="daily", description="Time window for aggregation."
+    )
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     strategies: Optional[List[str]] = Field(None, description="Strategies to include.")
@@ -330,6 +360,7 @@ class ReportRequest(BaseModel):
 
 class AnalyticsReportResponse(BaseModel):
     """Complete analytics report."""
+
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     generated_at: datetime = Field(default_factory=datetime.utcnow)
     window_type: str

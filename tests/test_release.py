@@ -32,7 +32,9 @@ REQUIRED_RELEASE_FILES = [
 
 REQUIRED_TOP_LEVEL = ["RELEASE_NOTES.md"]
 
-SEMVER_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(?:-([A-Za-z0-9.-]+))?(?:\+([A-Za-z0-9.-]+))?$")
+SEMVER_RE = re.compile(
+    r"^v?(\d+)\.(\d+)\.(\d+)(?:-([A-Za-z0-9.-]+))?(?:\+([A-Za-z0-9.-]+))?$"
+)
 
 
 # ─── File presence ────────────────────────────────────────────────
@@ -77,9 +79,9 @@ class TestReleaseNotes:
         # The release notes should declare the current version.
         match = re.search(r"v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?", content)
         assert match, "RELEASE_NOTES.md does not declare a semantic version"
-        assert SEMVER_RE.match(match.group()), (
-            f"RELEASE_NOTES.md version {match.group()!r} is not valid semver"
-        )
+        assert SEMVER_RE.match(
+            match.group()
+        ), f"RELEASE_NOTES.md version {match.group()!r} is not valid semver"
 
     def test_lists_assets(self) -> None:
         content = (REPO_ROOT / "RELEASE_NOTES.md").read_text(encoding="utf-8")
@@ -235,6 +237,7 @@ class TestVersioning:
         # Cross-check the declared version in code with the version in the
         # release notes — they must agree.
         import app
+
         try:
             code_version = app.__version__
         except AttributeError:
@@ -242,9 +245,9 @@ class TestVersioning:
         release = (REPO_ROOT / "RELEASE_NOTES.md").read_text(encoding="utf-8")
         # Strip any pre-release suffix for the comparison.
         base_code = code_version.split("-")[0]
-        assert base_code in release, (
-            f"app.__version__={code_version!r} not found in RELEASE_NOTES.md"
-        )
+        assert (
+            base_code in release
+        ), f"app.__version__={code_version!r} not found in RELEASE_NOTES.md"
 
 
 # ─── Release checklist ───────────────────────────────────────────
@@ -270,9 +273,9 @@ class TestReleaseChecklist:
         content = (DOCS_DIR / "RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
         # Should have at least 30 checkboxes
         checkboxes = re.findall(r"^- \[[ x]\]", content, re.MULTILINE)
-        assert len(checkboxes) >= 30, (
-            f"RELEASE_CHECKLIST.md has only {len(checkboxes)} checkboxes, expected >= 30"
-        )
+        assert (
+            len(checkboxes) >= 30
+        ), f"RELEASE_CHECKLIST.md has only {len(checkboxes)} checkboxes, expected >= 30"
 
     def test_smoke_test_mentions_security_selftest(self) -> None:
         content = (DOCS_DIR / "RELEASE_CHECKLIST.md").read_text(encoding="utf-8")

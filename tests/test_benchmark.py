@@ -51,6 +51,7 @@ from app.benchmark.reporter import Reporter as _Reporter
 
 # ─── Fixtures ──────────────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=True)
 def _reset_service_singleton() -> None:
     reset_benchmark_service()
@@ -64,6 +65,7 @@ def collector() -> MetricsCollector:
 
 
 # ─── MetricsCollector ──────────────────────────────────────────────
+
 
 class TestMetricsCollector:
     def test_compute_latency_stats_empty(self) -> None:
@@ -133,6 +135,7 @@ class TestMetricsCollector:
 
 
 # ─── PerformanceRunner ─────────────────────────────────────────────
+
 
 class TestPerformanceRunner:
     @pytest.mark.asyncio
@@ -204,6 +207,7 @@ class TestPerformanceRunner:
 
 # ─── LoadTester ────────────────────────────────────────────────────
 
+
 class TestLoadTester:
     @pytest.mark.asyncio
     async def test_runs_all_iterations(self) -> None:
@@ -251,7 +255,9 @@ class TestLoadTester:
         async def target() -> int:
             return 1
 
-        cfg = LoadTestConfig(name="t", target=target, concurrency=1, iterations=3, warmup=2)
+        cfg = LoadTestConfig(
+            name="t", target=target, concurrency=1, iterations=3, warmup=2
+        )
         result = await LoadTester().run(cfg)
         assert result.total == 3  # warmup not counted
 
@@ -270,13 +276,16 @@ class TestLoadTester:
             await asyncio.sleep(1.0)
             return 1
 
-        cfg = LoadTestConfig(name="t", target=target, concurrency=1, iterations=1, timeout_seconds=0.05)
+        cfg = LoadTestConfig(
+            name="t", target=target, concurrency=1, iterations=1, timeout_seconds=0.05
+        )
         result = await LoadTester().run(cfg)
         assert result.errors == 1
         assert result.results[0].error is not None
 
 
 # ─── BenchmarkService ──────────────────────────────────────────────
+
 
 class TestBenchmarkService:
     @pytest.mark.asyncio
@@ -344,6 +353,7 @@ class TestBenchmarkService:
 
 # ─── Reporter ──────────────────────────────────────────────────────
 
+
 class TestReporter:
     @pytest.mark.asyncio
     async def test_all_reports(self) -> None:
@@ -390,6 +400,7 @@ class TestReporter:
 
 # ─── CLI ───────────────────────────────────────────────────────────
 
+
 class TestCli:
     def test_quick_run(self, tmp_path, capsys) -> None:
         out = tmp_path / "bench.json"
@@ -422,9 +433,11 @@ class TestCli:
 
 # ─── Helpers ────────────────────────────────────────────────────────
 
+
 def _sample_run() -> Dict[str, Any]:
     """A minimal BenchmarkResponse-shaped payload for the report tests."""
     from datetime import datetime, timezone
+
     now = datetime.now(timezone.utc).isoformat()
     return {
         "run_id": "abc",
@@ -451,14 +464,28 @@ def _sample_run() -> Dict[str, Any]:
             },
             "latency_by_kind": {
                 "retrieval": {
-                    "count": 1, "min_ms": 1.0, "max_ms": 1.0, "mean_ms": 1.0,
-                    "median_ms": 1.0, "p50_ms": 1.0, "p90_ms": 1.0, "p95_ms": 1.0,
-                    "p99_ms": 1.0, "stddev_ms": 0.0,
+                    "count": 1,
+                    "min_ms": 1.0,
+                    "max_ms": 1.0,
+                    "mean_ms": 1.0,
+                    "median_ms": 1.0,
+                    "p50_ms": 1.0,
+                    "p90_ms": 1.0,
+                    "p95_ms": 1.0,
+                    "p99_ms": 1.0,
+                    "stddev_ms": 0.0,
                 },
                 "answer": {
-                    "count": 1, "min_ms": 5.0, "max_ms": 5.0, "mean_ms": 5.0,
-                    "median_ms": 5.0, "p50_ms": 5.0, "p90_ms": 5.0, "p95_ms": 5.0,
-                    "p99_ms": 5.0, "stddev_ms": 0.0,
+                    "count": 1,
+                    "min_ms": 5.0,
+                    "max_ms": 5.0,
+                    "mean_ms": 5.0,
+                    "median_ms": 5.0,
+                    "p50_ms": 5.0,
+                    "p90_ms": 5.0,
+                    "p95_ms": 5.0,
+                    "p99_ms": 5.0,
+                    "stddev_ms": 0.0,
                 },
             },
             "cost": {
@@ -475,20 +502,60 @@ def _sample_run() -> Dict[str, Any]:
         },
         "results": [
             {
-                "id": "1", "name": "retrieval", "kind": "retrieval",
-                "success": True, "error": None,
-                "latency": {"total_ms": 1.0, "server_ms": None, "queue_ms": None, "timestamp": now},
-                "memory": {"rss_mb": 100, "heap_mb": None, "traced_mb": None, "timestamp": now},
-                "tokens": {"input_tokens": 100, "output_tokens": 0, "embedding_tokens": 0, "retrieval_units": 1},
-                "cost_units": 0.0001, "metadata": {}, "timestamp": now,
+                "id": "1",
+                "name": "retrieval",
+                "kind": "retrieval",
+                "success": True,
+                "error": None,
+                "latency": {
+                    "total_ms": 1.0,
+                    "server_ms": None,
+                    "queue_ms": None,
+                    "timestamp": now,
+                },
+                "memory": {
+                    "rss_mb": 100,
+                    "heap_mb": None,
+                    "traced_mb": None,
+                    "timestamp": now,
+                },
+                "tokens": {
+                    "input_tokens": 100,
+                    "output_tokens": 0,
+                    "embedding_tokens": 0,
+                    "retrieval_units": 1,
+                },
+                "cost_units": 0.0001,
+                "metadata": {},
+                "timestamp": now,
             },
             {
-                "id": "2", "name": "answer", "kind": "answer",
-                "success": True, "error": None,
-                "latency": {"total_ms": 5.0, "server_ms": None, "queue_ms": None, "timestamp": now},
-                "memory": {"rss_mb": 110, "heap_mb": None, "traced_mb": None, "timestamp": now},
-                "tokens": {"input_tokens": 200, "output_tokens": 100, "embedding_tokens": 0, "retrieval_units": 2},
-                "cost_units": 0.0005, "metadata": {}, "timestamp": now,
+                "id": "2",
+                "name": "answer",
+                "kind": "answer",
+                "success": True,
+                "error": None,
+                "latency": {
+                    "total_ms": 5.0,
+                    "server_ms": None,
+                    "queue_ms": None,
+                    "timestamp": now,
+                },
+                "memory": {
+                    "rss_mb": 110,
+                    "heap_mb": None,
+                    "traced_mb": None,
+                    "timestamp": now,
+                },
+                "tokens": {
+                    "input_tokens": 200,
+                    "output_tokens": 100,
+                    "embedding_tokens": 0,
+                    "retrieval_units": 2,
+                },
+                "cost_units": 0.0005,
+                "metadata": {},
+                "timestamp": now,
             },
         ],
         "system_snapshots": [],

@@ -242,9 +242,7 @@ class WorkflowEngine:
         WorkflowStatus.FAILED,
     }
 
-    def create(
-        self, request: WorkflowCreateRequest
-    ) -> Workflow:
+    def create(self, request: WorkflowCreateRequest) -> Workflow:
         with track_request(
             endpoint="/api/v1/workflow/create",
             strategy="workflow_create",
@@ -252,9 +250,7 @@ class WorkflowEngine:
             steps = (
                 list(request.steps)
                 if request.steps
-                else list(
-                    _DEFAULT_TEMPLATES.get(request.workflow_type, [])
-                )
+                else list(_DEFAULT_TEMPLATES.get(request.workflow_type, []))
             )
             wf = Workflow(
                 name=request.name,
@@ -268,9 +264,7 @@ class WorkflowEngine:
                 created_by=request.created_by,
                 priority=request.priority,
                 metadata=request.metadata,
-                status=WorkflowStatus.DRAFT
-                if not steps
-                else WorkflowStatus.ACTIVE,
+                status=WorkflowStatus.DRAFT if not steps else WorkflowStatus.ACTIVE,
                 audit_trail=[
                     AuditEntry(
                         action="workflow.created",
@@ -291,9 +285,7 @@ class WorkflowEngine:
             WorkflowStatus.PAUSED,
             WorkflowStatus.ACTIVE,
         ):
-            raise ValueError(
-                f"Cannot start workflow in status {wf.status.value}"
-            )
+            raise ValueError(f"Cannot start workflow in status {wf.status.value}")
         if wf.status == WorkflowStatus.ACTIVE and wf.started_at is not None:
             # Already running; idempotent
             return wf
@@ -311,29 +303,19 @@ class WorkflowEngine:
 
     def pause(self, wf: Workflow, actor: str = "system") -> Workflow:
         if wf.status != WorkflowStatus.ACTIVE:
-            raise ValueError(
-                f"Cannot pause workflow in status {wf.status.value}"
-            )
+            raise ValueError(f"Cannot pause workflow in status {wf.status.value}")
         wf.status = WorkflowStatus.PAUSED
-        wf.audit_trail.append(
-            AuditEntry(action="workflow.paused", actor=actor)
-        )
+        wf.audit_trail.append(AuditEntry(action="workflow.paused", actor=actor))
         return wf
 
     def resume(self, wf: Workflow, actor: str = "system") -> Workflow:
         if wf.status != WorkflowStatus.PAUSED:
-            raise ValueError(
-                f"Cannot resume workflow in status {wf.status.value}"
-            )
+            raise ValueError(f"Cannot resume workflow in status {wf.status.value}")
         wf.status = WorkflowStatus.ACTIVE
-        wf.audit_trail.append(
-            AuditEntry(action="workflow.resumed", actor=actor)
-        )
+        wf.audit_trail.append(AuditEntry(action="workflow.resumed", actor=actor))
         return wf
 
-    def cancel(
-        self, wf: Workflow, actor: str = "system", reason: str = ""
-    ) -> Workflow:
+    def cancel(self, wf: Workflow, actor: str = "system", reason: str = "") -> Workflow:
         if wf.status in self._TERMINAL_STATUSES:
             raise ValueError(
                 f"Cannot cancel workflow in terminal status {wf.status.value}"
@@ -352,18 +334,15 @@ class WorkflowEngine:
 
     def complete(self, wf: Workflow, actor: str = "system") -> Workflow:
         if wf.status != WorkflowStatus.ACTIVE:
-            raise ValueError(
-                f"Cannot complete workflow in status {wf.status.value}"
-            )
+            raise ValueError(f"Cannot complete workflow in status {wf.status.value}")
         # Ensure all tasks are completed
         pending = [
-            t for t in wf.tasks
+            t
+            for t in wf.tasks
             if t.status not in (TaskStatus.COMPLETED, TaskStatus.SKIPPED)
         ]
         if pending:
-            raise ValueError(
-                f"Cannot complete: {len(pending)} task(s) still pending"
-            )
+            raise ValueError(f"Cannot complete: {len(pending)} task(s) still pending")
         wf.status = WorkflowStatus.COMPLETED
         wf.completed_at = time.time()
         wf.audit_trail.append(
@@ -376,9 +355,7 @@ class WorkflowEngine:
         get_workflow_metrics().record_completed()
         return wf
 
-    def fail(
-        self, wf: Workflow, actor: str = "system", reason: str = ""
-    ) -> Workflow:
+    def fail(self, wf: Workflow, actor: str = "system", reason: str = "") -> Workflow:
         wf.status = WorkflowStatus.FAILED
         wf.completed_at = time.time()
         wf.audit_trail.append(
@@ -415,13 +392,9 @@ class WorkflowEngine:
 class TaskManager:
     """Create, assign, complete, and track tasks within a workflow."""
 
-    def add_task(
-        self, wf: Workflow, request: TaskCreateRequest
-    ) -> TaskAssignment:
+    def add_task(self, wf: Workflow, request: TaskCreateRequest) -> TaskAssignment:
         # Verify the step exists
-        step = next(
-            (s for s in wf.steps if s.step_id == request.step_id), None
-        )
+        step = next((s for s in wf.steps if s.step_id == request.step_id), None)
         if step is None:
             raise ValueError(
                 f"Step {request.step_id} not found in workflow {wf.workflow_id}"
@@ -479,9 +452,7 @@ class TaskManager:
     ) -> TaskAssignment:
         task = self._find_task(wf, task_id)
         if task.status not in (TaskStatus.PENDING, TaskStatus.BLOCKED):
-            raise ValueError(
-                f"Cannot start task in status {task.status.value}"
-            )
+            raise ValueError(f"Cannot start task in status {task.status.value}")
         task.status = TaskStatus.IN_PROGRESS
         task.started_at = time.time()
         wf.audit_trail.append(
@@ -520,30 +491,20 @@ class TaskManager:
                 },
             )
         )
-        get_workflow_metrics().record_task_completed(
-            status=request.status.value
-        )
+        get_workflow_metrics().record_task_completed(status=request.status.value)
         return task
 
-    def tasks_for_assignee(
-        self, wf: Workflow, assignee: str
-    ) -> List[TaskAssignment]:
+    def tasks_for_assignee(self, wf: Workflow, assignee: str) -> List[TaskAssignment]:
         return [t for t in wf.tasks if t.assignee == assignee]
 
-    def tasks_by_status(
-        self, wf: Workflow, status: TaskStatus
-    ) -> List[TaskAssignment]:
+    def tasks_by_status(self, wf: Workflow, status: TaskStatus) -> List[TaskAssignment]:
         return [t for t in wf.tasks if t.status == status]
 
     @staticmethod
     def _find_task(wf: Workflow, task_id: str) -> TaskAssignment:
-        task = next(
-            (t for t in wf.tasks if t.task_id == task_id), None
-        )
+        task = next((t for t in wf.tasks if t.task_id == task_id), None)
         if task is None:
-            raise ValueError(
-                f"Task {task_id} not found in workflow {wf.workflow_id}"
-            )
+            raise ValueError(f"Task {task_id} not found in workflow {wf.workflow_id}")
         return task
 
 
@@ -581,8 +542,7 @@ class WorkflowOrchestrator:
                 (
                     r
                     for r in wf.escalation_rules
-                    if r.action == EscalationAction.ESCALATE
-                    and r.enabled
+                    if r.action == EscalationAction.ESCALATE and r.enabled
                 ),
                 None,
             )
@@ -648,9 +608,7 @@ class WorkflowOrchestrator:
             return 0.0
         if wf.status == WorkflowStatus.COMPLETED:
             return 100.0
-        return round(
-            wf.current_step_index / max(1, len(wf.steps) - 1) * 100.0, 2
-        )
+        return round(wf.current_step_index / max(1, len(wf.steps) - 1) * 100.0, 2)
 
 
 # ─── Store ─────────────────────────────────────────────────────────
@@ -743,10 +701,7 @@ class WorkflowRepository:
     def search(self, flt: WorkflowFilter) -> PaginatedWorkflows:
         items = self._store.list_all()
         if flt.workflow_type:
-            items = [
-                w for w in items
-                if w.workflow_type == flt.workflow_type
-            ]
+            items = [w for w in items if w.workflow_type == flt.workflow_type]
         if flt.status:
             items = [w for w in items if w.status == flt.status]
         if flt.document_id:
@@ -776,9 +731,7 @@ class WorkflowRepository:
             return s
         completed_durations: List[float] = []
         for wf in items:
-            s.by_status[wf.status.value] = (
-                s.by_status.get(wf.status.value, 0) + 1
-            )
+            s.by_status[wf.status.value] = s.by_status.get(wf.status.value, 0) + 1
             s.by_type[wf.workflow_type.value] = (
                 s.by_type.get(wf.workflow_type.value, 0) + 1
             )
@@ -789,28 +742,22 @@ class WorkflowRepository:
                 s.total_tasks += 1
             if wf.status == WorkflowStatus.COMPLETED:
                 if wf.started_at and wf.completed_at:
-                    completed_durations.append(
-                        wf.completed_at - wf.started_at
-                    )
+                    completed_durations.append(wf.completed_at - wf.started_at)
             s.escalations_triggered += sum(
-                1
-                for a in wf.audit_trail
-                if a.action == "workflow.escalated"
+                1 for a in wf.audit_trail if a.action == "workflow.escalated"
             )
-            s.last_workflow_at = max(
-                s.last_workflow_at or 0, wf.created_at
-            )
+            s.last_workflow_at = max(s.last_workflow_at or 0, wf.created_at)
         if completed_durations:
             s.average_completion_seconds = round(
                 sum(completed_durations) / len(completed_durations), 3
             )
         completed = s.by_status.get(WorkflowStatus.COMPLETED.value, 0)
-        terminal = completed + s.by_status.get(
-            WorkflowStatus.CANCELLED.value, 0
-        ) + s.by_status.get(WorkflowStatus.FAILED.value, 0)
-        s.success_rate = round(
-            completed / terminal, 4
-        ) if terminal > 0 else 0.0
+        terminal = (
+            completed
+            + s.by_status.get(WorkflowStatus.CANCELLED.value, 0)
+            + s.by_status.get(WorkflowStatus.FAILED.value, 0)
+        )
+        s.success_rate = round(completed / terminal, 4) if terminal > 0 else 0.0
         return s
 
 
@@ -846,9 +793,7 @@ class AutomationService:
 
     # ── Lifecycle ─────────────────────────────────────────────
 
-    def start(
-        self, workflow_id: str, actor: str = "system"
-    ) -> Optional[Workflow]:
+    def start(self, workflow_id: str, actor: str = "system") -> Optional[Workflow]:
         wf = self.store.get(workflow_id)
         if wf is None:
             return None
@@ -856,9 +801,7 @@ class AutomationService:
         self.store.add(wf)
         return wf
 
-    def pause(
-        self, workflow_id: str, actor: str = "system"
-    ) -> Optional[Workflow]:
+    def pause(self, workflow_id: str, actor: str = "system") -> Optional[Workflow]:
         wf = self.store.get(workflow_id)
         if wf is None:
             return None
@@ -866,9 +809,7 @@ class AutomationService:
         self.store.add(wf)
         return wf
 
-    def resume(
-        self, workflow_id: str, actor: str = "system"
-    ) -> Optional[Workflow]:
+    def resume(self, workflow_id: str, actor: str = "system") -> Optional[Workflow]:
         wf = self.store.get(workflow_id)
         if wf is None:
             return None
@@ -889,9 +830,7 @@ class AutomationService:
         self.store.add(wf)
         return wf
 
-    def complete(
-        self, workflow_id: str, actor: str = "system"
-    ) -> Optional[Workflow]:
+    def complete(self, workflow_id: str, actor: str = "system") -> Optional[Workflow]:
         wf = self.store.get(workflow_id)
         if wf is None:
             return None
@@ -945,9 +884,7 @@ class AutomationService:
         wf = self.store.get(workflow_id)
         if wf is None:
             return None
-        task = self.task_manager.complete_task(
-            wf, task_id, request, actor=actor
-        )
+        task = self.task_manager.complete_task(wf, task_id, request, actor=actor)
         self.store.add(wf)
         return task
 
@@ -972,17 +909,13 @@ class AutomationService:
             return 0.0
         return self.orchestrator.progress_percent(wf)
 
-    def evaluate_timeouts(
-        self, workflow_id: str
-    ) -> List[EscalationRule]:
+    def evaluate_timeouts(self, workflow_id: str) -> List[EscalationRule]:
         wf = self.store.get(workflow_id)
         if wf is None:
             return []
         return self.orchestrator.evaluate_timeouts(wf)
 
-    def advance(
-        self, workflow_id: str, actor: str = "system"
-    ) -> Optional[Workflow]:
+    def advance(self, workflow_id: str, actor: str = "system") -> Optional[Workflow]:
         wf = self.store.get(workflow_id)
         if wf is None:
             return None
@@ -1004,14 +937,11 @@ class AutomationService:
             "P2": TaskPriority.MEDIUM,
             "P3": TaskPriority.LOW,
         }
-        priority = priority_map.get(
-            getattr(rec, "priority", "P2"), TaskPriority.MEDIUM
-        )
+        priority = priority_map.get(getattr(rec, "priority", "P2"), TaskPriority.MEDIUM)
         request = WorkflowCreateRequest(
             name=f"Workflow for {rec.title}",
             description=(
-                f"Auto-generated workflow from recommendation "
-                f"{recommendation_id}"
+                f"Auto-generated workflow from recommendation " f"{recommendation_id}"
             ),
             workflow_type=WorkflowType.POLICY_UPDATE,
             source_recommendation_id=recommendation_id,
@@ -1062,14 +992,11 @@ class AutomationService:
             "high": TaskPriority.HIGH,
             "critical": TaskPriority.URGENT,
         }
-        priority = priority_map.get(
-            assessment.risk_level.value, TaskPriority.MEDIUM
-        )
+        priority = priority_map.get(assessment.risk_level.value, TaskPriority.MEDIUM)
         request = WorkflowCreateRequest(
             name=f"Workflow for risk {assessment_id}",
             description=(
-                f"Auto-generated workflow from risk assessment "
-                f"{assessment_id}"
+                f"Auto-generated workflow from risk assessment " f"{assessment_id}"
             ),
             workflow_type=wf_type,
             source_risk_assessment_id=assessment_id,
@@ -1127,9 +1054,7 @@ class AutomationService:
 
 
 def build_default_automation_service() -> AutomationService:
-    persist = os.path.join(
-        settings.STORAGE_ROOT, "workflow", "workflows.jsonl"
-    )
+    persist = os.path.join(settings.STORAGE_ROOT, "workflow", "workflows.jsonl")
     store = InMemoryWorkflowStore(persist_path=persist)
     return AutomationService(store=store)
 

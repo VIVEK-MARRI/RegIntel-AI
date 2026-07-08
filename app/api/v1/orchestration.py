@@ -128,9 +128,7 @@ async def list_messages(
     limit: int = 100,
     svc: OrchestrationService = _service_dep(),
 ) -> List[AgentMessage]:
-    return svc.messages(
-        from_agent=from_agent, to_agent=to_agent, limit=limit
-    )
+    return svc.messages(from_agent=from_agent, to_agent=to_agent, limit=limit)
 
 
 @router.get(

@@ -160,12 +160,8 @@ def test_repository_search_by_status():
 def test_repository_audit_list_for_run():
     s = InMemoryIngestionStore()
     repo = IngestionRepository(s)
-    repo.add_audit(
-        IngestionAuditEntry(run_id="r1", event="x")
-    )
-    repo.add_audit(
-        IngestionAuditEntry(run_id="r2", event="y")
-    )
+    repo.add_audit(IngestionAuditEntry(run_id="r1", event="x"))
+    repo.add_audit(IngestionAuditEntry(run_id="r2", event="y"))
     assert len(repo.list_audits(run_id="r1", limit=10)) == 1
     assert len(repo.list_audits(limit=10)) == 2
 
@@ -274,7 +270,9 @@ def _build_pipeline(
     registry = registry or _NoOpRegistry()
     duplicate_detector = duplicate_detector or DuplicateDetector(registry)
     recovery = recovery or FailureRecovery()
-    audit = audit or IngestionAuditService(IngestionRepository(InMemoryIngestionStore()))
+    audit = audit or IngestionAuditService(
+        IngestionRepository(InMemoryIngestionStore())
+    )
     return DocumentPipelineCoordinator(
         downloader=downloader,
         parser=parser,
@@ -475,7 +473,9 @@ async def test_service_ingest_url():
         audit_service=IngestionAuditService(
             IngestionRepository(InMemoryIngestionStore())
         ),
-        synchronizer=RegistrySynchronizer(_NoOpRegistry(), DuplicateDetector(_NoOpRegistry())),
+        synchronizer=RegistrySynchronizer(
+            _NoOpRegistry(), DuplicateDetector(_NoOpRegistry())
+        ),
         registry=_NoOpRegistry(),
     )
     resp = await svc.ingest(
@@ -494,7 +494,9 @@ async def test_service_ingest_discovery():
         audit_service=IngestionAuditService(
             IngestionRepository(InMemoryIngestionStore())
         ),
-        synchronizer=RegistrySynchronizer(_NoOpRegistry(), DuplicateDetector(_NoOpRegistry())),
+        synchronizer=RegistrySynchronizer(
+            _NoOpRegistry(), DuplicateDetector(_NoOpRegistry())
+        ),
         registry=_NoOpRegistry(),
     )
     d = DiscoveredDocument(
@@ -571,9 +573,11 @@ def test_ingestion_scheduler_status_default():
 def fresh_service():
     import uuid
     from typing import List
+
     class MockDownloader:
         def __init__(self):
             self.counter = 0
+
         async def download(self, url: str) -> bytes:
             self.counter += 1
             unique = f"{uuid.uuid4().hex}-{self.counter}"
@@ -605,13 +609,26 @@ trailer
 startxref
 322
 %%EOF""".encode()
+
     class MockEmbeddingProvider:
-        def get_dimension(self): return 384
-        def get_model_name(self): return "mock-model"
-        def encode_text(self, text): return [0.0] * 384
-        def encode_query(self, query): return [0.0] * 384
-        def encode_batch(self, texts: List[str]): return [[0.0] * 384 for _ in texts]
-        def health_check(self): return True
+        def get_dimension(self):
+            return 384
+
+        def get_model_name(self):
+            return "mock-model"
+
+        def encode_text(self, text):
+            return [0.0] * 384
+
+        def encode_query(self, query):
+            return [0.0] * 384
+
+        def encode_batch(self, texts: List[str]):
+            return [[0.0] * 384 for _ in texts]
+
+        def health_check(self):
+            return True
+
     return build_default_auto_ingestion_service(
         downloader=MockDownloader(),
         embedding_provider=MockEmbeddingProvider(),

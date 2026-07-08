@@ -52,9 +52,7 @@ logger = logging.getLogger(__name__)
 class KnowledgeProviderProtocol(Protocol):
     """Optional pluggable retrieval back-end."""
 
-    def search(
-        self, query: str, *, top_k: int = 5
-    ) -> List[Dict[str, Any]]: ...
+    def search(self, query: str, *, top_k: int = 5) -> List[Dict[str, Any]]: ...
 
     def get_by_id(self, item_id: str) -> Optional[Dict[str, Any]]: ...
 
@@ -88,9 +86,6 @@ class InMemoryKnowledgeProvider:
 
     def get_by_id(self, item_id: str) -> Optional[Dict[str, Any]]:
         return self._items.get(item_id)
-
-
-
 
 
 # ─── Planner ─────────────────────────────────────────────────────────
@@ -304,9 +299,7 @@ class ResearchExecutor:
                 step.status = ResearchStepStatus.FAILED
                 step.error = str(exc)
             step.finished_at = time.time()
-            step.duration_ms = round(
-                (step.finished_at - step.started_at) * 1000.0, 3
-            )
+            step.duration_ms = round((step.finished_at - step.started_at) * 1000.0, 3)
             all_outputs[step.step_id] = step.outputs
         duration_ms = round((time.time() - start) * 1000.0, 3)
         plan.metadata = plan.metadata or {}
@@ -326,13 +319,12 @@ class ResearchReportGenerator:
     """Compose a final report from an executed plan."""
 
     def generate(self, plan: ResearchPlan) -> ResearchReport:
-        start = time.time()
+        time.time()
         with track_request(
             endpoint="/api/v1/research/reports", strategy="research_report"
         ):
             citations: List[ResearchCitation] = [
-                ResearchCitation(**c)
-                for c in plan.metadata.get("citations", [])
+                ResearchCitation(**c) for c in plan.metadata.get("citations", [])
             ]
             summary = self._compose_summary(plan, citations)
             key_findings = self._key_findings(plan, citations)
@@ -523,16 +515,14 @@ class ResearchService:
         self.reporter = ResearchReportGenerator()
         self.top_k = top_k
 
-    async     def run(
+    async def run(
         self,
         request: ResearchRequest,
         *,
         top_k: Optional[int] = None,
         knowledge_items: Optional[List[Dict[str, Any]]] = None,
     ) -> ResearchReport:
-        with track_request(
-            endpoint="/api/v1/research/run", strategy="research_run"
-        ):
+        with track_request(endpoint="/api/v1/research/run", strategy="research_run"):
             if knowledge_items:
                 for item in knowledge_items:
                     self.provider.add(item)

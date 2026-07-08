@@ -331,9 +331,7 @@ async def hybrid_search(
         else SearchStrategy.HYBRID.value
     )
 
-    with track_request(
-        endpoint=endpoint_path, strategy=strategy_label
-    ) as ctx:
+    with track_request(endpoint=endpoint_path, strategy=strategy_label) as ctx:
         ctx.request_id = request_id
         # ── 1. Query classification ───────────────────────────────────────
         query_type = "unknown"
@@ -345,9 +343,7 @@ async def hybrid_search(
             query_confidence = analysis.confidence
             recommended_strategy = analysis.optimal_strategy
         except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "Query analysis failed (request_id=%s): %s", request_id, exc
-            )
+            logger.warning("Query analysis failed (request_id=%s): %s", request_id, exc)
 
         # ── 2. Hybrid retrieval ──────────────────────────────────────────
         try:
@@ -365,9 +361,7 @@ async def hybrid_search(
                 use_query_analysis=request.use_query_analysis,
             )
         except Exception as exc:  # noqa: BLE001
-            logger.exception(
-                "Hybrid retrieval failed (request_id=%s)", request_id
-            )
+            logger.exception("Hybrid retrieval failed (request_id=%s)", request_id)
             log_search_event(
                 "hybrid_search_failed",
                 ctx,
@@ -525,9 +519,7 @@ async def retrieval_metrics(
         pattern="^(hourly|daily|weekly|monthly)$",
         description="Aggregation window type.",
     ),
-    dataset_name: Optional[str] = Query(
-        None, description="Optional dataset filter."
-    ),
+    dataset_name: Optional[str] = Query(None, description="Optional dataset filter."),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> RetrievalMetricsResponse:
     analytics = AnalyticsService(db_session)
@@ -585,9 +577,7 @@ async def retrieval_metrics(
             if rerank
             else (sum(reranker_gains) / len(reranker_gains) if reranker_gains else None)
         ),
-        retrieval_success_rate=(
-            sum(hit_rates) / len(hit_rates) if hit_rates else None
-        ),
+        retrieval_success_rate=(sum(hit_rates) / len(hit_rates) if hit_rates else None),
         average_latency=(
             sum(avg_latencies) / len(avg_latencies) if avg_latencies else None
         ),
@@ -659,9 +649,7 @@ async def retrieval_health(
             overall = "degraded"
     except Exception as exc:  # noqa: BLE001
         components.append(
-            HealthCheck(
-                name="bm25_service", healthy=False, details={"error": str(exc)}
-            )
+            HealthCheck(name="bm25_service", healthy=False, details={"error": str(exc)})
         )
         checks["bm25_service"] = False
         overall = "unhealthy"
@@ -675,7 +663,8 @@ async def retrieval_health(
                 details={
                     "has_dense_backend": hybrid_retriever.retrieval_service is not None,
                     "has_bm25_backend": hybrid_retriever.bm25_retriever is not None,
-                    "query_analyzer_attached": hybrid_retriever.query_analyzer is not None,
+                    "query_analyzer_attached": hybrid_retriever.query_analyzer
+                    is not None,
                 },
             )
         )
@@ -721,9 +710,7 @@ async def retrieval_health(
     # ── Reranker ─────────────────────────────────────────────────────────
     try:
         provider = getattr(reranker, "provider", None)
-        model_name = (
-            provider.get_model_name() if provider is not None else "unknown"
-        )
+        model_name = provider.get_model_name() if provider is not None else "unknown"
         components.append(
             HealthCheck(
                 name="reranker",

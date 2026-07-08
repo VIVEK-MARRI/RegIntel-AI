@@ -377,8 +377,7 @@ def _compliance_impact_for(diff: DocumentDiff) -> ComplianceImpact:
         evidence_requirements=evidence,
         penalty_exposure=(
             "Elevated"
-            if diff.overall_severity
-            in (ChangeSeverity.HIGH, ChangeSeverity.CRITICAL)
+            if diff.overall_severity in (ChangeSeverity.HIGH, ChangeSeverity.CRITICAL)
             else "Standard"
         ),
     )
@@ -619,7 +618,9 @@ class ImpactAnalysisService:
         source: Optional[str],
     ) -> ImpactAnalysisResult:
         start = time.time()
-        with track_request(endpoint="/api/v1/impact/analyze", strategy="impact_analysis"):
+        with track_request(
+            endpoint="/api/v1/impact/analyze", strategy="impact_analysis"
+        ):
             change_count = max(
                 1, diff.added_count + diff.removed_count + diff.modified_count
             )
@@ -640,9 +641,7 @@ class ImpactAnalysisService:
                 actions.append(_action_for_category(c.category, c.severity))
             if not actions:
                 actions.append(
-                    _action_for_category(
-                        diff.overall_category, diff.overall_severity
-                    )
+                    _action_for_category(diff.overall_category, diff.overall_severity)
                 )
             business = _business_impacts_for(diff)
             compliance = _compliance_impact_for(diff)
@@ -669,7 +668,9 @@ class ImpactAnalysisService:
             report.duration_ms = round((time.time() - start) * 1000.0, 3)
             self.store.add_report(report)
             get_impact_analysis_metrics().record_report(report)
-            return ImpactAnalysisResult(report=report, has_impact=level != ImpactLevel.NEGLIGIBLE)
+            return ImpactAnalysisResult(
+                report=report, has_impact=level != ImpactLevel.NEGLIGIBLE
+            )
 
     # ── queries ────────────────────────────────────────────────────
 

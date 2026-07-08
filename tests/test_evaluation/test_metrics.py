@@ -273,8 +273,15 @@ class TestMetricsEngine:
         }
 
         score = self.engine.compute_composite_score(metrics)
-        expected = (0.8 * 0.20 + 0.9 * 0.15 + 0.7 * 0.20 + 0.6 * 0.10 +
-                    1.0 * 0.10 + 0.85 * 0.15 + 0.88 * 0.10)
+        expected = (
+            0.8 * 0.20
+            + 0.9 * 0.15
+            + 0.7 * 0.20
+            + 0.6 * 0.10
+            + 1.0 * 0.10
+            + 0.85 * 0.15
+            + 0.88 * 0.10
+        )
         assert score == pytest.approx(expected)
 
     def test_composite_score_custom_weights(self):
@@ -305,8 +312,15 @@ class TestMetricsEngine:
         }
 
         score = self.engine.compute_composite_score(metrics)
-        expected = (0.8 * 0.20 + 0.9 * 0.15 + 0.7 * 0.20 + 0.6 * 0.10 +
-                    1.0 * 0.10 + 0.85 * 0.15 + 0.88 * 0.10)
+        expected = (
+            0.8 * 0.20
+            + 0.9 * 0.15
+            + 0.7 * 0.20
+            + 0.6 * 0.10
+            + 1.0 * 0.10
+            + 0.85 * 0.15
+            + 0.88 * 0.10
+        )
         assert score == pytest.approx(expected)
 
     def test_composite_score_perfect(self):
@@ -378,10 +392,19 @@ class TestMetricsEngine:
         # DCG = (2^1 - 1)/log2(2) + (2^0 - 1)/log2(3) + (2^1 - 1)/log2(4)
         #     = 1/1.0 + 0 + 1/2.0 = 1.5
         import math
-        dcg = (math.pow(2, 1) - 1) / math.log2(2) + (math.pow(2, 0) - 1) / math.log2(3) + (math.pow(2, 1) - 1) / math.log2(4)
+
+        dcg = (
+            (math.pow(2, 1) - 1) / math.log2(2)
+            + (math.pow(2, 0) - 1) / math.log2(3)
+            + (math.pow(2, 1) - 1) / math.log2(4)
+        )
         # IDCG = (2^1 - 1)/log2(2) + (2^1 - 1)/log2(3) + (2^1 - 1)/log2(4)
         #      = 1/1.0 + 1/1.585 + 1/2.0 approx 1 + 0.6309 + 0.5 = 2.1309
-        idcg = (math.pow(2, 1) - 1) / math.log2(2) + (math.pow(2, 1) - 1) / math.log2(3) + (math.pow(2, 1) - 1) / math.log2(4)
+        idcg = (
+            (math.pow(2, 1) - 1) / math.log2(2)
+            + (math.pow(2, 1) - 1) / math.log2(3)
+            + (math.pow(2, 1) - 1) / math.log2(4)
+        )
         expected = dcg / idcg
 
         assert ndcg == pytest.approx(expected, abs=1e-4)
@@ -413,7 +436,9 @@ class TestMetricsEngine:
             "chunk_3": 1.0,
         }
 
-        ndcg = self.engine.compute_ndcg_at_k(retrieved, relevant, k=3, relevance_scores=relevance_scores)
+        ndcg = self.engine.compute_ndcg_at_k(
+            retrieved, relevant, k=3, relevance_scores=relevance_scores
+        )
 
         # Perfect ordering of graded relevance should give NDCG = 1.0
         assert ndcg == pytest.approx(1.0, abs=1e-4)
@@ -428,7 +453,9 @@ class TestMetricsEngine:
             "chunk_3": 1.0,
         }
 
-        ndcg = self.engine.compute_ndcg_at_k(retrieved, relevant, k=3, relevance_scores=relevance_scores)
+        ndcg = self.engine.compute_ndcg_at_k(
+            retrieved, relevant, k=3, relevance_scores=relevance_scores
+        )
 
         # Suboptimal ordering - NDCG should be < 1.0 but > 0.0
         assert ndcg > 0.0
@@ -444,8 +471,18 @@ class TestMetricsEngine:
 
     def test_ndcg_at_k_different_k_values(self):
         """Test NDCG with different K values."""
-        retrieved = ["chunk_1", "chunk_2", "chunk_3", "chunk_4", "chunk_5",
-                     "chunk_6", "chunk_7", "chunk_8", "chunk_9", "chunk_10"]
+        retrieved = [
+            "chunk_1",
+            "chunk_2",
+            "chunk_3",
+            "chunk_4",
+            "chunk_5",
+            "chunk_6",
+            "chunk_7",
+            "chunk_8",
+            "chunk_9",
+            "chunk_10",
+        ]
         relevant = {"chunk_1", "chunk_2", "chunk_3"}
 
         ndcg_3 = self.engine.compute_ndcg_at_k(retrieved, relevant, k=3)

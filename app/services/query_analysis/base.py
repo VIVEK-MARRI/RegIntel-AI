@@ -5,6 +5,7 @@ from typing import Tuple
 
 class QueryType(str, Enum):
     """Enumeration of supported search query types."""
+
     KEYWORD = "keyword"
     KEYWORD_LOOKUP = "keyword_lookup"
     SEMANTIC = "semantic"
@@ -16,6 +17,7 @@ class QueryType(str, Enum):
 
 class RetrievalStrategy(str, Enum):
     """Enumeration of supported retrieval strategies."""
+
     BM25 = "bm25"
     DENSE = "dense"
     HYBRID = "hybrid"
@@ -76,10 +78,7 @@ class StrategyRecommender(ABC):
 
     @abstractmethod
     def recommend(
-        self,
-        query_type: QueryType,
-        confidence: float,
-        query: str
+        self, query_type: QueryType, confidence: float, query: str
     ) -> RetrievalStrategy:
         """Recommends a retrieval strategy based on classification results.
 

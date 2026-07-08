@@ -188,11 +188,17 @@ class TestAnswerMetricsRepository:
     def test_add_and_retrieve(self):
         repo = AnswerMetricsRepository()
         event = AnswerAnalyticsEvent(
-            request_id="r1", query="q", confidence_score=0.5,
-            confidence_level="medium", faithfulness_score=0.7,
-            hallucination_detected=False, hallucination_risk_level="low",
-            attribution_coverage_ratio=0.5, citation_coverage_ratio=0.5,
-            source_count=1, latency_ms=10.0,
+            request_id="r1",
+            query="q",
+            confidence_score=0.5,
+            confidence_level="medium",
+            faithfulness_score=0.7,
+            hallucination_detected=False,
+            hallucination_risk_level="low",
+            attribution_coverage_ratio=0.5,
+            citation_coverage_ratio=0.5,
+            source_count=1,
+            latency_ms=10.0,
         )
         repo.add(event)
         assert len(repo.all()) == 1
@@ -201,49 +207,81 @@ class TestAnswerMetricsRepository:
     def test_window_all(self):
         repo = AnswerMetricsRepository()
         for i in range(3):
-            repo.add(AnswerAnalyticsEvent(
-                request_id=f"r{i}", query=f"q{i}", confidence_score=0.5,
-                confidence_level="medium", faithfulness_score=0.7,
-                hallucination_detected=False, hallucination_risk_level="low",
-                attribution_coverage_ratio=0.5, citation_coverage_ratio=0.5,
-                source_count=1, latency_ms=10.0,
-            ))
+            repo.add(
+                AnswerAnalyticsEvent(
+                    request_id=f"r{i}",
+                    query=f"q{i}",
+                    confidence_score=0.5,
+                    confidence_level="medium",
+                    faithfulness_score=0.7,
+                    hallucination_detected=False,
+                    hallucination_risk_level="low",
+                    attribution_coverage_ratio=0.5,
+                    citation_coverage_ratio=0.5,
+                    source_count=1,
+                    latency_ms=10.0,
+                )
+            )
         assert len(repo.window(AnalyticsWindow.ALL)) == 3
 
     def test_window_hour(self):
         repo = AnswerMetricsRepository()
-        repo.add(AnswerAnalyticsEvent(
-            request_id="r1", query="q", confidence_score=0.5,
-            confidence_level="medium", faithfulness_score=0.7,
-            hallucination_detected=False, hallucination_risk_level="low",
-            attribution_coverage_ratio=0.5, citation_coverage_ratio=0.5,
-            source_count=1, latency_ms=10.0,
-        ))
+        repo.add(
+            AnswerAnalyticsEvent(
+                request_id="r1",
+                query="q",
+                confidence_score=0.5,
+                confidence_level="medium",
+                faithfulness_score=0.7,
+                hallucination_detected=False,
+                hallucination_risk_level="low",
+                attribution_coverage_ratio=0.5,
+                citation_coverage_ratio=0.5,
+                source_count=1,
+                latency_ms=10.0,
+            )
+        )
         # Hour window should still contain a fresh event.
         assert len(repo.window(AnalyticsWindow.HOUR)) == 1
 
     def test_reset(self):
         repo = AnswerMetricsRepository()
-        repo.add(AnswerAnalyticsEvent(
-            request_id="r1", query="q", confidence_score=0.5,
-            confidence_level="medium", faithfulness_score=0.7,
-            hallucination_detected=False, hallucination_risk_level="low",
-            attribution_coverage_ratio=0.5, citation_coverage_ratio=0.5,
-            source_count=1, latency_ms=10.0,
-        ))
+        repo.add(
+            AnswerAnalyticsEvent(
+                request_id="r1",
+                query="q",
+                confidence_score=0.5,
+                confidence_level="medium",
+                faithfulness_score=0.7,
+                hallucination_detected=False,
+                hallucination_risk_level="low",
+                attribution_coverage_ratio=0.5,
+                citation_coverage_ratio=0.5,
+                source_count=1,
+                latency_ms=10.0,
+            )
+        )
         repo.reset()
         assert len(repo.all()) == 0
 
     def test_persistence(self, tmp_path):
         persist = tmp_path / "events.jsonl"
         repo = AnswerMetricsRepository(persist_path=persist)
-        repo.add(AnswerAnalyticsEvent(
-            request_id="r1", query="q", confidence_score=0.5,
-            confidence_level="medium", faithfulness_score=0.7,
-            hallucination_detected=False, hallucination_risk_level="low",
-            attribution_coverage_ratio=0.5, citation_coverage_ratio=0.5,
-            source_count=1, latency_ms=10.0,
-        ))
+        repo.add(
+            AnswerAnalyticsEvent(
+                request_id="r1",
+                query="q",
+                confidence_score=0.5,
+                confidence_level="medium",
+                faithfulness_score=0.7,
+                hallucination_detected=False,
+                hallucination_risk_level="low",
+                attribution_coverage_ratio=0.5,
+                citation_coverage_ratio=0.5,
+                source_count=1,
+                latency_ms=10.0,
+            )
+        )
         assert persist.exists()
         contents = persist.read_text()
         assert "r1" in contents
@@ -276,8 +314,15 @@ class TestAnswerAnalyticsService:
 
     def test_snapshot_with_data(self):
         service = build_default_answer_analytics_service()
-        service.record(_make_response(faithfulness=0.9, confidence=0.85), total_tokens=50)
-        service.record(_make_response(faithfulness=0.6, confidence=0.6, hallucination_detected=True), total_tokens=80)
+        service.record(
+            _make_response(faithfulness=0.9, confidence=0.85), total_tokens=50
+        )
+        service.record(
+            _make_response(
+                faithfulness=0.6, confidence=0.6, hallucination_detected=True
+            ),
+            total_tokens=80,
+        )
         snap = service.snapshot()
         assert snap.total_responses == 2
         assert 0.0 < snap.average_faithfulness < 1.0
@@ -317,9 +362,13 @@ class TestAnswerAnalyticsService:
         service = build_default_answer_analytics_service()
         # 50% hallucination rate
         for _ in range(2):
-            service.record(_make_response(hallucination_detected=True, faithfulness=0.3))
+            service.record(
+                _make_response(hallucination_detected=True, faithfulness=0.3)
+            )
         for _ in range(2):
-            service.record(_make_response(hallucination_detected=False, faithfulness=0.9))
+            service.record(
+                _make_response(hallucination_detected=False, faithfulness=0.9)
+            )
         h = service.health()
         assert h.hallucination_rate == 0.5
         assert h.status in (HealthStatus.DEGRADED, HealthStatus.UNHEALTHY)
@@ -354,7 +403,9 @@ class TestAnswerHealthMonitor:
 class TestAnswerAnalyticsAPI:
     @pytest.mark.asyncio
     async def test_analytics_empty(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/answers/analytics")
             assert r.status_code == 200
             data = r.json()
@@ -362,13 +413,17 @@ class TestAnswerAnalyticsAPI:
 
     @pytest.mark.asyncio
     async def test_analytics_invalid_window(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/answers/analytics?window=bogus")
             assert r.status_code == 422
 
     @pytest.mark.asyncio
     async def test_quality_hallucinations_citations(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             for path in ("/quality", "/hallucinations", "/citations"):
                 r = await c.get(f"/api/v1/answers{path}")
                 assert r.status_code == 200
@@ -376,7 +431,9 @@ class TestAnswerAnalyticsAPI:
 
     @pytest.mark.asyncio
     async def test_health(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/answers/health")
             assert r.status_code == 200
             data = r.json()
@@ -385,7 +442,9 @@ class TestAnswerAnalyticsAPI:
 
     @pytest.mark.asyncio
     async def test_record(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "response": _make_response().model_dump(mode="json"),
                 "total_tokens": 100,
@@ -397,13 +456,17 @@ class TestAnswerAnalyticsAPI:
 
     @pytest.mark.asyncio
     async def test_record_missing_response(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post("/api/v1/answers/record", json={})
             assert r.status_code == 422
 
     @pytest.mark.asyncio
     async def test_end_to_end_flow(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             # 1. Record a good response.
             payload = {
                 "response": _make_response(

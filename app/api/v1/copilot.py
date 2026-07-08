@@ -84,10 +84,14 @@ def get_copilot_service(
     orchestrator: ResponseOrchestrator = Depends(get_response_orchestrator),
     memory: MemoryService = Depends(get_memory_service),
     conversation: ConversationService = Depends(get_conversation_service),
-    hybrid_pipeline: Optional[HybridRerankPipeline] = Depends(get_hybrid_rerank_pipeline),
+    hybrid_pipeline: Optional[HybridRerankPipeline] = Depends(
+        get_hybrid_rerank_pipeline
+    ),
 ) -> CopilotService:
     """Dependency injection provider for CopilotService (singleton)."""
-    return _copilot_service_singleton(orchestrator, memory, conversation, hybrid_pipeline)
+    return _copilot_service_singleton(
+        orchestrator, memory, conversation, hybrid_pipeline
+    )
 
 
 def reset_copilot_service() -> None:

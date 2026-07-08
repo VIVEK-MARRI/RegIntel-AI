@@ -104,9 +104,7 @@ class AuditRecord(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    audit_id: str = Field(
-        default_factory=lambda: f"aud-{uuid.uuid4().hex[:12]}"
-    )
+    audit_id: str = Field(default_factory=lambda: f"aud-{uuid.uuid4().hex[:12]}")
     timestamp: float = Field(default_factory=time.time)
     actor: str = "system"
     actor_role: str = ""
@@ -131,9 +129,7 @@ class AuditEvidence(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    evidence_id: str = Field(
-        default_factory=lambda: f"evd-{uuid.uuid4().hex[:12]}"
-    )
+    evidence_id: str = Field(default_factory=lambda: f"evd-{uuid.uuid4().hex[:12]}")
     record_id: str = ""
     kind: EvidenceKind = EvidenceKind.OTHER
     title: str = Field(..., min_length=1, max_length=300)
@@ -154,9 +150,7 @@ class LineageNode(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    node_id: str = Field(
-        default_factory=lambda: f"nde-{secrets.token_hex(4)}"
-    )
+    node_id: str = Field(default_factory=lambda: f"nde-{secrets.token_hex(4)}")
     kind: str  # "decision" | "policy" | "evidence" | "review" | "workflow" | ...
     label: str
     ref_id: str = ""
@@ -170,9 +164,7 @@ class LineageEdge(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    edge_id: str = Field(
-        default_factory=lambda: f"edg-{secrets.token_hex(4)}"
-    )
+    edge_id: str = Field(default_factory=lambda: f"edg-{secrets.token_hex(4)}")
     from_node: str
     to_node: str
     relation: str = "derived_from"
@@ -184,9 +176,7 @@ class DecisionLineage(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    lineage_id: str = Field(
-        default_factory=lambda: f"lin-{uuid.uuid4().hex[:12]}"
-    )
+    lineage_id: str = Field(default_factory=lambda: f"lin-{uuid.uuid4().hex[:12]}")
     root_decision_id: str = ""
     subject_type: str = ""
     subject_id: str = ""
@@ -206,9 +196,7 @@ class ReportSection(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    section_id: str = Field(
-        default_factory=lambda: f"sec-{secrets.token_hex(4)}"
-    )
+    section_id: str = Field(default_factory=lambda: f"sec-{secrets.token_hex(4)}")
     title: str = Field(..., min_length=1, max_length=200)
     summary: str = ""
     metrics: Dict[str, Any] = Field(default_factory=dict)
@@ -223,9 +211,7 @@ class ComplianceReport(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    report_id: str = Field(
-        default_factory=lambda: f"rpt-{uuid.uuid4().hex[:12]}"
-    )
+    report_id: str = Field(default_factory=lambda: f"rpt-{uuid.uuid4().hex[:12]}")
     title: str = Field(..., min_length=1, max_length=300)
     description: str = ""
     kind: ReportKind = ReportKind.INTERNAL_AUDIT

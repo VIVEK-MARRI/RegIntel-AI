@@ -118,7 +118,9 @@ def _empty_annotations(answer: AnswerSection) -> AnnotatedAnswer:
 
     return AnnotatedAnswer(
         executive_summary=AnnotatedText(text=answer.executive_summary, citations=[]),
-        detailed_explanation=AnnotatedText(text=answer.detailed_explanation, citations=[]),
+        detailed_explanation=AnnotatedText(
+            text=answer.detailed_explanation, citations=[]
+        ),
         supporting_evidence=[],
         key_regulatory_references=list(answer.key_regulatory_references),
         references=[],
@@ -153,7 +155,9 @@ class AnswerPipeline:
     def __init__(self, *, step_timeout_sec: float = 60.0) -> None:
         self.step_timeout_sec = step_timeout_sec
 
-    async def run(self, context: ResponseContext) -> None:  # pragma: no cover - abstract
+    async def run(
+        self, context: ResponseContext
+    ) -> None:  # pragma: no cover - abstract
         raise NotImplementedError
 
     async def run_with_timeout(self, context: ResponseContext) -> StepResult:
@@ -214,7 +218,9 @@ class CitationStep(AnswerPipeline):
 
     async def run(self, context: ResponseContext) -> None:
         if context.answer is None:
-            raise RuntimeError("Citation step requires answer; run answer-generation first")
+            raise RuntimeError(
+                "Citation step requires answer; run answer-generation first"
+            )
         request = CitationRequest(
             query=context.query,
             answer=context.answer,
@@ -235,7 +241,6 @@ class ConfidenceStep(AnswerPipeline):
     async def run(self, context: ResponseContext) -> None:
         if context.answer is None:
             raise RuntimeError("Confidence step requires answer")
-        from app.schemas.confidence import ConfidenceRequest
 
         request = ConfidenceRequest(
             query=context.query,
@@ -365,7 +370,7 @@ class PipelineCoordinator:
         with track_request(
             endpoint="/api/v1/orchestrator/answer",
             strategy="response_orchestrator",
-        ) as ctx:
+        ):
             context = ResponseContext(
                 query=request.query,
                 chunks=request.chunks,
@@ -400,32 +405,45 @@ class PipelineCoordinator:
             # Synthesise a minimal answer from the first chunk.
             first = context.chunks[0] if context.chunks else None
             if first is None:
-                raise RuntimeError("Pipeline produced no answer and no chunks were supplied")
+                raise RuntimeError(
+                    "Pipeline produced no answer and no chunks were supplied"
+                )
             context.answer = AnswerSection(
                 executive_summary="Information retrieved.",
-                detailed_explanation=first.content[:500] or "No additional detail available.",
+                detailed_explanation=first.content[:500]
+                or "No additional detail available.",
                 supporting_evidence=[],
                 key_regulatory_references=[],
             )
-            context.warnings.append("answer_generation step produced no output; synthesised a stub")
+            context.warnings.append(
+                "answer_generation step produced no output; synthesised a stub"
+            )
 
         # Citations: default to empty annotations if missing.
         if context.citations is None:
             context.citations = _empty_annotations(context.answer)
-            context.warnings.append("citation step produced no output; using empty annotations")
+            context.warnings.append(
+                "citation step produced no output; using empty annotations"
+            )
 
         # Confidence: default to neutral.
         if context.confidence_score is None:
-            context.confidence_score = _neutral_confidence(context.answer, context.chunks)
+            context.confidence_score = _neutral_confidence(
+                context.answer, context.chunks
+            )
             context.confidence_level = ConfidenceLevel.MEDIUM
-            context.warnings.append("confidence step produced no output; using neutral fallback")
+            context.warnings.append(
+                "confidence step produced no output; using neutral fallback"
+            )
 
         # Faithfulness: default to 0.5.
         if context.faithfulness_score is None:
             context.faithfulness_score = _neutral_faithfulness()
             context.hallucination_detected = True
             context.hallucination_risk_level = HallucinationRiskLevel.MEDIUM
-            context.warnings.append("hallucination step produced no output; using fallback")
+            context.warnings.append(
+                "hallucination step produced no output; using fallback"
+            )
 
         if context.hallucination_detected is None:
             context.hallucination_detected = False
@@ -483,7 +501,9 @@ class ResponseBuilder:
             "faithfulness_score": response.faithfulness_score,
             "hallucination_detected": response.hallucination_detected,
             "hallucination_risk_level": response.hallucination_risk_level.value,
-            "source_attributions": [a.model_dump() for a in response.source_attributions],
+            "source_attributions": [
+                a.model_dump() for a in response.source_attributions
+            ],
             "attribution_coverage_ratio": response.attribution_coverage_ratio,
             "latency_ms": response.latency_ms,
             "metadata": response.metadata.model_dump(mode="json"),

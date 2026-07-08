@@ -111,11 +111,13 @@ def parse_sections(raw_text: str) -> Dict[str, str]:
     for name, pattern in _SECTION_PATTERNS.items():
         m = pattern.search(raw_text)
         if m:
-            matches.append({
-                "name": name,
-                "header_start": m.start(),
-                "body_start": m.start(1),
-            })
+            matches.append(
+                {
+                    "name": name,
+                    "header_start": m.start(),
+                    "body_start": m.start(1),
+                }
+            )
     matches.sort(key=lambda m: m["header_start"])
 
     if not matches:
@@ -125,7 +127,9 @@ def parse_sections(raw_text: str) -> Dict[str, str]:
             paragraphs = [raw_text.strip()]
         return {
             "executive_summary": paragraphs[0],
-            "detailed_explanation": "\n\n".join(paragraphs[1:]) if len(paragraphs) > 1 else "",
+            "detailed_explanation": "\n\n".join(paragraphs[1:])
+            if len(paragraphs) > 1
+            else "",
             "supporting_evidence": "",
             "key_regulatory_references": "",
         }
@@ -146,7 +150,11 @@ def parse_sections(raw_text: str) -> Dict[str, str]:
     # If the model omitted section headers, assign remaining text to the
     # first missing section.
     found = {m["name"] for m in matches}
-    for section_name in ("detailed_explanation", "supporting_evidence", "key_regulatory_references"):
+    for section_name in (
+        "detailed_explanation",
+        "supporting_evidence",
+        "key_regulatory_references",
+    ):
         if section_name in found:
             continue
         if sections["executive_summary"] and section_name == "detailed_explanation":
@@ -430,9 +438,7 @@ def build_default_service(
     prov = get_provider(
         provider, model=model, api_key=api_key, api_base=api_base, timeout=timeout
     )
-    builder = PromptBuilder(
-        tone=tone, context_token_budget=context_token_budget
-    )
+    builder = PromptBuilder(tone=tone, context_token_budget=context_token_budget)
     return AnswerGeneratorService(
         provider=prov, prompt_builder=builder, default_tone=tone
     )

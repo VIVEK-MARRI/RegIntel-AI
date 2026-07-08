@@ -59,10 +59,10 @@ class FeedbackEntry(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    feedback_id: str = Field(
-        default_factory=lambda: f"fb-{uuid.uuid4().hex[:12]}"
+    feedback_id: str = Field(default_factory=lambda: f"fb-{uuid.uuid4().hex[:12]}")
+    request_id: str = Field(
+        ..., description="Copilot request_id this feedback relates to."
     )
-    request_id: str = Field(..., description="Copilot request_id this feedback relates to.")
     conversation_id: Optional[str] = None
     user_id: Optional[str] = None
     feedback_type: FeedbackType

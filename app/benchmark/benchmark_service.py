@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 # ─── Default scenarios per suite ──────────────────────────────────────
 
+
 def _noop_async(*args: Any, **kwargs: Any) -> Dict[str, Any]:
     """Cheap synthetic async target that mimics a typical API call."""
     return {"input_tokens": 64, "output_tokens": 32, "retrieval_units": 1}
@@ -73,10 +74,10 @@ class _SuiteConfig:
 
 
 _SUITE_DEFAULTS: Dict[BenchmarkSuite, _SuiteConfig] = {
-    BenchmarkSuite.SMOKE:    _SuiteConfig(concurrency=1, iterations=1, warmup=0),
-    BenchmarkSuite.QUICK:    _SuiteConfig(concurrency=1, iterations=5, warmup=1),
+    BenchmarkSuite.SMOKE: _SuiteConfig(concurrency=1, iterations=1, warmup=0),
+    BenchmarkSuite.QUICK: _SuiteConfig(concurrency=1, iterations=5, warmup=1),
     BenchmarkSuite.STANDARD: _SuiteConfig(concurrency=4, iterations=25, warmup=2),
-    BenchmarkSuite.FULL:     _SuiteConfig(concurrency=8, iterations=100, warmup=4),
+    BenchmarkSuite.FULL: _SuiteConfig(concurrency=8, iterations=100, warmup=4),
 }
 
 
@@ -96,7 +97,9 @@ class BenchmarkService:
         self.load_tester = load_tester or LoadTester(self.collector)
         self.reporter = reporter or Reporter()
         # Optional pluggable target registry; if absent we use synthetic targets.
-        self._target_registry: Dict[OperationKind, Callable[[], Awaitable[Mapping[str, Any]]]] = {}
+        self._target_registry: Dict[
+            OperationKind, Callable[[], Awaitable[Mapping[str, Any]]]
+        ] = {}
         for tgt in _synthetic_targets():
             self._target_registry[_classify_target(tgt)] = tgt
 
@@ -189,13 +192,19 @@ class BenchmarkService:
     def cost_report(self, response: BenchmarkResponse) -> Mapping[str, Any]:
         return self.reporter.cost_report(response)
 
-    def agent_performance_report(self, response: BenchmarkResponse) -> Mapping[str, Any]:
+    def agent_performance_report(
+        self, response: BenchmarkResponse
+    ) -> Mapping[str, Any]:
         return self.reporter.agent_performance_report(response)
 
-    def system_performance_report(self, response: BenchmarkResponse) -> Mapping[str, Any]:
+    def system_performance_report(
+        self, response: BenchmarkResponse
+    ) -> Mapping[str, Any]:
         return self.reporter.system_performance_report(response)
 
-    def write_reports(self, response: BenchmarkResponse, out_dir: str) -> Dict[str, str]:
+    def write_reports(
+        self, response: BenchmarkResponse, out_dir: str
+    ) -> Dict[str, str]:
         return self.reporter.write_all(response, out_dir)
 
     # ─── Internals ──────────────────────────────────────────────────
@@ -249,10 +258,16 @@ class BenchmarkService:
             finished_at=finished_at,
         )
 
-    def _build_scenario(self, sc_dict: Mapping[str, Any], idx: int) -> PerformanceScenario:
+    def _build_scenario(
+        self, sc_dict: Mapping[str, Any], idx: int
+    ) -> PerformanceScenario:
         name = str(sc_dict.get("name", f"scenario-{idx}"))
         kind_str = str(sc_dict.get("kind", "other"))
-        kind = OperationKind(kind_str) if kind_str in {k.value for k in OperationKind} else OperationKind.OTHER
+        kind = (
+            OperationKind(kind_str)
+            if kind_str in {k.value for k in OperationKind}
+            else OperationKind.OTHER
+        )
         fn = sc_dict.get("fn") or _noop_async
         if not callable(fn):
             raise TypeError(f"scenario[{idx}].fn is not callable")
@@ -260,8 +275,12 @@ class BenchmarkService:
             name=name,
             fn=fn,
             kind=kind,
-            cost_per_1k_input_tokens=float(sc_dict.get("cost_per_1k_input_tokens", 0.00015)),
-            cost_per_1k_output_tokens=float(sc_dict.get("cost_per_1k_output_tokens", 0.00060)),
+            cost_per_1k_input_tokens=float(
+                sc_dict.get("cost_per_1k_input_tokens", 0.00015)
+            ),
+            cost_per_1k_output_tokens=float(
+                sc_dict.get("cost_per_1k_output_tokens", 0.00060)
+            ),
             cost_per_retrieval=float(sc_dict.get("cost_per_retrieval", 0.00001)),
         )
 
@@ -306,7 +325,10 @@ def reset_benchmark_service() -> None:
 
 # ─── Helpers ────────────────────────────────────────────────────────
 
-def _classify_target(target: Callable[[], Awaitable[Mapping[str, Any]]]) -> OperationKind:
+
+def _classify_target(
+    target: Callable[[], Awaitable[Mapping[str, Any]]],
+) -> OperationKind:
     name = getattr(target, "__name__", "")
     if "retrieval" in name:
         return OperationKind.RETRIEVAL

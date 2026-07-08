@@ -181,12 +181,8 @@ class FeedbackAnalytics:
             cutoff = now - window
             entries = [e for e in entries if e.created_at >= cutoff]
         by_type: Dict[FeedbackType, int] = Counter(e.feedback_type for e in entries)
-        by_category: Dict[FeedbackCategory, int] = Counter(
-            e.category for e in entries
-        )
-        by_severity: Dict[FeedbackSeverity, int] = Counter(
-            e.severity for e in entries
-        )
+        by_category: Dict[FeedbackCategory, int] = Counter(e.category for e in entries)
+        by_severity: Dict[FeedbackSeverity, int] = Counter(e.severity for e in entries)
         thumbs_up = by_type.get(FeedbackType.THUMBS_UP, 0)
         thumbs_down = by_type.get(FeedbackType.THUMBS_DOWN, 0)
         rated = thumbs_up + thumbs_down
@@ -272,9 +268,7 @@ class FeedbackService:
     ) -> None:
         if store is None:
             store = InMemoryFeedbackStore(
-                persist_path=Path(settings.STORAGE_ROOT)
-                / "feedback"
-                / "entries.jsonl"
+                persist_path=Path(settings.STORAGE_ROOT) / "feedback" / "entries.jsonl"
             )
         self.store = store
         if repository is None:

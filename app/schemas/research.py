@@ -85,9 +85,7 @@ class ResearchCitation(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    citation_id: str = Field(
-        default_factory=lambda: f"cit-{secrets.token_hex(6)}"
-    )
+    citation_id: str = Field(default_factory=lambda: f"cit-{secrets.token_hex(6)}")
     source: CitationSource
     title: str
     reference: str

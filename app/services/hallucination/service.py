@@ -102,7 +102,8 @@ class HallucinationGuardService:
                 if request.fail_open_on_provider_error:
                     logger.warning(
                         "Verification method %s failed (%s); falling back to lexical",
-                        request.method, exc,
+                        request.method,
+                        exc,
                     )
                     report = self._verify_lexical(request)
                 else:
@@ -166,22 +167,24 @@ class HallucinationGuardService:
             logger.debug("No LLM provider configured; using lexical fallback")
             return self._verify_lexical(request)
         if isinstance(provider, MockFaithfulnessProvider):
-            method = VerificationMethod.MOCK
+            pass
         else:
-            method = VerificationMethod.LLM
-        evaluator = FaithfulnessEvaluator(
-            provider=provider, extractor=self._extractor
-        )
+            pass
+        evaluator = FaithfulnessEvaluator(provider=provider, extractor=self._extractor)
         result = await evaluator.verify(
             query=request.query, answer=request.answer, chunks=request.chunks
         )
         if result.error:
             if request.fail_open_on_provider_error:
-                logger.warning("LLM evaluator error; falling back to lexical: %s", result.error)
+                logger.warning(
+                    "LLM evaluator error; falling back to lexical: %s", result.error
+                )
                 return self._verify_lexical(request)
             # Propagate the error so the outer try/except can re-raise it.
             raise RuntimeError(result.error) from None
-        provider_label = result.provider or getattr(provider.name, "value", str(provider.name))
+        provider_label = result.provider or getattr(
+            provider.name, "value", str(provider.name)
+        )
         return _Report(
             supported=result.supported,
             unsupported=result.unsupported,
@@ -195,9 +198,7 @@ class HallucinationGuardService:
             threshold=request.lexical_threshold,
             extractor=self._extractor,
         )
-        verdicts = checker.verify(
-            answer=request.answer, chunks=request.chunks
-        )
+        verdicts = checker.verify(answer=request.answer, chunks=request.chunks)
         supported = [v for v in verdicts if v.supported]
         unsupported = [v for v in verdicts if not v.supported]
         total = len(verdicts)
@@ -229,7 +230,9 @@ class HallucinationGuardService:
             if v.claim_id not in unsupported_ids:
                 combined_supported.append(v)
         for v in lexical.supported:
-            if v.claim_id not in unsupported_ids and v.claim_id not in {x.claim_id for x in combined_supported}:
+            if v.claim_id not in unsupported_ids and v.claim_id not in {
+                x.claim_id for x in combined_supported
+            }:
                 combined_supported.append(v)
 
         # Score: prefer the LLM's score; clamp to ensure unsupported count is respected.

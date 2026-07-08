@@ -7,16 +7,14 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=True if settings.ENV == "development" else False,
     future=True,
-    pool_pre_ping=True
+    pool_pre_ping=True,
 )
 
 # Async session factory
 async_session_factory = async_sessionmaker(
-    bind=engine,
-    autocommit=False,
-    autoflush=False,
-    expire_on_commit=False
+    bind=engine, autocommit=False, autoflush=False, expire_on_commit=False
 )
+
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency for getting async database sessions.

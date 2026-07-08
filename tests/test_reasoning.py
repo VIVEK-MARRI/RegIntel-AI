@@ -178,18 +178,26 @@ class TestSchemas:
         assert c.significance == ContradictionSeverity.MEDIUM
 
     def test_contradiction_defaults(self):
-        c = Contradiction(
-            claim_a="x", source_a="a", claim_b="y", source_b="b"
-        )
+        c = Contradiction(claim_a="x", source_a="a", claim_b="y", source_b="b")
         assert c.contradiction_id.startswith("ctr-")
 
     def test_reasoning_request_min_chunks(self):
         with pytest.raises(Exception):
-            ReasoningRequest(query="x", chunks=[{"chunk_id": "1", "document_id": "d", "content": "c"}])
+            ReasoningRequest(
+                query="x",
+                chunks=[{"chunk_id": "1", "document_id": "d", "content": "c"}],
+            )
 
     def test_reasoning_request_forbids_extra(self):
         with pytest.raises(Exception):
-            ReasoningRequest(query="x", chunks=[{"chunk_id": "1", "document_id": "d", "content": "c"}, {"chunk_id": "2", "document_id": "d", "content": "c"}], bad="x")
+            ReasoningRequest(
+                query="x",
+                chunks=[
+                    {"chunk_id": "1", "document_id": "d", "content": "c"},
+                    {"chunk_id": "2", "document_id": "d", "content": "c"},
+                ],
+                bad="x",
+            )
 
 
 # ─── DocumentComparator tests ──────────────────────────────────────────────
@@ -207,9 +215,7 @@ class TestDocumentComparator:
             DiffType.REMOVED in types and DiffType.ADDED in types
         )
 
-    def test_added_when_b_has_no_match(
-        self, comparator: DocumentComparator
-    ):
+    def test_added_when_b_has_no_match(self, comparator: DocumentComparator):
         # Two A chunks that both match to the SAME B chunk — second A
         # has no available match, second B has no available match.
         a = [
@@ -232,8 +238,20 @@ class TestDocumentComparator:
         assert any(d.diff_type == DiffType.UNCHANGED for d in diff.differences)
 
     def test_changed(self, comparator: DocumentComparator):
-        a = [_chunk("a1", "docA", "KYC process requires Aadhaar and PAN for verification of identity")]
-        b = [_chunk("b1", "docB", "KYC process requires Aadhaar and voter ID for identity verification of customers")]
+        a = [
+            _chunk(
+                "a1",
+                "docA",
+                "KYC process requires Aadhaar and PAN for verification of identity",
+            )
+        ]
+        b = [
+            _chunk(
+                "b1",
+                "docB",
+                "KYC process requires Aadhaar and voter ID for identity verification of customers",
+            )
+        ]
         diff = comparator.compare(a, b, document_a_id="docA", document_b_id="docB")
         # Either CHANGED (low-similarity match) or UNCHANGED (high-similarity)
         # depending on token overlap.
@@ -242,7 +260,11 @@ class TestDocumentComparator:
 
     def test_contradicts_detected(self, comparator: DocumentComparator):
         a = [_chunk("a1", "docA", "Insider trading is prohibited by SEBI regulations.")]
-        b = [_chunk("b1", "docB", "Insider trading is permitted under the new SEBI rules.")]
+        b = [
+            _chunk(
+                "b1", "docB", "Insider trading is permitted under the new SEBI rules."
+            )
+        ]
         diff = comparator.compare(a, b, document_a_id="docA", document_b_id="docB")
         assert any(d.diff_type == DiffType.CONTRADICTS for d in diff.differences)
 
@@ -322,8 +344,20 @@ class TestChangeDetector:
         assert any(c.change_type == ChangeType.REPEALED for c in report.changes)
 
     def test_detect_amended_or_new(self, change_detector: ChangeDetector):
-        a = [_chunk("a1", "docA", "KYC requires identity verification for onboarding of new customers only.")]
-        b = [_chunk("b1", "docB", "KYC requires identity verification plus address proof plus annual review for all existing customers.")]
+        a = [
+            _chunk(
+                "a1",
+                "docA",
+                "KYC requires identity verification for onboarding of new customers only.",
+            )
+        ]
+        b = [
+            _chunk(
+                "b1",
+                "docB",
+                "KYC requires identity verification plus address proof plus annual review for all existing customers.",
+            )
+        ]
         report = change_detector.detect(a, b)
         # Either AMENDED (low-similarity match) or NEW (no match) is fine.
         types = [c.change_type for c in report.changes]
@@ -348,9 +382,7 @@ class TestContradictionDetector:
             ContradictionSeverity.HIGH,
         )
 
-    def test_skip_within_document(
-        self, contradiction_detector: ContradictionDetector
-    ):
+    def test_skip_within_document(self, contradiction_detector: ContradictionDetector):
         chunks = [
             _chunk("c1", "d1", "Banks shall maintain records."),
             _chunk("c2", "d1", "Banks shall not maintain records."),
@@ -363,7 +395,9 @@ class TestContradictionDetector:
     ):
         chunks = [
             _chunk("c1", "d1", "Banks must verify customer identity."),
-            _chunk("c2", "d2", "Customer identity verification is required for all banks."),
+            _chunk(
+                "c2", "d2", "Customer identity verification is required for all banks."
+            ),
         ]
         report = contradiction_detector.detect(chunks)
         # Same direction → no contradiction flagged.
@@ -377,7 +411,9 @@ class TestCrossDocumentSummariser:
     def test_summarise(self, summariser: CrossDocumentSummariser):
         chunks = [
             _chunk("c1", "d1", "KYC is required for all banks operating in India."),
-            _chunk("c2", "d2", "SEBI also requires KYC for capital market participants."),
+            _chunk(
+                "c2", "d2", "SEBI also requires KYC for capital market participants."
+            ),
         ]
         s = summariser.summarise("KYC requirements", chunks)
         assert s.topic == "KYC requirements"
@@ -468,8 +504,18 @@ class TestAPI:
             json={
                 "query": "Compare KYC",
                 "chunks": [
-                    {"chunk_id": "c1", "document_id": "d1", "content": "KYC requires ID", "score": 0.9},
-                    {"chunk_id": "c2", "document_id": "d2", "content": "KYC requires ID", "score": 0.9},
+                    {
+                        "chunk_id": "c1",
+                        "document_id": "d1",
+                        "content": "KYC requires ID",
+                        "score": 0.9,
+                    },
+                    {
+                        "chunk_id": "c2",
+                        "document_id": "d2",
+                        "content": "KYC requires ID",
+                        "score": 0.9,
+                    },
                 ],
             },
         )
@@ -485,8 +531,18 @@ class TestAPI:
             json={
                 "query": "Timeline",
                 "chunks": [
-                    {"chunk_id": "c1", "document_id": "d1", "content": "In 2023 a rule was made.", "score": 0.9},
-                    {"chunk_id": "c2", "document_id": "d1", "content": "In 2024 another rule was made.", "score": 0.9},
+                    {
+                        "chunk_id": "c1",
+                        "document_id": "d1",
+                        "content": "In 2023 a rule was made.",
+                        "score": 0.9,
+                    },
+                    {
+                        "chunk_id": "c2",
+                        "document_id": "d1",
+                        "content": "In 2024 another rule was made.",
+                        "score": 0.9,
+                    },
                 ],
             },
         )
@@ -502,8 +558,18 @@ class TestAPI:
             json={
                 "query": "What changed?",
                 "chunks": [
-                    {"chunk_id": "c1", "document_id": "d1", "content": "Old rule", "score": 0.9},
-                    {"chunk_id": "c2", "document_id": "d2", "content": "New rule", "score": 0.9},
+                    {
+                        "chunk_id": "c1",
+                        "document_id": "d1",
+                        "content": "Old rule",
+                        "score": 0.9,
+                    },
+                    {
+                        "chunk_id": "c2",
+                        "document_id": "d2",
+                        "content": "New rule",
+                        "score": 0.9,
+                    },
                 ],
             },
         )
@@ -518,8 +584,18 @@ class TestAPI:
             json={
                 "query": "find conflicts",
                 "chunks": [
-                    {"chunk_id": "c1", "document_id": "d1", "content": "Banks shall maintain records.", "score": 0.9},
-                    {"chunk_id": "c2", "document_id": "d2", "content": "Banks shall not maintain records.", "score": 0.9},
+                    {
+                        "chunk_id": "c1",
+                        "document_id": "d1",
+                        "content": "Banks shall maintain records.",
+                        "score": 0.9,
+                    },
+                    {
+                        "chunk_id": "c2",
+                        "document_id": "d2",
+                        "content": "Banks shall not maintain records.",
+                        "score": 0.9,
+                    },
                 ],
             },
         )
@@ -535,8 +611,18 @@ class TestAPI:
             json={
                 "query": "KYC",
                 "chunks": [
-                    {"chunk_id": "c1", "document_id": "d1", "content": "KYC is mandatory for all banks.", "score": 0.9},
-                    {"chunk_id": "c2", "document_id": "d2", "content": "SEBI also mandates KYC for brokers.", "score": 0.9},
+                    {
+                        "chunk_id": "c1",
+                        "document_id": "d1",
+                        "content": "KYC is mandatory for all banks.",
+                        "score": 0.9,
+                    },
+                    {
+                        "chunk_id": "c2",
+                        "document_id": "d2",
+                        "content": "SEBI also mandates KYC for brokers.",
+                        "score": 0.9,
+                    },
                 ],
             },
         )
@@ -551,8 +637,18 @@ class TestAPI:
             json={
                 "query": "KYC",
                 "chunks": [
-                    {"chunk_id": "c1", "document_id": "d1", "content": "KYC in 2023", "score": 0.9},
-                    {"chunk_id": "c2", "document_id": "d2", "content": "KYC in 2024", "score": 0.9},
+                    {
+                        "chunk_id": "c1",
+                        "document_id": "d1",
+                        "content": "KYC in 2023",
+                        "score": 0.9,
+                    },
+                    {
+                        "chunk_id": "c2",
+                        "document_id": "d2",
+                        "content": "KYC in 2024",
+                        "score": 0.9,
+                    },
                 ],
                 "mode": "full",
             },

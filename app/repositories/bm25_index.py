@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class BM25IndexRepository(BaseRepository[BM25IndexMetadata]):
     """
     Repository for BM25 index metadata.
-    
+
     Stores index metadata (corpus size, avg doc length, vocab size,
     file path, active status) in the database for tracking and auditing.
     """
@@ -69,7 +69,7 @@ class BM25IndexRepository(BaseRepository[BM25IndexMetadata]):
     ) -> BM25IndexMetadata:
         """
         Create a new BM25 index metadata record.
-        
+
         Deactivates all existing indices before creating the new one.
         """
         await self.deactivate_all()

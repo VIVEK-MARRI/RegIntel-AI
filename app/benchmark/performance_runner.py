@@ -37,7 +37,9 @@ class PerformanceScenario:
 
     def __post_init__(self) -> None:
         if not callable(self.fn):
-            raise TypeError(f"PerformanceScenario.fn must be callable, got {type(self.fn)!r}")
+            raise TypeError(
+                f"PerformanceScenario.fn must be callable, got {type(self.fn)!r}"
+            )
 
 
 @dataclass
@@ -59,7 +61,9 @@ class PerformanceRunner:
     def collector(self) -> MetricsCollector:
         return self._collector
 
-    async def run(self, scenario: PerformanceScenario, *args: Any, **kwargs: Any) -> ScenarioResult:
+    async def run(
+        self, scenario: PerformanceScenario, *args: Any, **kwargs: Any
+    ) -> ScenarioResult:
         """Execute the scenario, measuring latency, memory, tokens, cost."""
         if not callable(scenario.fn):
             raise TypeError("scenario.fn is not callable")
@@ -93,7 +97,9 @@ class PerformanceRunner:
             kind=scenario.kind,
             success=success,
             error=error,
-            latency=__import__("app.benchmark.models", fromlist=["LatencyMetric"]).LatencyMetric(total_ms=total_ms),
+            latency=__import__(
+                "app.benchmark.models", fromlist=["LatencyMetric"]
+            ).LatencyMetric(total_ms=total_ms),
             memory=memory,
             tokens=tokens,
             cost_units=cost,

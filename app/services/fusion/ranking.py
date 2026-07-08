@@ -14,6 +14,7 @@ from app.services.hybrid.strategy import min_max_normalize as _min_max_normalize
 # Sorting
 # ---------------------------------------------------------------------------
 
+
 def sort_candidates(
     candidates: List[Dict[str, Any]],
     *,
@@ -33,6 +34,7 @@ def sort_candidates(
 # ---------------------------------------------------------------------------
 # Overlap / Diagnostics
 # ---------------------------------------------------------------------------
+
 
 def compute_overlap(
     dense_ids: set[str],
@@ -58,6 +60,7 @@ def compute_overlap(
 # Provenance
 # ---------------------------------------------------------------------------
 
+
 def build_provenance(
     chunk_id: str,
     dense_map: Dict[str, Any],
@@ -75,6 +78,7 @@ def build_provenance(
 # ---------------------------------------------------------------------------
 # Metadata merging
 # ---------------------------------------------------------------------------
+
 
 def merge_metadata(
     chunk_id: str,
@@ -112,6 +116,7 @@ def merge_metadata(
 # ---------------------------------------------------------------------------
 # Rank conflict resolution
 # ---------------------------------------------------------------------------
+
 
 def resolve_rank_conflicts(
     candidates: List[Dict[str, Any]],
@@ -153,7 +158,10 @@ _RANK_CONFLICT_THRESHOLD = 10  # positions
 # Multi-source rank lookup helper
 # ---------------------------------------------------------------------------
 
-def _rank_of(chunk_id: str, result_map: Dict[str, Any], ordered_ids: List[str]) -> int | None:
+
+def _rank_of(
+    chunk_id: str, result_map: Dict[str, Any], ordered_ids: List[str]
+) -> int | None:
     """Return the 1-based rank of *chunk_id* in *ordered_ids*, or ``None``."""
     if chunk_id not in result_map:
         return None
@@ -167,6 +175,7 @@ def _rank_of(chunk_id: str, result_map: Dict[str, Any], ordered_ids: List[str]) 
 # Score normalisation re-export
 # ---------------------------------------------------------------------------
 
+
 def normalize_scores(scores: List[float]) -> List[float]:
     """Min-max normalise a list of scores to [0, 1].
 
@@ -178,6 +187,7 @@ def normalize_scores(scores: List[float]) -> List[float]:
 # ---------------------------------------------------------------------------
 # Multi-source overlap (N sources)
 # ---------------------------------------------------------------------------
+
 
 def compute_multi_source_overlap(
     source_ids: Dict[str, set[str]],
@@ -212,13 +222,14 @@ def compute_multi_source_overlap(
         "overlap_count": len(overlap_ids),
         "overlap_ids": overlap_ids,
         "union_count": len(all_ids),
-        "source_coverage": {name: len(ids) for name, ids in source_ids.items() },
+        "source_coverage": {name: len(ids) for name, ids in source_ids.items()},
     }
 
 
 # ---------------------------------------------------------------------------
 # Deterministic tie-breaking
 # ---------------------------------------------------------------------------
+
 
 def break_ties(
     candidates: List[Dict[str, Any]],
@@ -257,6 +268,7 @@ def break_ties(
 # ---------------------------------------------------------------------------
 # Source attribution summary
 # ---------------------------------------------------------------------------
+
 
 def source_attribution_summary(
     candidates: List[Dict[str, Any]],

@@ -8,6 +8,7 @@ from app.models.chunk import ChunkEmbedding, DocumentChunk, EmbeddingStatusEnum
 
 logger = logging.getLogger(__name__)
 
+
 class VectorIndexManager:
     """Manages the lifecycle, maintenance, and monitoring of pgvector HNSW indexes on ChunkEmbedding."""
 
@@ -22,7 +23,9 @@ class VectorIndexManager:
         name = f"idx_chunk_embeddings_hnsw_{clean_model}_{clean_metric}"
         return name[:60]
 
-    async def _execute_outside_transaction(self, sql: str, params: Optional[dict] = None) -> None:
+    async def _execute_outside_transaction(
+        self, sql: str, params: Optional[dict] = None
+    ) -> None:
         """Executes a SQL statement outside the current active transaction block (e.g. for CONCURRENTLY)."""
         engine = self.db_session.bind
         if engine:
@@ -39,7 +42,7 @@ class VectorIndexManager:
         distance_metric: str = "cosine",
         m: int = 16,
         ef_construction: int = 64,
-        concurrently: bool = False
+        concurrently: bool = False,
     ) -> str:
         """Creates a model-specific partial HNSW vector index (or fallback index)."""
         metric = distance_metric.lower()
@@ -48,7 +51,7 @@ class VectorIndexManager:
             "inner_product": "vector_ip_ops",
             "ip": "vector_ip_ops",
             "l2": "vector_l2_ops",
-            "euclidean": "vector_l2_ops"
+            "euclidean": "vector_l2_ops",
         }
 
         if metric not in metrics_map:
@@ -89,7 +92,9 @@ class VectorIndexManager:
             await self.db_session.execute(text(sql))
             await self.db_session.commit()
 
-        logger.info(f"Successfully created HNSW index '{index_name}' for model '{model_name}'")
+        logger.info(
+            f"Successfully created HNSW index '{index_name}' for model '{model_name}'"
+        )
         return index_name
 
     async def rebuild_index(self, index_name: str, concurrently: bool = False) -> None:
@@ -133,17 +138,21 @@ class VectorIndexManager:
         result = await self.db_session.execute(text(sql))
         metrics = []
         for row in result.all():
-            metrics.append({
-                "index_name": row.index_name,
-                "table_name": row.table_name,
-                "index_size_bytes": row.index_size_bytes,
-                "index_size_pretty": f"{row.index_size_bytes / 1024:.2f} KB" if row.index_size_bytes < 1024 * 1024 else f"{row.index_size_bytes / (1024 * 1024):.2f} MB",
-                "is_valid": row.is_valid,
-                "is_unique": row.is_unique,
-                "index_scans": row.index_scans,
-                "tuples_read": row.tuples_read,
-                "tuples_fetched": row.tuples_fetched
-            })
+            metrics.append(
+                {
+                    "index_name": row.index_name,
+                    "table_name": row.table_name,
+                    "index_size_bytes": row.index_size_bytes,
+                    "index_size_pretty": f"{row.index_size_bytes / 1024:.2f} KB"
+                    if row.index_size_bytes < 1024 * 1024
+                    else f"{row.index_size_bytes / (1024 * 1024):.2f} MB",
+                    "is_valid": row.is_valid,
+                    "is_unique": row.is_unique,
+                    "index_scans": row.index_scans,
+                    "tuples_read": row.tuples_read,
+                    "tuples_fetched": row.tuples_fetched,
+                }
+            )
         return metrics
 
     async def validate_consistency(self, model_name: str) -> Dict[str, Any]:
@@ -160,12 +169,12 @@ class VectorIndexManager:
             .group_by(ChunkEmbedding.status)
         )
         res = await self.db_session.execute(stmt)
-        
+
         status_counts = {
             EmbeddingStatusEnum.PENDING.value: 0,
             EmbeddingStatusEnum.PROCESSING.value: 0,
             EmbeddingStatusEnum.COMPLETED.value: 0,
-            EmbeddingStatusEnum.FAILED.value: 0
+            EmbeddingStatusEnum.FAILED.value: 0,
         }
         for row in res.all():
             status_val, count = row
@@ -177,7 +186,9 @@ class VectorIndexManager:
         invalid_indexes = [m["index_name"] for m in health_metrics if not m["is_valid"]]
 
         is_consistent = (
-            status_counts[EmbeddingStatusEnum.COMPLETED.value] + status_counts[EmbeddingStatusEnum.FAILED.value] <= total_chunks
+            status_counts[EmbeddingStatusEnum.COMPLETED.value]
+            + status_counts[EmbeddingStatusEnum.FAILED.value]
+            <= total_chunks
             and len(invalid_indexes) == 0
         )
 
@@ -187,15 +198,19 @@ class VectorIndexManager:
             "completed_embeddings": status_counts[EmbeddingStatusEnum.COMPLETED.value],
             "failed_embeddings": status_counts[EmbeddingStatusEnum.FAILED.value],
             "pending_embeddings": status_counts[EmbeddingStatusEnum.PENDING.value],
-            "processing_embeddings": status_counts[EmbeddingStatusEnum.PROCESSING.value],
+            "processing_embeddings": status_counts[
+                EmbeddingStatusEnum.PROCESSING.value
+            ],
             "invalid_indexes": invalid_indexes,
-            "is_consistent": is_consistent
+            "is_consistent": is_consistent,
         }
 
     async def auto_rebuild_check(self, index_name: str) -> bool:
         """Determines if the index requires a rebuild based on health and statistics."""
         health_metrics = await self.index_health()
-        target_metric = next((m for m in health_metrics if m["index_name"] == index_name), None)
+        target_metric = next(
+            (m for m in health_metrics if m["index_name"] == index_name), None
+        )
 
         if not target_metric:
             logger.warning(f"Index '{index_name}' not found during auto rebuild check")
@@ -203,14 +218,21 @@ class VectorIndexManager:
 
         # Rule 1: Invalid indexes (e.g. from failed concurrent executions) must be rebuilt
         if not target_metric["is_valid"]:
-            logger.info(f"Auto-Rebuild check: Index '{index_name}' is INVALID. Rebuild triggered.")
+            logger.info(
+                f"Auto-Rebuild check: Index '{index_name}' is INVALID. Rebuild triggered."
+            )
             return True
 
         # Rule 2: Rebuild if index has substantial size and scan/utilization shows high reads but poor fetches
         # (This is a simplified metric simulating performance degradation check)
         if target_metric["index_size_bytes"] > 10 * 1024 * 1024:  # > 10MB
-            if target_metric["tuples_read"] > 5 * target_metric["tuples_fetched"] and target_metric["index_scans"] > 100:
-                logger.info(f"Auto-Rebuild check: High tuple read/fetch ratio detected for '{index_name}'. Rebuild triggered.")
+            if (
+                target_metric["tuples_read"] > 5 * target_metric["tuples_fetched"]
+                and target_metric["index_scans"] > 100
+            ):
+                logger.info(
+                    f"Auto-Rebuild check: High tuple read/fetch ratio detected for '{index_name}'. Rebuild triggered."
+                )
                 return True
 
         return False

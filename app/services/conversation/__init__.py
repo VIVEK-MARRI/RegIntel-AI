@@ -42,13 +42,73 @@ logger = logging.getLogger(__name__)
 
 _WORD_RE = re.compile(r"\b\w+\b", re.UNICODE)
 _STOPWORDS = {
-    "a", "an", "the", "and", "or", "of", "in", "on", "at", "by", "for", "to",
-    "from", "is", "are", "was", "were", "be", "been", "this", "that", "it",
-    "i", "you", "he", "she", "we", "they", "us", "my", "your", "their",
-    "do", "does", "did", "have", "has", "had", "what", "which", "who",
-    "when", "where", "how", "why", "as", "but", "or", "not", "no", "yes",
-    "can", "could", "will", "would", "should", "may", "might", "shall",
-    "with", "without", "into", "out", "up", "down", "over", "under",
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "of",
+    "in",
+    "on",
+    "at",
+    "by",
+    "for",
+    "to",
+    "from",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "this",
+    "that",
+    "it",
+    "i",
+    "you",
+    "he",
+    "she",
+    "we",
+    "they",
+    "us",
+    "my",
+    "your",
+    "their",
+    "do",
+    "does",
+    "did",
+    "have",
+    "has",
+    "had",
+    "what",
+    "which",
+    "who",
+    "when",
+    "where",
+    "how",
+    "why",
+    "as",
+    "but",
+    "or",
+    "not",
+    "no",
+    "yes",
+    "can",
+    "could",
+    "will",
+    "would",
+    "should",
+    "may",
+    "might",
+    "shall",
+    "with",
+    "without",
+    "into",
+    "out",
+    "up",
+    "down",
+    "over",
+    "under",
 }
 
 
@@ -201,7 +261,11 @@ class ConversationRepository:
         filtered: List[Conversation] = []
         for c in items:
             # Exclude expired by default.
-            if c.expires_at and c.expires_at <= now and c.status != ConversationStatus.EXPIRED:
+            if (
+                c.expires_at
+                and c.expires_at <= now
+                and c.status != ConversationStatus.EXPIRED
+            ):
                 continue
             if flt.user_id and c.user_id != flt.user_id:
                 continue
@@ -214,7 +278,11 @@ class ConversationRepository:
                     continue
             filtered.append(c)
         # Sort.
-        sort_key = flt.sort_by if flt.sort_by in {"created_at", "updated_at", "title"} else "updated_at"
+        sort_key = (
+            flt.sort_by
+            if flt.sort_by in {"created_at", "updated_at", "title"}
+            else "updated_at"
+        )
         filtered.sort(key=lambda c: getattr(c, sort_key), reverse=flt.sort_desc)
         # Paginate.
         total = len(filtered)
@@ -233,7 +301,11 @@ class ConversationRepository:
         now = now or datetime.now(timezone.utc)
         purged = 0
         for c in list(self.store.all()):
-            if c.expires_at and c.expires_at <= now and c.status != ConversationStatus.ARCHIVED:
+            if (
+                c.expires_at
+                and c.expires_at <= now
+                and c.status != ConversationStatus.ARCHIVED
+            ):
                 if self.store.delete(c.conversation_id):
                     purged += 1
         return purged
@@ -292,7 +364,10 @@ class SessionManager:
             recent_messages=messages,
             token_budget=budget,
             compressed=compressed,
-            extra={"message_count": len(conversation.messages), "included_count": len(messages)},
+            extra={
+                "message_count": len(conversation.messages),
+                "included_count": len(messages),
+            },
         )
 
 
@@ -343,7 +418,7 @@ class ConversationHistoryManager:
         and update the summary with the dropped portion."""
         if len(conversation.messages) <= keep_last:
             return conversation
-        dropped = conversation.messages[: -keep_last]
+        dropped = conversation.messages[:-keep_last]
         kept = conversation.messages[-keep_last:]
         # Append dropped messages to the summary.
         chunk_summaries = []
@@ -415,9 +490,7 @@ class ConversationManager:
     ) -> Conversation:
         return self.append(
             conversation_id,
-            AppendMessageRequest(
-                role=Role.USER, content=content, metadata=metadata
-            ),
+            AppendMessageRequest(role=Role.USER, content=content, metadata=metadata),
         )
 
     def append_assistant(
@@ -466,9 +539,7 @@ class ConversationManager:
         self.repository.update(conv)
         return conv
 
-    def trim(
-        self, conversation_id: str, *, keep_last: int = 20
-    ) -> Conversation:
+    def trim(self, conversation_id: str, *, keep_last: int = 20) -> Conversation:
         conv = self.get(conversation_id)
         if conv is None:
             raise KeyError(f"conversation {conversation_id!r} not found")
@@ -506,7 +577,9 @@ class ConversationService:
     ) -> None:
         if store is None:
             store = InMemoryConversationStore(
-                persist_path=Path(settings.STORAGE_ROOT) / "conversations" / "entries.jsonl"
+                persist_path=Path(settings.STORAGE_ROOT)
+                / "conversations"
+                / "entries.jsonl"
             )
         self.store = store
         if repository is None:

@@ -96,9 +96,7 @@ class CitationService:
 
             # 2. Map claims → chunks.
             exec_matches = self._map_all(exec_claims, request.chunks, mapper)
-            detailed_matches = self._map_all(
-                detailed_claims, request.chunks, mapper
-            )
+            detailed_matches = self._map_all(detailed_claims, request.chunks, mapper)
 
             # 3. Build reference list.
             references = builder.build_references(
@@ -196,14 +194,8 @@ class CitationService:
         claims: List[Claim], annotated: AnnotatedAnswer
     ) -> CitationCoverage:
         cited_ids = {
-            c.claim_id
-            for c in annotated.executive_summary.citations
-            for _ in [0]
-        } | {
-            c.claim_id
-            for c in annotated.detailed_explanation.citations
-            for _ in [0]
-        }
+            c.claim_id for c in annotated.executive_summary.citations for _ in [0]
+        } | {c.claim_id for c in annotated.detailed_explanation.citations for _ in [0]}
         uncited = [c.claim_id for c in claims if c.claim_id not in cited_ids]
         total = len(claims)
         cited = total - len(uncited)

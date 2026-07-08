@@ -6,6 +6,7 @@ from app.services.embedding.base import EmbeddingProvider
 
 logger = logging.getLogger(__name__)
 
+
 class BGEEmbeddingProvider(EmbeddingProvider):
     """BGE Embedding Provider using SentenceTransformers with lazy loading and thread-safety."""
 
@@ -14,7 +15,9 @@ class BGEEmbeddingProvider(EmbeddingProvider):
         model_name: str = "BAAI/bge-small-en-v1.5",
         device: Optional[str] = None,
         normalize_embeddings: bool = True,
-        query_instruction: Optional[str] = "represent this query for retrieving relevant documents: "
+        query_instruction: Optional[
+            str
+        ] = "represent this query for retrieving relevant documents: ",
     ):
         self.model_name = model_name
         self.device = device
@@ -38,21 +41,30 @@ class BGEEmbeddingProvider(EmbeddingProvider):
             if not self.device:
                 try:
                     import torch
+
                     self.device = "cuda" if torch.cuda.is_available() else "cpu"
                 except ImportError:
                     self.device = "cpu"
 
-            logger.info(f"Loading embedding model '{self.model_name}' on device '{self.device}'...")
+            logger.info(
+                f"Loading embedding model '{self.model_name}' on device '{self.device}'..."
+            )
             start_time = time.perf_counter()
             try:
                 from sentence_transformers import SentenceTransformer
+
                 model = SentenceTransformer(self.model_name, device=self.device)
                 self._model = model
                 self._dimension = model.get_sentence_embedding_dimension()
                 elapsed = (time.perf_counter() - start_time) * 1000
-                logger.info(f"Loaded embedding model '{self.model_name}' in {elapsed:.2f}ms. Dimension: {self._dimension}")
+                logger.info(
+                    f"Loaded embedding model '{self.model_name}' in {elapsed:.2f}ms. Dimension: {self._dimension}"
+                )
             except Exception as e:
-                logger.error(f"Failed to load embedding model '{self.model_name}': {e}", exc_info=True)
+                logger.error(
+                    f"Failed to load embedding model '{self.model_name}': {e}",
+                    exc_info=True,
+                )
                 raise RuntimeError(f"Could not load embedding model: {e}") from e
 
         return self._model
@@ -66,13 +78,10 @@ class BGEEmbeddingProvider(EmbeddingProvider):
 
         model = self._get_model()
         logger.debug(f"Encoding text of length: {len(text)}")
-        
+
         # SentenceTransformers encode returns a numpy array, convert to standard Python float list
         # encode() is thread-safe on a loaded model
-        embedding = model.encode(
-            text,
-            normalize_embeddings=self.normalize_embeddings
-        )
+        embedding = model.encode(text, normalize_embeddings=self.normalize_embeddings)
         return embedding.tolist()
 
     def encode_query(self, query: str) -> List[float]:
@@ -101,13 +110,13 @@ class BGEEmbeddingProvider(EmbeddingProvider):
         model = self._get_model()
         logger.info(f"Encoding batch of {len(texts)} texts...")
         start_time = time.perf_counter()
-        
+
         embeddings = model.encode(
             processed_texts,
             normalize_embeddings=self.normalize_embeddings,
-            show_progress_bar=False
+            show_progress_bar=False,
         )
-        
+
         # Replace empty string vectors with proper zero-vectors
         result = []
         dim = self.get_dimension()
@@ -118,14 +127,16 @@ class BGEEmbeddingProvider(EmbeddingProvider):
                 result.append(emb.tolist())
 
         elapsed = (time.perf_counter() - start_time) * 1000
-        logger.info(f"Completed batch encoding of {len(texts)} texts in {elapsed:.2f}ms")
+        logger.info(
+            f"Completed batch encoding of {len(texts)} texts in {elapsed:.2f}ms"
+        )
         return result
 
     def get_dimension(self) -> int:
         """Returns the size of the vector embeddings produced by the model."""
         if self._dimension is not None:
             return self._dimension
-        
+
         # Trigger lazy model loading to resolve dimension if not set
         self._get_model()
         return self._dimension

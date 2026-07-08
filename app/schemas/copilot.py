@@ -29,9 +29,9 @@ from app.schemas.confidence import ConfidenceLevel
 class CopilotMode(str, Enum):
     """Copilot execution mode."""
 
-    ANSWER = "answer"            # Produce a full orchestrated answer.
-    SUMMARISE = "summarise"      # Just summarise the memory/context.
-    SEARCH = "search"            # Just retrieve chunks; no answer.
+    ANSWER = "answer"  # Produce a full orchestrated answer.
+    SUMMARISE = "summarise"  # Just summarise the memory/context.
+    SEARCH = "search"  # Just retrieve chunks; no answer.
 
 
 # ─── Request / Response ───────────────────────────────────────────────────
@@ -47,7 +47,9 @@ class CopilotRequest(BaseModel):
     conversation_id: Optional[str] = Field(
         None, description="If absent, a new conversation is created."
     )
-    user_id: Optional[str] = Field(None, description="Owning user (for long-term memory).")
+    user_id: Optional[str] = Field(
+        None, description="Owning user (for long-term memory)."
+    )
     mode: CopilotMode = CopilotMode.ANSWER
     # Optional override of orchestrator knobs.
     tone: str = Field("regulatory")
@@ -86,7 +88,8 @@ class CopilotResponse(BaseModel):
     query: str
     mode: CopilotMode
     answer: Optional[Dict[str, Any]] = Field(
-        None, description="The orchestrator's structured answer (or None for non-answer modes)."
+        None,
+        description="The orchestrator's structured answer (or None for non-answer modes).",
     )
     citations: Optional[AnnotatedAnswer] = None
     confidence_score: float = Field(0.0, ge=0.0, le=1.0)

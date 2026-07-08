@@ -61,17 +61,21 @@ class TestMetricsQuerying:
 
         # Create records for different strategies
         for i in range(3):
-            await service.record_metrics(RetrievalMetricsCreate(
-                query_id=str(uuid.uuid4()),
-                query_text=f"Dense query {i}",
-                strategy="dense",
-            ))
+            await service.record_metrics(
+                RetrievalMetricsCreate(
+                    query_id=str(uuid.uuid4()),
+                    query_text=f"Dense query {i}",
+                    strategy="dense",
+                )
+            )
         for i in range(2):
-            await service.record_metrics(RetrievalMetricsCreate(
-                query_id=str(uuid.uuid4()),
-                query_text=f"BM25 query {i}",
-                strategy="bm25",
-            ))
+            await service.record_metrics(
+                RetrievalMetricsCreate(
+                    query_id=str(uuid.uuid4()),
+                    query_text=f"BM25 query {i}",
+                    strategy="bm25",
+                )
+            )
         await db_session.commit()
 
         result = await service.query_metrics(strategy="dense")
@@ -84,11 +88,13 @@ class TestMetricsQuerying:
         service = AnalyticsService(db_session)
 
         for i in range(10):
-            await service.record_metrics(RetrievalMetricsCreate(
-                query_id=str(uuid.uuid4()),
-                query_text=f"Query {i}",
-                strategy="dense",
-            ))
+            await service.record_metrics(
+                RetrievalMetricsCreate(
+                    query_id=str(uuid.uuid4()),
+                    query_text=f"Query {i}",
+                    strategy="dense",
+                )
+            )
         await db_session.commit()
 
         result = await service.query_metrics(limit=5, offset=0)
@@ -108,14 +114,16 @@ class TestAggregatedMetrics:
         service = AnalyticsService(db_session)
 
         for i in range(5):
-            await service.record_metrics(RetrievalMetricsCreate(
-                query_id=str(uuid.uuid4()),
-                query_text=f"Query {i}",
-                strategy="dense",
-                dense_recall_at_5=0.5 + (i * 0.1),
-                mrr=0.6 + (i * 0.05),
-                retrieval_latency_ms=30.0 + (i * 10),
-            ))
+            await service.record_metrics(
+                RetrievalMetricsCreate(
+                    query_id=str(uuid.uuid4()),
+                    query_text=f"Query {i}",
+                    strategy="dense",
+                    dense_recall_at_5=0.5 + (i * 0.1),
+                    mrr=0.6 + (i * 0.05),
+                    retrieval_latency_ms=30.0 + (i * 10),
+                )
+            )
         await db_session.commit()
 
         agg = await service.get_aggregated_metrics(strategy="dense")
@@ -146,12 +154,14 @@ class TestTrendAnalysis:
 
         # Create records with improving trend
         for i in range(5):
-            await service.record_metrics(RetrievalMetricsCreate(
-                query_id=str(uuid.uuid4()),
-                query_text=f"Query {i}",
-                strategy="dense",
-                dense_recall_at_5=0.5 + (i * 0.08),
-            ))
+            await service.record_metrics(
+                RetrievalMetricsCreate(
+                    query_id=str(uuid.uuid4()),
+                    query_text=f"Query {i}",
+                    strategy="dense",
+                    dense_recall_at_5=0.5 + (i * 0.08),
+                )
+            )
         await db_session.commit()
 
         trend = await service.get_trend_analysis(
@@ -184,6 +194,7 @@ class TestTrendAnalysis:
     def test_compute_trend_improving(self):
         """Test trend computation with improving values."""
         from app.schemas.analytics import TrendDataPoint
+
         service = AnalyticsService.__new__(AnalyticsService)
 
         points = [
@@ -200,6 +211,7 @@ class TestTrendAnalysis:
     def test_compute_trend_degrading(self):
         """Test trend computation with degrading values."""
         from app.schemas.analytics import TrendDataPoint
+
         service = AnalyticsService.__new__(AnalyticsService)
 
         points = [
@@ -216,6 +228,7 @@ class TestTrendAnalysis:
     def test_compute_trend_stable(self):
         """Test trend computation with stable values."""
         from app.schemas.analytics import TrendDataPoint
+
         service = AnalyticsService.__new__(AnalyticsService)
 
         points = [
@@ -239,13 +252,15 @@ class TestPerformanceSummary:
 
         for strategy in ["dense", "bm25", "hybrid"]:
             for i in range(3):
-                await service.record_metrics(RetrievalMetricsCreate(
-                    query_id=str(uuid.uuid4()),
-                    query_text=f"{strategy} query {i}",
-                    strategy=strategy,
-                    dense_recall_at_5=0.6 + (i * 0.05),
-                    mrr=0.7 + (i * 0.03),
-                ))
+                await service.record_metrics(
+                    RetrievalMetricsCreate(
+                        query_id=str(uuid.uuid4()),
+                        query_text=f"{strategy} query {i}",
+                        strategy=strategy,
+                        dense_recall_at_5=0.6 + (i * 0.05),
+                        mrr=0.7 + (i * 0.03),
+                    )
+                )
         await db_session.commit()
 
         summary = await service.get_performance_summary(
@@ -265,6 +280,7 @@ class TestPerformanceSummary:
     def test_compute_composite_score(self):
         """Test composite score computation."""
         from app.schemas.analytics import StrategyPerformance
+
         service = AnalyticsService.__new__(AnalyticsService)
 
         perf = StrategyPerformance(
@@ -292,12 +308,14 @@ class TestStrategyComparison:
 
         for strategy in ["dense", "bm25"]:
             for i in range(3):
-                await service.record_metrics(RetrievalMetricsCreate(
-                    query_id=str(uuid.uuid4()),
-                    query_text=f"{strategy} query {i}",
-                    strategy=strategy,
-                    dense_recall_at_5=0.7 if strategy == "dense" else 0.5,
-                ))
+                await service.record_metrics(
+                    RetrievalMetricsCreate(
+                        query_id=str(uuid.uuid4()),
+                        query_text=f"{strategy} query {i}",
+                        strategy=strategy,
+                        dense_recall_at_5=0.7 if strategy == "dense" else 0.5,
+                    )
+                )
         await db_session.commit()
 
         comparison = await service.compare_strategies(
@@ -442,13 +460,15 @@ class TestReportGeneration:
         # Create some data
         for strategy in ["dense", "bm25"]:
             for i in range(3):
-                await service.record_metrics(RetrievalMetricsCreate(
-                    query_id=str(uuid.uuid4()),
-                    query_text=f"{strategy} query {i}",
-                    strategy=strategy,
-                    dense_recall_at_5=0.6 + (i * 0.05),
-                    mrr=0.7 + (i * 0.03),
-                ))
+                await service.record_metrics(
+                    RetrievalMetricsCreate(
+                        query_id=str(uuid.uuid4()),
+                        query_text=f"{strategy} query {i}",
+                        strategy=strategy,
+                        dense_recall_at_5=0.6 + (i * 0.05),
+                        mrr=0.7 + (i * 0.03),
+                    )
+                )
         await db_session.commit()
 
         now = datetime.now(timezone.utc)

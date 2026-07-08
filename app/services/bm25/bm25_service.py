@@ -29,13 +29,13 @@ logger = logging.getLogger(__name__)
 class BM25Service:
     """
     High-level BM25 service for RegIntel AI.
-    
+
     Provides:
     - Index building from database chunks
     - Search with filtering and thresholds
     - Index lifecycle management
     - Telemetry and metrics
-    
+
     This is the primary interface that API endpoints and other services
     should use for BM25 operations.
     """
@@ -64,17 +64,17 @@ class BM25Service:
     async def build_index_from_db(self, session: AsyncSession) -> BM25IndexStats:
         """
         Build the BM25 index from all chunks in the database.
-        
+
         Args:
             session: Async SQLAlchemy session.
-            
+
         Returns:
             BM25IndexStats after building.
         """
         logger.info("BM25Service: building index from database")
         chunk_repo = ChunkRepository(session)
         chunks = await chunk_repo.get_all()
-        
+
         if not chunks:
             logger.warning("No chunks found in database to index")
             return self._retriever.get_index_stats()
@@ -102,18 +102,18 @@ class BM25Service:
     ) -> BM25IndexStats:
         """
         Update the BM25 index with new or modified chunks from the database.
-        
+
         Args:
             session: Async SQLAlchemy session.
             chunk_ids: Optional list of specific chunk IDs to update.
                       If None, updates all chunks.
-            
+
         Returns:
             BM25IndexStats after updating.
         """
         logger.info("BM25Service: updating index from database")
         chunk_repo = ChunkRepository(session)
-        
+
         if chunk_ids:
             chunks = []
             for cid in chunk_ids:
@@ -136,10 +136,10 @@ class BM25Service:
     async def rebuild_index_from_db(self, session: AsyncSession) -> BM25IndexStats:
         """
         Rebuild the entire BM25 index from the database.
-        
+
         Args:
             session: Async SQLAlchemy session.
-            
+
         Returns:
             BM25IndexStats after rebuilding.
         """
@@ -159,14 +159,14 @@ class BM25Service:
     ) -> BM25SearchResponse:
         """
         Execute a BM25 search.
-        
+
         Args:
             query: Search query string.
             top_k: Maximum number of results to return.
             source_filter: Optional list of sources to filter by (e.g., ["RBI", "SEBI"]).
             document_filter: Optional list of document IDs to filter by.
             score_threshold: Minimum BM25 score threshold.
-            
+
         Returns:
             BM25SearchResponse with results and telemetry.
         """
@@ -211,7 +211,7 @@ class BM25Service:
     def _chunks_to_documents(chunks: Sequence[Any]) -> List[BM25Document]:
         """
         Convert database chunk models to BM25Document instances.
-        
+
         Maps the chunk hierarchy (document -> section -> subsection -> chunk)
         into BM25Document fields for multi-field indexing.
         """

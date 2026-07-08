@@ -57,7 +57,11 @@ class ConfidenceService:
     # ── Public API ──────────────────────────────────────────────────────────
 
     def score(self, request: ConfidenceRequest) -> ConfidenceResponse:
-        if not request.chunks and request.retrieval_scores is None and request.reranker_scores is None:
+        if (
+            not request.chunks
+            and request.retrieval_scores is None
+            and request.reranker_scores is None
+        ):
             logger.debug("scoring with no chunks and no scores")
 
         weights = self._resolve_weights(request.weights)
@@ -128,8 +132,12 @@ class ConfidenceService:
             query=query,
             answer=dict(answer),
             chunks=[dict(c) for c in chunks],
-            retrieval_scores=list(retrieval_scores) if retrieval_scores is not None else None,
-            reranker_scores=list(reranker_scores) if reranker_scores is not None else None,
+            retrieval_scores=list(retrieval_scores)
+            if retrieval_scores is not None
+            else None,
+            reranker_scores=list(reranker_scores)
+            if reranker_scores is not None
+            else None,
             citation_coverage=citation_coverage,
             weights=weights,
         )
@@ -137,9 +145,7 @@ class ConfidenceService:
 
     # ── Internals ──────────────────────────────────────────────────────────
 
-    def _resolve_weights(
-        self, custom: Optional[Dict[str, float]]
-    ) -> Dict[str, float]:
+    def _resolve_weights(self, custom: Optional[Dict[str, float]]) -> Dict[str, float]:
         merged: Dict[str, float] = dict(DEFAULT_WEIGHTS)
         if custom:
             for k, v in custom.items():
@@ -167,9 +173,7 @@ class ConfidenceService:
             min_chunks_for_full_coverage=request.min_chunks_for_full_coverage,
         )
         # Citation coverage.
-        cite = citation_coverage_factor(
-            request.citation_coverage, request.answer
-        )
+        cite = citation_coverage_factor(request.citation_coverage, request.answer)
 
         return [
             FactorCalculator(
@@ -225,7 +229,10 @@ class ConfidenceService:
 
         # No answer content.
         answer_text = (request.answer.get("executive_summary", "") or "").strip()
-        if not answer_text and not (request.answer.get("detailed_explanation", "") or "").strip():
+        if (
+            not answer_text
+            and not (request.answer.get("detailed_explanation", "") or "").strip()
+        ):
             flags.append(ConfidenceFlag.NO_ANSWER)
 
         # Citation coverage.
@@ -241,7 +248,9 @@ class ConfidenceService:
             flags.append(ConfidenceFlag.NO_RERANK_SCORES)
 
         # Single source.
-        sources = {c.get("source") for c in request.chunks if c.get("source") is not None}
+        sources = {
+            c.get("source") for c in request.chunks if c.get("source") is not None
+        }
         if len(sources) == 1 and request.chunks:
             flags.append(ConfidenceFlag.SINGLE_SOURCE)
 
@@ -255,7 +264,7 @@ class ConfidenceService:
             mean = sum(scores) / len(scores)
             if mean > 0:
                 variance = sum((s - mean) ** 2 for s in scores) / len(scores)
-                stdev = variance ** 0.5
+                stdev = variance**0.5
                 if stdev / mean > 0.4:  # coefficient of variation > 0.4
                     flags.append(ConfidenceFlag.HIGH_SCORE_VARIANCE)
 

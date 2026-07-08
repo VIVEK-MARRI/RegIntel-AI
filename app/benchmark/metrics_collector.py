@@ -45,6 +45,7 @@ except Exception:  # pragma: no cover
 
 # ─── Per-process helpers ──────────────────────────────────────────────
 
+
 def _process_memory_mb() -> float:
     """Resident-set size in MB for the current process (best effort)."""
     if psutil is not None:
@@ -141,6 +142,7 @@ def _host_memory_percent() -> Optional[float]:
 
 # ─── Stats helpers ─────────────────────────────────────────────────────
 
+
 def _percentile(sorted_values: Sequence[float], pct: float) -> float:
     """Return the linear-interpolated percentile of a sorted sequence."""
     if not sorted_values:
@@ -159,8 +161,16 @@ def compute_latency_stats(values: Iterable[float]) -> LatencyStats:
     values = [float(v) for v in values if v is not None]
     if not values:
         return LatencyStats(
-            count=0, min_ms=0.0, max_ms=0.0, mean_ms=0.0, median_ms=0.0,
-            p50_ms=0.0, p90_ms=0.0, p95_ms=0.0, p99_ms=0.0, stddev_ms=0.0,
+            count=0,
+            min_ms=0.0,
+            max_ms=0.0,
+            mean_ms=0.0,
+            median_ms=0.0,
+            p50_ms=0.0,
+            p90_ms=0.0,
+            p95_ms=0.0,
+            p99_ms=0.0,
+            stddev_ms=0.0,
         )
     sorted_v = sorted(values)
     return LatencyStats(
@@ -207,6 +217,7 @@ def compute_cost_summary(
 
 
 # ─── Public collector ─────────────────────────────────────────────────
+
 
 class MetricsCollector:
     """Collects latency, memory and token metrics around operation calls."""
@@ -255,7 +266,9 @@ class MetricsCollector:
         start = time.perf_counter()
         captured: Dict[str, float] = {"total_ms": 0.0}
 
-        def _finalise(server_ms: Optional[float] = None, queue_ms: Optional[float] = None) -> LatencyMetric:
+        def _finalise(
+            server_ms: Optional[float] = None, queue_ms: Optional[float] = None
+        ) -> LatencyMetric:
             end = time.perf_counter()
             total_ms = (end - start) * 1000.0
             captured["total_ms"] = total_ms
@@ -305,6 +318,7 @@ class MetricsCollector:
 
 
 # ─── Convenience dataclass for callers that want a stateful helper ───
+
 
 @dataclass
 class _TokenLedger:

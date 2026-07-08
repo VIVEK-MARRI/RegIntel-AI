@@ -139,8 +139,12 @@ class TestRetrievalEvaluator:
         # Mock reranker results
         mock_rerank_response = MagicMock()
         mock_rerank_response.results = [
-            MagicMock(chunk_id="chunk_1", rerank_score=0.95, content="test", metadata={}),
-            MagicMock(chunk_id="chunk_2", rerank_score=0.85, content="test", metadata={}),
+            MagicMock(
+                chunk_id="chunk_1", rerank_score=0.95, content="test", metadata={}
+            ),
+            MagicMock(
+                chunk_id="chunk_2", rerank_score=0.85, content="test", metadata={}
+            ),
         ]
         self.mock_reranker_service.rerank.return_value = mock_rerank_response
 
@@ -261,7 +265,9 @@ class TestRetrievalEvaluator:
 
         mock_rerank_response = MagicMock()
         mock_rerank_response.results = [
-            MagicMock(chunk_id="chunk_1", rerank_score=0.98, content="test", metadata={}),
+            MagicMock(
+                chunk_id="chunk_1", rerank_score=0.98, content="test", metadata={}
+            ),
         ]
         self.mock_reranker_service.rerank.return_value = mock_rerank_response
 

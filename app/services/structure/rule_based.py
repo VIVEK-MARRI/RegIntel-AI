@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional
 from app.schemas.structure import StructureElement
 from app.services.structure.base import BaseStructureExtractor
 
+
 class RuleBasedStructureExtractor(BaseStructureExtractor):
     """Rule-based document structure extractor using regex heuristics for RBI/SEBI documents."""
 
@@ -10,7 +11,7 @@ class RuleBasedStructureExtractor(BaseStructureExtractor):
         # Chapter pattern e.g. "CHAPTER I" or "Chapter 1" or "CHAPTER II - Introduction"
         self.chapter_pattern = re.compile(
             r"^\s*(CHAPTER|Chapter)\s+(?P<num>[IVXLCDM\d]+)(?:\s+[-:]?\s*(?P<rest>.*))?$",
-            re.IGNORECASE
+            re.IGNORECASE,
         )
         # Section pattern e.g. "1. Introduction" or "12. Customer Due Diligence"
         self.section_pattern = re.compile(
@@ -30,8 +31,7 @@ class RuleBasedStructureExtractor(BaseStructureExtractor):
         )
         # Page footers / headers exclusion
         self.page_number_pattern = re.compile(
-            r"^\s*(Page|page)?\s*\d+\s*(of\s*\d+)?\s*$",
-            re.IGNORECASE
+            r"^\s*(Page|page)?\s*\d+\s*(of\s*\d+)?\s*$", re.IGNORECASE
         )
 
         # Regulators / metadata headers to ignore for document title lookup
@@ -45,7 +45,7 @@ class RuleBasedStructureExtractor(BaseStructureExtractor):
             "www.sebi.gov.in",
             "department of",
             "notification",
-            "circular"
+            "circular",
         ]
 
     def _is_probable_heading(self, text: str) -> bool:
@@ -62,20 +62,20 @@ class RuleBasedStructureExtractor(BaseStructureExtractor):
         elements: List[StructureElement] = []
         title_found = False
         pending_chapter_num: Optional[str] = None
-        
+
         for page_idx, page in enumerate(pages):
             page_num = page.get("page_number", page_idx + 1)
             content = page.get("content", "")
             if not content:
                 continue
-                
+
             lines = [line.strip() for line in content.split("\n") if line.strip()]
-            
+
             for line in lines:
                 # 1. Skip page number indicators
                 if self.page_number_pattern.match(line):
                     continue
-                    
+
                 # 2. Extract Document Title on page 1
                 if not title_found and page_num == 1:
                     lower_line = line.lower()
@@ -86,109 +86,123 @@ class RuleBasedStructureExtractor(BaseStructureExtractor):
                             if len(line) < len(ignore) + 15:
                                 should_ignore = True
                                 break
-                    
+
                     # Also ignore reference number lines
                     if re.search(r"rbi/\d{4}|sebi/|no\.|date\b", lower_line):
                         should_ignore = True
-                        
+
                     if not should_ignore and len(line) > 5:
-                        elements.append(StructureElement(
-                            type="title",
-                            title=line,
-                            page=page_num,
-                            level=0,
-                            numbering=None
-                        ))
+                        elements.append(
+                            StructureElement(
+                                type="title",
+                                title=line,
+                                page=page_num,
+                                level=0,
+                                numbering=None,
+                            )
+                        )
                         title_found = True
                         continue
-                
+
                 # 3. Handle pending Chapter title from a previous line
                 if pending_chapter_num is not None:
-                    elements.append(StructureElement(
-                        type="chapter",
-                        title=line,
-                        page=page_num,
-                        level=1,
-                        numbering=f"CHAPTER {pending_chapter_num}"
-                    ))
+                    elements.append(
+                        StructureElement(
+                            type="chapter",
+                            title=line,
+                            page=page_num,
+                            level=1,
+                            numbering=f"CHAPTER {pending_chapter_num}",
+                        )
+                    )
                     pending_chapter_num = None
                     continue
-                    
+
                 # 4. Match Chapter
                 chap_match = self.chapter_pattern.match(line)
                 if chap_match:
                     num = chap_match.group("num")
                     rest = chap_match.group("rest")
                     if rest and rest.strip():
-                        elements.append(StructureElement(
-                            type="chapter",
-                            title=rest.strip(),
-                            page=page_num,
-                            level=1,
-                            numbering=f"CHAPTER {num}"
-                        ))
+                        elements.append(
+                            StructureElement(
+                                type="chapter",
+                                title=rest.strip(),
+                                page=page_num,
+                                level=1,
+                                numbering=f"CHAPTER {num}",
+                            )
+                        )
                     else:
                         pending_chapter_num = num
                     continue
-                    
+
                 # 5. Match Sub-subsection
                 sub_sub_match = self.sub_subsection_pattern.match(line)
                 if sub_sub_match:
                     num = sub_sub_match.group("num")
                     title = sub_sub_match.group("title").strip()
                     if self._is_probable_heading(title):
-                        elements.append(StructureElement(
-                            type="clause",
-                            title=title,
-                            page=page_num,
-                            level=4,
-                            numbering=num
-                        ))
+                        elements.append(
+                            StructureElement(
+                                type="clause",
+                                title=title,
+                                page=page_num,
+                                level=4,
+                                numbering=num,
+                            )
+                        )
                         continue
-                    
+
                 # 6. Match Subsection
                 sub_match = self.subsection_pattern.match(line)
                 if sub_match:
                     num = sub_match.group("num")
                     title = sub_match.group("title").strip()
                     if self._is_probable_heading(title):
-                        elements.append(StructureElement(
-                            type="subsection",
-                            title=title,
-                            page=page_num,
-                            level=3,
-                            numbering=num
-                        ))
+                        elements.append(
+                            StructureElement(
+                                type="subsection",
+                                title=title,
+                                page=page_num,
+                                level=3,
+                                numbering=num,
+                            )
+                        )
                         continue
-                    
+
                 # 7. Match Section
                 sec_match = self.section_pattern.match(line)
                 if sec_match:
                     num = sec_match.group("num")
                     title = sec_match.group("title").strip()
                     if self._is_probable_heading(title):
-                        elements.append(StructureElement(
-                            type="section",
-                            title=title,
-                            page=page_num,
-                            level=2,
-                            numbering=num
-                        ))
+                        elements.append(
+                            StructureElement(
+                                type="section",
+                                title=title,
+                                page=page_num,
+                                level=2,
+                                numbering=num,
+                            )
+                        )
                         continue
-                    
+
                 # 8. Match Clause
                 clause_match = self.clause_pattern.match(line)
                 if clause_match:
                     num = clause_match.group("num")
                     title = clause_match.group("title").strip()
                     if self._is_probable_heading(title):
-                        elements.append(StructureElement(
-                            type="clause",
-                            title=title,
-                            page=page_num,
-                            level=5,
-                            numbering=num
-                        ))
+                        elements.append(
+                            StructureElement(
+                                type="clause",
+                                title=title,
+                                page=page_num,
+                                level=5,
+                                numbering=num,
+                            )
+                        )
                         continue
-                    
+
         return elements

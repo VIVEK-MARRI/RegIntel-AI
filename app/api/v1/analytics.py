@@ -98,10 +98,18 @@ async def record_metrics_batch(
 async def query_metrics(
     strategy: Optional[str] = Query(None, description="Filter by retrieval strategy."),
     dataset_name: Optional[str] = Query(None, description="Filter by dataset name."),
-    query_category: Optional[str] = Query(None, description="Filter by query category."),
-    start_time: Optional[datetime] = Query(None, description="Start of time range (ISO format)."),
-    end_time: Optional[datetime] = Query(None, description="End of time range (ISO format)."),
-    limit: int = Query(default=100, ge=1, le=10000, description="Max records to return."),
+    query_category: Optional[str] = Query(
+        None, description="Filter by query category."
+    ),
+    start_time: Optional[datetime] = Query(
+        None, description="Start of time range (ISO format)."
+    ),
+    end_time: Optional[datetime] = Query(
+        None, description="End of time range (ISO format)."
+    ),
+    limit: int = Query(
+        default=100, ge=1, le=10000, description="Max records to return."
+    ),
     offset: int = Query(default=0, ge=0, description="Number of records to skip."),
     service: AnalyticsService = Depends(get_analytics_service),
 ) -> Dict[str, Any]:
@@ -165,7 +173,9 @@ async def get_aggregated_metrics(
 )
 async def compute_aggregated_snapshot(
     strategy: str,
-    window_type: str = Query(..., description="Window type: hourly, daily, weekly, monthly."),
+    window_type: str = Query(
+        ..., description="Window type: hourly, daily, weekly, monthly."
+    ),
     window_start: datetime = Query(..., description="Start of the aggregation window."),
     window_end: datetime = Query(..., description="End of the aggregation window."),
     dataset_name: Optional[str] = Query(None, description="Filter by dataset name."),
@@ -200,7 +210,10 @@ async def compute_aggregated_snapshot(
 async def get_trend_analysis(
     metric_name: str,
     strategies: Optional[List[str]] = Query(None, description="Strategies to include."),
-    window_type: str = Query(default="daily", description="Aggregation window: hourly, daily, weekly, monthly."),
+    window_type: str = Query(
+        default="daily",
+        description="Aggregation window: hourly, daily, weekly, monthly.",
+    ),
     start_time: Optional[datetime] = Query(None, description="Start of time range."),
     end_time: Optional[datetime] = Query(None, description="End of time range."),
     service: AnalyticsService = Depends(get_analytics_service),
@@ -232,7 +245,9 @@ async def get_trend_analysis(
     description="Returns a comprehensive performance summary comparing all retrieval strategies with composite scores.",
 )
 async def get_performance_summary(
-    window_type: str = Query(default="daily", description="Time window: hourly, daily, weekly, monthly."),
+    window_type: str = Query(
+        default="daily", description="Time window: hourly, daily, weekly, monthly."
+    ),
     start_time: Optional[datetime] = Query(None, description="Start of time range."),
     end_time: Optional[datetime] = Query(None, description="End of time range."),
     dataset_name: Optional[str] = Query(None, description="Filter by dataset name."),
@@ -266,7 +281,9 @@ async def get_performance_summary(
     description="Compares a specific metric across all strategies with change percentage and trend direction.",
 )
 async def compare_strategies(
-    metric_name: str = Query(..., description="Metric to compare (e.g., dense_recall_at_5, mrr)."),
+    metric_name: str = Query(
+        ..., description="Metric to compare (e.g., dense_recall_at_5, mrr)."
+    ),
     window_type: str = Query(default="daily", description="Time window."),
     start_time: Optional[datetime] = Query(None, description="Start of time range."),
     end_time: Optional[datetime] = Query(None, description="End of time range."),
@@ -330,10 +347,18 @@ async def record_query_distribution(
     window_type: str = Query(..., description="Time window type."),
     window_start: datetime = Query(..., description="Start of the window."),
     window_end: datetime = Query(..., description="End of the window."),
-    category_counts: str = Query(..., description="Query counts by category (JSON string)."),
-    strategy_counts: str = Query(..., description="Query counts by strategy (JSON string)."),
-    avg_query_length: Optional[float] = Query(None, description="Average query length."),
-    avg_result_count: Optional[float] = Query(None, description="Average result count."),
+    category_counts: str = Query(
+        ..., description="Query counts by category (JSON string)."
+    ),
+    strategy_counts: str = Query(
+        ..., description="Query counts by strategy (JSON string)."
+    ),
+    avg_query_length: Optional[float] = Query(
+        None, description="Average query length."
+    ),
+    avg_result_count: Optional[float] = Query(
+        None, description="Average result count."
+    ),
     service: AnalyticsService = Depends(get_analytics_service),
 ) -> QueryDistributionSummary:
     try:
@@ -380,7 +405,6 @@ async def get_reranker_gain(
     return result
 
 
-
 @router.post(
     "/reranker/gain",
     response_model=RerankerGainResponse,
@@ -392,14 +416,28 @@ async def record_reranker_gain(
     window_type: str = Query(..., description="Time window type."),
     window_start: datetime = Query(..., description="Start of the window."),
     window_end: datetime = Query(..., description="End of the window."),
-    avg_recall_gain_at_5: Optional[float] = Query(None, description="Average Recall@5 gain."),
-    avg_recall_gain_at_10: Optional[float] = Query(None, description="Average Recall@10 gain."),
-    avg_precision_gain_at_5: Optional[float] = Query(None, description="Average Precision@5 gain."),
+    avg_recall_gain_at_5: Optional[float] = Query(
+        None, description="Average Recall@5 gain."
+    ),
+    avg_recall_gain_at_10: Optional[float] = Query(
+        None, description="Average Recall@10 gain."
+    ),
+    avg_precision_gain_at_5: Optional[float] = Query(
+        None, description="Average Precision@5 gain."
+    ),
     avg_mrr_gain: Optional[float] = Query(None, description="Average MRR gain."),
-    avg_hit_rate_gain: Optional[float] = Query(None, description="Average hit rate gain."),
-    avg_reranker_latency_ms: Optional[float] = Query(None, description="Average reranker latency."),
-    reranker_queries_count: int = Query(default=0, description="Number of queries reranked."),
-    improvement_rate: Optional[float] = Query(None, description="Fraction of queries improved."),
+    avg_hit_rate_gain: Optional[float] = Query(
+        None, description="Average hit rate gain."
+    ),
+    avg_reranker_latency_ms: Optional[float] = Query(
+        None, description="Average reranker latency."
+    ),
+    reranker_queries_count: int = Query(
+        default=0, description="Number of queries reranked."
+    ),
+    improvement_rate: Optional[float] = Query(
+        None, description="Fraction of queries improved."
+    ),
     dataset_name: Optional[str] = Query(None, description="Filter by dataset name."),
     service: AnalyticsService = Depends(get_analytics_service),
 ) -> RerankerGainResponse:
@@ -457,17 +495,37 @@ async def get_system_health(
     description="Records a system health snapshot with component availability and performance data.",
 )
 async def record_system_health(
-    status: str = Query(default="healthy", description="Overall status: healthy, degraded, unhealthy."),
-    dense_available: bool = Query(default=True, description="Dense retrieval availability."),
-    bm25_available: bool = Query(default=True, description="BM25 retrieval availability."),
-    hybrid_available: bool = Query(default=True, description="Hybrid retrieval availability."),
-    reranker_available: bool = Query(default=True, description="Reranker availability."),
-    index_consistent: bool = Query(default=True, description="Index consistency status."),
-    embedding_coverage: Optional[float] = Query(None, description="Embedding coverage percentage."),
+    status: str = Query(
+        default="healthy", description="Overall status: healthy, degraded, unhealthy."
+    ),
+    dense_available: bool = Query(
+        default=True, description="Dense retrieval availability."
+    ),
+    bm25_available: bool = Query(
+        default=True, description="BM25 retrieval availability."
+    ),
+    hybrid_available: bool = Query(
+        default=True, description="Hybrid retrieval availability."
+    ),
+    reranker_available: bool = Query(
+        default=True, description="Reranker availability."
+    ),
+    index_consistent: bool = Query(
+        default=True, description="Index consistency status."
+    ),
+    embedding_coverage: Optional[float] = Query(
+        None, description="Embedding coverage percentage."
+    ),
     total_indexed: Optional[int] = Query(None, description="Total indexed chunks."),
-    avg_latency: Optional[float] = Query(None, description="Average latency last hour (ms)."),
-    queries_last_hour: Optional[int] = Query(None, description="Queries in the last hour."),
-    error_rate: Optional[float] = Query(None, description="Error rate in the last hour."),
+    avg_latency: Optional[float] = Query(
+        None, description="Average latency last hour (ms)."
+    ),
+    queries_last_hour: Optional[int] = Query(
+        None, description="Queries in the last hour."
+    ),
+    error_rate: Optional[float] = Query(
+        None, description="Error rate in the last hour."
+    ),
     service: AnalyticsService = Depends(get_analytics_service),
 ) -> SystemHealthResponse:
     try:

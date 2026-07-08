@@ -120,9 +120,7 @@ class ConversationAnalytics:
         window_start: Optional[datetime] = None,
     ) -> ConversationMetrics:
         if window_start is not None:
-            conversations = [
-                c for c in conversations if c.created_at >= window_start
-            ]
+            conversations = [c for c in conversations if c.created_at >= window_start]
         total = len(conversations)
         if total == 0:
             return ConversationMetrics()
@@ -172,7 +170,13 @@ def _classify_memory(entry: Any) -> QueryCategory:
     blob = f"{text} {tags}"
     if "compare" in blob or "vs" in blob or "difference" in blob:
         return QueryCategory.COMPARISON
-    if "timeline" in blob or "evolution" in blob or "history" in blob or "effective from" in blob or "effective date" in blob:
+    if (
+        "timeline" in blob
+        or "evolution" in blob
+        or "history" in blob
+        or "effective from" in blob
+        or "effective date" in blob
+    ):
         return QueryCategory.TIMELINE
     if "change" in blob or "amend" in blob:
         return QueryCategory.CHANGE
@@ -244,7 +248,11 @@ class CopilotAnalyticsService:
         quality_metrics = self._quality_metrics(events, feedback)
         # Top-level counts.
         total_events = len(events)
-        successful = sum(1 for e in events if getattr(e, "warnings", None) is not None and not e.warnings)
+        successful = sum(
+            1
+            for e in events
+            if getattr(e, "warnings", None) is not None and not e.warnings
+        )
         failed = total_events - successful
         return CopilotMetrics(
             window=window,
@@ -261,9 +269,7 @@ class CopilotAnalyticsService:
             quality=quality_metrics,
         )
 
-    def usage(
-        self, *, window: AnalyticsWindow = AnalyticsWindow.ALL
-    ) -> UsageStats:
+    def usage(self, *, window: AnalyticsWindow = AnalyticsWindow.ALL) -> UsageStats:
         m = self.metrics(window=window)
         return UsageStats(
             window=window,
@@ -283,15 +289,16 @@ class CopilotAnalyticsService:
         self, memories: List[Any], request_count: int
     ) -> MemoryUsageMetrics:
         from app.schemas.memory import MemoryType
+
         if not memories:
-            return MemoryUsageMetrics(
-                memory_used_in_requests=0, memory_used_ratio=0.0
-            )
+            return MemoryUsageMetrics(memory_used_in_requests=0, memory_used_ratio=0.0)
         short_term = sum(1 for m in memories if m.memory_type == MemoryType.SHORT_TERM)
         long_term = sum(1 for m in memories if m.memory_type == MemoryType.LONG_TERM)
         retrieval = sum(1 for m in memories if m.memory_type == MemoryType.RETRIEVAL)
         pinned = sum(1 for m in memories if getattr(m, "pinned", False))
-        avg_rel = sum(getattr(m, "relevance_score", 0.0) for m in memories) / len(memories)
+        avg_rel = sum(getattr(m, "relevance_score", 0.0) for m in memories) / len(
+            memories
+        )
         # Heuristic: assume 30% of requests used memory (since this is
         # not directly tracked).  When request_count is 0, skip.
         used_in_req = int(request_count * 0.3) if request_count else 0
@@ -375,14 +382,10 @@ class CopilotAnalyticsService:
             return AnswerQualityMetrics()
         n = len(events)
         avg_conf = (
-            sum(getattr(e, "confidence_score", 0.0) for e in events) / n
-            if n
-            else 0.0
+            sum(getattr(e, "confidence_score", 0.0) for e in events) / n if n else 0.0
         )
         avg_faith = (
-            sum(getattr(e, "faithfulness_score", 0.0) for e in events) / n
-            if n
-            else 0.0
+            sum(getattr(e, "faithfulness_score", 0.0) for e in events) / n if n else 0.0
         )
         halluc = (
             sum(1 for e in events if getattr(e, "hallucination_detected", False)) / n
@@ -394,12 +397,32 @@ class CopilotAnalyticsService:
             if n
             else 0.0
         )
-        thumbs_up = sum(1 for f in feedback if getattr(f, "feedback_type", None) and f.feedback_type.value == "thumbs_up")
-        thumbs_down = sum(1 for f in feedback if getattr(f, "feedback_type", None) and f.feedback_type.value == "thumbs_down")
+        thumbs_up = sum(
+            1
+            for f in feedback
+            if getattr(f, "feedback_type", None)
+            and f.feedback_type.value == "thumbs_up"
+        )
+        thumbs_down = sum(
+            1
+            for f in feedback
+            if getattr(f, "feedback_type", None)
+            and f.feedback_type.value == "thumbs_down"
+        )
         rated = thumbs_up + thumbs_down
         sat = (thumbs_up / rated) if rated else 0.0
-        corrections = sum(1 for f in feedback if getattr(f, "feedback_type", None) and f.feedback_type.value == "correction")
-        halluc_reports = sum(1 for f in feedback if getattr(f, "feedback_type", None) and f.feedback_type.value == "hallucination_report")
+        corrections = sum(
+            1
+            for f in feedback
+            if getattr(f, "feedback_type", None)
+            and f.feedback_type.value == "correction"
+        )
+        halluc_reports = sum(
+            1
+            for f in feedback
+            if getattr(f, "feedback_type", None)
+            and f.feedback_type.value == "hallucination_report"
+        )
         return AnswerQualityMetrics(
             avg_confidence=avg_conf,
             avg_faithfulness=avg_faith,

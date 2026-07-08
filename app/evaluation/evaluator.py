@@ -190,12 +190,14 @@ class RetrievalEvaluator:
         )
         results = []
         for r in response.results:
-            results.append({
-                "chunk_id": r.chunk_id,
-                "score": r.score,
-                "content": r.content,
-                "metadata": r.metadata,
-            })
+            results.append(
+                {
+                    "chunk_id": r.chunk_id,
+                    "score": r.score,
+                    "content": r.content,
+                    "metadata": r.metadata,
+                }
+            )
         return results
 
     async def _retrieve_hybrid_rerank(
@@ -230,12 +232,14 @@ class RetrievalEvaluator:
 
         results = []
         for r in rerank_response.results:
-            results.append({
-                "chunk_id": r.chunk_id,
-                "score": r.rerank_score,
-                "content": r.content,
-                "metadata": r.metadata,
-            })
+            results.append(
+                {
+                    "chunk_id": r.chunk_id,
+                    "score": r.rerank_score,
+                    "content": r.content,
+                    "metadata": r.metadata,
+                }
+            )
         return results
 
     def _aggregate_query_results(
@@ -357,18 +361,20 @@ class RetrievalEvaluator:
                     "ndcg_at_10": result.avg_ndcg_at_10,
                 }
             )
-            entries.append({
-                "strategy": result.strategy.value,
-                "avg_recall_at_5": result.avg_recall_at_5,
-                "avg_recall_at_10": result.avg_recall_at_10,
-                "avg_mrr": result.avg_mrr,
-                "avg_precision_at_5": result.avg_precision_at_5,
-                "avg_ndcg_at_5": result.avg_ndcg_at_5,
-                "avg_ndcg_at_10": result.avg_ndcg_at_10,
-                "avg_hit_rate": result.avg_hit_rate,
-                "avg_latency_ms": result.avg_latency_ms,
-                "composite_score": composite_score,
-            })
+            entries.append(
+                {
+                    "strategy": result.strategy.value,
+                    "avg_recall_at_5": result.avg_recall_at_5,
+                    "avg_recall_at_10": result.avg_recall_at_10,
+                    "avg_mrr": result.avg_mrr,
+                    "avg_precision_at_5": result.avg_precision_at_5,
+                    "avg_ndcg_at_5": result.avg_ndcg_at_5,
+                    "avg_ndcg_at_10": result.avg_ndcg_at_10,
+                    "avg_hit_rate": result.avg_hit_rate,
+                    "avg_latency_ms": result.avg_latency_ms,
+                    "composite_score": composite_score,
+                }
+            )
 
         # Sort by composite score descending
         entries.sort(key=lambda x: x["composite_score"], reverse=True)

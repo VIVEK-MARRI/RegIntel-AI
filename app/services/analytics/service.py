@@ -434,7 +434,11 @@ class AnalyticsService:
             previous_value = agg_previous.get(f"avg_{metric_name}")
 
             change_pct = None
-            if current_value is not None and previous_value is not None and previous_value != 0:
+            if (
+                current_value is not None
+                and previous_value is not None
+                and previous_value != 0
+            ):
                 change_pct = round(
                     ((current_value - previous_value) / previous_value) * 100, 2
                 )
@@ -484,7 +488,9 @@ class AnalyticsService:
             start_time = end_time - timedelta(days=1)
 
         cat_dist = await self.dist_repo.get_category_distribution(start_time, end_time)
-        strat_dist = await self.dist_repo.get_strategy_distribution(start_time, end_time)
+        strat_dist = await self.dist_repo.get_strategy_distribution(
+            start_time, end_time
+        )
 
         total = cat_dist.get("total", 0)
 
@@ -643,8 +649,6 @@ class AnalyticsService:
         )
 
     # (accidental duplicate stub removed)
-
-
 
     async def record_system_health(
         self,

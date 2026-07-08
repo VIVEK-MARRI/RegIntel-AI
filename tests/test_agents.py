@@ -59,11 +59,7 @@ class TestBaseAgentLifecycle:
         a = EchoAgent(
             AgentMetadata(
                 name="t",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.OTHER, name="t"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.OTHER, name="t")],
             )
         )
         assert a.status.value == "registered"
@@ -81,11 +77,7 @@ class TestBaseAgentLifecycle:
         a = EchoAgent(
             AgentMetadata(
                 name="t",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")],
             )
         )
         assert a.supports(CapabilityKind.RETRIEVAL)
@@ -117,15 +109,11 @@ class TestEchoAgent:
 class TestExecutionEngine:
     @pytest.mark.asyncio
     async def test_run_succeeds(self) -> None:
-        a = EchoAgent(
-            AgentMetadata(name="t", default_timeout_ms=5000)
-        )
+        a = EchoAgent(AgentMetadata(name="t", default_timeout_ms=5000))
         engine = AgentExecutionEngine()
         result = await engine.run(
             a,
-            AgentTask(
-                capability=CapabilityKind.OTHER, input={"x": 1}
-            ),
+            AgentTask(capability=CapabilityKind.OTHER, input={"x": 1}),
         )
         assert result.succeeded
         assert result.attempts == 1
@@ -136,19 +124,13 @@ class TestExecutionEngine:
         class SlowAgent(BaseAgent):
             async def execute(self, task: AgentTask) -> AgentResult:
                 await asyncio.sleep(0.5)
-                return AgentResult(
-                    task_id=task.task_id, status=TaskStatus.SUCCEEDED
-                )
+                return AgentResult(task_id=task.task_id, status=TaskStatus.SUCCEEDED)
 
-        a = SlowAgent(
-            AgentMetadata(name="slow", default_timeout_ms=200)
-        )
+        a = SlowAgent(AgentMetadata(name="slow", default_timeout_ms=200))
         engine = AgentExecutionEngine()
         result = await engine.run(
             a,
-            AgentTask(
-                capability=CapabilityKind.OTHER, timeout_ms=100
-            ),
+            AgentTask(capability=CapabilityKind.OTHER, timeout_ms=100),
         )
         assert result.status == TaskStatus.TIMED_OUT
 
@@ -167,13 +149,9 @@ class TestExecutionEngine:
                     output={"ok": True},
                 )
 
-        a = FlakyAgent(
-            AgentMetadata(name="flaky", default_max_retries=2)
-        )
+        a = FlakyAgent(AgentMetadata(name="flaky", default_max_retries=2))
         engine = AgentExecutionEngine()
-        result = await engine.run(
-            a, AgentTask(capability=CapabilityKind.OTHER)
-        )
+        result = await engine.run(a, AgentTask(capability=CapabilityKind.OTHER))
         assert result.succeeded
         assert result.attempts == 2
         assert attempts["n"] == 2
@@ -186,9 +164,7 @@ class TestExecutionEngine:
 
         a = AlwaysFails(AgentMetadata(name="f", default_max_retries=1))
         engine = AgentExecutionEngine()
-        result = await engine.run(
-            a, AgentTask(capability=CapabilityKind.OTHER)
-        )
+        result = await engine.run(a, AgentTask(capability=CapabilityKind.OTHER))
         assert result.status == TaskStatus.FAILED
         assert "always" in result.error
 
@@ -202,18 +178,12 @@ class TestCapabilityAgent:
         a = CapabilityAgent(
             AgentMetadata(
                 name="cap",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")],
             ),
             handler=lambda t: {"got": t.input},
         )
         r = await a.execute(
-            AgentTask(
-                capability=CapabilityKind.RETRIEVAL, input={"q": "x"}
-            )
+            AgentTask(capability=CapabilityKind.RETRIEVAL, input={"q": "x"})
         )
         assert r.output == {"got": {"q": "x"}}
 
@@ -226,9 +196,7 @@ class TestCapabilityAgent:
             AgentMetadata(name="cap2"),
             handler=handler,
         )
-        r = await a.execute(
-            AgentTask(capability=CapabilityKind.OTHER, input={"a": 1})
-        )
+        r = await a.execute(AgentTask(capability=CapabilityKind.OTHER, input={"a": 1}))
         assert r.output == {"async": True, "input": {"a": 1}}
 
     @pytest.mark.asyncio
@@ -254,11 +222,7 @@ class TestAgentRegistry:
         meta = service.register(
             AgentRegistrationRequest(
                 name="a",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.OTHER, name="o"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.OTHER, name="o")],
             ),
             a,
         )
@@ -267,15 +231,11 @@ class TestAgentRegistry:
 
     def test_unregister(self, service: AgentFrameworkService) -> None:
         a = EchoAgent(AgentMetadata(name="a"))
-        service.register(
-            AgentRegistrationRequest(name="a"), a
-        )
+        service.register(AgentRegistrationRequest(name="a"), a)
         assert service.unregister("a") is True
         assert service.unregister("a") is False
 
-    def test_list_agents(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_list_agents(self, service: AgentFrameworkService) -> None:
         # Echo agent is seeded
         names = [m.name for m in service.list_agents()]
         assert "echo-agent" in names
@@ -285,18 +245,12 @@ class TestAgentRegistry:
 
 
 class TestCapabilityRegistry:
-    def test_by_capability(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_by_capability(self, service: AgentFrameworkService) -> None:
         a = EchoAgent(AgentMetadata(name="r1"))
         service.register(
             AgentRegistrationRequest(
                 name="r1",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")],
             ),
             a,
         )
@@ -306,7 +260,8 @@ class TestCapabilityRegistry:
                 name="r2",
                 capabilities=[
                     AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r",
+                        kind=CapabilityKind.RETRIEVAL,
+                        name="r",
                         parameters={"lang": "en"},
                     )
                 ],
@@ -314,9 +269,7 @@ class TestCapabilityRegistry:
             ),
             a2,
         )
-        matches = service.capability_registry.by_capability(
-            CapabilityKind.RETRIEVAL
-        )
+        matches = service.capability_registry.by_capability(CapabilityKind.RETRIEVAL)
         # r2 should be first because of higher priority
         assert matches[0].name == "r2"
 
@@ -325,60 +278,39 @@ class TestCapabilityRegistry:
         service.register(
             AgentRegistrationRequest(
                 name="b",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.REASONING, name="r"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.REASONING, name="r")],
             ),
             a,
         )
-        best = service.capability_registry.best_match(
-            CapabilityKind.REASONING
-        )
+        best = service.capability_registry.best_match(CapabilityKind.REASONING)
         assert best is not None
         assert best.name == "b"
 
     def test_no_match(self, service: AgentFrameworkService) -> None:
-        assert (
-            service.capability_registry.best_match(
-                CapabilityKind.AUDIT
-            )
-            is None
-        )
+        assert service.capability_registry.best_match(CapabilityKind.AUDIT) is None
 
 
 # ─── Discovery ────────────────────────────────────────────
 
 
 class TestAgentDiscovery:
-    def test_search_by_capability(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_search_by_capability(self, service: AgentFrameworkService) -> None:
         service.register(
             AgentRegistrationRequest(
                 name="r1",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")],
             ),
             EchoAgent(AgentMetadata(name="r1")),
         )
         from app.schemas.agents import AgentDiscoveryQuery
 
         result = service.search_agents(
-            AgentDiscoveryQuery(
-                capability=CapabilityKind.RETRIEVAL
-            )
+            AgentDiscoveryQuery(capability=CapabilityKind.RETRIEVAL)
         )
         assert result.total >= 1
         assert any(i.name == "r1" for i in result.items)
 
-    def test_search_by_text(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_search_by_text(self, service: AgentFrameworkService) -> None:
         service.register(
             AgentRegistrationRequest(
                 name="rbi-monitor",
@@ -388,26 +320,18 @@ class TestAgentDiscovery:
         )
         from app.schemas.agents import AgentDiscoveryQuery
 
-        result = service.search_agents(
-            AgentDiscoveryQuery(text_query="rbi")
-        )
+        result = service.search_agents(AgentDiscoveryQuery(text_query="rbi"))
         assert any(i.name == "rbi-monitor" for i in result.items)
 
-    def test_search_healthy_only(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_search_healthy_only(self, service: AgentFrameworkService) -> None:
         a = EchoAgent(AgentMetadata(name="h"))
-        service.register(
-            AgentRegistrationRequest(name="h"), a
-        )
+        service.register(AgentRegistrationRequest(name="h"), a)
         # Force 5 consecutive failures
         for _ in range(5):
             a._record_failure("err", 0.0)
         from app.schemas.agents import AgentDiscoveryQuery
 
-        result = service.search_agents(
-            AgentDiscoveryQuery(healthy_only=True)
-        )
+        result = service.search_agents(AgentDiscoveryQuery(healthy_only=True))
         assert not any(i.name == "h" for i in result.items)
 
 
@@ -416,25 +340,17 @@ class TestAgentDiscovery:
 
 class TestAgentHealth:
     @pytest.mark.asyncio
-    async def test_health_after_run(
-        self, service: AgentFrameworkService
-    ) -> None:
+    async def test_health_after_run(self, service: AgentFrameworkService) -> None:
         a = EchoAgent(AgentMetadata(name="x"))
-        service.register(
-            AgentRegistrationRequest(name="x"), a
-        )
+        service.register(AgentRegistrationRequest(name="x"), a)
         engine = AgentExecutionEngine()
-        await engine.run(
-            a, AgentTask(capability=CapabilityKind.OTHER)
-        )
+        await engine.run(a, AgentTask(capability=CapabilityKind.OTHER))
         h = service.health("x")
         assert h.total_invocations == 1
         assert h.successful_invocations == 1
         assert h.last_success_at is not None
 
-    def test_health_unknown(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_health_unknown(self, service: AgentFrameworkService) -> None:
         assert service.health("missing") is None
 
 
@@ -459,9 +375,7 @@ class TestTaskPlanner:
 
     def test_infer_capabilities(self) -> None:
         p = TaskPlanner()
-        plan = p.plan(
-            CoordinatorRequest(query="please forecast the risk")
-        )
+        plan = p.plan(CoordinatorRequest(query="please forecast the risk"))
         kinds = [s.capability for s in plan.steps]
         assert CapabilityKind.FORECASTING in kinds
 
@@ -486,17 +400,11 @@ class TestTaskPlanner:
 
 
 class TestTaskDistributor:
-    def test_distribute(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_distribute(self, service: AgentFrameworkService) -> None:
         service.register(
             AgentRegistrationRequest(
                 name="r1",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")],
             ),
             EchoAgent(AgentMetadata(name="r1")),
         )
@@ -513,9 +421,7 @@ class TestTaskDistributor:
         assert tasks[0].target_agent == "r1"
         assert "r1" in plan.selected_agents
 
-    def test_distribute_no_agent(
-        self, service: AgentFrameworkService
-    ) -> None:
+    def test_distribute_no_agent(self, service: AgentFrameworkService) -> None:
         p = TaskPlanner()
         plan = p.plan(
             CoordinatorRequest(
@@ -590,9 +496,7 @@ class TestResultAggregator:
 
 class TestCoordinator:
     @pytest.mark.asyncio
-    async def test_coordinate_with_echo(
-        self, service: AgentFrameworkService
-    ) -> None:
+    async def test_coordinate_with_echo(self, service: AgentFrameworkService) -> None:
         result = await service.coordinate(
             CoordinatorRequest(
                 query="search and reason",
@@ -617,11 +521,7 @@ class TestCoordinator:
         service.register(
             AgentRegistrationRequest(
                 name="r",
-                capabilities=[
-                    AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
-                ],
+                capabilities=[AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")],
             ),
             a,
         )
@@ -647,17 +547,13 @@ class TestCoordinator:
             a = EchoAgent(
                 AgentMetadata(
                     name=f"a-{cap.value}",
-                    capabilities=[
-                        AgentCapability(kind=cap, name=cap.value)
-                    ],
+                    capabilities=[AgentCapability(kind=cap, name=cap.value)],
                 )
             )
             service.register(
                 AgentRegistrationRequest(
                     name=f"a-{cap.value}",
-                    capabilities=[
-                        AgentCapability(kind=cap, name=cap.value)
-                    ],
+                    capabilities=[AgentCapability(kind=cap, name=cap.value)],
                 ),
                 a,
             )
@@ -673,13 +569,9 @@ class TestCoordinator:
 
 class TestServiceExecute:
     @pytest.mark.asyncio
-    async def test_execute_known_agent(
-        self, service: AgentFrameworkService
-    ) -> None:
+    async def test_execute_known_agent(self, service: AgentFrameworkService) -> None:
         a = EchoAgent(AgentMetadata(name="x"))
-        service.register(
-            AgentRegistrationRequest(name="x"), a
-        )
+        service.register(AgentRegistrationRequest(name="x"), a)
         r = await service.execute(
             AgentExecutionRequest(
                 agent_name="x",
@@ -691,9 +583,7 @@ class TestServiceExecute:
         assert r.agent_name == "x"
 
     @pytest.mark.asyncio
-    async def test_execute_unknown_agent(
-        self, service: AgentFrameworkService
-    ) -> None:
+    async def test_execute_unknown_agent(self, service: AgentFrameworkService) -> None:
         r = await service.execute(
             AgentExecutionRequest(
                 agent_name="nope",
@@ -713,9 +603,7 @@ class TestServiceHealthTracking:
         self, service: AgentFrameworkService
     ) -> None:
         a = EchoAgent(AgentMetadata(name="h"))
-        service.register(
-            AgentRegistrationRequest(name="h"), a
-        )
+        service.register(AgentRegistrationRequest(name="h"), a)
         await service.execute(
             AgentExecutionRequest(
                 agent_name="h",
@@ -733,9 +621,7 @@ class TestServiceHealthTracking:
 @pytest_asyncio.fixture
 async def client() -> AsyncClient:
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
@@ -768,9 +654,7 @@ async def test_api_register_and_unregister(
         json={
             "name": "test-agent",
             "description": "test",
-            "capabilities": [
-                {"kind": "retrieval", "name": "r"}
-            ],
+            "capabilities": [{"kind": "retrieval", "name": "r"}],
             "tags": ["test"],
         },
     )
@@ -852,9 +736,7 @@ async def test_api_coordinate(
 async def test_api_search(
     client: AsyncClient,
 ) -> None:
-    r = await client.get(
-        "/api/v1/agents/agents?capability=other"
-    )
+    r = await client.get("/api/v1/agents/agents?capability=other")
     assert r.status_code == 200
     items = r.json()["items"]
     assert any(i["name"] == "echo-agent" for i in items)
@@ -864,9 +746,7 @@ async def test_api_search(
 async def test_api_health_for_agent(
     client: AsyncClient,
 ) -> None:
-    r = await client.get(
-        "/api/v1/agents/agents/echo-agent/health"
-    )
+    r = await client.get("/api/v1/agents/agents/echo-agent/health")
     assert r.status_code == 200
     body = r.json()
     assert "healthy" in body
@@ -877,7 +757,5 @@ async def test_api_health_for_agent(
 async def test_api_health_for_missing_agent(
     client: AsyncClient,
 ) -> None:
-    r = await client.get(
-        "/api/v1/agents/agents/missing/health"
-    )
+    r = await client.get("/api/v1/agents/agents/missing/health")
     assert r.status_code == 404

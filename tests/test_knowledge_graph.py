@@ -124,9 +124,7 @@ def test_store_persistence(tmp_path):
     from app.schemas.knowledge_graph import GraphNode
 
     s1 = InMemoryGraphStore(persist_path=p)
-    n = GraphNode(
-        entity_type=EntityType.TOPIC, name="KYC", source=NodeSource.MANUAL
-    )
+    n = GraphNode(entity_type=EntityType.TOPIC, name="KYC", source=NodeSource.MANUAL)
     s1.add_node(n)
     s2 = InMemoryGraphStore(persist_path=p)
     out = s2.get_node(n.node_id)
@@ -190,11 +188,13 @@ def test_repository_search_relationships(tmp_store):
     tmp_store.add_node(src)
     tmp_store.add_node(tgt)
     r1 = GraphRelationship(
-        source_id=src.node_id, target_id=tgt.node_id,
+        source_id=src.node_id,
+        target_id=tgt.node_id,
         relationship_type=RelationshipType.AMENDS,
     )
     r2 = GraphRelationship(
-        source_id=tgt.node_id, target_id=src.node_id,
+        source_id=tgt.node_id,
+        target_id=src.node_id,
         relationship_type=RelationshipType.REFERENCES,
     )
     tmp_store.add_relationship(r1)
@@ -228,9 +228,7 @@ def test_repository_stats(tmp_store):
 
 
 def test_service_add_node_and_get(service):
-    n = service.add_node(
-        NodeCreateRequest(entity_type=EntityType.TOPIC, name="KYC")
-    )
+    n = service.add_node(NodeCreateRequest(entity_type=EntityType.TOPIC, name="KYC"))
     assert n.node_id
     out = service.get_node(n.node_id)
     assert out is not None
@@ -299,16 +297,20 @@ def test_service_search_relationships(service):
 def test_service_impact_traversal(service):
     a = service.add_node(NodeCreateRequest(entity_type=EntityType.REGULATION, name="A"))
     b = service.add_node(NodeCreateRequest(entity_type=EntityType.AMENDMENT, name="B"))
-    c = service.add_node(NodeCreateRequest(entity_type=EntityType.INSTITUTION, name="C"))
+    c = service.add_node(
+        NodeCreateRequest(entity_type=EntityType.INSTITUTION, name="C")
+    )
     service.add_relationship(
         RelationshipCreateRequest(
-            source_id=a.node_id, target_id=b.node_id,
+            source_id=a.node_id,
+            target_id=b.node_id,
             relationship_type=RelationshipType.AMENDS,
         )
     )
     service.add_relationship(
         RelationshipCreateRequest(
-            source_id=b.node_id, target_id=c.node_id,
+            source_id=b.node_id,
+            target_id=c.node_id,
             relationship_type=RelationshipType.AFFECTS,
         )
     )
@@ -327,7 +329,8 @@ def test_service_dependency_analysis(service):
     b = service.add_node(NodeCreateRequest(entity_type=EntityType.AMENDMENT, name="B"))
     service.add_relationship(
         RelationshipCreateRequest(
-            source_id=a.node_id, target_id=b.node_id,
+            source_id=a.node_id,
+            target_id=b.node_id,
             relationship_type=RelationshipType.SUPERSEDES,
         )
     )
@@ -364,7 +367,9 @@ def test_build_default_service(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_api_health():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/knowledge-graph/health")
         assert r.status_code == 200
         assert r.json()["module"] == "knowledge_graph"
@@ -372,11 +377,13 @@ async def test_api_health():
 
 @pytest.mark.asyncio
 async def test_api_create_node(tmp_store):
-    app.dependency_overrides[get_knowledge_graph_service] = lambda: KnowledgeGraphService(
-        store=tmp_store
+    app.dependency_overrides[get_knowledge_graph_service] = (
+        lambda: KnowledgeGraphService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/knowledge-graph/nodes",
                 json={
@@ -396,7 +403,9 @@ async def test_api_list_nodes(tmp_store):
     svc.add_node(NodeCreateRequest(entity_type=EntityType.TOPIC, name="KYC"))
     app.dependency_overrides[get_knowledge_graph_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/knowledge-graph/nodes")
             assert r.status_code == 200
             assert r.json()["total"] >= 1
@@ -406,11 +415,13 @@ async def test_api_list_nodes(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_get_node_404(tmp_store):
-    app.dependency_overrides[get_knowledge_graph_service] = lambda: KnowledgeGraphService(
-        store=tmp_store
+    app.dependency_overrides[get_knowledge_graph_service] = (
+        lambda: KnowledgeGraphService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/knowledge-graph/nodes/nope")
             assert r.status_code == 404
     finally:
@@ -424,7 +435,9 @@ async def test_api_create_relationship(tmp_store):
     b = svc.add_node(NodeCreateRequest(entity_type=EntityType.AMENDMENT, name="B"))
     app.dependency_overrides[get_knowledge_graph_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/knowledge-graph/relationships",
                 json={
@@ -440,11 +453,13 @@ async def test_api_create_relationship(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_create_relationship_validation(tmp_store):
-    app.dependency_overrides[get_knowledge_graph_service] = lambda: KnowledgeGraphService(
-        store=tmp_store
+    app.dependency_overrides[get_knowledge_graph_service] = (
+        lambda: KnowledgeGraphService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/knowledge-graph/relationships",
                 json={
@@ -472,7 +487,9 @@ async def test_api_impact_traversal(tmp_store):
     )
     app.dependency_overrides[get_knowledge_graph_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 f"/api/v1/knowledge-graph/impact-traversal/{a.node_id}?max_depth=3"
             )
@@ -497,7 +514,9 @@ async def test_api_dependency_analysis(tmp_store):
     )
     app.dependency_overrides[get_knowledge_graph_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 f"/api/v1/knowledge-graph/dependency-analysis/{a.node_id}?max_depth=3"
             )
@@ -508,11 +527,13 @@ async def test_api_dependency_analysis(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_stats(tmp_store):
-    app.dependency_overrides[get_knowledge_graph_service] = lambda: KnowledgeGraphService(
-        store=tmp_store
+    app.dependency_overrides[get_knowledge_graph_service] = (
+        lambda: KnowledgeGraphService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/knowledge-graph/stats")
             assert r.status_code == 200
             assert "total_nodes" in r.json()
@@ -522,11 +543,13 @@ async def test_api_stats(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_build(tmp_store):
-    app.dependency_overrides[get_knowledge_graph_service] = lambda: KnowledgeGraphService(
-        store=tmp_store
+    app.dependency_overrides[get_knowledge_graph_service] = (
+        lambda: KnowledgeGraphService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/knowledge-graph/build",
                 json={"text": "RBI Master Direction on KYC for NBFC."},
@@ -540,11 +563,13 @@ async def test_api_build(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_build_validation(tmp_store):
-    app.dependency_overrides[get_knowledge_graph_service] = lambda: KnowledgeGraphService(
-        store=tmp_store
+    app.dependency_overrides[get_knowledge_graph_service] = (
+        lambda: KnowledgeGraphService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post("/api/v1/knowledge-graph/build", json={})
             assert r.status_code == 400
     finally:

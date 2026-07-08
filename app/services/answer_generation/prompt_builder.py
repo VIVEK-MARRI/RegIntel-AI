@@ -140,9 +140,7 @@ class PromptBuilder:
             return 0
         return max(1, int(len(PromptBuilder._TOKEN_RE.findall(text)) * 1.3))
 
-    def _build_user_prompt(
-        self, query: str, chunks: Iterable[RetrievedChunk]
-    ) -> str:
+    def _build_user_prompt(self, query: str, chunks: Iterable[RetrievedChunk]) -> str:
         chunks = list(chunks)
         header = (
             f"Question:\n{query.strip()}\n\n"

@@ -77,9 +77,7 @@ class ConfidenceMetrics:
     factor_stats: Dict[str, _FactorStats] = field(
         default_factory=lambda: defaultdict(_FactorStats)
     )
-    flag_counts: Dict[str, int] = field(
-        default_factory=lambda: defaultdict(int)
-    )
+    flag_counts: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     # ── Public API ─────────────────────────────────────────────────────────
@@ -145,8 +143,7 @@ class ConfidenceMetrics:
                     "max": self.confidence_max if self.total_requests else 0.0,
                 },
                 "factor_stats": {
-                    name: stats.to_dict()
-                    for name, stats in self.factor_stats.items()
+                    name: stats.to_dict() for name, stats in self.factor_stats.items()
                 },
                 "flag_counts": dict(self.flag_counts),
             }

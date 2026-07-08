@@ -62,11 +62,7 @@ class _StubAgent:
         self.name = name
         self.metadata = AgentMetadata(
             name=name,
-            capabilities=[
-                AgentCapability(
-                    kind=CapabilityKind.OTHER, name="stub"
-                )
-            ],
+            capabilities=[AgentCapability(kind=CapabilityKind.OTHER, name="stub")],
         )
         self._output = output or {"echo": True, "summary": f"result of {name}"}
         self._calls: int = 0
@@ -100,11 +96,7 @@ class _FailingAgent:
         self.name = name
         self.metadata = AgentMetadata(
             name=name,
-            capabilities=[
-                AgentCapability(
-                    kind=CapabilityKind.OTHER, name="stub"
-                )
-            ],
+            capabilities=[AgentCapability(kind=CapabilityKind.OTHER, name="stub")],
         )
 
     def supports(self, kind: CapabilityKind) -> bool:
@@ -135,8 +127,7 @@ class _StubFramework:
 
     def list_agents(self):
         return [
-            type("M", (), {"name": a.name, "agent_id": a.name})()
-            for a in self.agents
+            type("M", (), {"name": a.name, "agent_id": a.name})() for a in self.agents
         ]
 
     @property
@@ -165,14 +156,18 @@ class _StubFramework:
                 error="not found",
             )
         return await a.execute(
-            type("_T", (), {
-                "task_id": "t",
-                "input": request.input,
-                "context": request.context,
-                "capability": request.capability,
-                "max_retries": request.max_retries or 0,
-                "timeout_ms": request.timeout_ms,
-            })()
+            type(
+                "_T",
+                (),
+                {
+                    "task_id": "t",
+                    "input": request.input,
+                    "context": request.context,
+                    "capability": request.capability,
+                    "max_retries": request.max_retries or 0,
+                    "timeout_ms": request.timeout_ms,
+                },
+            )()
         )
 
 
@@ -183,11 +178,7 @@ def test_message_bus_publish_and_history():
     bus = AgentMessageBus()
     received: list = []
     bus.subscribe("a", lambda m: received.append(m))
-    bus.publish(
-        AgentMessage(
-            from_agent="x", to_agent="a", kind=MessageKind.TASK
-        )
-    )
+    bus.publish(AgentMessage(from_agent="x", to_agent="a", kind=MessageKind.TASK))
     assert len(received) == 1
     assert bus.message_count == 1
     assert bus.history()[0].from_agent == "x"
@@ -197,26 +188,14 @@ def test_message_bus_wildcard_subscriber():
     bus = AgentMessageBus()
     received: list = []
     bus.subscribe("*", lambda m: received.append(m))
-    bus.publish(
-        AgentMessage(
-            from_agent="x", to_agent="a", kind=MessageKind.TASK
-        )
-    )
+    bus.publish(AgentMessage(from_agent="x", to_agent="a", kind=MessageKind.TASK))
     assert len(received) == 1
 
 
 def test_message_bus_history_filters():
     bus = AgentMessageBus()
-    bus.publish(
-        AgentMessage(
-            from_agent="x", to_agent="a", kind=MessageKind.TASK
-        )
-    )
-    bus.publish(
-        AgentMessage(
-            from_agent="x", to_agent="b", kind=MessageKind.RESULT
-        )
-    )
+    bus.publish(AgentMessage(from_agent="x", to_agent="a", kind=MessageKind.TASK))
+    bus.publish(AgentMessage(from_agent="x", to_agent="b", kind=MessageKind.RESULT))
     assert len(bus.history(from_agent="x", to_agent="a")) == 1
     assert len(bus.history(from_agent="x")) == 2
 
@@ -250,9 +229,7 @@ def test_shared_evidence_store_add_and_query():
 def test_execution_context_manager_snapshot():
     ctx = SharedExecutionContext(actor="alice")
     m = ExecutionContextManager(ctx)
-    m.add_evidence(
-        SharedEvidenceItem(producer="x", kind="y", title="t")
-    )
+    m.add_evidence(SharedEvidenceItem(producer="x", kind="y", title="t"))
     m.write_memory("k", "v")
     snap = m.snapshot()
     assert snap["actor"] == "alice"
@@ -267,9 +244,7 @@ def test_capability_based_router_returns_all_when_no_match():
     agents = [_StubAgent("a"), _StubAgent("b")]
     framework = _StubFramework(agents)
     r = CapabilityBasedRouter(framework)
-    cand = r.candidates_for(
-        AgentExecutionStep(agent_name="*", capability="unknown")
-    )
+    cand = r.candidates_for(AgentExecutionStep(agent_name="*", capability="unknown"))
     assert len(cand) == 2
 
 
@@ -277,9 +252,7 @@ def test_capability_based_router_filters_by_agent_name():
     agents = [_StubAgent("a"), _StubAgent("b")]
     framework = _StubFramework(agents)
     r = CapabilityBasedRouter(framework)
-    cand = r.candidates_for(
-        AgentExecutionStep(agent_name="a", capability="x")
-    )
+    cand = r.candidates_for(AgentExecutionStep(agent_name="a", capability="x"))
     assert len(cand) == 1
     assert cand[0].name == "a"
 
@@ -298,9 +271,7 @@ def test_selection_policy_prefers_named_agent():
 
 
 def test_conflict_resolver_picks_highest_confidence():
-    winner, conflicts = ConflictResolver.resolve(
-        [("a", 0.5), ("b", 0.9), ("c", 0.7)]
-    )
+    winner, conflicts = ConflictResolver.resolve([("a", 0.5), ("b", 0.9), ("c", 0.7)])
     assert winner == "b"
     assert conflicts == 2
 
@@ -311,32 +282,20 @@ def test_conflict_resolver_empty():
 
 
 def test_consensus_builder_full_agreement():
-    score = ConsensusBuilder.score(
-        [("yes", 0.8), ("yes", 0.7), ("yes", 0.9)]
-    )
+    score = ConsensusBuilder.score([("yes", 0.8), ("yes", 0.7), ("yes", 0.9)])
     assert score == 1.0
 
 
 def test_consensus_builder_partial_agreement():
-    score = ConsensusBuilder.score(
-        [("yes", 0.8), ("no", 0.7), ("yes", 0.9)]
-    )
+    score = ConsensusBuilder.score([("yes", 0.8), ("no", 0.7), ("yes", 0.9)])
     assert 0.0 < score < 1.0
 
 
 def test_evidence_aggregator_dedupes_by_id():
-    a = SharedEvidenceItem(
-        evidence_id="e1", producer="a", kind="x", title="t"
-    )
-    b = SharedEvidenceItem(
-        evidence_id="e1", producer="b", kind="x", title="t"
-    )
-    c = SharedEvidenceItem(
-        evidence_id="e2", producer="a", kind="x", title="t"
-    )
-    merged = EvidenceAggregator.merge(
-        {"a": [a, c], "b": [b]}
-    )
+    a = SharedEvidenceItem(evidence_id="e1", producer="a", kind="x", title="t")
+    b = SharedEvidenceItem(evidence_id="e1", producer="b", kind="x", title="t")
+    c = SharedEvidenceItem(evidence_id="e2", producer="a", kind="x", title="t")
+    merged = EvidenceAggregator.merge({"a": [a, c], "b": [b]})
     assert len(merged) == 2
     assert {m.evidence_id for m in merged} == {"e1", "e2"}
 
@@ -346,9 +305,7 @@ def test_evidence_aggregator_dedupes_by_id():
 
 def test_result_synthesizer_empty():
     s = ResultSynthesizer()
-    out, conf, cons, conflicts = s.synthesize(
-        "q", [], []
-    )
+    out, conf, cons, conflicts = s.synthesize("q", [], [])
     assert out["summary"].startswith("no agent")
     assert conf == 0.0
 
@@ -393,13 +350,9 @@ async def test_task_coordinator_dispatch_picks_agent():
     agents = [_StubAgent("a"), _StubAgent("b")]
     framework = _StubFramework(agents)
     r = CapabilityBasedRouter(framework)
-    coord = TaskCoordinator(
-        framework_service=framework, router=r
-    )
+    coord = TaskCoordinator(framework_service=framework, router=r)
     step = AgentExecutionStep(agent_name="a", capability="x")
-    agent, _ = await coord.dispatch(
-        step, "q", SharedExecutionContext()
-    )
+    agent, _ = await coord.dispatch(step, "q", SharedExecutionContext())
     assert agent.name == "a"
 
 
@@ -410,15 +363,11 @@ async def test_orchestration_engine_runs_sequential():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     graph = AgentExecutionGraph(
         steps=[
-            AgentExecutionStep(
-                agent_name="a", capability="x", depends_on=[]
-            ),
+            AgentExecutionStep(agent_name="a", capability="x", depends_on=[]),
             AgentExecutionStep(
                 agent_name="b",
                 capability="x",
@@ -428,9 +377,7 @@ async def test_orchestration_engine_runs_sequential():
         mode=ExecutionMode.SEQUENTIAL,
     )
     contribs: list = []
-    await engine.run_graph(
-        graph, "q", SharedExecutionContext(), contributions=contribs
-    )
+    await engine.run_graph(graph, "q", SharedExecutionContext(), contributions=contribs)
     assert len(contribs) == 2
 
 
@@ -440,21 +387,13 @@ async def test_orchestration_engine_handles_missing_agent():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     graph = AgentExecutionGraph(
-        steps=[
-            AgentExecutionStep(
-                agent_name="missing", capability="x", depends_on=[]
-            )
-        ]
+        steps=[AgentExecutionStep(agent_name="missing", capability="x", depends_on=[])]
     )
     contribs: list = []
-    await engine.run_graph(
-        graph, "q", SharedExecutionContext(), contributions=contribs
-    )
+    await engine.run_graph(graph, "q", SharedExecutionContext(), contributions=contribs)
     assert len(contribs) == 1
     assert contribs[0].status == "failed"
 
@@ -472,9 +411,7 @@ def test_agent_workflow_manager_register_and_run_lookup():
     )
     wm.register(d)
     assert wm.get(d.workflow_id) is not None
-    run = AgentWorkflow(
-        workflow_id=d.workflow_id, workflow_name=d.name
-    )
+    run = AgentWorkflow(workflow_id=d.workflow_id, workflow_name=d.name)
     wm.record_run(run)
     assert wm.get_run(run.run_id) is not None
     assert len(wm.list_definitions()) == 1
@@ -510,9 +447,7 @@ async def test_orchestrator_runs_sequential_pipeline():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     orch = AgentOrchestrator(
         framework_service=framework,
@@ -550,9 +485,7 @@ async def test_orchestrator_handles_partial_failure():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     orch = AgentOrchestrator(
         framework_service=framework,
@@ -577,9 +510,7 @@ async def test_orchestrator_handles_all_failure():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     orch = AgentOrchestrator(
         framework_service=framework,
@@ -607,9 +538,7 @@ async def test_orchestrator_runs_parallel():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     orch = AgentOrchestrator(
         framework_service=framework,
@@ -636,9 +565,7 @@ async def test_orchestrator_runs_with_custom_graph():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     orch = AgentOrchestrator(
         framework_service=framework,
@@ -651,9 +578,7 @@ async def test_orchestrator_runs_with_custom_graph():
     graph = AgentExecutionGraph(
         steps=[
             AgentExecutionStep(agent_name="x", capability="a"),
-            AgentExecutionStep(
-                agent_name="y", capability="a", depends_on=[]
-            ),
+            AgentExecutionStep(agent_name="y", capability="a", depends_on=[]),
         ]
     )
     req = OrchestrationRequest(query="kYc check", graph=graph)
@@ -668,9 +593,7 @@ async def test_orchestrator_runs_workflow():
     r = CapabilityBasedRouter(framework)
     engine = OrchestrationEngine(
         framework_service=framework,
-        coordinator=TaskCoordinator(
-            framework_service=framework, router=r
-        ),
+        coordinator=TaskCoordinator(framework_service=framework, router=r),
     )
     wm = AgentWorkflowManager()
     orch = AgentOrchestrator(
@@ -703,9 +626,7 @@ async def test_orchestrator_runs_workflow():
 async def test_orchestration_service_metrics_update():
     agents = [_StubAgent("a"), _StubAgent("b")]
     framework = _StubFramework(agents)
-    svc = build_default_orchestration_service(
-        framework_service=framework
-    )
+    svc = build_default_orchestration_service(framework_service=framework)
     req = OrchestrationRequest(
         query="kYc check",
         desired_agents=["a", "b"],
@@ -721,9 +642,7 @@ async def test_orchestration_service_metrics_update():
 def test_orchestration_service_lists_workflows_empty():
     agents: list = []
     framework = _StubFramework(agents)
-    svc = build_default_orchestration_service(
-        framework_service=framework
-    )
+    svc = build_default_orchestration_service(framework_service=framework)
     assert svc.list_workflows() == []
     assert svc.list_runs(limit=10) == []
 
@@ -737,18 +656,15 @@ async def test_api_orchestrate():
         get_orchestration_service,
         reset_orchestration_service,
     )
+
     reset_orchestration_service()
     agents = [
         _StubAgent("research-agent"),
         _StubAgent("compliance-agent"),
     ]
     framework = _StubFramework(agents)
-    svc = build_default_orchestration_service(
-        framework_service=framework
-    )
-    app.dependency_overrides[
-        get_orchestration_service
-    ] = lambda: svc
+    svc = build_default_orchestration_service(framework_service=framework)
+    app.dependency_overrides[get_orchestration_service] = lambda: svc
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -778,15 +694,12 @@ async def test_api_workflow_register_and_run():
         get_orchestration_service,
         reset_orchestration_service,
     )
+
     reset_orchestration_service()
     agents = [_StubAgent("a")]
     framework = _StubFramework(agents)
-    svc = build_default_orchestration_service(
-        framework_service=framework
-    )
-    app.dependency_overrides[
-        get_orchestration_service
-    ] = lambda: svc
+    svc = build_default_orchestration_service(framework_service=framework)
+    app.dependency_overrides[get_orchestration_service] = lambda: svc
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -825,25 +738,18 @@ async def test_api_orchestration_health_and_metrics():
         get_orchestration_service,
         reset_orchestration_service,
     )
+
     reset_orchestration_service()
-    svc = build_default_orchestration_service(
-        framework_service=_StubFramework([])
-    )
-    app.dependency_overrides[
-        get_orchestration_service
-    ] = lambda: svc
+    svc = build_default_orchestration_service(framework_service=_StubFramework([]))
+    app.dependency_overrides[get_orchestration_service] = lambda: svc
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as ac:
-            r = await ac.get(
-                "/api/v1/agents/orchestration/health"
-            )
+            r = await ac.get("/api/v1/agents/orchestration/health")
             assert r.status_code == 200
             assert r.json()["status"] == "healthy"
-            r2 = await ac.get(
-                "/api/v1/agents/orchestration/metrics"
-            )
+            r2 = await ac.get("/api/v1/agents/orchestration/metrics")
             assert r2.status_code == 200
             assert "total_executions" in r2.json()
             r3 = await ac.get("/api/v1/agents/messages")
@@ -854,6 +760,7 @@ async def test_api_orchestration_health_and_metrics():
 
 def test_running_mean_helper():
     from app.services.orchestration import _running_mean
+
     assert _running_mean(0.0, 5.0, 1) == 5.0
     assert _running_mean(5.0, 7.0, 2) == 6.0
 
@@ -861,12 +768,11 @@ def test_running_mean_helper():
 def test_message_bus_subscriber_remove():
     bus = AgentMessageBus()
     cb_calls: list = []
-    cb = lambda m: cb_calls.append(m)
+
+    def cb(m):
+        cb_calls.append(m)
+
     bus.subscribe("a", cb)
     bus.unsubscribe("a", cb)
-    bus.publish(
-        AgentMessage(
-            from_agent="x", to_agent="a", kind=MessageKind.TASK
-        )
-    )
+    bus.publish(AgentMessage(from_agent="x", to_agent="a", kind=MessageKind.TASK))
     assert cb_calls == []

@@ -102,7 +102,9 @@ class ConfidenceCalculator:
 
         # Effective (normalised) weights for the response.
         effective_weights = {
-            f.name.value: (f.weight / total_weight if (f.available and f.weight > 0) else 0.0)
+            f.name.value: (
+                f.weight / total_weight if (f.available and f.weight > 0) else 0.0
+            )
             for f in factors
         }
         breakdown = ConfidenceBreakdown(
@@ -121,9 +123,7 @@ class ConfidenceCalculator:
     @staticmethod
     def _empty_breakdown(factors: List[FactorCalculator]) -> ConfidenceBreakdown:
         return ConfidenceBreakdown(
-            factors=[
-                f.to_factor(0.0) for f in factors
-            ],
+            factors=[f.to_factor(0.0) for f in factors],
             weights={f.name.value: 0.0 for f in factors},
             total_weight=0.0,
         )

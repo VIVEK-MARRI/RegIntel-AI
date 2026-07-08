@@ -66,9 +66,7 @@ async def stats(svc: ForecastingService = _service_dep()) -> ForecastStats:
     last_at = max((f.generated_at for f in items), default=None)
     return ForecastStats(
         total_forecasts=metrics.get("total_forecasts", 0),
-        average_horizon_days=round(
-            metrics.get("average_horizon_days", 0.0), 3
-        ),
+        average_horizon_days=round(metrics.get("average_horizon_days", 0.0), 3),
         drift_detected=metrics.get("drift_detected", 0),
         drift_rate=metrics.get("drift_rate", 0.0),
         last_forecast_at=last_at,

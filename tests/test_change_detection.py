@@ -392,7 +392,11 @@ def test_change_classifier_severity_floor_penalty_change():
         similarity=0.0,
     )
     out = ChangeClassifier().classify(p)
-    assert out.severity in (ChangeSeverity.MEDIUM, ChangeSeverity.HIGH, ChangeSeverity.CRITICAL)
+    assert out.severity in (
+        ChangeSeverity.MEDIUM,
+        ChangeSeverity.HIGH,
+        ChangeSeverity.CRITICAL,
+    )
     assert out.category == ChangeCategory.PENALTY_CHANGE
 
 
@@ -420,9 +424,10 @@ def test_diff_engine_text_only_no_changes():
         old_text=text, new_text=text, old_version="1.0", new_version="1.0"
     )
     diff = DocumentDiffEngine().detect(req)
-    assert all(
-        c.change_type == ChangeType.UNCHANGED for c in diff.changes
-    ) or diff.changes == []
+    assert (
+        all(c.change_type == ChangeType.UNCHANGED for c in diff.changes)
+        or diff.changes == []
+    )
 
 
 def test_diff_engine_text_only_with_changes():
@@ -508,7 +513,7 @@ def test_store_persists_to_jsonl(tmp_path):
         overall_severity=ChangeSeverity.HIGH,
         overall_category=ChangeCategory.PENALTY_CHANGE,
         summary="added 1 high penalty",
-                duration_ms=2.0,
+        duration_ms=2.0,
     )
     s1.add_diff(diff)
     s2 = InMemoryChangeStore(persist_path=p)
@@ -537,7 +542,7 @@ def test_store_reset_clears_memory(tmp_store):
         overall_severity=ChangeSeverity.LOW,
         overall_category=ChangeCategory.OTHER,
         summary="",
-                duration_ms=0.0,
+        duration_ms=0.0,
     )
     tmp_store.add_diff(diff)
     assert len(tmp_store.list_diffs()) == 1
@@ -589,7 +594,7 @@ def test_repository_search_filter_by_severity(tmp_store):
             overall_severity=sev,
             overall_category=ChangeCategory.OTHER,
             summary="",
-                        duration_ms=0.0,
+            duration_ms=0.0,
         )
         tmp_store.add_diff(d)
     res = repo.search(ChangeFilter(min_severity=ChangeSeverity.CRITICAL))
@@ -612,7 +617,7 @@ def test_repository_search_filter_by_category(tmp_store):
             overall_severity=ChangeSeverity.MEDIUM,
             overall_category=cat,
             summary="",
-                        duration_ms=0.0,
+            duration_ms=0.0,
         )
         tmp_store.add_diff(d)
     res = repo.search(ChangeFilter(category=ChangeCategory.PENALTY_CHANGE))
@@ -660,7 +665,9 @@ def test_service_detect_rejects_empty(tmp_store):
     from app.schemas.change import ChangeDetectionRequest
 
     svc = ChangeDetectionService(store=tmp_store)
-    req = ChangeDetectionRequest(old_text=None, new_text=None, old_version="1.0", new_version="2.0")
+    req = ChangeDetectionRequest(
+        old_text=None, new_text=None, old_version="1.0", new_version="2.0"
+    )
     with pytest.raises(ValueError):
         svc.detect(req)
 
@@ -724,7 +731,9 @@ def test_build_default_service_uses_persistent_store(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_api_health():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/changes/health")
         assert r.status_code == 200
         body = r.json()
@@ -734,11 +743,13 @@ async def test_api_health():
 
 @pytest.mark.asyncio
 async def test_api_detect_success(tmp_store):
-    app.dependency_overrides[get_change_detection_service] = lambda: ChangeDetectionService(
-        store=tmp_store
+    app.dependency_overrides[get_change_detection_service] = (
+        lambda: ChangeDetectionService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/changes/detect",
                 json={
@@ -758,11 +769,13 @@ async def test_api_detect_success(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_detect_validation_error(tmp_store):
-    app.dependency_overrides[get_change_detection_service] = lambda: ChangeDetectionService(
-        store=tmp_store
+    app.dependency_overrides[get_change_detection_service] = (
+        lambda: ChangeDetectionService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/changes/detect",
                 json={"old_version": "1.0", "new_version": "2.0"},
@@ -782,7 +795,9 @@ async def test_api_list_diffs(tmp_store):
     )
     app.dependency_overrides[get_change_detection_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/changes?page=1&page_size=10")
             assert r.status_code == 200
             body = r.json()
@@ -794,11 +809,13 @@ async def test_api_list_diffs(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_get_diff_404(tmp_store):
-    app.dependency_overrides[get_change_detection_service] = lambda: ChangeDetectionService(
-        store=tmp_store
+    app.dependency_overrides[get_change_detection_service] = (
+        lambda: ChangeDetectionService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/changes/nope")
             assert r.status_code == 404
     finally:
@@ -807,11 +824,13 @@ async def test_api_get_diff_404(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_stats(tmp_store):
-    app.dependency_overrides[get_change_detection_service] = lambda: ChangeDetectionService(
-        store=tmp_store
+    app.dependency_overrides[get_change_detection_service] = (
+        lambda: ChangeDetectionService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/changes/stats")
             assert r.status_code == 200
             body = r.json()

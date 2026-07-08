@@ -13,7 +13,11 @@ from app.evaluation.dataset import DatasetManager, create_sample_dataset_with_id
 from app.evaluation.evaluator import RetrievalEvaluator
 from app.evaluation.metrics import MetricsEngine
 from app.evaluation.reporting import ReportGenerator, Leaderboard
-from app.evaluation.runner import StandaloneEvaluator, SimulatedRetriever, STRATEGY_PROFILES
+from app.evaluation.runner import (
+    StandaloneEvaluator,
+    SimulatedRetriever,
+    STRATEGY_PROFILES,
+)
 from app.evaluation.schemas import (
     EvaluationConfig,
     EvaluationReport,
@@ -28,6 +32,7 @@ from app.evaluation.storage import MetricsStorage
 # =====================================================================
 # Integration: Full Pipeline Tests
 # =====================================================================
+
 
 class TestFullPipeline:
     """End-to-end evaluation pipeline tests."""
@@ -50,6 +55,7 @@ class TestFullPipeline:
     def teardown_method(self):
         """Clean up test files."""
         import shutil
+
         if self.test_dir.exists():
             shutil.rmtree(self.test_dir)
 
@@ -205,10 +211,14 @@ class TestFullPipeline:
 
         report = await evaluator.run_evaluation(config)
 
-        dense_result = next(r for r in report.strategy_results
-                           if r.strategy == RetrievalStrategy.DENSE)
-        hybrid_rerank_result = next(r for r in report.strategy_results
-                                    if r.strategy == RetrievalStrategy.HYBRID_RERANK)
+        dense_result = next(
+            r for r in report.strategy_results if r.strategy == RetrievalStrategy.DENSE
+        )
+        hybrid_rerank_result = next(
+            r
+            for r in report.strategy_results
+            if r.strategy == RetrievalStrategy.HYBRID_RERANK
+        )
 
         # hybrid_rerank should have higher recall@5 (as per simulation profile)
         assert hybrid_rerank_result.avg_recall_at_5 >= dense_result.avg_recall_at_5
@@ -441,6 +451,7 @@ class TestFullPipeline:
 # Strategy Simulation Tests
 # =====================================================================
 
+
 class TestSimulatedRetriever:
     """Tests for the simulated retriever."""
 
@@ -520,6 +531,7 @@ class TestSimulatedRetriever:
 # Component Integration Tests
 # =====================================================================
 
+
 class TestComponentIntegration:
     """Tests for cross-component integration."""
 
@@ -566,24 +578,40 @@ class TestComponentIntegration:
         metrics = self.engine.compute_all_metrics(results, relevant, k_values=[5, 10])
 
         expected_keys = {
-            "recall_at_5", "recall_at_10",
-            "precision_at_5", "precision_at_10",
-            "ndcg_at_5", "ndcg_at_10",
-            "mrr", "hit_rate",
+            "recall_at_5",
+            "recall_at_10",
+            "precision_at_5",
+            "precision_at_10",
+            "ndcg_at_5",
+            "ndcg_at_10",
+            "mrr",
+            "hit_rate",
         }
         assert set(metrics.keys()) == expected_keys
 
     def test_aggregate_metrics_with_ndcg(self):
         """Test that aggregate_metrics handles NDCG fields correctly."""
         query_metrics = [
-            {"recall_at_5": 0.8, "recall_at_10": 0.9, "mrr": 0.7,
-             "precision_at_5": 0.6, "precision_at_10": 0.65,
-             "ndcg_at_5": 0.75, "ndcg_at_10": 0.80,
-             "hit_rate": 1.0},
-            {"recall_at_5": 0.6, "recall_at_10": 0.7, "mrr": 0.5,
-             "precision_at_5": 0.4, "precision_at_10": 0.45,
-             "ndcg_at_5": 0.55, "ndcg_at_10": 0.60,
-             "hit_rate": 0.8},
+            {
+                "recall_at_5": 0.8,
+                "recall_at_10": 0.9,
+                "mrr": 0.7,
+                "precision_at_5": 0.6,
+                "precision_at_10": 0.65,
+                "ndcg_at_5": 0.75,
+                "ndcg_at_10": 0.80,
+                "hit_rate": 1.0,
+            },
+            {
+                "recall_at_5": 0.6,
+                "recall_at_10": 0.7,
+                "mrr": 0.5,
+                "precision_at_5": 0.4,
+                "precision_at_10": 0.45,
+                "ndcg_at_5": 0.55,
+                "ndcg_at_10": 0.60,
+                "hit_rate": 0.8,
+            },
         ]
 
         aggregated = self.engine.aggregate_metrics(query_metrics)
@@ -596,6 +624,7 @@ class TestComponentIntegration:
 # =====================================================================
 # Regression Tests: Output Format Compliance
 # =====================================================================
+
 
 class TestOutputFormatCompliance:
     """Tests to ensure the output matches the required JSON format."""
@@ -632,8 +661,11 @@ class TestOutputFormatCompliance:
 
             report = await evaluator.run_evaluation(config)
 
-            rr_result = next(r for r in report.strategy_results
-                            if r.strategy == RetrievalStrategy.HYBRID_RERANK)
+            rr_result = next(
+                r
+                for r in report.strategy_results
+                if r.strategy == RetrievalStrategy.HYBRID_RERANK
+            )
 
             output = {
                 "strategy": rr_result.strategy.value,
@@ -645,5 +677,6 @@ class TestOutputFormatCompliance:
             assert 0.0 <= output["recall_at_5"] <= 1.0
         finally:
             import shutil
+
             if test_dir.exists():
                 shutil.rmtree(test_dir)

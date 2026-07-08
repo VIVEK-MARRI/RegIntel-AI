@@ -28,6 +28,7 @@ from app.services.compliance_risk import (
 @pytest.fixture(autouse=True)
 def _reset_singletons():
     from app.api import dependencies as deps
+
     deps.reset_compliance_risk_service()
     yield
     deps.reset_compliance_risk_service()
@@ -185,15 +186,12 @@ class TestComplianceRiskService:
                 ChangeDetectionRequest,
                 DocumentVersion,
             )
+
             cd = build_default_change_detection_service()
             req = ChangeDetectionRequest(
                 document_id="DOC-CD",
-                previous=DocumentVersion(
-                    version_id="v1", content="old", metadata={}
-                ),
-                current=DocumentVersion(
-                    version_id="v2", content="new", metadata={}
-                ),
+                previous=DocumentVersion(version_id="v1", content="old", metadata={}),
+                current=DocumentVersion(version_id="v2", content="new", metadata={}),
             )
             cr = cd.detect(req)
             ra = service.assess(
@@ -215,6 +213,7 @@ class TestComplianceRiskService:
                 build_default_impact_analysis_service,
             )
             from app.schemas.impact_analysis import ImpactAnalysisRequest
+
             ia = build_default_impact_analysis_service()
             iar = ia.analyze(
                 ImpactAnalysisRequest(
@@ -234,9 +233,7 @@ class TestComplianceRiskService:
         except Exception:
             pytest.skip("impact analysis unavailable")
 
-    def test_get_returns_none_for_missing(
-        self, service: ComplianceRiskService
-    ) -> None:
+    def test_get_returns_none_for_missing(self, service: ComplianceRiskService) -> None:
         assert service.get("missing") is None
 
 
@@ -277,9 +274,7 @@ class TestComplianceRiskAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            r = await client.get(
-                "/api/v1/compliance-risk?page=1&page_size=10"
-            )
+            r = await client.get("/api/v1/compliance-risk?page=1&page_size=10")
             assert r.status_code == 200
             body = r.json()
             assert "items" in body
@@ -302,9 +297,7 @@ class TestComplianceRiskAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            r = await client.get(
-                f"/api/v1/compliance-risk/{ra.assessment_id}"
-            )
+            r = await client.get(f"/api/v1/compliance-risk/{ra.assessment_id}")
             assert r.status_code == 200
             assert r.json()["assessment_id"] == ra.assessment_id
 
@@ -329,9 +322,7 @@ class TestComplianceRiskAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            r = await client.get(
-                "/api/v1/compliance-risk/trend?document_id=T-API"
-            )
+            r = await client.get("/api/v1/compliance-risk/trend?document_id=T-API")
             assert r.status_code == 200
             body = r.json()
             assert body["document_id"] == "T-API"

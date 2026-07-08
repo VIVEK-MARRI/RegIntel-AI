@@ -52,9 +52,7 @@ class ForecastModel(ABC):
     def fit(self, series: Sequence[float]) -> None: ...
 
     @abstractmethod
-    def predict(
-        self, horizon: int, confidence: float = 0.5
-    ) -> List[ForecastPoint]: ...
+    def predict(self, horizon: int, confidence: float = 0.5) -> List[ForecastPoint]: ...
 
 
 class LinearRegressionForecastModel(ForecastModel):
@@ -90,19 +88,13 @@ class LinearRegressionForecastModel(ForecastModel):
         for i, y in enumerate(series):
             pred = self._intercept + self._slope * i
             residuals.append((y - pred) ** 2)
-        self._residual_std = (
-            (sum(residuals) / max(1, n - 2)) ** 0.5
-        )
+        self._residual_std = (sum(residuals) / max(1, n - 2)) ** 0.5
 
-    def predict(
-        self, horizon: int, confidence: float = 0.5
-    ) -> List[ForecastPoint]:
+    def predict(self, horizon: int, confidence: float = 0.5) -> List[ForecastPoint]:
         if self._slope == 0.0 and self._intercept == 0.0 and self._residual_std == 0.0:
             return []
         now = time.time()
-        z = {0.5: 0.67, 0.8: 1.28, 0.95: 1.96}.get(
-            round(confidence, 2), 0.67
-        )
+        z = {0.5: 0.67, 0.8: 1.28, 0.95: 1.96}.get(round(confidence, 2), 0.67)
         out: List[ForecastPoint] = []
         for h in range(1, horizon + 1):
             x = len(range(horizon)) + h - 1
@@ -137,9 +129,7 @@ class ExponentialSmoothingForecastModel(ForecastModel):
             self._level = self._alpha * float(y) + (1 - self._alpha) * self._level
         self._fitted = True
 
-    def predict(
-        self, horizon: int, confidence: float = 0.5
-    ) -> List[ForecastPoint]:
+    def predict(self, horizon: int, confidence: float = 0.5) -> List[ForecastPoint]:
         if not self._fitted:
             return []
         now = time.time()
@@ -271,9 +261,7 @@ class RiskForecastingEngine:
                 drift_detected=drift,
             )
 
-    def scenario_simulation(
-        self, request: ScenarioRequest
-    ) -> List[ForecastScenario]:
+    def scenario_simulation(self, request: ScenarioRequest) -> List[ForecastScenario]:
         with track_request(
             endpoint="/api/v1/forecasting/scenario",
             strategy="scenario",
@@ -283,9 +271,7 @@ class RiskForecastingEngine:
                 request.baseline_score, request.scenario_types
             )
 
-    def trend_prediction(
-        self, document_id: str
-    ) -> Tuple[float, str]:
+    def trend_prediction(self, document_id: str) -> Tuple[float, str]:
         with track_request(
             endpoint="/api/v1/forecasting/trend",
             strategy="trend",
@@ -391,20 +377,14 @@ class ForecastingService:
 
     def forecast(self, request: ForecastRequest) -> RiskForecast:
         result = self.engine.forecast(request)
-        result.forecast_id = (
-            f"fcast-{uuid.uuid4().hex[:12]}"
-        )
+        result.forecast_id = f"fcast-{uuid.uuid4().hex[:12]}"
         self.store.add(result)
         return result
 
-    def scenario_simulation(
-        self, request: ScenarioRequest
-    ) -> List[ForecastScenario]:
+    def scenario_simulation(self, request: ScenarioRequest) -> List[ForecastScenario]:
         return self.engine.scenario_simulation(request)
 
-    def trend_prediction(
-        self, document_id: str
-    ) -> Tuple[float, str]:
+    def trend_prediction(self, document_id: str) -> Tuple[float, str]:
         return self.engine.trend_prediction(document_id)
 
     def get(self, fid: str) -> Optional[RiskForecast]:
@@ -430,9 +410,7 @@ class ForecastingService:
 
 
 def build_default_forecasting_service() -> ForecastingService:
-    persist = os.path.join(
-        settings.STORAGE_ROOT, "forecasting", "forecasts.jsonl"
-    )
+    persist = os.path.join(settings.STORAGE_ROOT, "forecasting", "forecasts.jsonl")
     store = InMemoryForecastingStore(persist_path=persist)
     return ForecastingService(store=store)
 

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.document import Document, SourceEnum, StatusEnum
 from app.repositories.base import BaseRepository
 
+
 class DocumentRepository(BaseRepository[Document]):
     def __init__(self, db_session: AsyncSession):
         super().__init__(Document, db_session)
@@ -24,13 +25,13 @@ class DocumentRepository(BaseRepository[Document]):
         return result.scalars().first()
 
     async def list_documents(
-        self, 
-        source: Optional[SourceEnum] = None, 
-        status: Optional[StatusEnum] = None, 
+        self,
+        source: Optional[SourceEnum] = None,
+        status: Optional[StatusEnum] = None,
         sort_by: str = "uploaded_at",
         sort_order: str = "desc",
-        skip: int = 0, 
-        limit: int = 100
+        skip: int = 0,
+        limit: int = 100,
     ) -> Sequence[Document]:
         """Lists Document entries with optional filters and dynamic sorting."""
         query = select(self.model)
@@ -38,19 +39,21 @@ class DocumentRepository(BaseRepository[Document]):
             query = query.where(self.model.source == source)
         if status:
             query = query.where(self.model.status == status)
-            
+
         # Apply sorting dynamically
         sort_col = getattr(self.model, sort_by, self.model.uploaded_at)
         if sort_order == "desc":
             query = query.order_by(sort_col.desc())
         else:
             query = query.order_by(sort_col.asc())
-            
+
         query = query.offset(skip).limit(limit)
         result = await self.db_session.execute(query)
         return result.scalars().all()
 
-    async def update_status(self, document_id: uuid.UUID, new_status: StatusEnum) -> Optional[Document]:
+    async def update_status(
+        self, document_id: uuid.UUID, new_status: StatusEnum
+    ) -> Optional[Document]:
         """Updates the status of a document."""
         # Using UPDATE statement with RETURNING
         query = (

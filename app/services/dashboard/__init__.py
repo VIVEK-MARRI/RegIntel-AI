@@ -55,7 +55,9 @@ class ComplianceMetricsAggregator:
         except Exception:  # pragma: no cover
             pass
         try:
-            from app.services.change_detection import build_default_change_detection_service
+            from app.services.change_detection import (
+                build_default_change_detection_service,
+            )
 
             chg = build_default_change_detection_service()
             st = chg.stats()
@@ -63,7 +65,9 @@ class ComplianceMetricsAggregator:
         except Exception:  # pragma: no cover
             pass
         try:
-            from app.services.impact_analysis import build_default_impact_analysis_service
+            from app.services.impact_analysis import (
+                build_default_impact_analysis_service,
+            )
 
             imp = build_default_impact_analysis_service()
             st = imp.stats()
@@ -89,7 +93,9 @@ class ComplianceMetricsAggregator:
         except Exception:  # pragma: no cover
             pass
         try:
-            from app.services.knowledge_graph import build_default_knowledge_graph_service
+            from app.services.knowledge_graph import (
+                build_default_knowledge_graph_service,
+            )
 
             kg = build_default_knowledge_graph_service()
             st = kg.stats()
@@ -130,7 +136,8 @@ class TrendAnalyzer:
                     unit="sources",
                     points=[
                         TrendPoint(
-                            label="current", value=float(snap.get("sources_monitored", 0)),
+                            label="current",
+                            value=float(snap.get("sources_monitored", 0)),
                             timestamp=time.time(),
                         )
                     ],
@@ -142,7 +149,8 @@ class TrendAnalyzer:
                     unit="docs",
                     points=[
                         TrendPoint(
-                            label="current", value=float(snap.get("documents_discovered", 0)),
+                            label="current",
+                            value=float(snap.get("documents_discovered", 0)),
                             timestamp=time.time(),
                         )
                     ],
@@ -151,7 +159,9 @@ class TrendAnalyzer:
         except Exception:  # pragma: no cover
             pass
         try:
-            from app.services.change_detection import build_default_change_detection_service
+            from app.services.change_detection import (
+                build_default_change_detection_service,
+            )
 
             chg = build_default_change_detection_service()
             st = chg.stats()
@@ -161,7 +171,9 @@ class TrendAnalyzer:
                     unit="diffs",
                     points=[
                         TrendPoint(
-                            label="total", value=float(st.total_diffs), timestamp=time.time()
+                            label="total",
+                            value=float(st.total_diffs),
+                            timestamp=time.time(),
                         )
                     ],
                 )
@@ -179,7 +191,9 @@ class TrendAnalyzer:
                     unit="runs",
                     points=[
                         TrendPoint(
-                            label="total", value=float(st.total_runs), timestamp=time.time()
+                            label="total",
+                            value=float(st.total_runs),
+                            timestamp=time.time(),
                         )
                     ],
                 )
@@ -207,9 +221,7 @@ class TrendAnalyzer:
     def _delta_pct(points: List[TrendPoint]) -> float:
         if len(points) < 2 or points[0].value == 0:
             return 0.0
-        return round(
-            (points[-1].value - points[0].value) / points[0].value * 100.0, 2
-        )
+        return round((points[-1].value - points[0].value) / points[0].value * 100.0, 2)
 
 
 # ─── Risk insights engine ───────────────────────────────────────────
@@ -257,7 +269,9 @@ class RiskInsightsEngine:
         except Exception:  # pragma: no cover
             pass
         try:
-            from app.services.change_detection import build_default_change_detection_service
+            from app.services.change_detection import (
+                build_default_change_detection_service,
+            )
 
             chg = build_default_change_detection_service()
             st = chg.stats()
@@ -290,7 +304,9 @@ class RiskInsightsEngine:
         except Exception:  # pragma: no cover
             pass
         try:
-            from app.services.impact_analysis import build_default_impact_analysis_service
+            from app.services.impact_analysis import (
+                build_default_impact_analysis_service,
+            )
 
             imp = build_default_impact_analysis_service()
             st = imp.stats()
@@ -376,7 +392,9 @@ class ExecutiveDashboardService:
 
     def _impact_distribution(self) -> ImpactDistribution:
         try:
-            from app.services.impact_analysis import build_default_impact_analysis_service
+            from app.services.impact_analysis import (
+                build_default_impact_analysis_service,
+            )
 
             st = build_default_impact_analysis_service().stats()
             return ImpactDistribution(
@@ -399,9 +417,7 @@ class ExecutiveDashboardService:
 
             st = build_default_alert_service().stats()
             delivery_rate = (
-                st.delivered_alerts / st.total_alerts
-                if st.total_alerts > 0
-                else 0.0
+                st.delivered_alerts / st.total_alerts if st.total_alerts > 0 else 0.0
             )
             return AlertMetricsView(
                 total=st.total_alerts,
@@ -433,7 +449,9 @@ class ExecutiveDashboardService:
     def _system_view(self) -> SystemHealthView:
         components: Dict[str, str] = {}
         try:
-            from app.services.knowledge_graph import build_default_knowledge_graph_service
+            from app.services.knowledge_graph import (
+                build_default_knowledge_graph_service,
+            )
 
             st = build_default_knowledge_graph_service().stats()
             components["knowledge_graph"] = "ok" if st else "degraded"
@@ -459,11 +477,7 @@ class ExecutiveDashboardService:
             components["health_subsystem"] = "ok"
         except Exception:  # pragma: no cover
             components["health_subsystem"] = "down"
-        status = (
-            "ok"
-            if all(v == "ok" for v in components.values())
-            else "degraded"
-        )
+        status = "ok" if all(v == "ok" for v in components.values()) else "degraded"
         return SystemHealthView(
             status=status,
             uptime_seconds=self.aggregator.uptime_seconds(),
@@ -474,9 +488,7 @@ class ExecutiveDashboardService:
     # ── public ──────────────────────────────────────────────────
 
     def snapshot(self) -> DashboardSnapshot:
-        with track_request(
-            endpoint="/api/v1/dashboard/snapshot", strategy="dashboard"
-        ):
+        with track_request(endpoint="/api/v1/dashboard/snapshot", strategy="dashboard"):
             compliance = self.aggregator.aggregate()
             trends = self.trend_analyzer.analyze()
             impact = self._impact_distribution()

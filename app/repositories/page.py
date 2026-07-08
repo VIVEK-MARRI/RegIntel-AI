@@ -5,9 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.page import DocumentPage
 from app.repositories.base import BaseRepository
 
+
 class PageRepository(BaseRepository[DocumentPage]):
     """Repository class managing database queries for DocumentPage ORM instances."""
-    
+
     def __init__(self, db_session: AsyncSession):
         super().__init__(DocumentPage, db_session)
 
@@ -17,10 +18,7 @@ class PageRepository(BaseRepository[DocumentPage]):
         await self.db_session.flush()
 
     async def get_pages_by_document(
-        self, 
-        document_id: uuid.UUID, 
-        skip: int = 0, 
-        limit: int = 100
+        self, document_id: uuid.UUID, skip: int = 0, limit: int = 100
     ) -> Sequence[DocumentPage]:
         """Retrieves page-level content for a document sorted by page_number, with pagination support."""
         query = (

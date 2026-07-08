@@ -80,7 +80,10 @@ async def scheduler_start(
     service: AutoIngestionService = Depends(get_ingestion_service),
 ) -> Dict[str, Any]:
     await service.start_scheduler()
-    return {"started": True, "status": service.scheduler_status().model_dump(mode="json")}
+    return {
+        "started": True,
+        "status": service.scheduler_status().model_dump(mode="json"),
+    }
 
 
 @router.post(
@@ -91,7 +94,10 @@ async def scheduler_stop(
     service: AutoIngestionService = Depends(get_ingestion_service),
 ) -> Dict[str, Any]:
     await service.stop_scheduler()
-    return {"stopped": True, "status": service.scheduler_status().model_dump(mode="json")}
+    return {
+        "stopped": True,
+        "status": service.scheduler_status().model_dump(mode="json"),
+    }
 
 
 @router.post(
@@ -172,7 +178,9 @@ async def sync_registry(
 ) -> Dict[str, Any]:
     from app.schemas.monitoring import RegulatorySource
 
-    flt = DiscoveryFilter(source=RegulatorySource(source) if source else None, page_size=200)
+    flt = DiscoveryFilter(
+        source=RegulatorySource(source) if source else None, page_size=200
+    )
     page = monitoring.search(flt)
     result = await service.sync_registry(page.items)
     return result.model_dump(mode="json")

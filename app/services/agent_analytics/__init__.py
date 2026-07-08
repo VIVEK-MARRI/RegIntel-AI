@@ -109,10 +109,7 @@ class AgentMetricsRepository:
 
     def stats(self, agent_name: str) -> AgentPerformance:
         with self._lock:
-            total = (
-                self._successes[agent_name]
-                + self._failures[agent_name]
-            )
+            total = self._successes[agent_name] + self._failures[agent_name]
             ok = self._successes[agent_name]
             fail = self._failures[agent_name]
             durations = list(self._latencies[agent_name])
@@ -120,13 +117,9 @@ class AgentMetricsRepository:
             last = self._last_invocation.get(agent_name)
             err = self._errors.get(agent_name, "")
         success_rate = (ok / total) if total else 0.0
-        avg = (
-            sum(durations) / len(durations) if durations else 0.0
-        )
+        avg = sum(durations) / len(durations) if durations else 0.0
         p95 = _percentile(durations, 95.0) if durations else 0.0
-        avg_conf = (
-            sum(confs) / len(confs) if confs else 0.0
-        )
+        avg_conf = sum(confs) / len(confs) if confs else 0.0
         # Classify health
         if total == 0:
             health = HealthLevel.UNKNOWN
@@ -198,14 +191,9 @@ class AgentPerformanceAnalyzer:
         return self._repo.stats(agent_name)
 
     def for_all(self) -> List[AgentPerformance]:
-        return [
-            self._repo.stats(name)
-            for name in self._repo.all_agent_names()
-        ]
+        return [self._repo.stats(name) for name in self._repo.all_agent_names()]
 
-    def latency_distribution(
-        self, agent_name: str
-    ) -> LatencyDistribution:
+    def latency_distribution(self, agent_name: str) -> LatencyDistribution:
         with self._repo._lock:  # noqa: SLF001
             durations = list(self._repo._latencies.get(agent_name, []))  # noqa: SLF001
         if not durations:
@@ -213,9 +201,7 @@ class AgentPerformanceAnalyzer:
         return LatencyDistribution(
             agent_name=agent_name,
             count=len(durations),
-            average_ms=round(
-                sum(durations) / len(durations), 3
-            ),
+            average_ms=round(sum(durations) / len(durations), 3),
             min_ms=round(min(durations), 3),
             max_ms=round(max(durations), 3),
             p50_ms=round(_percentile(durations, 50.0), 3),
@@ -233,9 +219,7 @@ class AgentPerformanceAnalyzer:
 class AgentHealthMonitor:
     """Classifies the health of a single agent or the whole ecosystem."""
 
-    def __init__(
-        self, analyzer: AgentPerformanceAnalyzer
-    ) -> None:
+    def __init__(self, analyzer: AgentPerformanceAnalyzer) -> None:
         self._analyzer = analyzer
 
     def agent_health(self, agent_name: str) -> HealthLevel:
@@ -294,9 +278,7 @@ class AgentLeaderboard:
         self.weight_confidence = weight_confidence
         self.weight_speed = weight_speed
 
-    def rank(
-        self, top_n: int = 10
-    ) -> List[LeaderboardEntry]:
+    def rank(self, top_n: int = 10) -> List[LeaderboardEntry]:
         perfs = self._analyzer.for_all()
         scored: List[LeaderboardEntry] = []
         for p in perfs:
@@ -353,9 +335,7 @@ class AgentCostAnalyzer:
         self.cost_per_invocation = cost_per_invocation
         self.cost_per_token = cost_per_token
 
-    def estimate_for_agent(
-        self, agent_name: str
-    ) -> CostEstimate:
+    def estimate_for_agent(self, agent_name: str) -> CostEstimate:
         p = self._repo.stats(agent_name)
         cost = p.total_invocations * self.cost_per_invocation
         return CostEstimate(
@@ -364,26 +344,17 @@ class AgentCostAnalyzer:
             tokens_used=0,
             cost_units=round(cost, 4),
             cost_per_invocation=round(self.cost_per_invocation, 6),
-            notes=(
-                "Estimated at "
-                f"${self.cost_per_invocation}/invocation"
-            ),
+            notes=("Estimated at " f"${self.cost_per_invocation}/invocation"),
         )
 
     def estimate_platform_total(self) -> CostEstimate:
         perfs = self._repo.all_agent_names()
-        total = sum(
-            self.estimate_for_agent(n).cost_units for n in perfs
-        )
-        invocations = sum(
-            self._repo.stats(n).total_invocations for n in perfs
-        )
+        total = sum(self.estimate_for_agent(n).cost_units for n in perfs)
+        invocations = sum(self._repo.stats(n).total_invocations for n in perfs)
         return CostEstimate(
             invocations=invocations,
             cost_units=round(total, 4),
-            cost_per_invocation=(
-                round(total / invocations, 6) if invocations else 0.0
-            ),
+            cost_per_invocation=(round(total / invocations, 6) if invocations else 0.0),
             notes="Aggregated cost across all known agents",
         )
 
@@ -440,39 +411,19 @@ class AgentAnalyticsService:
         collaboration_counts: Optional[Dict[str, int]] = None,
         recent_executions: Optional[List[ExecutionSummary]] = None,
         forecast_accuracy: Optional[List[ForecastAccuracy]] = None,
-        recommendation_accuracy: Optional[
-            List[RecommendationAccuracy]
-        ] = None,
+        recommendation_accuracy: Optional[List[RecommendationAccuracy]] = None,
     ) -> AgentAnalyticsOverview:
         perfs = self.analyzer.for_all()
         total_invocations = sum(p.total_invocations for p in perfs)
-        successes = sum(
-            p.successful_invocations for p in perfs
-        )
-        success_rate = (
-            successes / total_invocations if total_invocations else 0.0
-        )
-        durations = [
-            p.average_duration_ms
-            for p in perfs
-            if p.average_duration_ms > 0
-        ]
-        avg_dur = (
-            sum(durations) / len(durations) if durations else 0.0
-        )
-        confs = [
-            p.average_confidence
-            for p in perfs
-            if p.average_confidence > 0
-        ]
-        avg_conf = (
-            sum(confs) / len(confs) if confs else 0.0
-        )
+        successes = sum(p.successful_invocations for p in perfs)
+        success_rate = successes / total_invocations if total_invocations else 0.0
+        durations = [p.average_duration_ms for p in perfs if p.average_duration_ms > 0]
+        avg_dur = sum(durations) / len(durations) if durations else 0.0
+        confs = [p.average_confidence for p in perfs if p.average_confidence > 0]
+        avg_conf = sum(confs) / len(confs) if confs else 0.0
         health = self.monitor.ecosystem_health()
         leaderboard = self.leaderboard.rank(top_n=20)
-        collab_pairs = self._build_collaboration_stats(
-            collaboration_counts or {}
-        )
+        collab_pairs = self._build_collaboration_stats(collaboration_counts or {})
         cost = self.cost_analyzer.estimate_platform_total()
         return AgentAnalyticsOverview(
             total_agents=len(perfs),
@@ -480,9 +431,7 @@ class AgentAnalyticsService:
             success_rate=round(success_rate, 4),
             average_duration_ms=round(avg_dur, 3),
             average_confidence=round(avg_conf, 3),
-            total_collaborations=sum(
-                c.count for c in collab_pairs
-            ),
+            total_collaborations=sum(c.count for c in collab_pairs),
             total_cost_units=cost.cost_units,
             health=health,
             leaderboard=leaderboard,
@@ -496,16 +445,12 @@ class AgentAnalyticsService:
     def performance(self) -> List[AgentPerformance]:
         return self.analyzer.for_all()
 
-    def performance_for(
-        self, agent_name: str
-    ) -> Optional[AgentPerformance]:
+    def performance_for(self, agent_name: str) -> Optional[AgentPerformance]:
         if agent_name in self.repo.all_agent_names():
             return self.analyzer.for_agent(agent_name)
         return None
 
-    def leaderboard_view(
-        self, top_n: int = 10
-    ) -> List[LeaderboardEntry]:
+    def leaderboard_view(self, top_n: int = 10) -> List[LeaderboardEntry]:
         return self.leaderboard.rank(top_n=top_n)
 
     def health(self) -> HealthSummary:

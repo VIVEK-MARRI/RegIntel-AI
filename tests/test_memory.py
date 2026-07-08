@@ -258,9 +258,7 @@ class TestRepository:
                 pinned=True,
             )
         )
-        results = repository.search(
-            MemoryQuery(memory_types=[MemoryType.LONG_TERM])
-        )
+        results = repository.search(MemoryQuery(memory_types=[MemoryType.LONG_TERM]))
         assert all(r.entry.memory_type == MemoryType.LONG_TERM for r in results)
 
     def test_search_filter_by_user(self, repository: MemoryRepository):
@@ -346,9 +344,7 @@ class TestManager:
         assert entry.user_id == "u-1"
         assert entry.content == "hello"
 
-    def test_record_from_message_system_returns_none(
-        self, manager: MemoryManager
-    ):
+    def test_record_from_message_system_returns_none(self, manager: MemoryManager):
         msg = Message(role=Role.SYSTEM, content="sys")
         entry = manager.record_from_message(msg, user_id="u-1")
         assert entry is None
@@ -378,15 +374,9 @@ class TestManager:
         assert ctx.memory_used is True
         assert len(ctx.long_term) >= 1
 
-    def test_build_context_compresses_short_term(
-        self, manager: MemoryManager
-    ):
-        long_history = [
-            Message(role=Role.USER, content=f"msg {i}") for i in range(20)
-        ]
-        ctx = manager.build_context(
-            query="x", user_id="u", short_term=long_history
-        )
+    def test_build_context_compresses_short_term(self, manager: MemoryManager):
+        long_history = [Message(role=Role.USER, content=f"msg {i}") for i in range(20)]
+        ctx = manager.build_context(query="x", user_id="u", short_term=long_history)
         assert len(ctx.short_term) <= 6
 
 

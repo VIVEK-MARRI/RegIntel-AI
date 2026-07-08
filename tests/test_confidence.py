@@ -90,7 +90,14 @@ def sample_answer() -> Dict[str, Any]:
 def mixed_chunks() -> List[Dict[str, Any]]:
     return [
         _chunk(cid="c-1", doc="d-1", content="KYC", score=0.92, source="RBI", page=12),
-        _chunk(cid="c-2", doc="d-2", content="Disclosure", score=0.85, source="SEBI", page=4),
+        _chunk(
+            cid="c-2",
+            doc="d-2",
+            content="Disclosure",
+            score=0.85,
+            source="SEBI",
+            page=4,
+        ),
         _chunk(cid="c-3", doc="d-1", content="KYC", score=0.78, source="RBI", page=13),
     ]
 
@@ -130,13 +137,9 @@ class TestSchemas:
 
     def test_request_rejects_invalid_coverage(self):
         with pytest.raises(Exception):
-            ConfidenceRequest(
-                query="q", answer={}, chunks=[], citation_coverage=1.5
-            )
+            ConfidenceRequest(query="q", answer={}, chunks=[], citation_coverage=1.5)
         with pytest.raises(Exception):
-            ConfidenceRequest(
-                query="q", answer={}, chunks=[], citation_coverage=-0.1
-            )
+            ConfidenceRequest(query="q", answer={}, chunks=[], citation_coverage=-0.1)
 
     def test_request_rejects_empty_query(self):
         with pytest.raises(Exception):
@@ -170,9 +173,9 @@ class TestRetrievalRelevance:
 
     def test_falls_back_to_chunk_scores(self):
         out = retrieval_relevance_factor(
-            chunk_scores=[c["score"] for c in [
-                {"score": 0.5}, {"score": 0.7}, {"score": 0.9}
-            ]]
+            chunk_scores=[
+                c["score"] for c in [{"score": 0.5}, {"score": 0.7}, {"score": 0.9}]
+            ]
         )
         assert abs(out["score"] - 0.7) < 1e-9
 
@@ -219,10 +222,7 @@ class TestSourceAgreement:
         assert out["score"] == 0.0
 
     def test_70_30_split(self):
-        chunks = (
-            [_chunk(source="RBI")] * 7
-            + [_chunk(source="SEBI")] * 3
-        )
+        chunks = [_chunk(source="RBI")] * 7 + [_chunk(source="SEBI")] * 3
         out = source_agreement_factor(chunks)
         # primary_share = 0.7 → score = (0.7 - 0.5) * 2 = 0.4
         assert abs(out["score"] - 0.4) < 1e-9
@@ -302,11 +302,15 @@ class TestConfidenceCalculator:
         factors = [
             FactorCalculator(
                 name=ConfidenceFactorName.RETRIEVAL_RELEVANCE,
-                score=0.8, weight=0.5, available=True,
+                score=0.8,
+                weight=0.5,
+                available=True,
             ),
             FactorCalculator(
                 name=ConfidenceFactorName.CITATION_COVERAGE,
-                score=1.0, weight=0.5, available=True,
+                score=1.0,
+                weight=0.5,
+                available=True,
             ),
         ]
         confidence, breakdown = calc.aggregate(factors)
@@ -322,11 +326,15 @@ class TestConfidenceCalculator:
         factors = [
             FactorCalculator(
                 name=ConfidenceFactorName.RETRIEVAL_RELEVANCE,
-                score=0.8, weight=0.5, available=True,
+                score=0.8,
+                weight=0.5,
+                available=True,
             ),
             FactorCalculator(
                 name=ConfidenceFactorName.RERANKER_CONFIDENCE,
-                score=0.99, weight=0.5, available=False,  # not available
+                score=0.99,
+                weight=0.5,
+                available=False,  # not available
             ),
         ]
         confidence, breakdown = calc.aggregate(factors)
@@ -341,7 +349,9 @@ class TestConfidenceCalculator:
         factors = [
             FactorCalculator(
                 name=ConfidenceFactorName.RERANKER_CONFIDENCE,
-                score=0.99, weight=0.5, available=False,
+                score=0.99,
+                weight=0.5,
+                available=False,
             ),
         ]
         confidence, breakdown = calc.aggregate(factors)
@@ -357,7 +367,9 @@ class TestConfidenceCalculator:
         factors = [
             FactorCalculator(
                 name=ConfidenceFactorName.RETRIEVAL_RELEVANCE,
-                score=0.95, weight=1.0, available=True,
+                score=0.95,
+                weight=1.0,
+                available=True,
             ),
         ]
         confidence, _ = calc.aggregate(factors)
@@ -368,9 +380,7 @@ class TestConfidenceCalculator:
 
 
 class TestConfidenceService:
-    def test_score_high_quality(
-        self, confidence_service, mixed_chunks, sample_answer
-    ):
+    def test_score_high_quality(self, confidence_service, mixed_chunks, sample_answer):
         req = ConfidenceRequest(
             query="What are KYC obligations?",
             answer=sample_answer,
@@ -383,20 +393,25 @@ class TestConfidenceService:
         assert isinstance(res, ConfidenceResponse)
         # 0.7-0.95 is the sweet spot for MEDIUM, depending on source mix.
         assert 0.0 <= res.confidence <= 1.0
-        assert res.level in {ConfidenceLevel.LOW, ConfidenceLevel.MEDIUM, ConfidenceLevel.HIGH}
+        assert res.level in {
+            ConfidenceLevel.LOW,
+            ConfidenceLevel.MEDIUM,
+            ConfidenceLevel.HIGH,
+        }
         assert res.metadata["chunks_used"] == 3
         assert res.metadata["rerank_available"] is True
         # Has all five factors in the breakdown.
         names = {f.name for f in res.breakdown.factors}
         assert names == set(ConfidenceFactorName)
 
-    def test_score_low_quality_triggers_flags(
-        self, confidence_service, sample_answer
-    ):
+    def test_score_low_quality_triggers_flags(self, confidence_service, sample_answer):
         chunks = [_chunk(score=0.3, source="RBI")]
         req = ConfidenceRequest(
-            query="q", answer=sample_answer, chunks=chunks,
-            retrieval_scores=[0.3], citation_coverage=0.3,
+            query="q",
+            answer=sample_answer,
+            chunks=chunks,
+            retrieval_scores=[0.3],
+            citation_coverage=0.3,
         )
         res = confidence_service.score(req)
         assert res.level == ConfidenceLevel.LOW
@@ -404,11 +419,11 @@ class TestConfidenceService:
         assert ConfidenceFlag.LOW_CITATION_COVERAGE in res.flags
         assert ConfidenceFlag.NO_RERANK_SCORES in res.flags
 
-    def test_score_empty_chunks_returns_zero(
-        self, confidence_service, sample_answer
-    ):
+    def test_score_empty_chunks_returns_zero(self, confidence_service, sample_answer):
         req = ConfidenceRequest(
-            query="q", answer=sample_answer, chunks=[],
+            query="q",
+            answer=sample_answer,
+            chunks=[],
             retrieval_scores=[],
         )
         res = confidence_service.score(req)
@@ -416,13 +431,14 @@ class TestConfidenceService:
         assert res.level == ConfidenceLevel.LOW
         assert ConfidenceFlag.EMPTY_CHUNKS in res.flags
 
-    def test_score_single_source_flag(
-        self, confidence_service, sample_answer
-    ):
+    def test_score_single_source_flag(self, confidence_service, sample_answer):
         chunks = [_chunk(score=0.9, source="RBI") for _ in range(5)]
         req = ConfidenceRequest(
-            query="q", answer=sample_answer, chunks=chunks,
-            retrieval_scores=[0.9] * 5, reranker_scores=[0.95] * 5,
+            query="q",
+            answer=sample_answer,
+            chunks=chunks,
+            retrieval_scores=[0.9] * 5,
+            reranker_scores=[0.95] * 5,
             citation_coverage=1.0,
         )
         res = confidence_service.score(req)
@@ -432,7 +448,9 @@ class TestConfidenceService:
         self, confidence_service, mixed_chunks, sample_answer
     ):
         res = confidence_service.score_answer(
-            query="q", answer=sample_answer, chunks=mixed_chunks,
+            query="q",
+            answer=sample_answer,
+            chunks=mixed_chunks,
             retrieval_scores=[0.9, 0.85, 0.8],
             reranker_scores=[0.95, 0.88, 0.81],
             citation_coverage=1.0,
@@ -444,8 +462,11 @@ class TestConfidenceService:
         custom = {n.value: 1.0 for n in ConfidenceFactorName}
         custom[ConfidenceFactorName.RETRIEVAL_RELEVANCE.value] = 4.0
         req = ConfidenceRequest(
-            query="q", answer=sample_answer, chunks=mixed_chunks,
-            retrieval_scores=[0.92, 0.85, 0.78], weights=custom,
+            query="q",
+            answer=sample_answer,
+            chunks=mixed_chunks,
+            retrieval_scores=[0.92, 0.85, 0.78],
+            weights=custom,
         )
         res = confidence_service.score(req)
         # With rerank unavailable, total weight is 7 (not 8), so retrieval
@@ -454,22 +475,23 @@ class TestConfidenceService:
         # be well above the unweighted default (~0.6) and below 0.9.
         assert 0.7 < res.confidence < 0.9
         retrieval = next(
-            f for f in res.breakdown.factors
+            f
+            for f in res.breakdown.factors
             if f.name == ConfidenceFactorName.RETRIEVAL_RELEVANCE
         )
         # Retrieval should be the single largest contributor.
         assert retrieval.contribution > 0.3
 
-    def test_high_variance_triggers_flag(
-        self, confidence_service, sample_answer
-    ):
+    def test_high_variance_triggers_flag(self, confidence_service, sample_answer):
         chunks = [
             _chunk(score=0.95, source="RBI"),
             _chunk(score=0.95, source="RBI"),
             _chunk(score=0.1, source="RBI"),
         ]
         req = ConfidenceRequest(
-            query="q", answer=sample_answer, chunks=chunks,
+            query="q",
+            answer=sample_answer,
+            chunks=chunks,
             retrieval_scores=[c["score"] for c in chunks],
         )
         res = confidence_service.score(req)
@@ -506,8 +528,10 @@ class TestConfidenceMetrics:
     def test_reset(self):
         m = ConfidenceMetrics()
         m.record(
-            confidence=0.9, level=ConfidenceLevel.HIGH,
-            factor_scores={}, flags=[],
+            confidence=0.9,
+            level=ConfidenceLevel.HIGH,
+            factor_scores={},
+            flags=[],
         )
         m.reset()
         snap = m.snapshot()
@@ -520,14 +544,18 @@ class TestConfidenceMetrics:
         def hammer():
             for _ in range(500):
                 m.record(
-                    confidence=0.5, level=ConfidenceLevel.MEDIUM,
-                    factor_scores={}, flags=[],
+                    confidence=0.5,
+                    level=ConfidenceLevel.MEDIUM,
+                    factor_scores={},
+                    flags=[],
                 )
 
         t1 = threading.Thread(target=hammer)
         t2 = threading.Thread(target=hammer)
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
         snap = m.snapshot()
         assert snap["total_requests"] == 1000
 
@@ -550,7 +578,9 @@ class TestConfidenceAPI:
         reset_confidence_service()
 
     @pytest.mark.asyncio
-    async def test_score_endpoint_success(self, api_client, mixed_chunks, sample_answer):
+    async def test_score_endpoint_success(
+        self, api_client, mixed_chunks, sample_answer
+    ):
         ac, _svc = api_client
         payload = {
             "query": "What are KYC obligations?",
@@ -596,7 +626,9 @@ class TestConfidenceAPI:
             await ac.post(
                 "/api/v1/confidence/score",
                 json={
-                    "query": "q", "answer": sample_answer, "chunks": mixed_chunks,
+                    "query": "q",
+                    "answer": sample_answer,
+                    "chunks": mixed_chunks,
                     "retrieval_scores": [0.92, 0.85, 0.78],
                     "reranker_scores": [0.95, 0.88, 0.81],
                     "citation_coverage": 1.0,

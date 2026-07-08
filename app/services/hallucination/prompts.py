@@ -84,7 +84,9 @@ def _format_chunks(chunks: List[RetrievedChunk]) -> str:
 def _format_claims(claims: List[Claim]) -> str:
     parts: List[str] = []
     for idx, claim in enumerate(claims, start=1):
-        parts.append(f"[{idx}] claim_id={claim.claim_id} section={claim.section}\n{claim.text}")
+        parts.append(
+            f"[{idx}] claim_id={claim.claim_id} section={claim.section}\n{claim.text}"
+        )
     return "\n\n".join(parts) if parts else "(no claims to verify)"
 
 
@@ -145,7 +147,10 @@ def parse_verification_response(
     supported: List[ClaimVerdict] = []
     for entry in supported_raw:
         verdict = _to_verdict(
-            entry, expected_section=section_by_id, expected_text=text_by_id, supported=True
+            entry,
+            expected_section=section_by_id,
+            expected_text=text_by_id,
+            supported=True,
         )
         if verdict is not None:
             supported.append(verdict)
@@ -153,7 +158,10 @@ def parse_verification_response(
     unsupported: List[ClaimVerdict] = []
     for entry in unsupported_raw:
         verdict = _to_verdict(
-            entry, expected_section=section_by_id, expected_text=text_by_id, supported=False
+            entry,
+            expected_section=section_by_id,
+            expected_text=text_by_id,
+            supported=False,
         )
         if verdict is not None:
             unsupported.append(verdict)

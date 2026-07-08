@@ -74,9 +74,7 @@ class LexicalFaithfulnessChecker:
             ]
         )
 
-    def _verdict_for(
-        self, claim: Claim, chunks: List[RetrievedChunk]
-    ) -> ClaimVerdict:
+    def _verdict_for(self, claim: Claim, chunks: List[RetrievedChunk]) -> ClaimVerdict:
         if not chunks:
             return ClaimVerdict(
                 claim_id=claim.claim_id,

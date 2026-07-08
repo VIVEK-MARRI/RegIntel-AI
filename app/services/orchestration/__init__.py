@@ -88,9 +88,7 @@ class AgentMessageBus:
     """
 
     def __init__(self, max_history: int = 500) -> None:
-        self._subs: Dict[str, List[Callable[[AgentMessage], None]]] = (
-            defaultdict(list)
-        )
+        self._subs: Dict[str, List[Callable[[AgentMessage], None]]] = defaultdict(list)
         self._lock = threading.RLock()
         self._history: List[AgentMessage] = []
         self._max_history = max_history
@@ -120,10 +118,7 @@ class AgentMessageBus:
             if len(self._history) > self._max_history:
                 self._history = self._history[-self._max_history :]
             self._metrics_counter += 1
-            cbs = list(
-                self._subs.get(message.to_agent, [])
-                + self._subs.get("*", [])
-            )
+            cbs = list(self._subs.get(message.to_agent, []) + self._subs.get("*", []))
         for cb in cbs:
             try:
                 cb(message)
@@ -171,11 +166,7 @@ class SharedEvidenceStore:
 
     def for_consumer(self, consumer: str) -> List[SharedEvidenceItem]:
         with self._lock:
-            return [
-                it
-                for it in self._items
-                if it.consumer in ("", "*", consumer)
-            ]
+            return [it for it in self._items if it.consumer in ("", "*", consumer)]
 
     def all(self) -> List[SharedEvidenceItem]:
         with self._lock:
@@ -243,11 +234,7 @@ class AgentSelectionPolicy:
                     return a
         # Fall back to first healthy
         for a in candidates:
-            if (
-                self.prefer_healthy
-                and hasattr(a, "health")
-                and a.health().healthy
-            ):
+            if self.prefer_healthy and hasattr(a, "health") and a.health().healthy:
                 return a
         return candidates[0]
 
@@ -306,9 +293,7 @@ class ConflictResolver:
         if not values:
             return None, 0
         # Sort by (-confidence, value) and pick first
-        sorted_v = sorted(
-            values, key=lambda x: (-x[1], x[0])
-        )
+        sorted_v = sorted(values, key=lambda x: (-x[1], x[0]))
         winner = sorted_v[0]
         conflicts = max(0, len(values) - 1)
         return winner[0], conflicts
@@ -327,9 +312,7 @@ class ConsensusBuilder:
 
         counter = Counter([v[0] for v in values])
         top, _ = counter.most_common(1)[0]
-        agreements = sum(
-            c for v, c in counter.items() if v == top
-        )
+        agreements = sum(c for v, c in counter.items() if v == top)
         return _clamp(agreements / len(values))
 
 
@@ -386,14 +369,10 @@ class ResultSynthesizer:
                 values.append(c.confidence)
         avg_conf = sum(values) / max(1, len(values)) if values else 0.0
         # 2) Consensus: look at all summary strings
-        summary_pairs = [
-            (c.summary or "", c.confidence) for c in contributions
-        ]
+        summary_pairs = [(c.summary or "", c.confidence) for c in contributions]
         consensus = self.consensus_builder.score(summary_pairs)
         # 3) Conflict resolution: pick the most-confident summary
-        resolved, conflicts = self.conflict_resolver.resolve(
-            summary_pairs
-        )
+        resolved, conflicts = self.conflict_resolver.resolve(summary_pairs)
         final_output = {
             "query": query,
             "agent_count": len(contributions),
@@ -403,11 +382,7 @@ class ResultSynthesizer:
             "primary_summary": resolved
             or (contributions[0].summary if contributions else ""),
             "primary_output": next(
-                (
-                    c.output
-                    for c in contributions
-                    if c.status == "succeeded"
-                ),
+                (c.output for c in contributions if c.status == "succeeded"),
                 {},
             ),
             "evidence_count": len(evidence),
@@ -506,9 +481,7 @@ class OrchestrationEngine:
                 max_retries=task.max_retries,
                 timeout_ms=task.timeout_ms,
             )
-            result: AgentResult = await self._framework.execute(
-                request
-            )
+            result: AgentResult = await self._framework.execute(request)
             duration = (_now() - started) * 1000.0
             if result.status != TaskStatus.SUCCEEDED:
                 return AgentContribution(
@@ -564,8 +537,7 @@ class OrchestrationEngine:
         if not isinstance(output, dict):
             return 0.5
         return _clamp(
-            output.get("confidence", 0.5)
-            or output.get("final_confidence", 0.5)
+            output.get("confidence", 0.5) or output.get("final_confidence", 0.5)
         )
 
     @staticmethod
@@ -599,10 +571,7 @@ class OrchestrationEngine:
             eligible = [
                 s
                 for s in pending
-                if all(
-                    dep in {c.agent_name for c in completed}
-                    for dep in s.depends_on
-                )
+                if all(dep in {c.agent_name for c in completed} for dep in s.depends_on)
             ]
             if not eligible:
                 # Circular or broken deps — run the first one and let
@@ -611,22 +580,14 @@ class OrchestrationEngine:
             if graph.mode == ExecutionMode.PARALLEL and allow_parallel:
                 tasks = []
                 for s in eligible:
-                    agent, _ = await self._coordinator.dispatch(
-                        s, query, context
-                    )
-                    tasks.append(
-                        self.run_step(agent, s, query, context)
-                    )
+                    agent, _ = await self._coordinator.dispatch(s, query, context)
+                    tasks.append(self.run_step(agent, s, query, context))
                 wave = await asyncio.gather(*tasks)
             else:
                 wave = []
                 for s in eligible:
-                    agent, _ = await self._coordinator.dispatch(
-                        s, query, context
-                    )
-                    wave.append(
-                        await self.run_step(agent, s, query, context)
-                    )
+                    agent, _ = await self._coordinator.dispatch(s, query, context)
+                    wave.append(await self.run_step(agent, s, query, context))
             completed.extend(wave)
             contributions.extend(wave)
             for s in eligible:
@@ -718,9 +679,7 @@ class AgentOrchestrator:
         if request.graph is not None:
             return request.graph
         # Otherwise build a sequential graph from desired_agents
-        agents = list(request.desired_agents) or list(
-            self._DEFAULT_AGENT_ORDER
-        )
+        agents = list(request.desired_agents) or list(self._DEFAULT_AGENT_ORDER)
         steps: List[AgentExecutionStep] = []
         prev: List[str] = []
         for name in agents:
@@ -728,9 +687,7 @@ class AgentOrchestrator:
             step = AgentExecutionStep(
                 agent_name=name,
                 capability=capability,
-                description=(
-                    f"Run {name} on the orchestration query"
-                ),
+                description=(f"Run {name} on the orchestration query"),
                 depends_on=list(prev),
                 input_template={"agent": name},
                 timeout_ms=request.context.timeout_ms,
@@ -802,15 +759,11 @@ class AgentOrchestrator:
                 self._bus.publish(msg)
                 messages.append(msg)
             evidence = self._evidence.all()
-            final_output, conf, consensus, conflicts = (
-                self._synthesizer.synthesize(
-                    request.query, contributions, evidence
-                )
+            final_output, conf, consensus, conflicts = self._synthesizer.synthesize(
+                request.query, contributions, evidence
             )
             # Status derivation
-            successes = sum(
-                1 for c in contributions if c.status == "succeeded"
-            )
+            successes = sum(1 for c in contributions if c.status == "succeeded")
             if not contributions:
                 status_ = WorkflowStatus.FAILED
             elif successes == len(contributions):
@@ -845,8 +798,7 @@ class AgentOrchestrator:
                 notes=(
                     ""
                     if status_ == WorkflowStatus.SUCCEEDED
-                    else f"{len(contributions) - successes} "
-                    f"agent(s) failed"
+                    else f"{len(contributions) - successes} " f"agent(s) failed"
                 ),
             )
             return result
@@ -909,9 +861,7 @@ class OrchestrationService:
         self._lock = threading.RLock()
         self._metrics = OrchestrationMetricsSummary()
 
-    async def orchestrate(
-        self, request: OrchestrationRequest
-    ) -> OrchestrationResult:
+    async def orchestrate(self, request: OrchestrationRequest) -> OrchestrationResult:
         result = await self.orchestrator.orchestrate(request)
         self._record_metrics(result)
         return result
@@ -919,9 +869,7 @@ class OrchestrationService:
     async def run_workflow(
         self, definition: WorkflowDefinition, query: str = ""
     ) -> AgentWorkflow:
-        return await self.orchestrator.run_workflow(
-            definition, query=query
-        )
+        return await self.orchestrator.run_workflow(definition, query=query)
 
     def list_workflows(self) -> List[WorkflowDefinition]:
         return self.workflow_manager.list_definitions()
@@ -936,9 +884,7 @@ class OrchestrationService:
         to_agent: Optional[str] = None,
         limit: int = 100,
     ) -> List[AgentMessage]:
-        return self.bus.history(
-            from_agent=from_agent, to_agent=to_agent, limit=limit
-        )
+        return self.bus.history(from_agent=from_agent, to_agent=to_agent, limit=limit)
 
     def metrics(self) -> OrchestrationMetricsSummary:
         with self._lock:
@@ -958,9 +904,7 @@ class OrchestrationService:
                 self._metrics.by_status.get(result.status.value, 0) + 1
             )
             for a in result.agents_used:
-                self._metrics.by_agent[a] = (
-                    self._metrics.by_agent.get(a, 0) + 1
-                )
+                self._metrics.by_agent[a] = self._metrics.by_agent.get(a, 0) + 1
             self._metrics.total_messages += len(result.messages)
             self._metrics.total_evidence += len(result.shared_evidence)
             self._metrics.total_conflicts += result.conflicts_resolved

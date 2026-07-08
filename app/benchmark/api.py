@@ -26,11 +26,13 @@ router = APIRouter(prefix="/benchmark", tags=["benchmark"])
 
 # ─── Helpers ─────────────────────────────────────────────────────────
 
+
 def _service() -> BenchmarkService:
     return get_benchmark_service()
 
 
 # ─── Health / readiness ─────────────────────────────────────────────
+
 
 @router.get("/health", summary="Benchmark platform health")
 async def benchmark_health() -> Dict[str, Any]:
@@ -44,6 +46,7 @@ async def benchmark_health() -> Dict[str, Any]:
 
 
 # ─── Run a benchmark ───────────────────────────────────────────────
+
 
 @router.post(
     "/run",
@@ -59,6 +62,7 @@ async def run_benchmark(request: BenchmarkRequest) -> BenchmarkResponse:
 
 
 # ─── Convenience GET (synchronous smoke run) ───────────────────────
+
 
 @router.get(
     "/run",
@@ -79,6 +83,7 @@ async def run_benchmark_get(
 
 
 # ─── On-demand reports ─────────────────────────────────────────────
+
 
 @router.get(
     "/reports/latency",
@@ -126,6 +131,7 @@ async def system_report(
 
 # ─── Diagnostics ──────────────────────────────────────────────────
 
+
 @router.post(
     "/reset",
     summary="Reset the benchmark service (test helper)",
@@ -151,8 +157,8 @@ async def suites() -> Dict[str, Any]:
 
 def _suite_description(suite: BenchmarkSuite) -> str:
     return {
-        BenchmarkSuite.SMOKE:   "1 op, 1 worker — health check only",
-        BenchmarkSuite.QUICK:   "5 ops, 1 worker — fast smoke",
+        BenchmarkSuite.SMOKE: "1 op, 1 worker — health check only",
+        BenchmarkSuite.QUICK: "5 ops, 1 worker — fast smoke",
         BenchmarkSuite.STANDARD: "25 ops, 4 workers — default suite",
-        BenchmarkSuite.FULL:    "100 ops, 8 workers — full perf sweep",
+        BenchmarkSuite.FULL: "100 ops, 8 workers — full perf sweep",
     }[suite]

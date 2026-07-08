@@ -10,14 +10,15 @@ from app.repositories.bm25 import BM25IndexMetadataRepository
 from app.services.bm25.service import (
     clean_tokenize,
     BM25IndexManager,
-    BM25RetrieverService
+    BM25RetrieverService,
 )
+
 
 def test_tokenizer_clean_tokenize():
     # Test normalization, punctuation removal, and stopwords filtering
     text = "The quick brown Fox jumps over the lazy Dog! And it was a nice day."
     tokens = clean_tokenize(text)
-    
+
     # "The", "over", "the", "And", "it", "was", "a" are stopwords
     assert "fox" in tokens
     assert "dog" in tokens
@@ -27,7 +28,7 @@ def test_tokenizer_clean_tokenize():
     assert "lazy" in tokens
     assert "nice" in tokens
     assert "day" in tokens
-    
+
     # Ensure no capitals or punctuation exist
     assert "Fox" not in tokens
     assert "Dog!" not in tokens
@@ -39,14 +40,14 @@ def test_tokenizer_clean_tokenize():
 async def test_bm25_repository_operations(db_session):
     repo = BM25IndexMetadataRepository(db_session)
     await repo.deactivate_all()
-    
+
     meta1 = BM25IndexMetadata(
         index_name="index_1",
         corpus_size=10,
         avg_doc_len=12.5,
         vocab_size=100,
         file_path="/tmp/idx1.pkl",
-        is_active=True
+        is_active=True,
     )
     meta2 = BM25IndexMetadata(
         index_name="index_2",
@@ -54,22 +55,22 @@ async def test_bm25_repository_operations(db_session):
         avg_doc_len=14.2,
         vocab_size=150,
         file_path="/tmp/idx2.pkl",
-        is_active=True
+        is_active=True,
     )
-    
+
     await repo.create(meta1)
     await repo.create(meta2)
     await db_session.commit()
-    
+
     # Active metadata should return the latest updated active record
     active = await repo.get_active_metadata()
     assert active is not None
     assert active.index_name in ["index_1", "index_2"]
-    
+
     # Deactivate all
     await repo.deactivate_all()
     await db_session.commit()
-    
+
     active_after = await repo.get_active_metadata()
     assert active_after is None
 
@@ -83,7 +84,7 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
         file_name="rbi.pdf",
         file_path="rbi.pdf",
         checksum="a" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     doc_sebi = Document(
         title="SEBI Mutual Fund Circular",
@@ -91,7 +92,7 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
         file_name="sebi.pdf",
         file_path="sebi.pdf",
         checksum="b" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     db_session.add_all([doc_rbi, doc_sebi])
     await db_session.commit()
@@ -103,7 +104,7 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
             section="Sec 1",
             subsection="Sub 1",
             content="KYC verification requires Aadhaar card and PAN card details for diligence.",
-            token_count=15
+            token_count=15,
         )
         chunk2 = DocumentChunk(
             document_id=doc_rbi.id,
@@ -111,7 +112,7 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
             section="Sec 2",
             subsection="Sub 2",
             content="Customer due diligence process should be completed within ten working days.",
-            token_count=15
+            token_count=15,
         )
         chunk3 = DocumentChunk(
             document_id=doc_sebi.id,
@@ -119,19 +120,19 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
             section="Sec 1",
             subsection="Sub 1",
             content="Mutual fund investment schemes must clearly disclose asset allocation details.",
-            token_count=15
+            token_count=15,
         )
         db_session.add_all([chunk1, chunk2, chunk3])
         await db_session.commit()
 
         # 1. Initialize Index Manager
         manager = BM25IndexManager(db_session, storage_dir=str(tmp_path))
-        
+
         # Build index
         index_name = "test_run_bm25"
         filepath = await manager.build_index(index_name)
         assert os.path.exists(filepath)
-        
+
         # Check pickled structure
         with open(filepath, "rb") as f:
             payload = pickle.load(f)
@@ -150,7 +151,7 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
 
         # 2. Test BM25 Retriever
         retriever = BM25RetrieverService(db_session)
-        
+
         # Query for KYC
         results = await retriever.retrieve(query="KYC Aadhaar diligence", top_k=5)
         assert len(results) >= 2
@@ -164,19 +165,25 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
 
         # Query with score threshold
         # Higher threshold should screen out lower scoring matches
-        results_threshold = await retriever.retrieve(query="KYC Aadhaar diligence", score_threshold=1.0)
+        results_threshold = await retriever.retrieve(
+            query="KYC Aadhaar diligence", score_threshold=1.0
+        )
         # Check that less matches are returned compared to no threshold
         assert len(results_threshold) < len(results)
 
         # 3. Test Source Filtering
-        results_rbi = await retriever.retrieve(query="diligence mutual fund", source=SourceEnum.RBI)
+        results_rbi = await retriever.retrieve(
+            query="diligence mutual fund", source=SourceEnum.RBI
+        )
         # Even though "mutual fund" matches chunk3, source=RBI filters only doc_rbi chunks
         for r in results_rbi:
             assert r["chunk_id"] in [str(chunk1.id), str(chunk2.id)]
             assert r["chunk_id"] != str(chunk3.id)
 
         # 4. Test Document Filtering
-        results_doc = await retriever.retrieve(query="details diligence", document_id=doc_sebi.id)
+        results_doc = await retriever.retrieve(
+            query="details diligence", document_id=doc_sebi.id
+        )
         assert len(results_doc) == 1
         assert results_doc[0]["chunk_id"] == str(chunk3.id)
 
@@ -192,7 +199,7 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
             section="Sec 3",
             subsection="Sub 3",
             content="New regulatory compliance guidelines for asset management companies.",
-            token_count=12
+            token_count=12,
         )
         db_session.add(chunk4)
         await db_session.commit()

@@ -93,9 +93,7 @@ class AgentCapability(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    capability_id: str = Field(
-        default_factory=lambda: f"cap-{secrets.token_hex(4)}"
-    )
+    capability_id: str = Field(default_factory=lambda: f"cap-{secrets.token_hex(4)}")
     kind: CapabilityKind
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
@@ -110,9 +108,7 @@ class AgentContext(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    context_id: str = Field(
-        default_factory=lambda: f"ctx-{uuid.uuid4().hex[:12]}"
-    )
+    context_id: str = Field(default_factory=lambda: f"ctx-{uuid.uuid4().hex[:12]}")
     session_id: str = ""
     actor: str = "system"
     timeout_ms: int = Field(30_000, ge=100, le=600_000)
@@ -127,9 +123,7 @@ class AgentTask(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    task_id: str = Field(
-        default_factory=lambda: f"tsk-{uuid.uuid4().hex[:12]}"
-    )
+    task_id: str = Field(default_factory=lambda: f"tsk-{uuid.uuid4().hex[:12]}")
     capability: CapabilityKind
     input: Dict[str, Any] = Field(default_factory=dict)
     context: AgentContext = Field(default_factory=AgentContext)
@@ -148,9 +142,7 @@ class AgentResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(
-        default_factory=lambda: f"res-{uuid.uuid4().hex[:12]}"
-    )
+    result_id: str = Field(default_factory=lambda: f"res-{uuid.uuid4().hex[:12]}")
     task_id: str = ""
     agent_id: str = ""
     agent_name: str = ""
@@ -191,9 +183,7 @@ class AgentMetadata(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    agent_id: str = Field(
-        default_factory=lambda: f"agt-{uuid.uuid4().hex[:12]}"
-    )
+    agent_id: str = Field(default_factory=lambda: f"agt-{uuid.uuid4().hex[:12]}")
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     version: str = "1.0.0"
@@ -219,9 +209,7 @@ class PlanStep(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    step_id: str = Field(
-        default_factory=lambda: f"step-{secrets.token_hex(4)}"
-    )
+    step_id: str = Field(default_factory=lambda: f"step-{secrets.token_hex(4)}")
     capability: CapabilityKind
     description: str = ""
     input: Dict[str, Any] = Field(default_factory=dict)
@@ -236,9 +224,7 @@ class CoordinatorPlan(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    plan_id: str = Field(
-        default_factory=lambda: f"plan-{uuid.uuid4().hex[:12]}"
-    )
+    plan_id: str = Field(default_factory=lambda: f"plan-{uuid.uuid4().hex[:12]}")
     query: str = ""
     steps: List[PlanStep] = Field(default_factory=list)
     selected_agents: List[str] = Field(default_factory=list)
@@ -252,9 +238,7 @@ class CoordinatorResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(
-        default_factory=lambda: f"cres-{uuid.uuid4().hex[:12]}"
-    )
+    result_id: str = Field(default_factory=lambda: f"cres-{uuid.uuid4().hex[:12]}")
     plan_id: str = ""
     query: str = ""
     selected_agents: List[str] = Field(default_factory=list)

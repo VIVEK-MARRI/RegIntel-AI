@@ -191,8 +191,12 @@ class MockLLMProvider(BaseLLMProvider):
                 current["subsection"] = stripped.split(":", 1)[1].strip()
             elif lower.startswith("content:"):
                 collecting_content = True
-                content_parts.append(stripped[len("content:"):].strip())
-            elif collecting_content and not lower.startswith("[") and not lower.startswith("now produce"):
+                content_parts.append(stripped[len("content:") :].strip())
+            elif (
+                collecting_content
+                and not lower.startswith("[")
+                and not lower.startswith("now produce")
+            ):
                 content_parts.append(stripped)
 
         if current:
@@ -209,10 +213,11 @@ class MockLLMProvider(BaseLLMProvider):
         for prefix in ["Document:", "Section:", "Subsection:"]:
             if prefix in first_content:
                 first_content = first_content.split(prefix, 1)[-1]
-        summary_lead = first_content.strip().lstrip(".").strip()[:300] if first_content else ""
-        summary = (
-            f"Executive Summary: {question.strip()}"
-            + (f" {summary_lead}" if summary_lead else "")
+        summary_lead = (
+            first_content.strip().lstrip(".").strip()[:300] if first_content else ""
+        )
+        summary = f"Executive Summary: {question.strip()}" + (
+            f" {summary_lead}" if summary_lead else ""
         )
 
         # Detailed explanation: enumerate each chunk's contribution.
@@ -226,7 +231,11 @@ class MockLLMProvider(BaseLLMProvider):
             for cl in content.split("Document:"):
                 last = cl.rsplit("Section:", 1)[-1] if "Section:" in cl else cl
                 clean_lines.append(last.strip().lstrip(".").strip())
-            snippet = " ".join(clean_lines)[:400] if clean_lines else (content[:400] if content else "")
+            snippet = (
+                " ".join(clean_lines)[:400]
+                if clean_lines
+                else (content[:400] if content else "")
+            )
             label = f" according to {doc}" if doc else ""
             if section:
                 label += f" ({section})"
@@ -382,8 +391,10 @@ class GeminiProvider(BaseLLMProvider):
         **kwargs: Any,
     ) -> None:
         super().__init__(model=model, **kwargs)
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "") or os.getenv(
-            "GOOGLE_API_KEY", ""
+        self.api_key = (
+            api_key
+            or os.getenv("GEMINI_API_KEY", "")
+            or os.getenv("GOOGLE_API_KEY", "")
         )
         self.timeout = timeout
         self._client: Any = None
@@ -512,8 +523,10 @@ class LiteLLMProvider(BaseLLMProvider):
         **kwargs: Any,
     ) -> None:
         super().__init__(model=model, **kwargs)
-        self.api_key = api_key or os.getenv("LITELLM_API_KEY", "") or os.getenv(
-            "OPENAI_API_KEY", ""
+        self.api_key = (
+            api_key
+            or os.getenv("LITELLM_API_KEY", "")
+            or os.getenv("OPENAI_API_KEY", "")
         )
         self.api_base = api_base or os.getenv("LITELLM_API_BASE")
         self.timeout = timeout

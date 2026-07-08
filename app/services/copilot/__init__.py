@@ -61,7 +61,9 @@ class CopilotService:
         orchestrator: Optional[ResponseOrchestrator] = None,
         memory: Optional[MemoryService] = None,
         conversation: Optional[ConversationService] = None,
-        analytics: Optional[Any] = None,  # AnswerAnalyticsService (avoid circular import)
+        analytics: Optional[
+            Any
+        ] = None,  # AnswerAnalyticsService (avoid circular import)
         hybrid_pipeline: Optional[HybridRerankPipeline] = None,
     ) -> None:
         self.orchestrator = orchestrator
@@ -103,6 +105,7 @@ class CopilotService:
                 )
             else:
                 from app.schemas.memory import MemoryContext  # local to avoid cycle
+
                 memory_context = MemoryContext(memory_used=False)
 
             # 3. Dispatch by mode.
@@ -142,13 +145,13 @@ class CopilotService:
             # Build an empty answer (degraded path) without invoking the
             # orchestrator: the orchestrator requires ≥1 chunk.
             return self._empty_answer(
-                request=request, conv=conv, memory_context=memory_context,
+                request=request,
+                conv=conv,
+                memory_context=memory_context,
                 reason="no chunks available; orchestrator not invoked",
             )
         # Build the orchestrator request.
-        verification = self._resolve_verification_method(
-            request.verification_method
-        )
+        verification = self._resolve_verification_method(request.verification_method)
         orchestrator_request = OrchestratorRequest(
             query=request.query,
             chunks=chunks,
@@ -167,7 +170,11 @@ class CopilotService:
                 logger.warning("Analytics record failed: %s", exc)
         # Record retrieval memory (best-effort).
         try:
-            answer_text = final_response.answer.executive_summary or final_response.answer.detailed_explanation or ""
+            answer_text = (
+                final_response.answer.executive_summary
+                or final_response.answer.detailed_explanation
+                or ""
+            )
             self.memory.manager.record_retrieval(
                 query=request.query,
                 answer_text=answer_text,
@@ -206,9 +213,7 @@ class CopilotService:
             "query or provide context."
         )
         try:
-            self.conversation.manager.append_user(
-                conv.conversation_id, request.query
-            )
+            self.conversation.manager.append_user(conv.conversation_id, request.query)
             self.conversation.manager.append_assistant(
                 conv.conversation_id,
                 assistant_text,
@@ -264,9 +269,7 @@ class CopilotService:
             for hit in memory_context.retrieval[:3]:
                 parts.append(f"- {hit.entry.content[:200]}")
         if not parts:
-            summary_text = (
-                f"No prior context for query: {request.query!r}."
-            )
+            summary_text = f"No prior context for query: {request.query!r}."
         else:
             summary_text = " ".join(parts)
         history = [
@@ -421,9 +424,7 @@ class CopilotService:
         self._append_user_assistant(conv, request, final_response)
         # Echo the recent history.
         history = [
-            CopilotMessage(
-                role=m.role.value, content=m.content, timestamp=m.timestamp
-            )
+            CopilotMessage(role=m.role.value, content=m.content, timestamp=m.timestamp)
             for m in conv.messages[-6:]
         ]
         # Tag metadata with retrieval_invoked flag.
@@ -461,9 +462,7 @@ class CopilotService:
         """Append the user query and the assistant answer to the
         conversation history (best-effort)."""
         try:
-            self.conversation.manager.append_user(
-                conv.conversation_id, request.query
-            )
+            self.conversation.manager.append_user(conv.conversation_id, request.query)
             assistant_text = (
                 final_response.answer.executive_summary
                 or final_response.answer.detailed_explanation

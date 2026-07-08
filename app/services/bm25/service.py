@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
 try:
     from rank_bm25 import BM25Okapi
 except ImportError:  # pragma: no cover
@@ -24,18 +25,152 @@ logger = logging.getLogger(__name__)
 
 # Stopwords set for regulatory tokenization
 STOPWORDS = {
-    "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren", "as", "at",
-    "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can", "couldn", "did",
-    "didn", "do", "does", "doesn", "doing", "don", "down", "during", "each", "few", "for", "from", "further",
-    "had", "hadn", "has", "hasn", "have", "haven", "having", "he", "her", "here", "hers", "herself", "him",
-    "himself", "his", "how", "i", "if", "in", "into", "is", "isn", "it", "its", "itself", "just", "me", "more",
-    "most", "mustn", "my", "myself", "no", "nor", "not", "now", "of", "off", "on", "once", "only", "or", "other",
-    "our", "ours", "ourselves", "out", "over", "own", "re", "s", "same", "shan", "she", "should", "shouldn",
-    "so", "some", "such", "t", "than", "that", "the", "their", "theirs", "them", "themselves", "then", "there",
-    "these", "they", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn",
-    "we", "were", "weren", "what", "when", "where", "which", "while", "who", "whom", "why", "will", "with",
-    "won", "wouldn", "y", "you", "your", "yours", "yourself", "yourselves"
+    "a",
+    "about",
+    "above",
+    "after",
+    "again",
+    "against",
+    "all",
+    "am",
+    "an",
+    "and",
+    "any",
+    "are",
+    "aren",
+    "as",
+    "at",
+    "be",
+    "because",
+    "been",
+    "before",
+    "being",
+    "below",
+    "between",
+    "both",
+    "but",
+    "by",
+    "can",
+    "couldn",
+    "did",
+    "didn",
+    "do",
+    "does",
+    "doesn",
+    "doing",
+    "don",
+    "down",
+    "during",
+    "each",
+    "few",
+    "for",
+    "from",
+    "further",
+    "had",
+    "hadn",
+    "has",
+    "hasn",
+    "have",
+    "haven",
+    "having",
+    "he",
+    "her",
+    "here",
+    "hers",
+    "herself",
+    "him",
+    "himself",
+    "his",
+    "how",
+    "i",
+    "if",
+    "in",
+    "into",
+    "is",
+    "isn",
+    "it",
+    "its",
+    "itself",
+    "just",
+    "me",
+    "more",
+    "most",
+    "mustn",
+    "my",
+    "myself",
+    "no",
+    "nor",
+    "not",
+    "now",
+    "of",
+    "off",
+    "on",
+    "once",
+    "only",
+    "or",
+    "other",
+    "our",
+    "ours",
+    "ourselves",
+    "out",
+    "over",
+    "own",
+    "re",
+    "s",
+    "same",
+    "shan",
+    "she",
+    "should",
+    "shouldn",
+    "so",
+    "some",
+    "such",
+    "t",
+    "than",
+    "that",
+    "the",
+    "their",
+    "theirs",
+    "them",
+    "themselves",
+    "then",
+    "there",
+    "these",
+    "they",
+    "this",
+    "those",
+    "through",
+    "to",
+    "too",
+    "under",
+    "until",
+    "up",
+    "very",
+    "was",
+    "wasn",
+    "we",
+    "were",
+    "weren",
+    "what",
+    "when",
+    "where",
+    "which",
+    "while",
+    "who",
+    "whom",
+    "why",
+    "will",
+    "with",
+    "won",
+    "wouldn",
+    "y",
+    "you",
+    "your",
+    "yours",
+    "yourself",
+    "yourselves",
 }
+
 
 def clean_tokenize(text: str) -> List[str]:
     """Applies lowercase normalization, matches word tokens, and filters stopwords."""
@@ -63,7 +198,7 @@ class BM25IndexManager:
     async def build_index(self, index_name: str = "default_bm25") -> str:
         """Fetches all registered chunks, builds the BM25 index, and serializes it to disk."""
         logger.info("Initializing BM25 index build...")
-        
+
         # Query all chunks including document titles
         stmt = select(DocumentChunk).options(selectinload(DocumentChunk.document))
         res = await self.db_session.execute(stmt)
@@ -82,10 +217,7 @@ class BM25IndexManager:
 
         # Serialize index and mapping metadata
         filepath = os.path.join(self.storage_dir, f"{index_name}.pkl")
-        payload = {
-            "bm25": bm25_engine,
-            "chunk_ids": chunk_ids
-        }
+        payload = {"bm25": bm25_engine, "chunk_ids": chunk_ids}
         with open(filepath, "wb") as f:
             pickle.dump(payload, f)
 
@@ -93,13 +225,15 @@ class BM25IndexManager:
         vocab = set()
         for doc in tokenized_corpus:
             vocab.update(doc)
-        
+
         corpus_size = len(chunks)
         avg_doc_len = bm25_engine.avgdl
         vocab_size = len(vocab)
 
         # Persist index metadata details in DB (upsert based on index_name)
-        stmt_exist = select(BM25IndexMetadata).where(BM25IndexMetadata.index_name == index_name)
+        stmt_exist = select(BM25IndexMetadata).where(
+            BM25IndexMetadata.index_name == index_name
+        )
         existing_res = await self.db_session.execute(stmt_exist)
         meta = existing_res.scalars().first()
 
@@ -118,7 +252,7 @@ class BM25IndexManager:
                 avg_doc_len=avg_doc_len,
                 vocab_size=vocab_size,
                 file_path=filepath,
-                is_active=True
+                is_active=True,
             )
             await self.metadata_repo.create(meta)
         await self.db_session.commit()
@@ -147,7 +281,9 @@ class BM25IndexManager:
             return False
 
         # Rebuild index to recalculate globals (IDF/averages) correctly
-        logger.info(f"New chunks detected ({total_chunks} vs {active_meta.corpus_size}). Rebuilding index...")
+        logger.info(
+            f"New chunks detected ({total_chunks} vs {active_meta.corpus_size}). Rebuilding index..."
+        )
         await self.build_index(active_meta.index_name)
         return True
 
@@ -164,7 +300,7 @@ class BM25RetrieverService(BM25Retriever):
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
         self.metadata_repo = BM25IndexMetadataRepository(db_session)
-        
+
         # In-memory index cache
         self._cached_metadata_id: Optional[uuid.UUID] = None
         self._cached_bm25: Optional[BM25Okapi] = None
@@ -193,15 +329,21 @@ class BM25RetrieverService(BM25Retriever):
         try:
             with open(filepath, "rb") as f:
                 payload = pickle.load(f)
-            
+
             self._cached_bm25 = payload["bm25"]
             self._cached_chunk_ids = payload["chunk_ids"]
-            self._cached_chunk_id_to_idx = {cid: idx for idx, cid in enumerate(self._cached_chunk_ids)}
+            self._cached_chunk_id_to_idx = {
+                cid: idx for idx, cid in enumerate(self._cached_chunk_ids)
+            }
             self._cached_metadata_id = active_meta.id
-            logger.info(f"Loaded BM25 index '{active_meta.index_name}' successfully into memory cache.")
+            logger.info(
+                f"Loaded BM25 index '{active_meta.index_name}' successfully into memory cache."
+            )
             return True
         except Exception as e:
-            logger.error(f"Failed to load BM25 index file {filepath}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to load BM25 index file {filepath}: {e}", exc_info=True
+            )
             return False
 
     async def retrieve(
@@ -210,11 +352,11 @@ class BM25RetrieverService(BM25Retriever):
         top_k: int = 5,
         score_threshold: float = 0.0,
         source: Optional[SourceEnum] = None,
-        document_id: Optional[uuid.UUID] = None
+        document_id: Optional[uuid.UUID] = None,
     ) -> List[Dict[str, Any]]:
         """Scores documents matching query and filters candidates by metadata constraints and score threshold."""
         start_time = time.perf_counter()
-        
+
         if not query or not query.strip():
             return []
 
@@ -225,15 +367,21 @@ class BM25RetrieverService(BM25Retriever):
             return []
 
         # 1. Fetch matching candidate chunks from database to apply filters efficiently
-        candidate_stmt = select(DocumentChunk).options(selectinload(DocumentChunk.document))
-        
+        candidate_stmt = select(DocumentChunk).options(
+            selectinload(DocumentChunk.document)
+        )
+
         # Apply filters in database query
         if source or document_id:
-            candidate_stmt = candidate_stmt.join(Document, Document.id == DocumentChunk.document_id)
+            candidate_stmt = candidate_stmt.join(
+                Document, Document.id == DocumentChunk.document_id
+            )
             if source:
                 candidate_stmt = candidate_stmt.where(Document.source == source)
             if document_id:
-                candidate_stmt = candidate_stmt.where(DocumentChunk.document_id == document_id)
+                candidate_stmt = candidate_stmt.where(
+                    DocumentChunk.document_id == document_id
+                )
 
         candidate_res = await self.db_session.execute(candidate_stmt)
         candidates = candidate_res.scalars().all()
@@ -251,7 +399,7 @@ class BM25RetrieverService(BM25Retriever):
             if chunk_str not in self._cached_chunk_id_to_idx:
                 # Chunk exists in DB but not in the active index (rebuild/update needed)
                 continue
-            
+
             idx = self._cached_chunk_id_to_idx[chunk_str]
             score = float(all_scores[idx])
 
@@ -271,17 +419,21 @@ class BM25RetrieverService(BM25Retriever):
         # 4. Serialize matching items
         serialized = []
         for chunk, score in top_results:
-            serialized.append({
-                "chunk_id": str(chunk.id),
-                "score": score,
-                "section": chunk.section,
-                "subsection": chunk.subsection,
-                "content": chunk.content,
-                "metadata": {
-                    "document_id": str(chunk.document_id),
-                    "document_title": chunk.document.title if chunk.document else "",
-                    "page_number": chunk.page_number,
-                    "token_count": chunk.token_count
+            serialized.append(
+                {
+                    "chunk_id": str(chunk.id),
+                    "score": score,
+                    "section": chunk.section,
+                    "subsection": chunk.subsection,
+                    "content": chunk.content,
+                    "metadata": {
+                        "document_id": str(chunk.document_id),
+                        "document_title": chunk.document.title
+                        if chunk.document
+                        else "",
+                        "page_number": chunk.page_number,
+                        "token_count": chunk.token_count,
+                    },
                 }
-            })
+            )
         return serialized

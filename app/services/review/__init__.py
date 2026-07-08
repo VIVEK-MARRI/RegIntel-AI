@@ -57,9 +57,7 @@ class ReviewEngine:
         ReviewStatus.WITHDRAWN,
     }
 
-    def create(
-        self, request: ReviewCreateRequest, actor: str = "system"
-    ) -> Review:
+    def create(self, request: ReviewCreateRequest, actor: str = "system") -> Review:
         with track_request(
             endpoint="/api/v1/review/create",
             strategy="review_create",
@@ -94,16 +92,12 @@ class ReviewEngine:
             get_review_metrics().record_status(ReviewStatus.PENDING.value)
             return review
 
-    def start(
-        self, review: Review, actor: str = "system"
-    ) -> Review:
+    def start(self, review: Review, actor: str = "system") -> Review:
         if review.status not in (
             ReviewStatus.PENDING,
             ReviewStatus.IN_REVIEW,
         ):
-            raise ValueError(
-                f"Cannot start review in status {review.status.value}"
-            )
+            raise ValueError(f"Cannot start review in status {review.status.value}")
         review.status = ReviewStatus.IN_REVIEW
         review.started_at = review.started_at or time.time()
         review.audit_trail.append(
@@ -143,17 +137,13 @@ class ReviewEngine:
             )
             latency = 0.0
             if review.started_at:
-                latency = (
-                    time.time() - review.started_at
-                ) * 1000.0
+                latency = (time.time() - review.started_at) * 1000.0
             get_review_metrics().record_decision(
                 decision=decision.value, latency_ms=latency
             )
             get_review_metrics().record_status(review.status.value)
             return review
-        raise ValueError(
-            f"Cannot complete review in status {review.status.value}"
-        )
+        raise ValueError(f"Cannot complete review in status {review.status.value}")
 
     def escalate(
         self, review: Review, actor: str = "system", reason: str = ""
@@ -292,9 +282,7 @@ class ReviewManager:
 class ApprovalCoordinator:
     """Coordinate multi-approver consensus on a review."""
 
-    def evaluate(
-        self, review: Review
-    ) -> Dict[str, Any]:
+    def evaluate(self, review: Review) -> Dict[str, Any]:
         """Compute current approval state."""
         result: Dict[str, Any] = {
             "fully_approved": False,
@@ -365,11 +353,7 @@ class ApprovalCoordinator:
                 target = req
                 break
         if target is None:
-            target = (
-                review.required_approvers[0]
-                if review.required_approvers
-                else None
-            )
+            target = review.required_approvers[0] if review.required_approvers else None
         if target is None:
             raise ValueError("No matching approval requirement")
         target.rejected_by.append(approver)
@@ -511,15 +495,9 @@ class ReviewRepository:
             return s
         latencies: List[float] = []
         for r in items:
-            s.by_status[r.status.value] = (
-                s.by_status.get(r.status.value, 0) + 1
-            )
-            s.by_priority[r.priority.value] = (
-                s.by_priority.get(r.priority.value, 0) + 1
-            )
-            s.by_decision[r.decision.value] = (
-                s.by_decision.get(r.decision.value, 0) + 1
-            )
+            s.by_status[r.status.value] = s.by_status.get(r.status.value, 0) + 1
+            s.by_priority[r.priority.value] = s.by_priority.get(r.priority.value, 0) + 1
+            s.by_decision[r.decision.value] = s.by_decision.get(r.decision.value, 0) + 1
             s.total_comments += len(r.comments)
             s.total_corrections += len(r.corrections)
             if r.status == ReviewStatus.APPROVED:
@@ -531,18 +509,12 @@ class ReviewRepository:
             elif r.status == ReviewStatus.PENDING:
                 s.pending += 1
             if r.started_at and r.completed_at:
-                latencies.append(
-                    (r.completed_at - r.started_at) * 1000.0
-                )
+                latencies.append((r.completed_at - r.started_at) * 1000.0)
             s.last_review_at = max(s.last_review_at or 0, r.created_at)
         decided = s.approved + s.rejected
-        s.approval_rate = round(
-            s.approved / decided, 4
-        ) if decided > 0 else 0.0
+        s.approval_rate = round(s.approved / decided, 4) if decided > 0 else 0.0
         if latencies:
-            s.average_latency_ms = round(
-                sum(latencies) / len(latencies), 3
-            )
+            s.average_latency_ms = round(sum(latencies) / len(latencies), 3)
         return s
 
     def history_for(self, rid: str) -> List[Review]:
@@ -556,8 +528,7 @@ class ReviewRepository:
             r
             for r in self._store.list_all()
             if r.assigned_to == assignee
-            and r.status
-            in (ReviewStatus.PENDING, ReviewStatus.IN_REVIEW)
+            and r.status in (ReviewStatus.PENDING, ReviewStatus.IN_REVIEW)
         ]
 
 
@@ -574,9 +545,7 @@ class ReviewService:
 
     # ── CRUD ─────────────────────────────────────────────────
 
-    def create(
-        self, request: ReviewCreateRequest, actor: str = "system"
-    ) -> Review:
+    def create(self, request: ReviewCreateRequest, actor: str = "system") -> Review:
         review = self.engine.create(request, actor=actor)
         self.store.add(review)
         return review
@@ -598,9 +567,7 @@ class ReviewService:
 
     # ── Lifecycle ────────────────────────────────────────────
 
-    def start(
-        self, rid: str, actor: str = "system"
-    ) -> Optional[Review]:
+    def start(self, rid: str, actor: str = "system") -> Optional[Review]:
         review = self.store.get(rid)
         if review is None:
             return None
@@ -656,18 +623,12 @@ class ReviewService:
                 )
             consensus = self.approver.evaluate(review)
             if consensus["rejected"]:
-                self.engine.complete(
-                    review, ReviewDecision.REJECTED, actor=actor
-                )
+                self.engine.complete(review, ReviewDecision.REJECTED, actor=actor)
             elif consensus["fully_approved"]:
-                self.engine.complete(
-                    review, ReviewDecision.APPROVED, actor=actor
-                )
+                self.engine.complete(review, ReviewDecision.APPROVED, actor=actor)
             # Otherwise keep IN_REVIEW pending other approvers
         elif decision == ReviewDecision.ESCALATE:
-            self.engine.escalate(
-                review, actor=actor, reason=request.reason or ""
-            )
+            self.engine.escalate(review, actor=actor, reason=request.reason or "")
         elif decision == ReviewDecision.NEEDS_CHANGES:
             review.decision = decision
             review.audit_trail.append(
@@ -755,9 +716,7 @@ class ReviewService:
         self.approver.record_approval(review, approver, role, actor=actor)
         consensus = self.approver.evaluate(review)
         if consensus["fully_approved"]:
-            self.engine.complete(
-                review, ReviewDecision.APPROVED, actor=actor
-            )
+            self.engine.complete(review, ReviewDecision.APPROVED, actor=actor)
         self.store.add(review)
         return review
 
@@ -772,12 +731,8 @@ class ReviewService:
         review = self.store.get(rid)
         if review is None:
             return None
-        self.approver.record_rejection(
-            review, approver, reason, role, actor=actor
-        )
-        self.engine.complete(
-            review, ReviewDecision.REJECTED, actor=actor
-        )
+        self.approver.record_rejection(review, approver, reason, role, actor=actor)
+        self.engine.complete(review, ReviewDecision.REJECTED, actor=actor)
         self.store.add(review)
         return review
 
@@ -794,14 +749,14 @@ class ReviewService:
             from app.services.workflow import (
                 build_default_automation_service,
             )
+
             wf = build_default_automation_service().get(workflow_id)
             if wf is None:
                 return None
             request = ReviewCreateRequest(
                 title=title,
                 description=(
-                    f"Review of workflow {workflow_id} "
-                    f"({wf.workflow_type.value})"
+                    f"Review of workflow {workflow_id} " f"({wf.workflow_type.value})"
                 ),
                 subject_type="workflow",
                 subject_id=workflow_id,
@@ -817,9 +772,7 @@ class ReviewService:
 
 
 def build_default_review_service() -> ReviewService:
-    persist = os.path.join(
-        settings.STORAGE_ROOT, "review", "reviews.jsonl"
-    )
+    persist = os.path.join(settings.STORAGE_ROOT, "review", "reviews.jsonl")
     store = InMemoryReviewStore(persist_path=persist)
     return ReviewService(store=store)
 

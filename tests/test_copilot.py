@@ -50,6 +50,7 @@ from app.schemas.hallucination import HallucinationRiskLevel
 from app.schemas.orchestrator import (
     FinalAnswerResponse,
     OrchestratorMetadata,
+    OrchestratorRequest,
     StepResult,
     PipelineStep,
     PipelineStatus,
@@ -95,6 +96,7 @@ class _FakeOrchestrator:
 
     async def answer(self, request):  # type: ignore[no-untyped-def]
         from app.schemas.orchestrator import OrchestratorRequest
+
         self.calls.append(request)
         return FinalAnswerResponse(
             query=request.query,
@@ -327,9 +329,7 @@ class TestSchemas:
 
 class TestService:
     @pytest.mark.asyncio
-    async def test_ask_creates_conversation(
-        self, controller: CopilotController
-    ):
+    async def test_ask_creates_conversation(self, controller: CopilotController):
         req = CopilotRequest(query="What is KYC?")
         resp = await controller.handle(req)
         assert resp.conversation_id.startswith("conv-")
@@ -400,14 +400,28 @@ class TestService:
     ):
         req1 = CopilotRequest(
             query="What is KYC?",
-            chunks=[{"chunk_id": "c1", "document_id": "d1", "content": "KYC info", "score": 0.9}],
+            chunks=[
+                {
+                    "chunk_id": "c1",
+                    "document_id": "d1",
+                    "content": "KYC info",
+                    "score": 0.9,
+                }
+            ],
         )
         r1 = await controller.handle(req1)
         # Second turn: use the same conversation.
         req2 = CopilotRequest(
             query="Tell me more",
             conversation_id=r1.conversation_id,
-            chunks=[{"chunk_id": "c2", "document_id": "d2", "content": "more KYC", "score": 0.9}],
+            chunks=[
+                {
+                    "chunk_id": "c2",
+                    "document_id": "d2",
+                    "content": "more KYC",
+                    "score": 0.9,
+                }
+            ],
         )
         r2 = await controller.handle(req2)
         assert r1.conversation_id == r2.conversation_id
@@ -422,7 +436,14 @@ class TestService:
         req = CopilotRequest(
             query="What is KYC?",
             use_memory=False,
-            chunks=[{"chunk_id": "c1", "document_id": "d1", "content": "KYC info", "score": 0.9}],
+            chunks=[
+                {
+                    "chunk_id": "c1",
+                    "document_id": "d1",
+                    "content": "KYC info",
+                    "score": 0.9,
+                }
+            ],
         )
         resp = await controller.handle(req)
         assert resp.memory_used is False
@@ -467,12 +488,12 @@ class TestService:
         assert "sources" in resp.answer
 
     @pytest.mark.asyncio
-    async def test_history_echo(
-        self, controller: CopilotController
-    ):
+    async def test_history_echo(self, controller: CopilotController):
         req1 = CopilotRequest(
             query="first",
-            chunks=[{"chunk_id": "c1", "document_id": "d1", "content": "x", "score": 0.5}],
+            chunks=[
+                {"chunk_id": "c1", "document_id": "d1", "content": "x", "score": 0.5}
+            ],
         )
         r1 = await controller.handle(req1)
         assert len(r1.history) == 2
@@ -526,9 +547,7 @@ class TestAPI:
         assert body["confidence_score"] == 0.85
 
     @pytest.mark.asyncio
-    async def test_query_with_empty_query_returns_422(
-        self, client: AsyncClient
-    ):
+    async def test_query_with_empty_query_returns_422(self, client: AsyncClient):
         r = await client.post(
             "/api/v1/copilot/query",
             json={"query": ""},
@@ -580,9 +599,7 @@ class TestP00HybridRetrieval:
 
         svc = controller_with_hybrid.service
         # (a) hybrid pipeline was actually invoked
-        assert getattr(svc, "_fake_pipeline").calls, (
-            "hybrid pipeline was never invoked"
-        )
+        assert getattr(svc, "_fake_pipeline").calls, "hybrid pipeline was never invoked"
         assert svc._fake_pipeline.calls[0]["query"] == "What is KYC?"
 
         # (b) orchestrator received real chunks from retrieval

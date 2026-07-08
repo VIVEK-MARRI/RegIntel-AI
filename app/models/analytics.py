@@ -27,6 +27,7 @@ from app.models.types import PortableJSON
 
 class RetrievalStrategyEnum(str, PyEnum):
     """Retrieval strategy types tracked by analytics."""
+
     DENSE = "dense"
     BM25 = "bm25"
     HYBRID = "hybrid"
@@ -35,6 +36,7 @@ class RetrievalStrategyEnum(str, PyEnum):
 
 class QueryCategoryEnum(str, PyEnum):
     """Categories for query distribution tracking."""
+
     FACTUAL = "factual"
     NAVIGATIONAL = "navigational"
     ANALYTICAL = "analytical"
@@ -51,6 +53,7 @@ class RetrievalMetricsRecord(Base):
     retrieval strategy, capturing recall, precision, MRR, hit rate,
     and latency measurements.
     """
+
     __tablename__ = "retrieval_metrics_records"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -102,7 +105,9 @@ class RetrievalMetricsRecord(Base):
     relevant_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(
+        PortableJSON(), nullable=False, default=dict
+    )
 
     __table_args__ = (
         Index("idx_rmr_strategy_timestamp", "strategy", "timestamp"),
@@ -117,6 +122,7 @@ class AggregatedMetricsSnapshot(Base):
     Used for fast dashboard queries and trend analysis without
     computing aggregates on-the-fly from raw records.
     """
+
     __tablename__ = "aggregated_metrics_snapshots"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -175,11 +181,16 @@ class AggregatedMetricsSnapshot(Base):
     unique_queries: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(
+        PortableJSON(), nullable=False, default=dict
+    )
 
     __table_args__ = (
         UniqueConstraint(
-            "window_type", "strategy", "window_start", "dataset_name",
+            "window_type",
+            "strategy",
+            "window_start",
+            "dataset_name",
             name="uq_ams_window_strategy_dataset",
         ),
         Index("idx_ams_window_strategy", "window_type", "strategy"),
@@ -193,6 +204,7 @@ class QueryDistributionRecord(Base):
     Captures the volume and categorization of queries to identify
     usage patterns and optimize retrieval strategies accordingly.
     """
+
     __tablename__ = "query_distribution_records"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -236,11 +248,14 @@ class QueryDistributionRecord(Base):
     avg_result_count: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(
+        PortableJSON(), nullable=False, default=dict
+    )
 
     __table_args__ = (
         UniqueConstraint(
-            "window_type", "window_start",
+            "window_type",
+            "window_start",
             name="uq_qdr_window",
         ),
         Index("idx_qdr_window_type_timestamp", "window_type", "timestamp"),
@@ -253,6 +268,7 @@ class RerankerGainRecord(Base):
     Measures how much the reranker improves retrieval quality
     compared to the base retrieval strategy.
     """
+
     __tablename__ = "reranker_gain_records"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -285,20 +301,27 @@ class RerankerGainRecord(Base):
 
     # Reranker performance
     avg_reranker_latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
-    reranker_queries_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reranker_queries_count: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
 
     # Improvement rate
     improvement_rate: Mapped[float | None] = mapped_column(
-        Float, nullable=True,
-        help_text="Fraction of queries where reranker improved results"
+        Float,
+        nullable=True,
+        help_text="Fraction of queries where reranker improved results",
     )
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
+    metadata_json: Mapped[dict] = mapped_column(
+        PortableJSON(), nullable=False, default=dict
+    )
 
     __table_args__ = (
         UniqueConstraint(
-            "window_type", "window_start", "dataset_name",
+            "window_type",
+            "window_start",
+            "dataset_name",
             name="uq_rgr_window_dataset",
         ),
         Index("idx_rgr_window_type_timestamp", "window_type", "timestamp"),
@@ -310,6 +333,7 @@ class SystemHealthSnapshot(Base):
 
     Captures overall system health indicators at regular intervals.
     """
+
     __tablename__ = "system_health_snapshots"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -331,13 +355,23 @@ class SystemHealthSnapshot(Base):
     )  # "healthy", "degraded", "unhealthy"
 
     # Retrieval system health
-    dense_retrieval_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    bm25_retrieval_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    hybrid_retrieval_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    reranker_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    dense_retrieval_available: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    bm25_retrieval_available: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    hybrid_retrieval_available: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    reranker_available: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
 
     # Index health
-    index_consistency: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    index_consistency: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
     embedding_coverage_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     total_indexed_chunks: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
@@ -347,9 +381,8 @@ class SystemHealthSnapshot(Base):
     error_rate_last_hour: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[dict] = mapped_column(PortableJSON(), nullable=False, default=dict)
-
-    __table_args__ = (
-        Index("idx_shs_status_timestamp", "status", "timestamp"),
+    metadata_json: Mapped[dict] = mapped_column(
+        PortableJSON(), nullable=False, default=dict
     )
-    
+
+    __table_args__ = (Index("idx_shs_status_timestamp", "status", "timestamp"),)

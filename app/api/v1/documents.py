@@ -2,7 +2,16 @@ import uuid
 import mimetypes
 import logging
 from typing import Optional, Sequence
-from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    Query,
+    status,
+    UploadFile,
+    File,
+    Form,
+    HTTPException,
+)
 from app.api.dependencies import (
     get_document_service,
     get_storage_service,
@@ -85,6 +94,7 @@ def _validate_upload_file(file: UploadFile) -> None:
 def _sanitize_filename(filename: str) -> str:
     """Remove path traversal characters from filename."""
     import os
+
     sanitized = os.path.basename(filename)
     if not sanitized:
         sanitized = "document"
@@ -194,7 +204,9 @@ async def get_document_hierarchy(
     root_node = hierarchy_builder.build_hierarchy(document_id, doc.title, structure)
     validation_errors = hierarchy_validator.validate(root_node)
     if validation_errors:
-        logger.warning("Hierarchy validation warnings for %s: %s", document_id, validation_errors)
+        logger.warning(
+            "Hierarchy validation warnings for %s: %s", document_id, validation_errors
+        )
     return DocumentHierarchyResponse(document_id=document_id, root=root_node)
 
 
@@ -283,9 +295,15 @@ async def update_document_metadata(
 )
 async def upload_document(
     file: UploadFile = File(..., description="Document file (PDF, DOCX, TXT, HTML)"),
-    title: Optional[str] = Form(None, max_length=255, description="Document title (defaults to filename)"),
-    document_type: Optional[str] = Form(None, max_length=100, description="E.g. Policy, Report, SOP"),
-    source: Optional[SourceEnum] = Form(SourceEnum.USER_UPLOAD, description="Document source"),
+    title: Optional[str] = Form(
+        None, max_length=255, description="Document title (defaults to filename)"
+    ),
+    document_type: Optional[str] = Form(
+        None, max_length=100, description="E.g. Policy, Report, SOP"
+    ),
+    source: Optional[SourceEnum] = Form(
+        SourceEnum.USER_UPLOAD, description="Document source"
+    ),
     document_service: DocumentService = Depends(get_document_service),
     storage_service: StorageService = Depends(get_storage_service),
     ingestion_service: AutoIngestionService = Depends(get_ingestion_service),
@@ -319,7 +337,9 @@ async def upload_document(
         run_id = result.run_id
         logger.info("Upload ingestion started for document %s (run %s)", doc.id, run_id)
     except Exception as exc:
-        logger.exception("Failed to start ingestion for uploaded document %s: %s", doc.id, exc)
+        logger.exception(
+            "Failed to start ingestion for uploaded document %s: %s", doc.id, exc
+        )
 
     return DocumentUploadResponse(
         document_id=doc.id,

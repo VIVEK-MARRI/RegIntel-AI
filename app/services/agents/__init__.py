@@ -138,16 +138,16 @@ class BaseAgent(ABC):
 
     def health(self) -> AgentHealthCheck:
         with self._lock:
-            avg = (
-                self._total_duration_ms / self._total
-                if self._total
-                else 0.0
+            avg = self._total_duration_ms / self._total if self._total else 0.0
+            healthy = (
+                self._status
+                in (
+                    AgentStatus.ACTIVE,
+                    AgentStatus.REGISTERED,
+                    AgentStatus.BUSY,
+                )
+                and self._consecutive_failures < 5
             )
-            healthy = self._status in (
-                AgentStatus.ACTIVE,
-                AgentStatus.REGISTERED,
-                AgentStatus.BUSY,
-            ) and self._consecutive_failures < 5
             return AgentHealthCheck(
                 agent_id=self.agent_id,
                 healthy=healthy,
@@ -174,9 +174,7 @@ class BaseAgent(ABC):
             self._last_invocation_at = self._last_success_at
             self._last_error = ""
 
-    def _record_failure(
-        self, error: str, duration_ms: float = 0.0
-    ) -> None:
+    def _record_failure(self, error: str, duration_ms: float = 0.0) -> None:
         with self._lock:
             self._total += 1
             self._failed += 1
@@ -225,9 +223,7 @@ class CapabilityAgent(BaseAgent):
     def __init__(
         self,
         metadata: AgentMetadata,
-        handler: Callable[
-            [AgentTask], Any
-        ],
+        handler: Callable[[AgentTask], Any],
     ) -> None:
         super().__init__(metadata)
         self._handler = handler
@@ -259,9 +255,7 @@ class CapabilityAgent(BaseAgent):
 class AgentExecutionEngine:
     """Async runtime that wraps an agent with retries, timeouts, lifecycle."""
 
-    async def run(
-        self, agent: BaseAgent, task: AgentTask
-    ) -> AgentResult:
+    async def run(self, agent: BaseAgent, task: AgentTask) -> AgentResult:
         with track_request(
             endpoint="/api/v1/agents/execute",
             strategy="agent_execute",
@@ -291,18 +285,14 @@ class AgentExecutionEngine:
                             agent.execute(task),
                             timeout=timeout_s,
                         )
-                        duration_ms = (
-                            time.time() - attempt_started
-                        ) * 1000.0
+                        duration_ms = (time.time() - attempt_started) * 1000.0
                         agent._record_success(duration_ms)
                         result.attempts = attempts
                         result.started_at = attempt_started
                         result.completed_at = time.time()
                         result.duration_ms = round(duration_ms, 3)
                         if attempts > 1:
-                            get_agent_metrics().record_retry(
-                                agent.metadata.name
-                            )
+                            get_agent_metrics().record_retry(agent.metadata.name)
                         get_agent_metrics().record_execution(
                             agent.metadata.name,
                             capability=task.capability.value,
@@ -322,9 +312,7 @@ class AgentExecutionEngine:
                         )
                         # Retryable
                         if attempt < max_retries:
-                            get_agent_metrics().record_retry(
-                                agent.metadata.name
-                            )
+                            get_agent_metrics().record_retry(agent.metadata.name)
                             continue
                         return AgentResult(
                             task_id=task.task_id,
@@ -339,9 +327,7 @@ class AgentExecutionEngine:
                         )
                     except Exception as exc:  # noqa: BLE001
                         last_error = str(exc)
-                        duration_ms = (
-                            time.time() - attempt_started
-                        ) * 1000.0
+                        duration_ms = (time.time() - attempt_started) * 1000.0
                         agent._record_failure(last_error, duration_ms)
                         get_agent_metrics().record_execution(
                             agent.metadata.name,
@@ -350,9 +336,7 @@ class AgentExecutionEngine:
                             duration_ms=duration_ms,
                         )
                         if attempt < max_retries:
-                            get_agent_metrics().record_retry(
-                                agent.metadata.name
-                            )
+                            get_agent_metrics().record_retry(agent.metadata.name)
                             continue
                         return AgentResult(
                             task_id=task.task_id,
@@ -432,13 +416,10 @@ class AgentMetadataStore:
         if not self._persist_path:
             return
         try:
-            os.makedirs(
-                os.path.dirname(self._persist_path), exist_ok=True
-            )
+            os.makedirs(os.path.dirname(self._persist_path), exist_ok=True)
             payload = {
                 "agents": [
-                    json.loads(m.model_dump_json())
-                    for m in self._agents.values()
+                    json.loads(m.model_dump_json()) for m in self._agents.values()
                 ],
             }
             with open(self._persist_path, "w", encoding="utf-8") as f:
@@ -447,9 +428,7 @@ class AgentMetadataStore:
             logger.exception("Failed to persist agent metadata")
 
     def _load(self) -> None:
-        if not self._persist_path or not os.path.exists(
-            self._persist_path
-        ):
+        if not self._persist_path or not os.path.exists(self._persist_path):
             return
         try:
             with open(self._persist_path, "r", encoding="utf-8") as f:
@@ -486,12 +465,10 @@ class AgentRegistry:
         if existing is not None:
             agent.metadata = existing.model_copy(
                 update={
-                    "description": request.description
-                    or existing.description,
+                    "description": request.description or existing.description,
                     "version": request.version or existing.version,
                     "author": request.author or existing.author,
-                    "capabilities": request.capabilities
-                    or existing.capabilities,
+                    "capabilities": request.capabilities or existing.capabilities,
                     "default_max_retries": request.default_max_retries,
                     "default_timeout_ms": request.default_timeout_ms,
                     "priority": request.priority,
@@ -562,9 +539,7 @@ class CapabilityRegistry:
     def __init__(self, registry: AgentRegistry) -> None:
         self._registry = registry
 
-    def by_capability(
-        self, capability: CapabilityKind
-    ) -> List[AgentMetadata]:
+    def by_capability(self, capability: CapabilityKind) -> List[AgentMetadata]:
         out: List[AgentMetadata] = []
         for m in self._registry.list_all():
             if any(c.kind == capability for c in m.capabilities):
@@ -572,9 +547,7 @@ class CapabilityRegistry:
         out.sort(key=lambda m: (-m.priority, m.name))
         return out
 
-    def best_match(
-        self, capability: CapabilityKind
-    ) -> Optional[AgentMetadata]:
+    def best_match(self, capability: CapabilityKind) -> Optional[AgentMetadata]:
         matches = self.by_capability(capability)
         return matches[0] if matches else None
 
@@ -604,9 +577,7 @@ class AgentDiscoveryService:
         items: List[AgentMetadata] = []
         for meta in self._registry.list_all():
             if query.capability is not None:
-                if not any(
-                    c.kind == query.capability for c in meta.capabilities
-                ):
+                if not any(c.kind == query.capability for c in meta.capabilities):
                     continue
             if query.tag:
                 if query.tag not in meta.tags:
@@ -667,9 +638,7 @@ class TaskPlanner:
         self,
         request: CoordinatorRequest,
     ) -> CoordinatorPlan:
-        caps = list(request.desired_capabilities) or self._infer_caps(
-            request.query
-        )
+        caps = list(request.desired_capabilities) or self._infer_caps(request.query)
         steps: List[PlanStep] = []
         for i, cap in enumerate(caps[: request.max_steps]):
             steps.append(
@@ -677,9 +646,7 @@ class TaskPlanner:
                     capability=cap,
                     description=f"step {i+1}: {cap.value}",
                     input={"query": request.query, "step_index": i},
-                    depends_on=(
-                        [steps[-1].step_id] if steps else []
-                    ),
+                    depends_on=([steps[-1].step_id] if steps else []),
                 )
             )
         selected_agents: List[str] = []
@@ -707,15 +674,11 @@ class TaskPlanner:
         """
         q = query.lower()
         caps: List[CapabilityKind] = []
-        if any(
-            w in q for w in ["search", "find", "retrieve", "document"]
-        ):
+        if any(w in q for w in ["search", "find", "retrieve", "document"]):
             caps.append(CapabilityKind.RETRIEVAL)
         if any(w in q for w in ["reason", "analyze", "compare"]):
             caps.append(CapabilityKind.REASONING)
-        if any(
-            w in q for w in ["risk", "compliance", "regulatory"]
-        ):
+        if any(w in q for w in ["risk", "compliance", "regulatory"]):
             caps.append(CapabilityKind.RISK_ASSESSMENT)
         if any(w in q for w in ["recommend", "suggest"]):
             caps.append(CapabilityKind.RECOMMENDATION)
@@ -750,9 +713,7 @@ class TaskDistributor:
     ) -> List[AgentTask]:
         tasks: List[AgentTask] = []
         for step in plan.steps:
-            agent = self._discovery.select(
-                step.capability, prefer_healthy=True
-            )
+            agent = self._discovery.select(step.capability, prefer_healthy=True)
             target = step.target_agent or (agent.name if agent else "")
             tasks.append(
                 AgentTask(
@@ -781,9 +742,7 @@ class ResultAggregator:
         plan: CoordinatorPlan,
         results: List[AgentResult],
     ) -> CoordinatorResult:
-        successful = [
-            r for r in results if r.status == TaskStatus.SUCCEEDED
-        ]
+        successful = [r for r in results if r.status == TaskStatus.SUCCEEDED]
         failed = [r for r in results if r.status != TaskStatus.SUCCEEDED]
         # Conflict resolution: prefer the most-recent successful result
         # per (capability, key) tuple. Here we just collect outputs.
@@ -794,10 +753,7 @@ class ResultAggregator:
             "successful_count": len(successful),
             "failed_count": len(failed),
             "outputs": [r.output for r in successful],
-            "errors": [
-                {"agent": r.agent_name, "error": r.error}
-                for r in failed
-            ],
+            "errors": [{"agent": r.agent_name, "error": r.error} for r in failed],
         }
         # If there is exactly one successful result, hoist its output
         if len(successful) == 1:
@@ -818,9 +774,7 @@ class ResultAggregator:
             duration_ms=round(duration_ms, 3),
             conflicts_resolved=max(0, len(successful) - 1),
             notes=(
-                ""
-                if not failed
-                else f"{len(failed)} of {len(results)} step(s) failed"
+                "" if not failed else f"{len(failed)} of {len(results)} step(s) failed"
             ),
         )
 
@@ -846,9 +800,7 @@ class CoordinatorAgent:
         self._distributor = TaskDistributor(discovery)
         self._aggregator = ResultAggregator()
 
-    async def coordinate(
-        self, request: CoordinatorRequest
-    ) -> CoordinatorResult:
+    async def coordinate(self, request: CoordinatorRequest) -> CoordinatorResult:
         with track_request(
             endpoint="/api/v1/agents/coordinate",
             strategy="coordinator",
@@ -864,9 +816,7 @@ class CoordinatorAgent:
                 agent = (
                     self._registry.get(task.target_agent)
                     if task.target_agent
-                    else self._discovery.select(
-                        task.capability, prefer_healthy=True
-                    )
+                    else self._discovery.select(task.capability, prefer_healthy=True)
                 )
                 if agent is None:
                     results.append(
@@ -884,20 +834,14 @@ class CoordinatorAgent:
                     continue
                 result = await self._engine.run(agent, task)
                 results.append(result)
-                if (
-                    result.status
-                    == TaskStatus.FAILED
-                    and task.max_retries == 0
-                ):
+                if result.status == TaskStatus.FAILED and task.max_retries == 0:
                     # Continue executing the rest of the plan so that
                     # the caller gets a complete picture.
                     continue
             final = self._aggregator.aggregate(plan, results)
             final.started_at = started
             final.completed_at = time.time()
-            final.duration_ms = round(
-                (final.completed_at - started) * 1000.0, 3
-            )
+            final.duration_ms = round((final.completed_at - started) * 1000.0, 3)
             get_agent_metrics().record_coordination(
                 plan=plan,
                 final_status=final.status.value,
@@ -919,12 +863,8 @@ class AgentFrameworkService:
         self.engine = AgentExecutionEngine()
         self.registry = AgentRegistry(store)
         self.capability_registry = CapabilityRegistry(self.registry)
-        self.discovery = AgentDiscoveryService(
-            self.registry, self.capability_registry
-        )
-        self.coordinator = CoordinatorAgent(
-            self.registry, self.discovery, self.engine
-        )
+        self.discovery = AgentDiscoveryService(self.registry, self.capability_registry)
+        self.coordinator = CoordinatorAgent(self.registry, self.discovery, self.engine)
         # Seed a single EchoAgent so the framework is usable out of
         # the box for demos and tests.
         self._seed_default_agents()
@@ -940,12 +880,8 @@ class AgentFrameworkService:
                 # in-process instance map is empty after a restart.
                 if self.registry.get("echo-agent") is None:
                     instance = EchoAgent(existing)
-                    self.registry._instances[existing.agent_id] = (
-                        instance
-                    )
-                    self.registry._instances_by_name[existing.name] = (
-                        existing.agent_id
-                    )
+                    self.registry._instances[existing.agent_id] = instance
+                    self.registry._instances_by_name[existing.name] = existing.agent_id
                 return
             self.register(
                 AgentRegistrationRequest(
@@ -1001,9 +937,7 @@ class AgentFrameworkService:
     def get_agent_instance(self, name: str) -> Optional[BaseAgent]:
         return self.registry.get(name)
 
-    def search_agents(
-        self, query: AgentDiscoveryQuery
-    ) -> PaginatedAgents:
+    def search_agents(self, query: AgentDiscoveryQuery) -> PaginatedAgents:
         return self.discovery.search(query)
 
     def health(self, name: str) -> Optional[AgentHealthCheck]:
@@ -1012,9 +946,7 @@ class AgentFrameworkService:
 
     # ─── execution ─────────────────────────────────────
 
-    async def execute(
-        self, request: AgentExecutionRequest
-    ) -> AgentResult:
+    async def execute(self, request: AgentExecutionRequest) -> AgentResult:
         agent = self.registry.get(request.agent_name)
         if agent is None:
             return AgentResult(
@@ -1034,9 +966,7 @@ class AgentFrameworkService:
         )
         return await self.engine.run(agent, task)
 
-    async def coordinate(
-        self, request: CoordinatorRequest
-    ) -> CoordinatorResult:
+    async def coordinate(self, request: CoordinatorRequest) -> CoordinatorResult:
         return await self.coordinator.coordinate(request)
 
 
@@ -1045,9 +975,7 @@ class AgentFrameworkService:
 
 def build_default_agent_framework_service() -> AgentFrameworkService:
     """Build a default :class:`AgentFrameworkService` with JSONL persistence."""
-    persist_path = os.path.join(
-        settings.STORAGE_ROOT, "agents", "agents.jsonl"
-    )
+    persist_path = os.path.join(settings.STORAGE_ROOT, "agents", "agents.jsonl")
     store = AgentMetadataStore(persist_path=persist_path)
     return AgentFrameworkService(store)
 

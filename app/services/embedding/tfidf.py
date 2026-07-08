@@ -73,24 +73,30 @@ class TFIDFEmbeddingProvider(EmbeddingProvider):
             if self._pipeline is not None:
                 return self._pipeline
             n_components = min(self._dimension, len(_CORPUS_SEED) - 1)
-            pipeline = Pipeline([
-                ("tfidf", TfidfVectorizer(
-                    max_features=8192,
-                    ngram_range=(1, 2),
-                    sublinear_tf=True,
-                    strip_accents="unicode",
-                    analyzer="word",
-                    token_pattern=r"(?u)\b\w+\b",
-                )),
-                ("svd", TruncatedSVD(n_components=n_components, random_state=42)),
-                ("norm", Normalizer(copy=False)),
-            ])
+            pipeline = Pipeline(
+                [
+                    (
+                        "tfidf",
+                        TfidfVectorizer(
+                            max_features=8192,
+                            ngram_range=(1, 2),
+                            sublinear_tf=True,
+                            strip_accents="unicode",
+                            analyzer="word",
+                            token_pattern=r"(?u)\b\w+\b",
+                        ),
+                    ),
+                    ("svd", TruncatedSVD(n_components=n_components, random_state=42)),
+                    ("norm", Normalizer(copy=False)),
+                ]
+            )
             pipeline.fit(_CORPUS_SEED)
             # Pad to the requested dimension if SVD produced fewer components.
             self._pipeline = pipeline
             logger.info(
                 "TFIDFEmbeddingProvider initialised (dimension=%d, actual_svd_dim=%d).",
-                self._dimension, n_components,
+                self._dimension,
+                n_components,
             )
         return self._pipeline
 

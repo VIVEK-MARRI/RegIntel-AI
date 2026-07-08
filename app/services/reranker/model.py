@@ -66,13 +66,16 @@ class BGERerankerProvider:
             if not self.device:
                 try:
                     import torch
+
                     self.device = "cuda" if torch.cuda.is_available() else "cpu"
                 except ImportError:
                     self.device = "cpu"
 
             logger.info(
                 "Loading reranker model '%s' on device '%s' (max_length=%d)...",
-                self.model_name, self.device, self.max_length,
+                self.model_name,
+                self.device,
+                self.max_length,
             )
             start = time.perf_counter()
             try:
@@ -87,12 +90,15 @@ class BGERerankerProvider:
                 elapsed = (time.perf_counter() - start) * 1000
                 logger.info(
                     "Loaded reranker model '%s' in %.2fms.",
-                    self.model_name, elapsed,
+                    self.model_name,
+                    elapsed,
                 )
             except Exception as e:
                 logger.error(
                     "Failed to load reranker model '%s': %s",
-                    self.model_name, e, exc_info=True,
+                    self.model_name,
+                    e,
+                    exc_info=True,
                 )
                 raise RuntimeError(f"Could not load reranker model: {e}") from e
 
@@ -135,7 +141,11 @@ class BGERerankerProvider:
             return ScoringResult(scores=[], scoring_latency_ms=0.0)
 
         model = self._get_model()
-        logger.debug("Scoring %d query-text pairs (batch_size=%d)...", len(pairs), self.batch_size)
+        logger.debug(
+            "Scoring %d query-text pairs (batch_size=%d)...",
+            len(pairs),
+            self.batch_size,
+        )
         start = time.perf_counter()
 
         scores = model.predict(
@@ -147,7 +157,8 @@ class BGERerankerProvider:
         elapsed = (time.perf_counter() - start) * 1000
         logger.info(
             "Scored %d pairs with reranker in %.2fms.",
-            len(pairs), elapsed,
+            len(pairs),
+            elapsed,
         )
         return ScoringResult(
             scores=[float(s) for s in scores],

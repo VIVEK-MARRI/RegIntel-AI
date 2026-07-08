@@ -99,9 +99,7 @@ class PolicyRule(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    rule_id: str = Field(
-        default_factory=lambda: f"rule-{secrets.token_hex(4)}"
-    )
+    rule_id: str = Field(default_factory=lambda: f"rule-{secrets.token_hex(4)}")
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     kind: PolicyRuleKind
@@ -122,9 +120,7 @@ class PolicyViolation(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    violation_id: str = Field(
-        default_factory=lambda: f"vio-{secrets.token_hex(4)}"
-    )
+    violation_id: str = Field(default_factory=lambda: f"vio-{secrets.token_hex(4)}")
     rule_id: str
     rule_name: str
     policy_id: str
@@ -145,9 +141,7 @@ class GovernancePolicy(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    policy_id: str = Field(
-        default_factory=lambda: f"pol-{uuid.uuid4().hex[:12]}"
-    )
+    policy_id: str = Field(default_factory=lambda: f"pol-{uuid.uuid4().hex[:12]}")
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     version: str = "1.0.0"
@@ -165,9 +159,7 @@ class ApprovalPolicy(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    policy_id: str = Field(
-        default_factory=lambda: f"aprv-{uuid.uuid4().hex[:12]}"
-    )
+    policy_id: str = Field(default_factory=lambda: f"aprv-{uuid.uuid4().hex[:12]}")
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     decision_types: List[DecisionType] = Field(default_factory=list)
@@ -187,9 +179,7 @@ class GovernanceDecision(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    decision_id: str = Field(
-        default_factory=lambda: f"dec-{uuid.uuid4().hex[:12]}"
-    )
+    decision_id: str = Field(default_factory=lambda: f"dec-{uuid.uuid4().hex[:12]}")
     decision_type: DecisionType
     subject_type: str = ""  # "document" | "workflow" | "task" | "recommendation" | ...
     subject_id: str = ""
@@ -248,9 +238,7 @@ class PolicyCheckResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(
-        default_factory=lambda: f"chk-{secrets.token_hex(6)}"
-    )
+    result_id: str = Field(default_factory=lambda: f"chk-{secrets.token_hex(6)}")
     decision_id: str = ""
     policy_compliant: bool = True
     violations: List[PolicyViolation] = Field(default_factory=list)
@@ -262,9 +250,7 @@ class PolicyCheckResult(BaseModel):
 
     @property
     def has_blocking_violation(self) -> bool:
-        return any(
-            v.action == PolicyAction.BLOCK for v in self.violations
-        )
+        return any(v.action == PolicyAction.BLOCK for v in self.violations)
 
     @property
     def highest_severity(self) -> PolicySeverity:

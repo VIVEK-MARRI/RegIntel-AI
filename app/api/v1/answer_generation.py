@@ -133,9 +133,7 @@ async def stream_answer(
                     yield f"data: {payload}\n\n".encode("utf-8")
             except Exception as exc:  # pragma: no cover - defensive
                 logger.exception("Streaming failed: %s", exc)
-                err = AnswerStreamChunk(
-                    event="error", error=str(exc)
-                ).model_dump_json()
+                err = AnswerStreamChunk(event="error", error=str(exc)).model_dump_json()
                 yield f"data: {err}\n\n".encode("utf-8")
         # SSE terminator.
         yield b"data: [DONE]\n\n"

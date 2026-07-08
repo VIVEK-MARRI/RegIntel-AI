@@ -138,7 +138,9 @@ _BUILT_IN_ROLE_TAGS: Dict[str, List[str]] = {
 def _hash_password(password: str) -> str:
     """Hash a password using PBKDF2-SHA256 with a random salt."""
     salt = secrets.token_hex(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 600000)
+    dk = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt.encode("utf-8"), 600000
+    )
     return f"pbkdf2-sha256$600000${salt}${dk.hex()}"
 
 
@@ -148,7 +150,9 @@ def _verify_password(password: str, stored: str) -> bool:
         algorithm, iterations, salt, hash_hex = stored.split("$")
         if algorithm != "pbkdf2-sha256":
             return False
-        dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), int(iterations))
+        dk = hashlib.pbkdf2_hmac(
+            "sha256", password.encode("utf-8"), salt.encode("utf-8"), int(iterations)
+        )
         return hmac.compare_digest(dk.hex(), hash_hex)
     except (ValueError, AttributeError):
         return False
@@ -163,9 +167,7 @@ class UserManagement:
     def __init__(self, store: "InMemoryAdminStore") -> None:
         self._store = store
 
-    def create(
-        self, request: UserCreateRequest, actor: str = "system"
-    ) -> User:
+    def create(self, request: UserCreateRequest, actor: str = "system") -> User:
         with track_request(
             endpoint="/api/v1/admin/users/create",
             strategy="user_create",
@@ -207,9 +209,7 @@ class UserManagement:
     def list_all(self) -> List[User]:
         return self._store.list_users_unfiltered()
 
-    def update(
-        self, user_id: str, request: UserUpdateRequest
-    ) -> Optional[User]:
+    def update(self, user_id: str, request: UserUpdateRequest) -> Optional[User]:
         user = self._store.get_user(user_id)
         if user is None:
             return None
@@ -227,7 +227,9 @@ class UserManagement:
             user.metadata = request.metadata
         user.updated_at = time.time()
         self._store.update_user(user)
-        get_admin_metrics().record_user_updated(request.status.value if request.status else "unchanged")
+        get_admin_metrics().record_user_updated(
+            request.status.value if request.status else "unchanged"
+        )
         return user
 
     def record_login(self, user_id: str) -> Optional[User]:
@@ -262,9 +264,7 @@ class RoleManager:
     def __init__(self, store: "InMemoryAdminStore") -> None:
         self._store = store
 
-    def create(
-        self, request: RoleCreateRequest, actor: str = "system"
-    ) -> Role:
+    def create(self, request: RoleCreateRequest, actor: str = "system") -> Role:
         with track_request(
             endpoint="/api/v1/admin/roles/create",
             strategy="role_create",
@@ -276,7 +276,9 @@ class RoleManager:
                 tags=request.tags,
             )
             self._store.add_role(role)
-            get_admin_metrics().record_role_created(permission_count=len(request.permissions))
+            get_admin_metrics().record_role_created(
+                permission_count=len(request.permissions)
+            )
             return role
 
     def get(self, role_id: str) -> Optional[Role]:
@@ -357,10 +359,16 @@ class RoleManager:
             )
         codes = self.permissions_for_user(user)
         matched_roles = [
-            rid for rid in user.role_ids
-            if any(p.code == permission_code or p.code == "*"
-                   for p in (self._store.get_role(rid).permissions
-                             if self._store.get_role(rid) else []))
+            rid
+            for rid in user.role_ids
+            if any(
+                p.code == permission_code or p.code == "*"
+                for p in (
+                    self._store.get_role(rid).permissions
+                    if self._store.get_role(rid)
+                    else []
+                )
+            )
         ]
         allowed = "*" in codes or permission_code in codes
         return RBACCheck(
@@ -505,7 +513,7 @@ class AdminDashboardService:
     def overview(self) -> AdminOverview:
         users = self._store.list_users_unfiltered()
         roles = self._store.list_roles_unfiltered()
-        settings_list = self._store.list_settings()
+        self._store.list_settings()
 
         total_policies = total_decisions = total_audit = total_reports = 0
         compliance_rate = approval_rate = 0.0
@@ -625,9 +633,7 @@ class AdminDashboardService:
             by_kind[r.kind.value] = by_kind.get(r.kind.value, 0) + 1
             by_status[r.status.value] = by_status.get(r.status.value, 0) + 1
             if r.regulator:
-                by_regulator[r.regulator] = (
-                    by_regulator.get(r.regulator, 0) + 1
-                )
+                by_regulator[r.regulator] = by_regulator.get(r.regulator, 0) + 1
             total_sections += len(r.sections)
         average_sections = total_sections / max(1, len(reports))
         # Evidence totals
@@ -647,9 +653,7 @@ class AdminDashboardService:
             by_regulator=by_regulator,
             total_evidence=total_evidence,
             average_report_sections=round(average_sections, 3),
-            last_report_at=max(
-                (r.generated_at for r in reports), default=None
-            ),
+            last_report_at=max((r.generated_at for r in reports), default=None),
         )
 
     # ─── admin stats ───────────────────────────────────────
@@ -664,9 +668,7 @@ class AdminDashboardService:
                 by_role[rid] = by_role.get(rid, 0) + 1
         by_status: Dict[str, int] = {}
         for u in users:
-            by_status[u.status.value] = (
-                by_status.get(u.status.value, 0) + 1
-            )
+            by_status[u.status.value] = by_status.get(u.status.value, 0) + 1
         return AdminStats(
             total_users=len(users),
             active_users=by_status.get("active", 0),
@@ -784,7 +786,8 @@ class InMemoryAdminStore(AdminStore):
         if flt.text_query:
             q = flt.text_query.lower()
             items = [
-                u for u in items
+                u
+                for u in items
                 if q in u.username.lower()
                 or q in u.email.lower()
                 or q in u.full_name.lower()
@@ -838,8 +841,7 @@ class InMemoryAdminStore(AdminStore):
         if flt.text_query:
             q = flt.text_query.lower()
             items = [
-                r for r in items
-                if q in r.name.lower() or q in r.description.lower()
+                r for r in items if q in r.name.lower() or q in r.description.lower()
             ]
         return sorted(items, key=lambda r: r.created_at)
 
@@ -876,9 +878,7 @@ class InMemoryAdminStore(AdminStore):
 
     def list_settings(self) -> List[PlatformSetting]:
         with self._lock:
-            return sorted(
-                self._settings.values(), key=lambda s: s.key
-            )
+            return sorted(self._settings.values(), key=lambda s: s.key)
 
     def update_setting(self, setting: PlatformSetting) -> None:
         with self._lock:
@@ -931,16 +931,13 @@ class InMemoryAdminStore(AdminStore):
             os.makedirs(os.path.dirname(self._persist_path), exist_ok=True)
             payload = {
                 "users": [
-                    json.loads(u.model_dump_json())
-                    for u in self._users.values()
+                    json.loads(u.model_dump_json()) for u in self._users.values()
                 ],
                 "roles": [
-                    json.loads(r.model_dump_json())
-                    for r in self._roles.values()
+                    json.loads(r.model_dump_json()) for r in self._roles.values()
                 ],
                 "settings": [
-                    json.loads(s.model_dump_json())
-                    for s in self._settings.values()
+                    json.loads(s.model_dump_json()) for s in self._settings.values()
                 ],
             }
             with open(self._persist_path, "w", encoding="utf-8") as f:
@@ -1005,9 +1002,7 @@ class AdminService:
 
     # ─── users ────────────────────────────────────────────
 
-    def create_user(
-        self, request: UserCreateRequest
-    ) -> User:
+    def create_user(self, request: UserCreateRequest) -> User:
         return self.user_management.create(request)
 
     def get_user(self, user_id: str) -> Optional[User]:
@@ -1019,9 +1014,7 @@ class AdminService:
     def list_users(self, flt: UserFilter) -> PaginatedUsers:
         return self.user_management.list(flt)
 
-    def update_user(
-        self, user_id: str, request: UserUpdateRequest
-    ) -> Optional[User]:
+    def update_user(self, user_id: str, request: UserUpdateRequest) -> Optional[User]:
         return self.user_management.update(user_id, request)
 
     def delete_user(self, user_id: str) -> bool:
@@ -1032,9 +1025,7 @@ class AdminService:
 
     # ─── roles ────────────────────────────────────────────
 
-    def create_role(
-        self, request: RoleCreateRequest
-    ) -> Role:
+    def create_role(self, request: RoleCreateRequest) -> Role:
         return self.role_manager.create(request)
 
     def get_role(self, role_id: str) -> Optional[Role]:
@@ -1060,9 +1051,7 @@ class AdminService:
     def revoke_role(self, user_id: str, role_id: str) -> Optional[User]:
         return self.role_manager.revoke_role(user_id, role_id)
 
-    def rbac_check(
-        self, user_id: str, permission_code: str
-    ) -> RBACCheck:
+    def rbac_check(self, user_id: str, permission_code: str) -> RBACCheck:
         return self.role_manager.check(user_id, permission_code)
 
     # ─── settings ────────────────────────────────────────
@@ -1104,9 +1093,7 @@ class AdminService:
 
 def build_default_admin_service() -> AdminService:
     """Build a default :class:`AdminService` with a JSONL-backed store."""
-    persist_path = os.path.join(
-        settings.STORAGE_ROOT, "admin", "admin.jsonl"
-    )
+    persist_path = os.path.join(settings.STORAGE_ROOT, "admin", "admin.jsonl")
     store = InMemoryAdminStore(persist_path=persist_path)
     svc = AdminService(store)
     _ensure_default_users(svc)

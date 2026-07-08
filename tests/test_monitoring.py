@@ -80,7 +80,9 @@ def test_discovered_document_brief_dict():
 
 def test_monitoring_run_finish_records_duration():
     run = MonitoringRun(source=RegulatorySource.RBI)
-    run.finish(MonitoringStatus.HEALTHY, discovered_count=3, new_count=2, updated_count=1)
+    run.finish(
+        MonitoringStatus.HEALTHY, discovered_count=3, new_count=2, updated_count=1
+    )
     assert run.finished_at is not None
     assert run.status == MonitoringStatus.HEALTHY
     assert run.discovered_count == 3
@@ -89,7 +91,9 @@ def test_monitoring_run_finish_records_duration():
 
 def test_source_config_validates_interval():
     with pytest.raises(Exception):
-        SourceConfig(source=RegulatorySource.RBI, base_url="x", poll_interval_seconds=10)
+        SourceConfig(
+            source=RegulatorySource.RBI, base_url="x", poll_interval_seconds=10
+        )
 
 
 def test_discovery_filter_validates_page():
@@ -424,9 +428,7 @@ def test_service_get_run_missing():
 
 def test_service_versions_for_unknown_discovery():
     svc = MonitoringService()
-    d = DiscoveredDocument(
-        source=RegulatorySource.RBI, title="x", document_url="u"
-    )
+    d = DiscoveredDocument(source=RegulatorySource.RBI, title="x", document_url="u")
     assert svc.versions_for(d) == []
 
 

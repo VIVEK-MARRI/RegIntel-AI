@@ -32,6 +32,7 @@ from app.services.workflow import (
 @pytest.fixture(autouse=True)
 def _reset_singletons():
     from app.api import dependencies as deps
+
     deps.reset_automation_service()
     deps.reset_recommendation_service()
     deps.reset_compliance_risk_service()
@@ -82,9 +83,7 @@ def _make_request(
 class TestWorkflowEngine:
     def test_create_with_default_template(self) -> None:
         eng = WorkflowEngine()
-        wf = eng.create(
-            _make_request(workflow_type=WorkflowType.COMPLIANCE_REVIEW)
-        )
+        wf = eng.create(_make_request(workflow_type=WorkflowType.COMPLIANCE_REVIEW))
         # Default template has 4 steps for compliance_review
         assert len(wf.steps) == 4
         assert wf.status == WorkflowStatus.ACTIVE
@@ -95,12 +94,8 @@ class TestWorkflowEngine:
 
         eng = WorkflowEngine()
         custom = [
-            WorkflowStep(
-                name="Custom A", step_type=StepType.TASK, sequence=1
-            ),
-            WorkflowStep(
-                name="Custom B", step_type=StepType.TASK, sequence=2
-            ),
+            WorkflowStep(name="Custom A", step_type=StepType.TASK, sequence=1),
+            WorkflowStep(name="Custom B", step_type=StepType.TASK, sequence=2),
         ]
         wf = eng.create(_make_request(steps=custom))
         assert len(wf.steps) == 2
@@ -111,9 +106,7 @@ class TestWorkflowEngine:
 
         eng = WorkflowEngine()
         wf = eng.create(
-            _make_request(
-                workflow_type=WorkflowType.RISK_ASSESSMENT, steps=[]
-            )
+            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT, steps=[])
         )
         # Default template applies, so ACTIVE
         # But we need a workflow type whose default has steps
@@ -121,9 +114,7 @@ class TestWorkflowEngine:
 
     def test_lifecycle(self) -> None:
         eng = WorkflowEngine()
-        wf = eng.create(
-            _make_request(workflow_type=WorkflowType.POLICY_UPDATE)
-        )
+        wf = eng.create(_make_request(workflow_type=WorkflowType.POLICY_UPDATE))
         eng.start(wf, "alice")
         assert wf.status == WorkflowStatus.ACTIVE
         eng.pause(wf, "alice")
@@ -135,9 +126,7 @@ class TestWorkflowEngine:
 
     def test_complete_requires_all_tasks_done(self) -> None:
         eng = WorkflowEngine()
-        wf = eng.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = eng.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         # Add a task that isn't completed
         wf.tasks.append(
             __import__(
@@ -153,18 +142,14 @@ class TestWorkflowEngine:
 
     def test_advance_step(self) -> None:
         eng = WorkflowEngine()
-        wf = eng.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = eng.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         original = wf.current_step_index
         eng.advance_step(wf, "alice")
         assert wf.current_step_index == original + 1
 
     def test_is_terminal(self) -> None:
         eng = WorkflowEngine()
-        wf = eng.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = eng.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         eng.cancel(wf, "alice")
         assert eng.is_terminal(wf) is True
 
@@ -174,9 +159,7 @@ class TestWorkflowEngine:
 
 class TestTaskManager:
     def test_add_task(self, service: AutomationService) -> None:
-        wf = service.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = service.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         task = service.add_task(
             wf.workflow_id,
             TaskCreateRequest(
@@ -190,9 +173,7 @@ class TestTaskManager:
         assert task.task_id in [t.task_id for t in wf.tasks]
 
     def test_add_task_unknown_step(self, service: AutomationService) -> None:
-        wf = service.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = service.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         with pytest.raises(ValueError):
             service.task_manager.add_task(
                 wf,
@@ -200,14 +181,10 @@ class TestTaskManager:
             )
 
     def test_assign_and_complete(self, service: AutomationService) -> None:
-        wf = service.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = service.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         task = service.add_task(
             wf.workflow_id,
-            TaskCreateRequest(
-                step_id=wf.steps[0].step_id, title="T"
-            ),
+            TaskCreateRequest(step_id=wf.steps[0].step_id, title="T"),
         )
         service.assign_task(
             wf.workflow_id,
@@ -224,18 +201,12 @@ class TestTaskManager:
         assert result.completed_at is not None
 
     def test_complete_unknown_task(self, service: AutomationService) -> None:
-        wf = service.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = service.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         with pytest.raises(ValueError):
-            service.task_manager.complete_task(
-                wf, "missing", TaskCompletionRequest()
-            )
+            service.task_manager.complete_task(wf, "missing", TaskCompletionRequest())
 
     def test_tasks_for_assignee(self, service: AutomationService) -> None:
-        wf = service.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = service.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         service.add_task(
             wf.workflow_id,
             TaskCreateRequest(
@@ -266,13 +237,9 @@ class TestWorkflowOrchestrator:
         wf = WorkflowEngine().create(
             _make_request(workflow_type=WorkflowType.COMPLIANCE_REVIEW)
         )
-        rule = orch.trigger_escalation(
-            wf, EscalationRequest(reason="late")
-        )
+        rule = orch.trigger_escalation(wf, EscalationRequest(reason="late"))
         assert rule is not None
-        assert any(
-            a.action == "workflow.escalated" for a in wf.audit_trail
-        )
+        assert any(a.action == "workflow.escalated" for a in wf.audit_trail)
 
     def test_evaluate_timeouts(self) -> None:
         orch = WorkflowOrchestrator()
@@ -323,9 +290,7 @@ class TestRepository:
         assert stats.total_workflows >= 2
 
     def test_stats_with_completed(self, service: AutomationService) -> None:
-        wf = service.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = service.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         service.start(wf.workflow_id, "tester")
         time.sleep(0.01)
         for t_step in wf.steps:
@@ -380,9 +345,7 @@ class TestIntegration:
 
         rec_svc = build_default_recommendation_service()
         rec_svc.store.add(rec)
-        wf = service.create_from_recommendation(
-            rec.recommendation_id, "tester"
-        )
+        wf = service.create_from_recommendation(rec.recommendation_id, "tester")
         assert wf is not None
         assert wf.source_recommendation_id == rec.recommendation_id
         assert wf.priority == TaskPriority.HIGH
@@ -429,9 +392,7 @@ class TestIntegration:
         )
         cr_svc = build_default_compliance_risk_service()
         cr_svc.store.add(ra)
-        wf = service.create_from_risk_assessment(
-            ra.assessment_id, "tester"
-        )
+        wf = service.create_from_risk_assessment(ra.assessment_id, "tester")
         assert wf is not None
         assert wf.source_risk_assessment_id == ra.assessment_id
         assert wf.priority == TaskPriority.HIGH
@@ -479,9 +440,7 @@ class TestWorkflowAPI:
     @pytest.mark.asyncio
     async def test_lifecycle_via_api(self) -> None:
         svc = AutomationService(store=InMemoryWorkflowStore())
-        wf = svc.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = svc.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         _override(svc)
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -507,9 +466,7 @@ class TestWorkflowAPI:
     @pytest.mark.asyncio
     async def test_task_flow(self) -> None:
         svc = AutomationService(store=InMemoryWorkflowStore())
-        wf = svc.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = svc.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         _override(svc)
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -543,9 +500,7 @@ class TestWorkflowAPI:
     @pytest.mark.asyncio
     async def test_escalate(self) -> None:
         svc = AutomationService(store=InMemoryWorkflowStore())
-        wf = svc.create(
-            _make_request(workflow_type=WorkflowType.COMPLIANCE_REVIEW)
-        )
+        wf = svc.create(_make_request(workflow_type=WorkflowType.COMPLIANCE_REVIEW))
         _override(svc)
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -560,21 +515,15 @@ class TestWorkflowAPI:
     @pytest.mark.asyncio
     async def test_audit_and_progress(self) -> None:
         svc = AutomationService(store=InMemoryWorkflowStore())
-        wf = svc.create(
-            _make_request(workflow_type=WorkflowType.RISK_ASSESSMENT)
-        )
+        wf = svc.create(_make_request(workflow_type=WorkflowType.RISK_ASSESSMENT))
         _override(svc)
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            a = await client.get(
-                f"/api/v1/workflow/{wf.workflow_id}/audit"
-            )
+            a = await client.get(f"/api/v1/workflow/{wf.workflow_id}/audit")
             assert a.status_code == 200
             assert isinstance(a.json(), list)
-            p = await client.get(
-                f"/api/v1/workflow/{wf.workflow_id}/progress"
-            )
+            p = await client.get(f"/api/v1/workflow/{wf.workflow_id}/progress")
             assert p.json()["workflow_id"] == wf.workflow_id
 
     @pytest.mark.asyncio
@@ -588,9 +537,9 @@ class TestWorkflowAPI:
             r = await client.get("/api/v1/workflow/stats")
             assert r.status_code == 200
             assert r.json()["total_workflows"] >= 1
-            l = await client.get("/api/v1/workflow?page=1&page_size=10")
-            assert l.status_code == 200
-            body = l.json()
+            resp = await client.get("/api/v1/workflow?page=1&page_size=10")
+            assert resp.status_code == 200
+            body = resp.json()
             assert body["total"] >= 1
 
     @pytest.mark.asyncio

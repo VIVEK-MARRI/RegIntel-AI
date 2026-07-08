@@ -194,9 +194,7 @@ class RelationshipMapper:
         for rtype, pos in rel_hits:
             nearest = sorted(
                 nodes,
-                key=lambda n: abs(
-                    self._first_occurrence(text, n.name) - pos
-                ),
+                key=lambda n: abs(self._first_occurrence(text, n.name) - pos),
             )[:2]
             if len(nearest) == 2 and nearest[0].node_id != nearest[1].node_id:
                 rels.append(
@@ -478,9 +476,7 @@ class GraphRepository:
                         q.append((nxt, d + 1))
         return max_d
 
-    def _components(
-        self, nodes: List[GraphNode], rels: List[GraphRelationship]
-    ) -> int:
+    def _components(self, nodes: List[GraphNode], rels: List[GraphRelationship]) -> int:
         if not nodes:
             return 0
         adj: Dict[str, Set[str]] = defaultdict(set)
@@ -595,9 +591,7 @@ class KnowledgeGraphService:
     def get_node(self, node_id: str) -> Optional[GraphNode]:
         return self.store.get_node(node_id)
 
-    def get_relationship(
-        self, rel_id: str
-    ) -> Optional[GraphRelationship]:
+    def get_relationship(self, rel_id: str) -> Optional[GraphRelationship]:
         return self.store.get_relationship(rel_id)
 
     def search_nodes(self, flt: NodeFilter) -> PaginatedNodes:
@@ -647,12 +641,8 @@ class KnowledgeGraphService:
             for r in self.store.list_relationships():
                 if allowed and r.relationship_type not in allowed:
                     continue
-                adj[r.source_id].append(
-                    (r.target_id, r.relationship_type, r.weight)
-                )
-                adj[r.target_id].append(
-                    (r.source_id, r.relationship_type, r.weight)
-                )
+                adj[r.source_id].append((r.target_id, r.relationship_type, r.weight))
+                adj[r.target_id].append((r.source_id, r.relationship_type, r.weight))
             steps: List[TraversalStep] = []
             affected: List[str] = []
             seen = {start_node_id}
@@ -709,9 +699,7 @@ class KnowledgeGraphService:
                 fwd[r.source_id].append(r.target_id)
                 bwd[r.target_id].append(r.source_id)
 
-            def _chain(
-                start_id: str, adj: Dict[str, List[str]]
-            ) -> List[GraphNode]:
+            def _chain(start_id: str, adj: Dict[str, List[str]]) -> List[GraphNode]:
                 seen = {start_id}
                 q: deque[str] = deque([start_id])
                 collected: List[GraphNode] = []
@@ -741,9 +729,7 @@ class KnowledgeGraphService:
                 upstream=upstream,
                 downstream=downstream,
                 cycles_detected=cycles,
-                max_chain_length=max(
-                    len(upstream), len(downstream)
-                ),
+                max_chain_length=max(len(upstream), len(downstream)),
                 duration_ms=round((time.time() - start) * 1000.0, 3),
             )
 

@@ -11,14 +11,17 @@ from app.services.metadata.service import MetadataService
 from app.services.metadata.extractor import (
     FileMetadataExtractor,
     PDFStructureExtractor,
-    RegulatorMetadataExtractor
+    RegulatorMetadataExtractor,
 )
 from app.services.structure.service import StructureService
 from app.services.structure.rule_based import RuleBasedStructureExtractor
 from app.services.structure.hierarchy import HierarchyBuilder
 from app.services.structure.validator import HierarchyValidator
 from app.core.token_utils import SimpleTokenizer
-from app.services.structure.chunker import HierarchicalChunker, HierarchicalChunkerService
+from app.services.structure.chunker import (
+    HierarchicalChunker,
+    HierarchicalChunkerService,
+)
 from app.services.structure.enricher import MetadataEnricher, MetadataValidator
 from app.services.chunk_registry import ChunkRegistryService
 from app.services.embedding import EmbeddingProvider, embedding_provider
@@ -41,121 +44,138 @@ _storage_provider = LocalStorageProvider(settings.STORAGE_ROOT)
 
 
 async def get_document_service(
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> DocumentService:
     """Dependency injection provider for DocumentService."""
     return DocumentService(db_session)
+
 
 def get_storage_provider() -> StorageProvider:
     """Dependency injection provider for StorageProvider (defaults to local storage)."""
     return _storage_provider
 
+
 async def get_storage_service(
     provider: StorageProvider = Depends(get_storage_provider),
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> StorageService:
     """Dependency injection provider for StorageService."""
     return StorageService(provider, db_session)
 
+
 async def get_page_service(
     db_session: AsyncSession = Depends(get_db_session),
-    doc_service: DocumentService = Depends(get_document_service)
+    doc_service: DocumentService = Depends(get_document_service),
 ) -> PageService:
     """Dependency injection provider for PageService."""
     return PageService(db_session, doc_service)
 
+
 async def get_parser_service(
     doc_service: DocumentService = Depends(get_document_service),
-    page_service: PageService = Depends(get_page_service)
+    page_service: PageService = Depends(get_page_service),
 ) -> ParserService:
     """Dependency injection provider for ParserService."""
     return ParserService(doc_service, settings.STORAGE_ROOT, page_service=page_service)
 
+
 # Global MetadataService instance configured with standard extractors
-_metadata_service = MetadataService([
-    FileMetadataExtractor(),
-    PDFStructureExtractor(),
-    RegulatorMetadataExtractor()
-])
+_metadata_service = MetadataService(
+    [FileMetadataExtractor(), PDFStructureExtractor(), RegulatorMetadataExtractor()]
+)
+
 
 def get_metadata_service() -> MetadataService:
     """Dependency injection provider for MetadataService."""
     return _metadata_service
 
+
 async def get_structure_service(
-    page_service: PageService = Depends(get_page_service)
+    page_service: PageService = Depends(get_page_service),
 ) -> StructureService:
     """Dependency injection provider for StructureService."""
     return StructureService(page_service, RuleBasedStructureExtractor())
+
 
 def get_hierarchy_builder() -> HierarchyBuilder:
     """Dependency injection provider for HierarchyBuilder."""
     return HierarchyBuilder()
 
+
 def get_hierarchy_validator() -> HierarchyValidator:
     """Dependency injection provider for HierarchyValidator."""
     return HierarchyValidator()
+
 
 def get_metadata_enricher() -> MetadataEnricher:
     """Dependency injection provider for MetadataEnricher."""
     return MetadataEnricher(MetadataValidator())
 
+
 async def get_hierarchical_chunker_service(
     doc_service: DocumentService = Depends(get_document_service),
     page_service: PageService = Depends(get_page_service),
-    enricher: MetadataEnricher = Depends(get_metadata_enricher)
+    enricher: MetadataEnricher = Depends(get_metadata_enricher),
 ) -> HierarchicalChunkerService:
     """Dependency injection provider for HierarchicalChunkerService."""
     tokenizer = SimpleTokenizer()
     chunker = HierarchicalChunker(tokenizer)
     return HierarchicalChunkerService(doc_service, page_service, chunker, enricher)
 
+
 async def get_chunk_registry_service(
     db_session: AsyncSession = Depends(get_db_session),
-    doc_service: DocumentService = Depends(get_document_service)
+    doc_service: DocumentService = Depends(get_document_service),
 ) -> ChunkRegistryService:
     """Dependency injection provider for ChunkRegistryService."""
     return ChunkRegistryService(db_session, doc_service)
+
 
 def get_embedding_provider() -> EmbeddingProvider:
     """Dependency injection provider for EmbeddingProvider singleton."""
     return embedding_provider
 
+
 async def get_embedding_pipeline(
     db_session: AsyncSession = Depends(get_db_session),
     chunk_service: ChunkRegistryService = Depends(get_chunk_registry_service),
-    embedding_provider: EmbeddingProvider = Depends(get_embedding_provider)
+    embedding_provider: EmbeddingProvider = Depends(get_embedding_provider),
 ) -> EmbeddingPipeline:
     """Dependency injection provider for EmbeddingPipeline."""
     return EmbeddingPipeline(db_session, chunk_service, embedding_provider)
 
+
 async def get_vector_index_manager(
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> VectorIndexManager:
     """Dependency injection provider for VectorIndexManager."""
     return VectorIndexManager(db_session)
 
+
 async def get_retrieval_service(
     db_session: AsyncSession = Depends(get_db_session),
-    embedding_provider: EmbeddingProvider = Depends(get_embedding_provider)
+    embedding_provider: EmbeddingProvider = Depends(get_embedding_provider),
 ) -> RetrievalService:
     """Dependency injection provider for RetrievalService."""
     return RetrievalService(db_session, embedding_provider)
 
+
 async def get_embedding_quality_validator(
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> EmbeddingQualityValidator:
     """Dependency injection provider for EmbeddingQualityValidator."""
     return EmbeddingQualityValidator(db_session)
 
+
 async def get_benchmark_runner(
-    retrieval_service: RetrievalService = Depends(get_retrieval_service)
+    retrieval_service: RetrievalService = Depends(get_retrieval_service),
 ) -> RetrievalBenchmarkRunner:
     """Dependency injection provider for RetrievalBenchmarkRunner."""
     return RetrievalBenchmarkRunner(retrieval_service)
 
+
 async def get_bm25_retriever(
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> BM25Retriever:
     """Dependency injection provider for BM25Retriever."""
     return BM25RetrieverService(db_session)
@@ -188,6 +208,7 @@ def get_query_analyzer() -> QueryAnalyzer:
     """Dependency injection provider for QueryAnalyzer."""
     return QueryAnalyzer()
 
+
 def get_hybrid_retriever(
     retrieval_service: RetrievalService = Depends(get_retrieval_service),
     bm25_retriever: BM25Retriever = Depends(get_bm25_retriever),
@@ -204,6 +225,7 @@ def get_hybrid_retriever(
 # Lazy singleton reranker provider — loaded on first request
 _reranker_provider: BGERerankerProvider | None = None
 
+
 def get_reranker_provider() -> BGERerankerProvider:
     """Dependency injection provider for BGERerankerProvider (singleton)."""
     global _reranker_provider
@@ -215,6 +237,7 @@ def get_reranker_provider() -> BGERerankerProvider:
             batch_size=settings.RERANKER_BATCH_SIZE,
         )
     return _reranker_provider
+
 
 def get_reranker_service(
     provider: BGERerankerProvider = Depends(get_reranker_provider),
@@ -724,7 +747,7 @@ def _ingestion_service_singleton() -> "AutoIngestionService":
 
 
 async def get_ingestion_service(
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> AutoIngestionService:
     """Dependency injection provider for AutoIngestionService (singleton)."""
     return _ingestion_service_singleton()
@@ -1220,8 +1243,14 @@ def _audit_agent_service_singleton() -> "AuditAgentService":
         # are all defined earlier in this file but only when the
         # singletons are first touched.
         audit_svc = get_audit_service() if "get_audit_service" in dir() else None
-        gov_svc = get_governance_service() if "get_governance_service" in dir() else None
-        kg_svc = get_knowledge_graph_service() if "get_knowledge_graph_service" in dir() else None
+        gov_svc = (
+            get_governance_service() if "get_governance_service" in dir() else None
+        )
+        kg_svc = (
+            get_knowledge_graph_service()
+            if "get_knowledge_graph_service" in dir()
+            else None
+        )
         cr_svc = (
             get_compliance_risk_service()
             if "get_compliance_risk_service" in dir()

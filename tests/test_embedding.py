@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 from app.services.embedding.bge import BGEEmbeddingProvider
 
+
 @pytest.fixture
 def mock_transformer():
     """Mocks the SentenceTransformer class to avoid network and GPU requirements during tests."""
@@ -41,9 +42,10 @@ def mock_transformer():
         mock_class.return_value = mock_instance
         yield mock_class
 
+
 def test_embedding_provider_metadata(mock_transformer):
     provider = BGEEmbeddingProvider(model_name="BAAI/bge-small-en-v1.5")
-    
+
     # Check basic properties without loading model
     assert provider.get_model_name() == "BAAI/bge-small-en-v1.5"
     assert provider._model is None
@@ -53,9 +55,10 @@ def test_embedding_provider_metadata(mock_transformer):
     assert provider._model is not None
     mock_transformer.assert_called_once()
 
+
 def test_encode_single_text(mock_transformer):
     provider = BGEEmbeddingProvider(model_name="BAAI/bge-small-en-v1.5")
-    
+
     # Test valid text encoding
     emb = provider.encode_text("Hello world")
     assert len(emb) == 384
@@ -72,14 +75,16 @@ def test_encode_single_text(mock_transformer):
     assert len(whitespace_emb) == 384
     assert sum(whitespace_emb) == 0.0
 
+
 def test_encode_query_with_prefix(mock_transformer):
     provider = BGEEmbeddingProvider(
-        model_name="BAAI/bge-small-en-v1.5",
-        query_instruction="query_prefix: "
+        model_name="BAAI/bge-small-en-v1.5", query_instruction="query_prefix: "
     )
-    
+
     # Mock encode to inspect call args
-    with patch.object(provider, "encode_text", wraps=provider.encode_text) as mock_encode_text:
+    with patch.object(
+        provider, "encode_text", wraps=provider.encode_text
+    ) as mock_encode_text:
         emb = provider.encode_query("my search term")
         assert len(emb) == 384
         mock_encode_text.assert_called_once_with("query_prefix: my search term")
@@ -89,12 +94,13 @@ def test_encode_query_with_prefix(mock_transformer):
     assert len(empty_emb) == 384
     assert sum(empty_emb) == 0.0
 
+
 def test_encode_batch(mock_transformer):
     provider = BGEEmbeddingProvider(model_name="BAAI/bge-small-en-v1.5")
-    
+
     texts = ["First text", "", "Third text", "   "]
     embeddings = provider.encode_batch(texts)
-    
+
     assert len(embeddings) == 4
     assert len(embeddings[0]) == 384
     # First is valid
@@ -106,17 +112,21 @@ def test_encode_batch(mock_transformer):
     # Fourth is whitespace -> zero-vector
     assert sum(embeddings[3]) == 0.0
 
+
 def test_health_check(mock_transformer):
     provider = BGEEmbeddingProvider(model_name="BAAI/bge-small-en-v1.5")
     assert provider.health_check() is True
 
     # Health check returns False if model fails to load
-    with patch.object(provider, "_get_model", side_effect=RuntimeError("GPU memory full")):
+    with patch.object(
+        provider, "_get_model", side_effect=RuntimeError("GPU memory full")
+    ):
         assert provider.health_check() is False
+
 
 def test_thread_safety_lazy_loading(mock_transformer):
     provider = BGEEmbeddingProvider(model_name="BAAI/bge-small-en-v1.5")
-    
+
     # We will start 10 threads trying to encode text concurrently
     # This verifies that self._get_model() is thread-safe and only calls SentenceTransformer once.
     num_threads = 10

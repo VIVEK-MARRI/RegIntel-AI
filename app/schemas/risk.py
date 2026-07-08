@@ -92,9 +92,7 @@ class RecommendedAction(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    action_id: str = Field(
-        default_factory=lambda: f"act-{secrets.token_hex(4)}"
-    )
+    action_id: str = Field(default_factory=lambda: f"act-{secrets.token_hex(4)}")
     action_type: RecommendedActionType
     title: str
     description: str
@@ -136,9 +134,7 @@ class RiskAssessment(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    assessment_id: str = Field(
-        default_factory=lambda: f"rsk-{secrets.token_hex(6)}"
-    )
+    assessment_id: str = Field(default_factory=lambda: f"rsk-{secrets.token_hex(6)}")
     document_id: Optional[str] = None
     diff_id: Optional[str] = None
     impact_report_id: Optional[str] = None

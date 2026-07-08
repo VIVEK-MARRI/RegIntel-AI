@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 # Enums
 # ---------------------------------------------------------------------------
 
+
 class IndexStatus(str, Enum):
     """Lifecycle status of a BM25 index."""
+
     NOT_BUILT = "not_built"
     BUILDING = "building"
     READY = "ready"
@@ -37,6 +39,7 @@ class IndexStatus(str, Enum):
 
 class Source(str, Enum):
     """Supported regulatory sources."""
+
     RBI = "RBI"
     SEBI = "SEBI"
 
@@ -45,9 +48,11 @@ class Source(str, Enum):
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BM25Document:
     """Represents a single document (chunk) stored in the BM25 index."""
+
     chunk_id: str
     content: str
     section_title: str = ""
@@ -76,6 +81,7 @@ class BM25Document:
 @dataclass
 class BM25SearchResult:
     """Single search result returned by the BM25 retriever."""
+
     chunk_id: str
     bm25_score: float
     section: str = ""
@@ -90,6 +96,7 @@ class BM25SearchResult:
 @dataclass
 class BM25SearchResponse:
     """Full search response with results and telemetry."""
+
     query: str
     results: List[BM25SearchResult]
     total_results: int
@@ -101,6 +108,7 @@ class BM25SearchResponse:
 @dataclass
 class BM25IndexStats:
     """Statistics about the current BM25 index."""
+
     status: IndexStatus = IndexStatus.NOT_BUILT
     total_documents: int = 0
     total_tokens: int = 0
@@ -113,6 +121,7 @@ class BM25IndexStats:
 @dataclass
 class BM25SearchRequest:
     """Search request with filters and thresholds."""
+
     query: str
     top_k: int = 10
     source_filter: Optional[List[str]] = None
@@ -123,6 +132,7 @@ class BM25SearchRequest:
 # ---------------------------------------------------------------------------
 # Tokenizer
 # ---------------------------------------------------------------------------
+
 
 class BM25Tokenizer:
     """
@@ -139,8 +149,7 @@ class BM25Tokenizer:
         # Simple whitespace tokenization with lowercase
         # Remove common punctuation but preserve alphanumeric and hyphens
         cleaned = "".join(
-            ch if ch.isalnum() or ch in (" ", "-", "_") else " "
-            for ch in text
+            ch if ch.isalnum() or ch in (" ", "-", "_") else " " for ch in text
         )
         return [tok for tok in cleaned.lower().split() if tok]
 
@@ -149,15 +158,16 @@ class BM25Tokenizer:
 # Abstract BM25 Retriever Interface
 # ---------------------------------------------------------------------------
 
+
 class AbstractBM25Retriever(ABC):
     """
     Abstract interface for BM25 retrieval.
-    
+
     Implementations:
     - InMemoryBM25Retriever (rank-bm25 based, for development / small corpora)
     - ElasticsearchBM25Retriever (future migration target)
     - OpenSearchBM25Retriever (future migration target)
-    
+
     This abstraction ensures the service layer remains decoupled from the
     underlying search engine.
     """
@@ -202,10 +212,11 @@ class AbstractBM25Retriever(ABC):
 # In-Memory BM25 Retriever (rank-bm25)
 # ---------------------------------------------------------------------------
 
+
 class InMemoryBM25Retriever(AbstractBM25Retriever):
     """
     Production-grade in-memory BM25 retriever using rank-bm25.
-    
+
     Features:
     - Multi-field indexing (content, section, subsection, document title)
     - Source filtering (RBI/SEBI)
@@ -213,7 +224,7 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
     - Score thresholds
     - Retrieval latency tracking
     - Index statistics
-    
+
     Designed to be replaced by Elasticsearch/OpenSearch implementation
     without changing the service layer.
     """
@@ -221,7 +232,7 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
     def __init__(self, k1: float = 1.5, b: float = 0.75) -> None:
         """
         Initialize the BM25 retriever.
-        
+
         Args:
             k1: BM25 k1 parameter (term frequency saturation). Default 1.5.
             b: BM25 b parameter (length normalization). Default 0.75.
@@ -234,9 +245,7 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
         self._corpus_tokens: List[List[str]] = []
         self._chunk_ids: List[str] = []
         self._stats = BM25IndexStats()
-        logger.info(
-            "InMemoryBM25Retriever initialized (k1=%.2f, b=%.2f)", k1, b
-        )
+        logger.info("InMemoryBM25Retriever initialized (k1=%.2f, b=%.2f)", k1, b)
 
     # ----- Index Management -----
 
@@ -293,7 +302,7 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
     def update_index(self, documents: Sequence[BM25Document]) -> BM25IndexStats:
         """
         Incrementally update the index with new or modified documents.
-        
+
         For the in-memory implementation, we rebuild with the updated set
         since BM25Okapi does not support incremental adds.  The abstract
         interface, however, allows Elasticsearch/OpenSearch implementations
@@ -413,10 +422,10 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
     def search(self, request: BM25SearchRequest) -> BM25SearchResponse:
         """
         Execute a BM25 search with optional filters and score thresholds.
-        
+
         Args:
             request: BM25SearchRequest with query, top_k, filters, and threshold.
-            
+
         Returns:
             BM25SearchResponse with results and telemetry.
         """
@@ -461,7 +470,10 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
                 continue
 
             # Apply document filter
-            if request.document_filter and doc.document_id not in request.document_filter:
+            if (
+                request.document_filter
+                and doc.document_id not in request.document_filter
+            ):
                 filtered_count += 1
                 continue
 
@@ -483,7 +495,9 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
         for rank, (idx, score) in enumerate(top_results, start=1):
             chunk_id = self._chunk_ids[idx]
             doc = self._documents[chunk_id]
-            content_preview = doc.content[:200] + ("..." if len(doc.content) > 200 else "")
+            content_preview = doc.content[:200] + (
+                "..." if len(doc.content) > 200 else ""
+            )
             results.append(
                 BM25SearchResult(
                     chunk_id=chunk_id,
@@ -536,8 +550,7 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
             return {}
         scores = self._bm25.get_scores(tokens)
         return {
-            self._chunk_ids[i]: float(scores[i])
-            for i in range(len(self._chunk_ids))
+            self._chunk_ids[i]: float(scores[i]) for i in range(len(self._chunk_ids))
         }
 
 
@@ -545,11 +558,14 @@ class InMemoryBM25Retriever(AbstractBM25Retriever):
 # Custom Exceptions
 # ---------------------------------------------------------------------------
 
+
 class BM25IndexError(Exception):
     """Raised when BM25 index operations fail."""
+
     pass
 
 
 class BM25SearchError(Exception):
     """Raised when BM25 search operations fail."""
+
     pass

@@ -55,7 +55,9 @@ class TestAPIKeyEnforcement:
 
         with TestClient(mini, raise_server_exceptions=False) as client:
             resp = client.get("/protected")
-            assert resp.status_code == 401, f"Expected 401, got {resp.status_code}: {resp.text}"
+            assert (
+                resp.status_code == 401
+            ), f"Expected 401, got {resp.status_code}: {resp.text}"
 
     def test_valid_api_key_allows_request(self):
         from fastapi import FastAPI
@@ -167,9 +169,9 @@ class TestSecurityHeaders:
             resp = client.get("/")
             assert resp.status_code == 200
             for header in DEFAULT_SECURITY_HEADERS:
-                assert header in resp.headers, (
-                    f"Security header '{header}' missing from response headers"
-                )
+                assert (
+                    header in resp.headers
+                ), f"Security header '{header}' missing from response headers"
 
 
 class TestAuditLog:
@@ -224,9 +226,9 @@ class TestAuditLog:
             client.put("/item")
 
         entries = audit.all()
-        assert any(e.method == "PUT" for e in entries), (
-            f"Expected PUT method in audit entries; got: {[e.method for e in entries]}"
-        )
+        assert any(
+            e.method == "PUT" for e in entries
+        ), f"Expected PUT method in audit entries; got: {[e.method for e in entries]}"
 
 
 class TestCORSNotWildcardWithAuth:

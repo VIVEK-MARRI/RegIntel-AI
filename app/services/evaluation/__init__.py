@@ -123,9 +123,7 @@ class MetricsEngine:
 
     # ── Source attribution accuracy ─────────────────────────────────────
 
-    def source_attribution_accuracy(
-        self, response: FinalAnswerResponse
-    ) -> MetricScore:
+    def source_attribution_accuracy(self, response: FinalAnswerResponse) -> MetricScore:
         attributions = response.source_attributions
         if not attributions:
             return MetricScore(
@@ -138,11 +136,7 @@ class MetricsEngine:
         # count weighted by their confidence bucket).
         coverage = response.attribution_coverage_ratio
         # Count attributions with valid chunk_id + document_id.
-        valid = sum(
-            1
-            for a in attributions
-            if a.chunk_id and a.document_id
-        )
+        valid = sum(1 for a in attributions if a.chunk_id and a.document_id)
         validity = valid / len(attributions)
         score = 0.5 * coverage + 0.5 * validity
         return MetricScore(
@@ -243,16 +237,31 @@ class MetricsEngine:
     ) -> List[MetricScore]:
         all_metrics: List[Tuple[EvaluationMetric, Any]] = [
             (EvaluationMetric.FAITHFULNESS, lambda: self.faithfulness(response)),
-            (EvaluationMetric.ANSWER_RELEVANCE, lambda: self.answer_relevance(response, query)),
-            (EvaluationMetric.CITATION_ACCURACY, lambda: self.citation_accuracy(response)),
+            (
+                EvaluationMetric.ANSWER_RELEVANCE,
+                lambda: self.answer_relevance(response, query),
+            ),
+            (
+                EvaluationMetric.CITATION_ACCURACY,
+                lambda: self.citation_accuracy(response),
+            ),
             (
                 EvaluationMetric.SOURCE_ATTRIBUTION_ACCURACY,
                 lambda: self.source_attribution_accuracy(response),
             ),
-            (EvaluationMetric.COMPLETENESS, lambda: self.completeness(response, chunks)),
+            (
+                EvaluationMetric.COMPLETENESS,
+                lambda: self.completeness(response, chunks),
+            ),
             (EvaluationMetric.GROUNDEDNESS, lambda: self.groundedness(response)),
-            (EvaluationMetric.HALLUCINATION_RATE, lambda: self.hallucination_rate(response)),
-            (EvaluationMetric.EVIDENCE_COVERAGE, lambda: self.evidence_coverage(response)),
+            (
+                EvaluationMetric.HALLUCINATION_RATE,
+                lambda: self.hallucination_rate(response),
+            ),
+            (
+                EvaluationMetric.EVIDENCE_COVERAGE,
+                lambda: self.evidence_coverage(response),
+            ),
         ]
         selected = metrics or [m for m, _ in all_metrics]
         out: List[MetricScore] = []
@@ -286,9 +295,7 @@ class AnswerEvaluator:
             chunks=chunks,
             metrics=request.metrics,
         )
-        aggregate = (
-            sum(s.score for s in scores) / len(scores) if scores else 0.0
-        )
+        aggregate = sum(s.score for s in scores) / len(scores) if scores else 0.0
         hr = next(
             (
                 1.0 - s.score
@@ -394,7 +401,7 @@ class AnswerEvaluationService:
         with track_request(
             endpoint="/api/v1/evaluation/evaluate",
             strategy="answer_evaluation",
-        ) as ctx:
+        ):
             return self.evaluator.evaluate(request)
 
     def benchmark(
@@ -406,7 +413,7 @@ class AnswerEvaluationService:
         with track_request(
             endpoint="/api/v1/evaluation/benchmark",
             strategy="answer_evaluation",
-        ) as ctx:
+        ):
             return self.runner.run(cases, baseline_results=baseline_results)
 
 

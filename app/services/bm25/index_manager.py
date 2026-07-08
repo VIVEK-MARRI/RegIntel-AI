@@ -29,9 +29,11 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class IndexManagerConfig:
     """Configuration for the BM25 Index Manager."""
+
     storage_dir: str = "storage/bm25"
     index_filename: str = "bm25_index.pkl"
     metadata_filename: str = "bm25_metadata.json"
@@ -45,17 +47,18 @@ class IndexManagerConfig:
 # Index Manager
 # ---------------------------------------------------------------------------
 
+
 class BM25IndexManager:
     """
     Manages the full lifecycle of BM25 indices.
-    
+
     Responsibilities:
     - Build, update, rebuild indices
     - Persist indices to disk
     - Load indices from disk
     - Track index versions and statistics
     - Coordinate between retriever and repository layers
-    
+
     The manager wraps an AbstractBM25Retriever, so swapping from
     InMemoryBM25Retriever to an Elasticsearch implementation only
     requires changing the retriever instance passed to the manager.
@@ -71,7 +74,7 @@ class BM25IndexManager:
             k1=self._config.k1, b=self._config.b
         )
         self._ensure_storage_dir()
-        
+
         if self._config.auto_load:
             self._try_load_from_disk()
 
@@ -90,10 +93,10 @@ class BM25IndexManager:
     def build_index(self, documents: Sequence[BM25Document]) -> BM25IndexStats:
         """
         Build the BM25 index from scratch.
-        
+
         Args:
             documents: Sequence of BM25Document instances to index.
-            
+
         Returns:
             BM25IndexStats after building.
         """
@@ -106,10 +109,10 @@ class BM25IndexManager:
     def update_index(self, documents: Sequence[BM25Document]) -> BM25IndexStats:
         """
         Incrementally update the index with new or modified documents.
-        
+
         Args:
             documents: Sequence of BM25Document instances to add/update.
-            
+
         Returns:
             BM25IndexStats after updating.
         """
@@ -122,10 +125,10 @@ class BM25IndexManager:
     def rebuild_index(self, documents: Sequence[BM25Document]) -> BM25IndexStats:
         """
         Rebuild the entire index from scratch.
-        
+
         Args:
             documents: Sequence of BM25Document instances to index.
-            
+
         Returns:
             BM25IndexStats after rebuilding.
         """
@@ -156,7 +159,7 @@ class BM25IndexManager:
     def save_index(self) -> str:
         """
         Persist the current index to disk.
-        
+
         Returns:
             Path to the saved index file.
         """
@@ -165,7 +168,7 @@ class BM25IndexManager:
     def load_index(self) -> BM25IndexStats:
         """
         Load a previously saved index from disk.
-        
+
         Returns:
             BM25IndexStats after loading.
         """
@@ -253,6 +256,7 @@ class BM25IndexManager:
             # Rebuild the BM25Okapi object from loaded tokens
             if self._retriever._corpus_tokens:
                 from rank_bm25 import BM25Okapi
+
                 self._retriever._bm25 = BM25Okapi(
                     self._retriever._corpus_tokens,
                     k1=state.get("k1", 1.5),

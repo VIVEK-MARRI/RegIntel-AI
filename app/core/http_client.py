@@ -28,9 +28,7 @@ class HTTPClientConfig:
     timeout_seconds: float = 30.0
     max_retries: int = 3
     backoff_factor: float = 0.5
-    user_agent: str = (
-        "RegIntel-AI/7.0 (+https://regintel.example.com) monitoring-bot"
-    )
+    user_agent: str = "RegIntel-AI/7.0 (+https://regintel.example.com) monitoring-bot"
     follow_redirects: bool = True
     verify_ssl: bool = True
     default_headers: Dict[str, str] = field(default_factory=dict)
@@ -87,9 +85,7 @@ class HTTPClient:
                     "http_request",
                     extra={"method": method, "url": url, "attempt": attempt},
                 )
-                response = await self._client.request(
-                    method, url, params=params
-                )
+                response = await self._client.request(method, url, params=params)
                 response.raise_for_status()
                 return response
             except (

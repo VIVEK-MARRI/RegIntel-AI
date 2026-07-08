@@ -103,9 +103,7 @@ class FakeResearchService:
         self.runs = 0
         self.provider_items: list = []
 
-    def run(
-        self, request: ResearchRequest, *, top_k: int = 5
-    ) -> ResearchReport:
+    def run(self, request: ResearchRequest, *, top_k: int = 5) -> ResearchReport:
         self.runs += 1
         items = self.provider_items[:top_k] or [
             {
@@ -144,7 +142,9 @@ class FakeResearchService:
         )
 
     def add_knowledge_item(self, item):
-        return self.provider_items.append(item) or item.get("id", f"k-{len(self.provider_items)}")
+        return self.provider_items.append(item) or item.get(
+            "id", f"k-{len(self.provider_items)}"
+        )
 
 
 class FakeKGService:
@@ -154,6 +154,7 @@ class FakeKGService:
             EntityType,
             NodeSource,
         )
+
         self._nodes = [
             GraphNode(
                 node_id="n1",
@@ -208,7 +209,7 @@ class FakeRecommendationService:
                             step_id=f"ps-{i}",
                             title="step",
                         )
-                    ]
+                    ],
                 ),
                 risk_assessment_id=request.risk_assessment_id,
             )
@@ -223,6 +224,7 @@ class FakeGovernanceService:
             compliant = True
             violations = []
             rules_evaluated = []
+
         return _Result()
 
 
@@ -232,6 +234,7 @@ class FakeForecastingService:
             ForecastPoint,
             RiskForecast,
         )
+
         f = RiskForecast(
             forecast_id="fcast-x",
             horizon_days=request.horizon_days,
@@ -348,9 +351,11 @@ class TestResearchAgentExecutor:
         plan = ResearchAgentPlanner().plan(req)
         executed, findings, citations, timeline = ex.execute(req, plan)
         # Without KG service, no KG insights but plan still completes
-        assert all(s.finished_at > 0 for s in executed if s.action in {
-            "plan", "retrieve", "compare", "reason", "summarize"
-        })
+        assert all(
+            s.finished_at > 0
+            for s in executed
+            if s.action in {"plan", "retrieve", "compare", "reason", "summarize"}
+        )
 
 
 class TestResearchAgentReasoner:
@@ -404,9 +409,7 @@ class TestResearchAgent:
                 capabilities=[
                     __import__(
                         "app.schemas.agents", fromlist=["AgentCapability"]
-                    ).AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
+                    ).AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")
                 ],
             ),
             research_service=FakeResearchService(),
@@ -426,16 +429,12 @@ class TestResearchAgent:
     @pytest.mark.asyncio
     async def test_execute_timeline(self):
         agent = ResearchAgent(
-            __import__(
-                "app.schemas.agents", fromlist=["AgentMetadata"]
-            ).AgentMetadata(
+            __import__("app.schemas.agents", fromlist=["AgentMetadata"]).AgentMetadata(
                 name="test-research-t",
                 capabilities=[
                     __import__(
                         "app.schemas.agents", fromlist=["AgentCapability"]
-                    ).AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
+                    ).AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")
                 ],
             ),
             research_service=FakeResearchService(),
@@ -457,16 +456,12 @@ class TestResearchAgent:
     @pytest.mark.asyncio
     async def test_execute_invalid_request(self):
         agent = ResearchAgent(
-            __import__(
-                "app.schemas.agents", fromlist=["AgentMetadata"]
-            ).AgentMetadata(
+            __import__("app.schemas.agents", fromlist=["AgentMetadata"]).AgentMetadata(
                 name="test-research-bad",
                 capabilities=[
                     __import__(
                         "app.schemas.agents", fromlist=["AgentCapability"]
-                    ).AgentCapability(
-                        kind=CapabilityKind.RETRIEVAL, name="r"
-                    )
+                    ).AgentCapability(kind=CapabilityKind.RETRIEVAL, name="r")
                 ],
             ),
         )
@@ -496,6 +491,7 @@ class TestComplianceAnalyzer:
 
     def test_with_assessment(self):
         from app.schemas.risk import RiskExplanation
+
         ra = RiskAssessment(
             assessment_id="r1",
             risk_level=RiskLevel.HIGH,
@@ -528,16 +524,12 @@ class TestComplianceAgent:
     @pytest.mark.asyncio
     async def test_execute_no_assessment(self):
         agent = ComplianceAgent(
-            __import__(
-                "app.schemas.agents", fromlist=["AgentMetadata"]
-            ).AgentMetadata(
+            __import__("app.schemas.agents", fromlist=["AgentMetadata"]).AgentMetadata(
                 name="test-compliance-no",
                 capabilities=[
                     __import__(
                         "app.schemas.agents", fromlist=["AgentCapability"]
-                    ).AgentCapability(
-                        kind=CapabilityKind.COMPLIANCE, name="c"
-                    )
+                    ).AgentCapability(kind=CapabilityKind.COMPLIANCE, name="c")
                 ],
             ),
             recommendation_service=FakeRecommendationService(),
@@ -560,6 +552,7 @@ class TestComplianceAgent:
     @pytest.mark.asyncio
     async def test_execute_with_risk_assessment(self):
         from app.schemas.risk import RiskExplanation
+
         risk = FakeComplianceRiskService()
         a = RiskAssessment(
             assessment_id="r1",
@@ -579,16 +572,12 @@ class TestComplianceAgent:
         )
         risk.add(a)
         agent = ComplianceAgent(
-            __import__(
-                "app.schemas.agents", fromlist=["AgentMetadata"]
-            ).AgentMetadata(
+            __import__("app.schemas.agents", fromlist=["AgentMetadata"]).AgentMetadata(
                 name="test-compliance-2",
                 capabilities=[
                     __import__(
                         "app.schemas.agents", fromlist=["AgentCapability"]
-                    ).AgentCapability(
-                        kind=CapabilityKind.COMPLIANCE, name="c"
-                    )
+                    ).AgentCapability(kind=CapabilityKind.COMPLIANCE, name="c")
                 ],
             ),
             compliance_risk_service=risk,
@@ -624,6 +613,7 @@ class TestRiskAnalyzer:
 
     def test_with_assessment(self):
         from app.schemas.risk import RiskExplanation
+
         risk = FakeComplianceRiskService()
         a = RiskAssessment(
             assessment_id="r1",
@@ -722,6 +712,7 @@ class TestRiskAgent:
     @pytest.mark.asyncio
     async def test_execute_basic(self):
         from app.schemas.risk import RiskExplanation
+
         risk_svc = FakeComplianceRiskService()
         a = RiskAssessment(
             assessment_id="r1",
@@ -731,16 +722,12 @@ class TestRiskAgent:
         )
         risk_svc.add(a)
         agent = RiskIntelligenceAgent(
-            __import__(
-                "app.schemas.agents", fromlist=["AgentMetadata"]
-            ).AgentMetadata(
+            __import__("app.schemas.agents", fromlist=["AgentMetadata"]).AgentMetadata(
                 name="test-risk",
                 capabilities=[
                     __import__(
                         "app.schemas.agents", fromlist=["AgentCapability"]
-                    ).AgentCapability(
-                        kind=CapabilityKind.RISK_ASSESSMENT, name="r"
-                    )
+                    ).AgentCapability(kind=CapabilityKind.RISK_ASSESSMENT, name="r")
                 ],
             ),
             compliance_risk_service=risk_svc,
@@ -768,16 +755,12 @@ class TestRiskAgent:
     @pytest.mark.asyncio
     async def test_execute_no_services(self):
         agent = RiskIntelligenceAgent(
-            __import__(
-                "app.schemas.agents", fromlist=["AgentMetadata"]
-            ).AgentMetadata(
+            __import__("app.schemas.agents", fromlist=["AgentMetadata"]).AgentMetadata(
                 name="test-risk-2",
                 capabilities=[
                     __import__(
                         "app.schemas.agents", fromlist=["AgentCapability"]
-                    ).AgentCapability(
-                        kind=CapabilityKind.RISK_ASSESSMENT, name="r"
-                    )
+                    ).AgentCapability(kind=CapabilityKind.RISK_ASSESSMENT, name="r")
                 ],
             ),
         )
@@ -821,8 +804,11 @@ class TestIntelligenceAgentFactory:
     def test_collaborate_records(self):
         factory = _build_factory()
         c = factory.collaborate(
-            "research", "compliance", "evidence_handoff",
-            {"k1": 1}, {"k2": 2},
+            "research",
+            "compliance",
+            "evidence_handoff",
+            {"k1": 1},
+            {"k2": 2},
         )
         assert c.from_agent == "research"
         assert c.to_agent == "compliance"
@@ -955,6 +941,7 @@ class TestDefaultFactory:
 async def test_api_research_run():
     """Smoke test the /agents/research/run endpoint."""
     from app.api.dependencies import get_intelligence_agent_service
+
     factory = _build_factory()
     svc = IntelligenceAgentService(factory)
     app.dependency_overrides[get_intelligence_agent_service] = lambda: svc
@@ -977,6 +964,7 @@ async def test_api_research_run():
 @pytest.mark.asyncio
 async def test_api_compliance_run():
     from app.api.dependencies import get_intelligence_agent_service
+
     factory = _build_factory()
     svc = IntelligenceAgentService(factory)
     app.dependency_overrides[get_intelligence_agent_service] = lambda: svc
@@ -999,6 +987,7 @@ async def test_api_compliance_run():
 @pytest.mark.asyncio
 async def test_api_risk_run():
     from app.api.dependencies import get_intelligence_agent_service
+
     factory = _build_factory()
     svc = IntelligenceAgentService(factory)
     app.dependency_overrides[get_intelligence_agent_service] = lambda: svc
@@ -1022,6 +1011,7 @@ async def test_api_risk_run():
 @pytest.mark.asyncio
 async def test_api_health_endpoints():
     from app.api.dependencies import get_intelligence_agent_service
+
     factory = _build_factory()
     svc = IntelligenceAgentService(factory)
     app.dependency_overrides[get_intelligence_agent_service] = lambda: svc
@@ -1044,6 +1034,7 @@ async def test_api_health_endpoints():
 @pytest.mark.asyncio
 async def test_api_coordinate_pipeline():
     from app.api.dependencies import get_intelligence_agent_service
+
     factory = _build_factory()
     svc = IntelligenceAgentService(factory)
     app.dependency_overrides[get_intelligence_agent_service] = lambda: svc
@@ -1068,6 +1059,7 @@ async def test_api_coordinate_pipeline():
 @pytest.mark.asyncio
 async def test_api_collaborations():
     from app.api.dependencies import get_intelligence_agent_service
+
     factory = _build_factory()
     svc = IntelligenceAgentService(factory)
     app.dependency_overrides[get_intelligence_agent_service] = lambda: svc

@@ -8,13 +8,15 @@ from app.models.chunk import ChunkEmbedding, DocumentChunk, EmbeddingStatusEnum
 from app.schemas.embedding_validation import (
     EmbeddingValidationIssue,
     EmbeddingValidationMetrics,
-    EmbeddingValidationReport
+    EmbeddingValidationReport,
 )
 
 logger = logging.getLogger(__name__)
 
+
 class BaseEmbeddingValidationRule:
     """Base class for all individual embedding validation rules."""
+
     @property
     def name(self) -> str:
         raise NotImplementedError
@@ -23,8 +25,10 @@ class BaseEmbeddingValidationRule:
         """Validates a single embedding record. Returns error message if invalid, else None."""
         raise NotImplementedError
 
+
 class NoDimensionMismatchRule(BaseEmbeddingValidationRule):
     """Rule ensuring embedding vector dimensions match the expected model dimension."""
+
     @property
     def name(self) -> str:
         return "dimension_mismatch"
@@ -38,8 +42,10 @@ class NoDimensionMismatchRule(BaseEmbeddingValidationRule):
             return f"Field embedding_dimension mismatch: expected {expected_dim}, got {record.embedding_dimension}"
         return None
 
+
 class NoZeroVectorRule(BaseEmbeddingValidationRule):
     """Rule ensuring embedding vectors are not zero vectors (all elements are zero)."""
+
     @property
     def name(self) -> str:
         return "zero_vector"
@@ -52,8 +58,10 @@ class NoZeroVectorRule(BaseEmbeddingValidationRule):
             return "Vector is a zero vector (norm is too close to zero)"
         return None
 
+
 class NoCorruptedVectorRule(BaseEmbeddingValidationRule):
     """Rule ensuring embedding vectors contain only valid floating point numbers (no NaNs or Infs)."""
+
     @property
     def name(self) -> str:
         return "corrupted_vector"
@@ -70,22 +78,27 @@ class NoCorruptedVectorRule(BaseEmbeddingValidationRule):
                 return f"Vector contains invalid float value (NaN/Inf) at index {idx}"
         return None
 
+
 class EmbeddingQualityValidator:
     """Orchestrates quality validation checks and calculates statistics on stored embeddings."""
 
-    def __init__(self, db_session: AsyncSession, rules: Optional[List[BaseEmbeddingValidationRule]] = None):
+    def __init__(
+        self,
+        db_session: AsyncSession,
+        rules: Optional[List[BaseEmbeddingValidationRule]] = None,
+    ):
         self.db_session = db_session
         self.rules = rules or [
             NoDimensionMismatchRule(),
             NoZeroVectorRule(),
-            NoCorruptedVectorRule()
+            NoCorruptedVectorRule(),
         ]
 
     async def validate_embeddings(
         self,
         expected_dim: int,
         embedding_model: str,
-        document_id: Optional[uuid.UUID] = None
+        document_id: Optional[uuid.UUID] = None,
     ) -> EmbeddingValidationReport:
         """Validates all chunk embeddings for a specific model (optionally filtered by document)."""
         issues: List[EmbeddingValidationIssue] = []
@@ -98,14 +111,14 @@ class EmbeddingQualityValidator:
                 and_(
                     ChunkEmbedding.chunk_id == DocumentChunk.id,
                     ChunkEmbedding.embedding_model == embedding_model,
-                    ChunkEmbedding.status == EmbeddingStatusEnum.COMPLETED
-                )
+                    ChunkEmbedding.status == EmbeddingStatusEnum.COMPLETED,
+                ),
             )
             .where(ChunkEmbedding.chunk_id == None)
         )
         if document_id:
             missing_stmt = missing_stmt.where(DocumentChunk.document_id == document_id)
-        
+
         missing_res = await self.db_session.execute(missing_stmt)
         missing_chunk_ids = [row[0] for row in missing_res.all()]
         for chunk_id in missing_chunk_ids:
@@ -114,7 +127,7 @@ class EmbeddingQualityValidator:
                     chunk_id=str(chunk_id),
                     rule_name="missing_embedding",
                     message=f"Chunk is missing a completed embedding for model '{embedding_model}'",
-                    severity="ERROR"
+                    severity="ERROR",
                 )
             )
 
@@ -125,7 +138,7 @@ class EmbeddingQualityValidator:
             .where(
                 and_(
                     ChunkEmbedding.embedding_model == embedding_model,
-                    DocumentChunk.id == None
+                    DocumentChunk.id == None,
                 )
             )
         )
@@ -137,15 +150,19 @@ class EmbeddingQualityValidator:
                     chunk_id=str(row[1]),
                     rule_name="orphan_embedding",
                     message="Embedding record exists but does not correspond to any chunk in document_chunks",
-                    severity="ERROR"
+                    severity="ERROR",
                 )
             )
 
         # 3. Fetch all active embedding records for this model to validate individually and compute metrics
-        stmt = select(ChunkEmbedding).where(ChunkEmbedding.embedding_model == embedding_model)
+        stmt = select(ChunkEmbedding).where(
+            ChunkEmbedding.embedding_model == embedding_model
+        )
         if document_id:
-            stmt = stmt.join(DocumentChunk, DocumentChunk.id == ChunkEmbedding.chunk_id).where(DocumentChunk.document_id == document_id)
-        
+            stmt = stmt.join(
+                DocumentChunk, DocumentChunk.id == ChunkEmbedding.chunk_id
+            ).where(DocumentChunk.document_id == document_id)
+
         records_res = await self.db_session.execute(stmt)
         records = records_res.scalars().all()
 
@@ -155,11 +172,14 @@ class EmbeddingQualityValidator:
         embedding_vectors = {}  # chunk_id -> embedding (for duplicate check)
 
         for record in records:
-            if record.status != EmbeddingStatusEnum.COMPLETED or record.embedding is None:
+            if (
+                record.status != EmbeddingStatusEnum.COMPLETED
+                or record.embedding is None
+            ):
                 continue
 
             embedding_vectors[record.chunk_id] = record.embedding
-            
+
             # Compute L2 norm
             norm_val = math.sqrt(sum(x * x for x in record.embedding))
             completed_norms.append(norm_val)
@@ -173,7 +193,7 @@ class EmbeddingQualityValidator:
                             chunk_id=str(record.chunk_id),
                             rule_name=rule.name,
                             message=err,
-                            severity="ERROR"
+                            severity="ERROR",
                         )
                     )
                     invalid_records.add(record.id)
@@ -196,21 +216,27 @@ class EmbeddingQualityValidator:
                             chunk_id=str(chunk_id),
                             rule_name="duplicate_embedding",
                             message=f"Duplicate embedding vector value detected across {len(chunk_ids)} chunks",
-                            severity="WARNING"
+                            severity="WARNING",
                         )
                     )
 
         # 5. Fetch Total Chunks count for coverage calculation
         total_chunks_stmt = select(func.count(DocumentChunk.id))
         if document_id:
-            total_chunks_stmt = total_chunks_stmt.where(DocumentChunk.document_id == document_id)
+            total_chunks_stmt = total_chunks_stmt.where(
+                DocumentChunk.document_id == document_id
+            )
         total_chunks_res = await self.db_session.execute(total_chunks_stmt)
         total_chunks = total_chunks_res.scalar() or 0
 
         # Metrics calculation
         completed_count = len(completed_norms)
-        embedding_coverage = (completed_count / total_chunks * 100.0) if total_chunks > 0 else 100.0
-        avg_norm = (sum(completed_norms) / completed_count) if completed_count > 0 else 0.0
+        embedding_coverage = (
+            (completed_count / total_chunks * 100.0) if total_chunks > 0 else 100.0
+        )
+        avg_norm = (
+            (sum(completed_norms) / completed_count) if completed_count > 0 else 0.0
+        )
         invalid_count = len(invalid_records)
 
         metrics = EmbeddingValidationMetrics(
@@ -219,7 +245,7 @@ class EmbeddingQualityValidator:
             embedding_coverage=embedding_coverage,
             average_vector_norm=avg_norm,
             invalid_embedding_count=invalid_count,
-            duplicate_embedding_count=duplicate_embedding_count
+            duplicate_embedding_count=duplicate_embedding_count,
         )
 
         has_errors = any(i.severity == "ERROR" for i in issues)
@@ -231,8 +257,5 @@ class EmbeddingQualityValidator:
         )
 
         return EmbeddingValidationReport(
-            valid=valid,
-            issues=issues,
-            metrics=metrics,
-            summary=summary
+            valid=valid, issues=issues, metrics=metrics, summary=summary
         )

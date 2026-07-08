@@ -94,7 +94,8 @@ class AttributionMapper:
             out.append(_Segment(AttributionSection.EXECUTIVE_SUMMARY, i, c.text))
         # Detailed explanation: each sentence is a segment.
         de_claims = self.extractor.extract(
-            answer.detailed_explanation, section=AttributionSection.DETAILED_EXPLANATION.value
+            answer.detailed_explanation,
+            section=AttributionSection.DETAILED_EXPLANATION.value,
         )
         for i, c in enumerate(de_claims):
             out.append(_Segment(AttributionSection.DETAILED_EXPLANATION, i, c.text))
@@ -103,17 +104,13 @@ class AttributionMapper:
             text = (ev.excerpt or "").strip()
             if not text:
                 continue
-            out.append(
-                _Segment(AttributionSection.SUPPORTING_EVIDENCE, i, text)
-            )
+            out.append(_Segment(AttributionSection.SUPPORTING_EVIDENCE, i, text))
         # Key regulatory references: each item is a segment.
         for i, ref in enumerate(answer.key_regulatory_references):
             text = (ref or "").strip()
             if not text:
                 continue
-            out.append(
-                _Segment(AttributionSection.KEY_REGULATORY_REFERENCES, i, text)
-            )
+            out.append(_Segment(AttributionSection.KEY_REGULATORY_REFERENCES, i, text))
         return out
 
     def _attest(
@@ -158,8 +155,11 @@ class AttributionMapper:
                 chunk_id=chunk.chunk_id,
                 page_number=chunk.page_number,
                 chunk_section=chunk.section,
-                source=getattr(chunk, "source", None) and (
-                    chunk.source.value if hasattr(chunk.source, "value") else str(chunk.source)
+                source=getattr(chunk, "source", None)
+                and (
+                    chunk.source.value
+                    if hasattr(chunk.source, "value")
+                    else str(chunk.source)
                 ),
                 excerpt=build_excerpt(chunk.content, max_length=max_excerpt_length),
                 similarity=score,
@@ -175,8 +175,11 @@ class AttributionMapper:
             chunk_id=chunk.chunk_id,
             page_number=chunk.page_number,
             chunk_section=chunk.section,
-            source=getattr(chunk, "source", None) and (
-                chunk.source.value if hasattr(chunk.source, "value") else str(chunk.source)
+            source=getattr(chunk, "source", None)
+            and (
+                chunk.source.value
+                if hasattr(chunk.source, "value")
+                else str(chunk.source)
             ),
             excerpt=build_excerpt(chunk.content, max_length=max_excerpt_length),
             similarity=score,
@@ -199,8 +202,12 @@ class AttributionValidator:
     ) -> AttributionValidation:
         issues: List[str] = []
         warnings: List[str] = []
-        unattributed = [a for a in attributions if a.confidence == AttributionConfidence.NONE]
-        low_conf = [a for a in attributions if a.confidence == AttributionConfidence.LOW]
+        unattributed = [
+            a for a in attributions if a.confidence == AttributionConfidence.NONE
+        ]
+        low_conf = [
+            a for a in attributions if a.confidence == AttributionConfidence.LOW
+        ]
 
         if not attributions:
             issues.append("no answer segments were extracted from the answer")
@@ -214,7 +221,9 @@ class AttributionValidator:
                 f"more than 50% of segments have LOW confidence ({len(low_conf)}/{len(attributions)})"
             )
         if request.require_full_coverage and unattributed:
-            issues.append("require_full_coverage=true but some segments are unattributed")
+            issues.append(
+                "require_full_coverage=true but some segments are unattributed"
+            )
         valid = not issues
         return AttributionValidation(valid=valid, issues=issues, warnings=warnings)
 
@@ -240,7 +249,7 @@ class SourceAttributionService:
         with track_request(
             endpoint="/api/v1/attribution/attribute",
             strategy="source_attribution",
-        ) as ctx:
+        ):
             try:
                 attributions = self.mapper.map(
                     answer=request.answer,
@@ -252,7 +261,7 @@ class SourceAttributionService:
                     attributions=attributions, request=request
                 )
                 coverage = self._compute_coverage(attributions)
-            except Exception as exc:
+            except Exception:
                 logger.exception("Source attribution failed")
                 raise
         latency_ms = (time.perf_counter() - t0) * 1000.0
@@ -310,9 +319,15 @@ class SourceAttributionService:
                 low_confidence_count=0,
             )
         total = len(attributions)
-        unattributed = [a for a in attributions if a.confidence == AttributionConfidence.NONE]
-        high = sum(1 for a in attributions if a.confidence == AttributionConfidence.HIGH)
-        med = sum(1 for a in attributions if a.confidence == AttributionConfidence.MEDIUM)
+        unattributed = [
+            a for a in attributions if a.confidence == AttributionConfidence.NONE
+        ]
+        high = sum(
+            1 for a in attributions if a.confidence == AttributionConfidence.HIGH
+        )
+        med = sum(
+            1 for a in attributions if a.confidence == AttributionConfidence.MEDIUM
+        )
         low = sum(1 for a in attributions if a.confidence == AttributionConfidence.LOW)
         avg = sum(a.similarity for a in attributions) / total
         return AttributionCoverage(

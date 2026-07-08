@@ -1,6 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 
+
 class BaseTokenizer(ABC):
     """Abstract Base Class for pluggable tokenizers."""
 
@@ -8,6 +9,7 @@ class BaseTokenizer(ABC):
     def count_tokens(self, text: str) -> int:
         """Counts the estimated tokens in the given text string."""
         pass
+
 
 class SimpleTokenizer(BaseTokenizer):
     """Simple tokenizer counting words and punctuation, approximating subword token count.

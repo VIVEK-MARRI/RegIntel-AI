@@ -22,14 +22,14 @@ from pydantic import BaseModel, ConfigDict, Field
 class QueryType(str, Enum):
     """Top-level classification of a regulatory query."""
 
-    DEFINITION = "definition"            # "What is KYC?"
-    FACTUAL = "factual"                  # "When was the RBI circular issued?"
-    PROCEDURAL = "procedural"            # "How to file a complaint?"
-    COMPARISON = "comparison"            # "Compare RBI vs SEBI disclosure rules"
-    TIMELINE = "timeline"                # "Evolution of KYC norms"
+    DEFINITION = "definition"  # "What is KYC?"
+    FACTUAL = "factual"  # "When was the RBI circular issued?"
+    PROCEDURAL = "procedural"  # "How to file a complaint?"
+    COMPARISON = "comparison"  # "Compare RBI vs SEBI disclosure rules"
+    TIMELINE = "timeline"  # "Evolution of KYC norms"
     REGULATORY_CHANGE = "regulatory_change"  # "What changed in 2023?"
-    CROSS_DOCUMENT = "cross_document"    # "What do RBI + SEBI say about X?"
-    MULTI_STEP = "multi_step"            # "First, find X, then compare with Y"
+    CROSS_DOCUMENT = "cross_document"  # "What do RBI + SEBI say about X?"
+    MULTI_STEP = "multi_step"  # "First, find X, then compare with Y"
     UNKNOWN = "unknown"
 
 
@@ -49,10 +49,10 @@ class PlanStepType(str, Enum):
 class PlanStrategy(str, Enum):
     """High-level strategy used to answer the query."""
 
-    SINGLE_DOC = "single_doc"            # All evidence in one document.
-    MULTI_DOC = "multi_doc"              # Multiple documents needed.
-    ITERATIVE = "iterative"              # Multi-step with sub-queries.
-    EVIDENCE_BASED = "evidence_based"    # Pull evidence and synthesise.
+    SINGLE_DOC = "single_doc"  # All evidence in one document.
+    MULTI_DOC = "multi_doc"  # Multiple documents needed.
+    ITERATIVE = "iterative"  # Multi-step with sub-queries.
+    EVIDENCE_BASED = "evidence_based"  # Pull evidence and synthesise.
 
 
 class PlanStepStatus(str, Enum):
@@ -68,9 +68,9 @@ class PlanStepStatus(str, Enum):
 class PlanComplexity(str, Enum):
     """Coarse estimate of how expensive the plan is to execute."""
 
-    SIMPLE = "simple"        # 1–2 steps, single doc.
-    MODERATE = "moderate"    # 3–5 steps, multi-doc.
-    COMPLEX = "complex"      # Multi-step, multi-doc, with reasoning.
+    SIMPLE = "simple"  # 1–2 steps, single doc.
+    MODERATE = "moderate"  # 3–5 steps, multi-doc.
+    COMPLEX = "complex"  # Multi-step, multi-doc, with reasoning.
 
 
 # ─── Plan structure ────────────────────────────────────────────────────────
@@ -214,10 +214,13 @@ class QueryPlanRequest(BaseModel):
     # Pre-supplied chunks (skips retrieval; useful for unit tests / API callers
     # that already have evidence).
     chunks: Optional[List[Dict[str, Any]]] = Field(
-        None, description="Pre-retrieved chunks; when present, RETRIEVE steps are skipped."
+        None,
+        description="Pre-retrieved chunks; when present, RETRIEVE steps are skipped.",
     )
     # Mode flag: when true, the plan is executed end-to-end.
-    execute: bool = Field(False, description="If true, execute the plan after generation.")
+    execute: bool = Field(
+        False, description="If true, execute the plan after generation."
+    )
     # Optional time budget for the whole plan in seconds.
     timeout_sec: float = Field(60.0, ge=1.0, le=600.0)
     metadata: Dict[str, Any] = Field(default_factory=dict)

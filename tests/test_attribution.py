@@ -215,7 +215,9 @@ class TestAttributionMapper:
 
     def test_map_supported_segments(self, sample_chunks, well_supported_answer):
         mapper = AttributionMapper()
-        attrs = mapper.map(answer=well_supported_answer, chunks=sample_chunks, min_similarity=0.10)
+        attrs = mapper.map(
+            answer=well_supported_answer, chunks=sample_chunks, min_similarity=0.10
+        )
         # All segments should match a chunk.
         assert all(a.confidence != AttributionConfidence.NONE for a in attrs)
         assert all(a.document_id for a in attrs)
@@ -300,7 +302,9 @@ class TestAttributionValidator:
 
 
 class TestSourceAttributionService:
-    def test_attribute_returns_full_envelope(self, well_supported_answer, sample_chunks):
+    def test_attribute_returns_full_envelope(
+        self, well_supported_answer, sample_chunks
+    ):
         service = build_default_attribution_service()
         req = AttributionRequest(
             query="q", answer=well_supported_answer, chunks=sample_chunks
@@ -328,7 +332,13 @@ class TestSourceAttributionService:
         )
         c = resp.coverage
         # High + medium + low + (unattributed) = total
-        assert c.high_confidence_count + c.medium_confidence_count + c.low_confidence_count + c.unattributed_segments == c.total_segments
+        assert (
+            c.high_confidence_count
+            + c.medium_confidence_count
+            + c.low_confidence_count
+            + c.unattributed_segments
+            == c.total_segments
+        )
         # Average similarity is bounded.
         assert 0.0 <= c.average_similarity <= 1.0
         # Coverage ratio.
@@ -346,7 +356,9 @@ class TestSourceAttributionService:
             key_regulatory_references=[],
         )
         service = build_default_attribution_service()
-        resp = service.attribute_segments(query="q", answer=answer, chunks=sample_chunks)
+        resp = service.attribute_segments(
+            query="q", answer=answer, chunks=sample_chunks
+        )
         # Both are claim-bearing sections, so 2 segments.
         assert resp.coverage.total_segments >= 2
 
@@ -357,7 +369,9 @@ class TestSourceAttributionService:
 class TestAttributionAPI:
     @pytest.mark.asyncio
     async def test_health(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/attribution/health")
             assert r.status_code == 200
             data = r.json()
@@ -366,7 +380,9 @@ class TestAttributionAPI:
 
     @pytest.mark.asyncio
     async def test_attribute_full(self, app, well_supported_answer, sample_chunks):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "What is KYC?",
                 "answer": well_supported_answer.model_dump(),
@@ -382,7 +398,9 @@ class TestAttributionAPI:
 
     @pytest.mark.asyncio
     async def test_attribute_empty_query_rejected(self, app, well_supported_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "  ",
                 "answer": well_supported_answer.model_dump(),
@@ -393,7 +411,9 @@ class TestAttributionAPI:
 
     @pytest.mark.asyncio
     async def test_attribute_empty_summary_rejected(self, app, sample_chunks):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "q",
                 "answer": {
@@ -408,8 +428,12 @@ class TestAttributionAPI:
             assert r.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_attribute_no_chunks_still_returns_200(self, app, well_supported_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async def test_attribute_no_chunks_still_returns_200(
+        self, app, well_supported_answer
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "q",
                 "answer": well_supported_answer.model_dump(),
@@ -419,12 +443,19 @@ class TestAttributionAPI:
             assert r.status_code == 200
             data = r.json()
             # All segments unattributed.
-            assert data["coverage"]["unattributed_segments"] == data["coverage"]["total_segments"]
+            assert (
+                data["coverage"]["unattributed_segments"]
+                == data["coverage"]["total_segments"]
+            )
             assert data["coverage"]["coverage_ratio"] == 0.0
 
     @pytest.mark.asyncio
-    async def test_attribute_metadata_populated(self, app, well_supported_answer, sample_chunks):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async def test_attribute_metadata_populated(
+        self, app, well_supported_answer, sample_chunks
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "q",
                 "answer": well_supported_answer.model_dump(),

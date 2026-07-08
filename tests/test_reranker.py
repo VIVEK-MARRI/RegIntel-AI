@@ -41,6 +41,7 @@ from app.services.reranker.service import RerankerService
 # Mock reranker provider
 # ======================================================================
 
+
 class MockBGERerankerProvider(BGERerankerProvider):
     """Deterministic mock that scores based on word overlap (no model loading)."""
 
@@ -67,6 +68,7 @@ class MockBGERerankerProvider(BGERerankerProvider):
         if not pairs:
             return ScoringResult(scores=[], scoring_latency_ms=0.0)
         import time
+
         start = time.perf_counter()
         scores = self.score_pairs(pairs)
         elapsed = (time.perf_counter() - start) * 1000
@@ -82,6 +84,7 @@ class MockBGERerankerProvider(BGERerankerProvider):
 # ======================================================================
 # Fixtures
 # ======================================================================
+
 
 @pytest.fixture
 def mock_provider():
@@ -109,7 +112,9 @@ def _make_candidate(chunk_id: str, content: str, score: float = 0.5) -> Dict[str
 QUERY = "KYC customer due diligence requirements"
 
 CANDIDATES = [
-    _make_candidate("c1", "KYC guidelines require customer due diligence procedures", 0.90),
+    _make_candidate(
+        "c1", "KYC guidelines require customer due diligence procedures", 0.90
+    ),
     _make_candidate("c2", "AML anti money laundering reporting obligations", 0.85),
     _make_candidate("c3", "Customer identification program for banks and NBFCs", 0.80),
     _make_candidate("c4", "Due diligence standards for high risk customers", 0.75),
@@ -120,6 +125,7 @@ CANDIDATES = [
 # ======================================================================
 # 1. Mock Provider Contract
 # ======================================================================
+
 
 class TestMockProvider:
     def test_score_pair_perfect_overlap(self, mock_provider):
@@ -165,6 +171,7 @@ class TestMockProvider:
 # 2. score_candidates()
 # ======================================================================
 
+
 class TestScoreCandidates:
     def test_all_candidates_scored(self, reranker):
         scored = reranker.score_candidates(QUERY, CANDIDATES)
@@ -198,6 +205,7 @@ class TestScoreCandidates:
 # ======================================================================
 # 3. rerank() – Full Pipeline
 # ======================================================================
+
 
 class TestRerankPipeline:
     def test_returns_rerank_response(self, reranker):
@@ -264,6 +272,7 @@ class TestRerankPipeline:
 # 4. Batch Reranking
 # ======================================================================
 
+
 class TestBatchReranking:
     def test_batch_rerank(self, reranker):
         queries = ["KYC requirements", "AML reporting"]
@@ -306,6 +315,7 @@ class TestBatchReranking:
 # ======================================================================
 # 5. RerankReport – Score Distribution & Precision Metrics
 # ======================================================================
+
 
 class TestRerankReport:
     def test_report_fields(self, reranker):
@@ -387,6 +397,7 @@ class TestRerankReport:
 # 6. Benchmark Suite
 # ======================================================================
 
+
 class TestBenchmark:
     def test_benchmark_returns_report(self, reranker):
         queries = ["KYC requirements", "AML reporting", "customer due diligence"]
@@ -457,7 +468,10 @@ class TestBenchmark:
         queries = ["q1", "q2"]
         candidates = [
             [_make_candidate("a", "content", 0.5)],
-            [_make_candidate("b", "content", 0.5), _make_candidate("c", "content", 0.5)],
+            [
+                _make_candidate("b", "content", 0.5),
+                _make_candidate("c", "content", 0.5),
+            ],
         ]
         report = reranker.benchmark(queries, candidates, top_k=5)
         assert report.avg_candidates_per_query == 1.5
@@ -466,6 +480,7 @@ class TestBenchmark:
 # ======================================================================
 # 7. Edge Cases
 # ======================================================================
+
 
 class TestEdgeCases:
     def test_empty_query(self, reranker):
@@ -503,11 +518,24 @@ class TestEdgeCases:
 # 8. rerank_fusion_results() – Convenience Wrapper
 # ======================================================================
 
+
 class TestRerankFusionResults:
     def test_from_fusion_output(self, reranker):
         fusion_results = [
-            {"chunk_id": "f1", "score": 0.82, "content": "KYC customer due diligence", "metadata": {}, "sources": ["dense", "bm25"]},
-            {"chunk_id": "f2", "score": 0.65, "content": "Settlement clearing procedures", "metadata": {}, "sources": ["dense"]},
+            {
+                "chunk_id": "f1",
+                "score": 0.82,
+                "content": "KYC customer due diligence",
+                "metadata": {},
+                "sources": ["dense", "bm25"],
+            },
+            {
+                "chunk_id": "f2",
+                "score": 0.65,
+                "content": "Settlement clearing procedures",
+                "metadata": {},
+                "sources": ["dense"],
+            },
         ]
         resp = reranker.rerank_fusion_results(QUERY, fusion_results, top_k=2)
         assert isinstance(resp, RerankResponse)
@@ -521,11 +549,14 @@ class TestRerankFusionResults:
 # 9. API Endpoint E2E
 # ======================================================================
 
+
 @pytest.fixture(autouse=True)
 def override_reranker():
     """Override the reranker service with a mock for API tests."""
     mock = MockBGERerankerProvider()
-    mock_service = RerankerService(provider=mock, default_top_k=5, default_score_threshold=0.0)
+    mock_service = RerankerService(
+        provider=mock, default_top_k=5, default_score_threshold=0.0
+    )
     app.dependency_overrides[get_reranker_service] = lambda: mock_service
     yield
     app.dependency_overrides.pop(get_reranker_service, None)
@@ -536,7 +567,10 @@ async def test_rerank_api_endpoint(client: AsyncClient):
     payload = {
         "query": "KYC customer due diligence",
         "candidates": [
-            {"chunk_id": "api-c1", "content": "KYC guidelines for customer due diligence"},
+            {
+                "chunk_id": "api-c1",
+                "content": "KYC guidelines for customer due diligence",
+            },
             {"chunk_id": "api-c2", "content": "Trade settlement and custody services"},
             {"chunk_id": "api-c3", "content": "Customer identification program"},
         ],

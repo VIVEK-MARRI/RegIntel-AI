@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.base import BaseRepository
 from app.models.bm25 import BM25IndexMetadata
 
+
 class BM25IndexMetadataRepository(BaseRepository[BM25IndexMetadata]):
     """Repository managing database CRUD operations for BM25IndexMetadata."""
 

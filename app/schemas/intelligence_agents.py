@@ -50,9 +50,7 @@ class ResearchPlanStep(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    step_id: str = Field(
-        default_factory=lambda: f"rstep-{secrets.token_hex(4)}"
-    )
+    step_id: str = Field(default_factory=lambda: f"rstep-{secrets.token_hex(4)}")
     action: str  # "plan" | "retrieve" | "compare" | "reason" | "summarize"
     description: str
     capability: str = "retrieval"  # mapped to CapabilityKind
@@ -69,9 +67,7 @@ class ResearchFinding(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    finding_id: str = Field(
-        default_factory=lambda: f"find-{secrets.token_hex(4)}"
-    )
+    finding_id: str = Field(default_factory=lambda: f"find-{secrets.token_hex(4)}")
     statement: str
     confidence: float = Field(0.5, ge=0.0, le=1.0)
     sources: List[str] = Field(default_factory=list)
@@ -101,9 +97,7 @@ class ResearchAgentResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(
-        default_factory=lambda: f"rres-{uuid.uuid4().hex[:12]}"
-    )
+    result_id: str = Field(default_factory=lambda: f"rres-{uuid.uuid4().hex[:12]}")
     agent: str = "research"
     agent_id: str = ""
     query: str
@@ -155,9 +149,7 @@ class ComplianceObligation(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    obligation_id: str = Field(
-        default_factory=lambda: f"obl-{secrets.token_hex(4)}"
-    )
+    obligation_id: str = Field(default_factory=lambda: f"obl-{secrets.token_hex(4)}")
     title: str
     source: str = ""  # regulator / circular / policy
     description: str = ""
@@ -173,9 +165,7 @@ class ComplianceGapDetail(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    gap_id: str = Field(
-        default_factory=lambda: f"gap-{secrets.token_hex(4)}"
-    )
+    gap_id: str = Field(default_factory=lambda: f"gap-{secrets.token_hex(4)}")
     title: str
     description: str
     risk_level: str = "medium"  # mapped to RiskLevel values
@@ -191,9 +181,7 @@ class ComplianceActionItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    action_id: str = Field(
-        default_factory=lambda: f"cait-{secrets.token_hex(4)}"
-    )
+    action_id: str = Field(default_factory=lambda: f"cait-{secrets.token_hex(4)}")
     title: str
     description: str
     priority: str = "medium"
@@ -227,9 +215,7 @@ class ComplianceAgentResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(
-        default_factory=lambda: f"cres-{uuid.uuid4().hex[:12]}"
-    )
+    result_id: str = Field(default_factory=lambda: f"cres-{uuid.uuid4().hex[:12]}")
     agent: str = "compliance"
     agent_id: str = ""
     query: str
@@ -282,9 +268,7 @@ class RiskScenario(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    scenario_id: str = Field(
-        default_factory=lambda: f"scn-{secrets.token_hex(4)}"
-    )
+    scenario_id: str = Field(default_factory=lambda: f"scn-{secrets.token_hex(4)}")
     name: str
     kind: RiskScenarioKind = RiskScenarioKind.BASELINE
     description: str = ""
@@ -336,9 +320,7 @@ class RiskAgentResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(
-        default_factory=lambda: f"riskres-{uuid.uuid4().hex[:12]}"
-    )
+    result_id: str = Field(default_factory=lambda: f"riskres-{uuid.uuid4().hex[:12]}")
     agent: str = "risk"
     agent_id: str = ""
     query: str

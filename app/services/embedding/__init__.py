@@ -60,4 +60,3 @@ __all__ = [
     "TFIDFEmbeddingProvider",
     "embedding_provider",
 ]
-

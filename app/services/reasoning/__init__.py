@@ -63,12 +63,31 @@ _DATE_RE = re.compile(
 )
 
 _MONTH_MAP = {
-    "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
-    "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
 }
 
 # Polarising words used to detect contradictions.
-_NEGATIVE_HINTS = {"not", "no", "prohibited", "shall not", "must not", "cannot", "may not", "forbidden"}
+_NEGATIVE_HINTS = {
+    "not",
+    "no",
+    "prohibited",
+    "shall not",
+    "must not",
+    "cannot",
+    "may not",
+    "forbidden",
+}
 _AFFIRMATIVE_HINTS = {"shall", "must", "required", "may", "permitted", "allowed"}
 
 
@@ -91,7 +110,9 @@ def _extract_date(text: str) -> Tuple[Optional[date], Optional[int]]:
             return None, year
     if gd.get("year"):
         try:
-            return date(int(gd["year"]), int(gd["month"]), int(gd["day"])), int(gd["year"])
+            return date(int(gd["year"]), int(gd["month"]), int(gd["day"])), int(
+                gd["year"]
+            )
         except ValueError:
             return None, int(gd["year"])
     return None, None
@@ -269,8 +290,12 @@ def _looks_contradictory(a: str, b: str) -> bool:
     # Antonym-style: share most tokens but have one of a small set of
     # opposite markers.
     opposite = {
-        "shall": "shall not", "must": "must not", "required": "not required",
-        "permitted": "prohibited", "allowed": "forbidden", "may": "may not",
+        "shall": "shall not",
+        "must": "must not",
+        "required": "not required",
+        "permitted": "prohibited",
+        "allowed": "forbidden",
+        "may": "may not",
     }
     for k, v in opposite.items():
         if (k in a_low and v in b_low) or (v in a_low and k in b_low):
@@ -361,9 +386,7 @@ class ChangeDetector:
 
     def __init__(self, *, similarity_threshold: float = 0.6) -> None:
         self.similarity_threshold = similarity_threshold
-        self.comparator = DocumentComparator(
-            similarity_threshold=similarity_threshold
-        )
+        self.comparator = DocumentComparator(similarity_threshold=similarity_threshold)
 
     def detect(
         self, chunks_a: List[Dict[str, Any]], chunks_b: List[Dict[str, Any]]
@@ -439,7 +462,10 @@ class ContradictionDetector:
                 if a["document_id"] == b["document_id"]:
                     continue  # within-document; skip
                 # Quick overlap gate.
-                if token_overlap(a["content"], b["content"]) < self.similarity_threshold:
+                if (
+                    token_overlap(a["content"], b["content"])
+                    < self.similarity_threshold
+                ):
                     continue
                 if not _looks_contradictory(a["content"], b["content"]):
                     continue
@@ -457,9 +483,7 @@ class ContradictionDetector:
                         explanation=explanation,
                     )
                 )
-        summary = (
-            f"{len(contradictions)} contradiction(s) found across the chunks."
-        )
+        summary = f"{len(contradictions)} contradiction(s) found across the chunks."
         return ContradictionReport(contradictions=contradictions, summary=summary)
 
     def _severity(self, a: str, b: str) -> ContradictionSeverity:
@@ -661,7 +685,9 @@ class MultiDocumentReasoner:
         **kwargs: Any,
     ) -> ReasoningResponse:
         return self.reason(
-            ReasoningRequest(query=query, chunks=chunks, mode=ReasoningMode.COMPARE, **kwargs)
+            ReasoningRequest(
+                query=query, chunks=chunks, mode=ReasoningMode.COMPARE, **kwargs
+            )
         )
 
     def timeline(
@@ -671,7 +697,9 @@ class MultiDocumentReasoner:
         **kwargs: Any,
     ) -> ReasoningResponse:
         return self.reason(
-            ReasoningRequest(query=query, chunks=chunks, mode=ReasoningMode.TIMELINE, **kwargs)
+            ReasoningRequest(
+                query=query, chunks=chunks, mode=ReasoningMode.TIMELINE, **kwargs
+            )
         )
 
     def changes(
@@ -681,7 +709,9 @@ class MultiDocumentReasoner:
         **kwargs: Any,
     ) -> ReasoningResponse:
         return self.reason(
-            ReasoningRequest(query=query, chunks=chunks, mode=ReasoningMode.CHANGES, **kwargs)
+            ReasoningRequest(
+                query=query, chunks=chunks, mode=ReasoningMode.CHANGES, **kwargs
+            )
         )
 
     def contradictions(
@@ -691,7 +721,9 @@ class MultiDocumentReasoner:
         **kwargs: Any,
     ) -> ReasoningResponse:
         return self.reason(
-            ReasoningRequest(query=query, chunks=chunks, mode=ReasoningMode.CONTRADICTIONS, **kwargs)
+            ReasoningRequest(
+                query=query, chunks=chunks, mode=ReasoningMode.CONTRADICTIONS, **kwargs
+            )
         )
 
     def cross_summary(
@@ -701,7 +733,9 @@ class MultiDocumentReasoner:
         **kwargs: Any,
     ) -> ReasoningResponse:
         return self.reason(
-            ReasoningRequest(query=query, chunks=chunks, mode=ReasoningMode.CROSS_SUMMARY, **kwargs)
+            ReasoningRequest(
+                query=query, chunks=chunks, mode=ReasoningMode.CROSS_SUMMARY, **kwargs
+            )
         )
 
 

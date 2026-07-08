@@ -88,12 +88,20 @@ class AuditAnalyzer:
 
     _KEYWORD_RULES = (
         ("kyc_renewal", AuditViolationSeverity.HIGH, "KYC renewal cadence"),
-        ("incident_reporting", AuditViolationSeverity.CRITICAL, "Cyber incident reporting"),
+        (
+            "incident_reporting",
+            AuditViolationSeverity.CRITICAL,
+            "Cyber incident reporting",
+        ),
         ("data_localisation", AuditViolationSeverity.HIGH, "Data localisation"),
         ("capital_adequacy", AuditViolationSeverity.CRITICAL, "Capital adequacy"),
         ("suspicious_transaction_reporting", AuditViolationSeverity.HIGH, "STR filing"),
         ("grievance_redressal", AuditViolationSeverity.MEDIUM, "Grievance redressal"),
-        ("outsourcing_due_diligence", AuditViolationSeverity.MEDIUM, "Outsourcing due diligence"),
+        (
+            "outsourcing_due_diligence",
+            AuditViolationSeverity.MEDIUM,
+            "Outsourcing due diligence",
+        ),
     )
 
     def __init__(
@@ -120,9 +128,7 @@ class AuditAnalyzer:
             # Match if the tag (or any of its parts) appears in the
             # query, OR the label appears in the query.
             tag_tokens = [t for t in tag.split("_") if len(t) > 1]
-            label_tokens = [
-                t for t in label.lower().split() if len(t) > 1
-            ]
+            label_tokens = [t for t in label.lower().split() if len(t) > 1]
             if (
                 any(tok in tokens for tok in tag_tokens)
                 or any(tok in tokens for tok in label_tokens)
@@ -177,14 +183,9 @@ class AuditAnalyzer:
 
     def _risk_violations(self, request: AuditAgentRequest) -> List[AuditViolation]:
         out: List[AuditViolation] = []
-        if (
-            self.compliance_risk_service is not None
-            and request.risk_assessment_id
-        ):
+        if self.compliance_risk_service is not None and request.risk_assessment_id:
             try:
-                a = self.compliance_risk_service.get(
-                    request.risk_assessment_id
-                )
+                a = self.compliance_risk_service.get(request.risk_assessment_id)
                 if a is not None:
                     score = float(getattr(a, "risk_score", 0.0))
                     if score >= 0.7:
@@ -198,9 +199,7 @@ class AuditAnalyzer:
                     out.append(
                         AuditViolation(
                             title="Elevated risk assessment",
-                            description=(
-                                f"Linked risk assessment score={score:.2f}"
-                            ),
+                            description=(f"Linked risk assessment score={score:.2f}"),
                             severity=sev,
                             source="risk_assessment",
                             metadata={"risk_score": score},
@@ -213,9 +212,7 @@ class AuditAnalyzer:
                                 description=getattr(g, "description", ""),
                                 severity=AuditViolationSeverity.MEDIUM,
                                 source="compliance_gap",
-                                metadata={
-                                    "area": str(getattr(g, "area", "other"))
-                                },
+                                metadata={"area": str(getattr(g, "area", "other"))},
                             )
                         )
             except Exception as exc:  # pragma: no cover
@@ -245,9 +242,7 @@ class AuditAnalyzer:
 
         # Trim
         if len(violations) > request.max_violations:
-            violations.sort(
-                key=lambda x: -_SEVERITY_RANK.get(x.severity, 0)
-            )
+            violations.sort(key=lambda x: -_SEVERITY_RANK.get(x.severity, 0))
             violations = violations[: request.max_violations]
         return violations, policies
 
@@ -295,6 +290,7 @@ class AuditEvidenceCollector:
         # 2) Pull recent audit records
         try:
             from app.schemas.audit import AuditFilter, AuditSeverity
+
             flt = AuditFilter(severity=AuditSeverity.INFO, page=1, page_size=20)
             page = self.audit_service.search_records(flt)
             for r in page.items[: request.max_evidence]:
@@ -379,9 +375,7 @@ class AuditReasoner:
         chain: Dict[str, Any],
     ) -> Tuple[AuditStatus, float, List[str]]:
         if chain.get("verified") is False:
-            return AuditStatus.NON_COMPLIANT, 0.95, [
-                "audit_chain_broken"
-            ]
+            return AuditStatus.NON_COMPLIANT, 0.95, ["audit_chain_broken"]
         if not violations:
             status = AuditStatus.COMPLIANT
             confidence = _clamp(0.9 if evidence else 0.6)
@@ -440,8 +434,13 @@ class AuditReportGenerator:
             f"{len(lineage)} lineage node(s); confidence={confidence:.2f}."
         )
         md = self._render_markdown(
-            request, status, confidence,
-            violations, evidence, lineage, chain,
+            request,
+            status,
+            confidence,
+            violations,
+            evidence,
+            lineage,
+            chain,
         )
         return AuditAgentResult(
             agent_id=agent_id,
@@ -500,8 +499,7 @@ class AuditReportGenerator:
         else:
             for v in violations:
                 lines.append(
-                    f"- **{v.severity.value.upper()}** — {v.title}  "
-                    f"({v.source})"
+                    f"- **{v.severity.value.upper()}** — {v.title}  " f"({v.source})"
                 )
                 if v.description:
                     lines.append(f"  - {v.description}")
@@ -521,9 +519,7 @@ class AuditReportGenerator:
             lines.append("_No lineage nodes recorded._")
         else:
             for n in lineage:
-                lines.append(
-                    f"- {n.kind} — {n.label} (subject={n.subject_id})"
-                )
+                lines.append(f"- {n.kind} — {n.label} (subject={n.subject_id})")
         return "\n".join(lines)
 
 
@@ -601,26 +597,22 @@ class AuditAgent(BaseAgent):
                 strategy="audit_agent",
             ):
                 violations, policies = self._analyzer.analyze(request)
-                evidence, lineage, chain = (
-                    [], [], {"verified": None, "break_at": ""}
-                )
+                evidence, lineage, chain = ([], [], {"verified": None, "break_at": ""})
                 if request.include_evidence:
-                    evidence, lineage, chain = self._collector.collect(
-                        request
-                    )
+                    evidence, lineage, chain = self._collector.collect(request)
                 status, confidence, affected = self._reasoner.reason(
                     violations, evidence, chain
                 )
                 # Best-effort recs
                 rec_ids: List[str] = []
-                if (
-                    self._recommendation_service is not None
-                    and (request.risk_assessment_id or request.diff_id)
+                if self._recommendation_service is not None and (
+                    request.risk_assessment_id or request.diff_id
                 ):
                     try:
                         from app.schemas.recommendations import (
                             RecommendationRequest,
                         )
+
                         rr = RecommendationRequest(
                             document_id=request.document_id,
                             diff_id=request.diff_id,
@@ -628,9 +620,7 @@ class AuditAgent(BaseAgent):
                             max_recommendations=5,
                         )
                         recs = self._recommendation_service.generate(rr)
-                        rec_ids.extend(
-                            r.recommendation_id for r in recs
-                        )
+                        rec_ids.extend(r.recommendation_id for r in recs)
                     except Exception:  # pragma: no cover
                         logger.warning(
                             "Recommendation generation failed",
@@ -645,6 +635,7 @@ class AuditAgent(BaseAgent):
                             AuditRecord,
                             AuditSeverity,
                         )
+
                         rec = AuditRecord(
                             action=AuditAction.OTHER,
                             actor="audit-agent",
@@ -652,9 +643,7 @@ class AuditAgent(BaseAgent):
                             or request.document_id
                             or request.query,
                             severity=AuditSeverity.INFO,
-                            description=(
-                                f"Audit agent task {request.task_kind.value}"
-                            ),
+                            description=(f"Audit agent task {request.task_kind.value}"),
                             metadata={
                                 "agent": "audit",
                                 "task_kind": request.task_kind.value,
@@ -668,8 +657,7 @@ class AuditAgent(BaseAgent):
                 decision_ids = [
                     n.metadata.get("decision_id", "")
                     for n in lineage
-                    if n.kind == "governance_decision"
-                    and n.metadata.get("decision_id")
+                    if n.kind == "governance_decision" and n.metadata.get("decision_id")
                 ]
                 duration = (_now() - start) * 1000.0
                 result = self._reporter.build(
@@ -802,13 +790,11 @@ class AuditAgentService:
             )
             if ok and result.output:
                 from app.schemas.audit_agent import AuditAgentResult as _AR
+
                 try:
                     parsed = _AR.model_validate(result.output)
                     self._metrics.by_status[parsed.audit_status.value] = (
-                        self._metrics.by_status.get(
-                            parsed.audit_status.value, 0
-                        )
-                        + 1
+                        self._metrics.by_status.get(parsed.audit_status.value, 0) + 1
                     )
                     self._metrics.total_violations += len(parsed.violations)
                     self._metrics.total_evidence += len(parsed.evidence)

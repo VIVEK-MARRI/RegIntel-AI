@@ -59,9 +59,7 @@ class RecommendationCitation(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    citation_id: str = Field(
-        default_factory=lambda: f"rcit-{secrets.token_hex(4)}"
-    )
+    citation_id: str = Field(default_factory=lambda: f"rcit-{secrets.token_hex(4)}")
     kind: CitationKind
     reference: str
     title: str = ""
@@ -75,9 +73,7 @@ class ReasoningStep(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    step_id: str = Field(
-        default_factory=lambda: f"rstep-{secrets.token_hex(4)}"
-    )
+    step_id: str = Field(default_factory=lambda: f"rstep-{secrets.token_hex(4)}")
     description: str
     rule: str = ""
     inputs: Dict[str, Any] = Field(default_factory=dict)
@@ -89,9 +85,7 @@ class ActionPlanStep(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    step_id: str = Field(
-        default_factory=lambda: f"apst-{secrets.token_hex(4)}"
-    )
+    step_id: str = Field(default_factory=lambda: f"apst-{secrets.token_hex(4)}")
     sequence: int = 0
     title: str
     description: str = ""
@@ -105,9 +99,7 @@ class ActionPlan(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    plan_id: str = Field(
-        default_factory=lambda: f"plan-{secrets.token_hex(4)}"
-    )
+    plan_id: str = Field(default_factory=lambda: f"plan-{secrets.token_hex(4)}")
     title: str
     summary: str = ""
     steps: List[ActionPlanStep] = Field(default_factory=list)

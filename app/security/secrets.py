@@ -160,7 +160,9 @@ class SecretsManager:
         if self._file_root is not None:
             file_value = self._lookup_file(name)
             if file_value is not None:
-                result = SecretResult(name=name, value=file_value, source=SecretSource.FILE)
+                result = SecretResult(
+                    name=name, value=file_value, source=SecretSource.FILE
+                )
                 self._cache_put(result)
                 self._bump(name)
                 return result
@@ -170,7 +172,10 @@ class SecretsManager:
             vault_value, version = self._lookup_vault(name)
             if vault_value is not None:
                 result = SecretResult(
-                    name=name, value=vault_value, source=SecretSource.VAULT, version=version
+                    name=name,
+                    value=vault_value,
+                    source=SecretSource.VAULT,
+                    version=version,
                 )
                 self._cache_put(result)
                 self._bump(name)
@@ -214,7 +219,11 @@ class SecretsManager:
                 "override_count": len(self._overrides),
                 "access_counts": dict(self._access_counts),
                 "cached": {
-                    n: {"source": r.source.value, "preview": r.preview(), "version": r.version}
+                    n: {
+                        "source": r.source.value,
+                        "preview": r.preview(),
+                        "version": r.version,
+                    }
                     for n, r in self._cache.items()
                 },
             }
@@ -224,7 +233,7 @@ class SecretsManager:
         seen = set()
         for k in os.environ.keys():
             if k.startswith(self._env_prefix):
-                seen.add(k[len(self._env_prefix):].lower())
+                seen.add(k[len(self._env_prefix) :].lower())
         if self._file_root and self._file_root.exists():
             for entry in self._file_root.iterdir():
                 if entry.is_file():
@@ -264,7 +273,11 @@ class SecretsManager:
                     data = json.loads(candidate.read_text(encoding="utf-8"))
                     if isinstance(data, dict):
                         for k, value in data.items():
-                            if isinstance(k, str) and k.lower() == name.lower() and isinstance(value, str):
+                            if (
+                                isinstance(k, str)
+                                and k.lower() == name.lower()
+                                and isinstance(value, str)
+                            ):
                                 return value
                 else:
                     text = candidate.read_text(encoding="utf-8")
@@ -298,7 +311,10 @@ class SecretsManager:
                 payload = json.loads(resp.read().decode("utf-8"))
             data = payload.get("data", {}).get("data", {})
             value = data.get("value")
-            version = str(payload.get("data", {}).get("metadata", {}).get("version", "")) or None
+            version = (
+                str(payload.get("data", {}).get("metadata", {}).get("version", ""))
+                or None
+            )
             return (value if isinstance(value, str) else None), version
         except Exception as exc:  # pragma: no cover - network
             logger.debug("Vault lookup for %s failed: %s", name, exc)

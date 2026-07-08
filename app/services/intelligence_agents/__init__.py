@@ -206,7 +206,12 @@ class ResearchAgentExecutor:
         self,
         request: ResearchAgentRequest,
         steps: List[ResearchPlanStep],
-    ) -> Tuple[List[ResearchPlanStep], List[ResearchFinding], List[Dict[str, Any]], List[Dict[str, Any]]]:
+    ) -> Tuple[
+        List[ResearchPlanStep],
+        List[ResearchFinding],
+        List[Dict[str, Any]],
+        List[Dict[str, Any]],
+    ]:
         from app.schemas.research import ResearchRequest
 
         executed: List[ResearchPlanStep] = []
@@ -228,9 +233,7 @@ class ResearchAgentExecutor:
                 report = self.research_service.run(rr, top_k=request.top_k)
                 duration = (_now() - start) * 1000.0
             except Exception as exc:  # pragma: no cover
-                logger.warning(
-                    "Research service failed: %s", exc
-                )
+                logger.warning("Research service failed: %s", exc)
                 report = None
                 duration = 0.0
             # Mark retrieve / compare / reason / summarise steps
@@ -239,7 +242,9 @@ class ResearchAgentExecutor:
                     s.started_at = _now()
                     s.outputs = {
                         "step_kind": s.action,
-                        "duration_ms": round(duration, 3) if s.action == "retrieve" else 0.0,
+                        "duration_ms": round(duration, 3)
+                        if s.action == "retrieve"
+                        else 0.0,
                     }
                     s.duration_ms = s.outputs["duration_ms"]
                     s.finished_at = _now()
@@ -310,7 +315,9 @@ class ResearchAgentExecutor:
                         nodes, rels = self.knowledge_graph_service.list_all()
                         # Pick nodes whose name appears in the query
                         query_tokens = {
-                            t for t in re.findall(r"\w+", request.query.lower()) if len(t) > 3
+                            t
+                            for t in re.findall(r"\w+", request.query.lower())
+                            if len(t) > 3
                         }
                         hits = [
                             {
@@ -365,9 +372,7 @@ class ResearchAgentExecutor:
                 if years:
                     findings.append(
                         ResearchFinding(
-                            statement=(
-                                f"Timeline covers {len(years)} time anchor(s)."
-                            ),
+                            statement=(f"Timeline covers {len(years)} time anchor(s)."),
                             confidence=0.65,
                         )
                     )
@@ -387,9 +392,7 @@ class ResearchAgentReasoner:
         plan: List[ResearchPlanStep],
     ) -> Tuple[str, float]:
         if not findings:
-            summary = (
-                f"No structured findings produced for query {query!r}."
-            )
+            summary = f"No structured findings produced for query {query!r}."
             return summary, 0.3
         # Average confidence
         avg = sum(f.confidence for f in findings) / max(1, len(findings))
@@ -572,12 +575,32 @@ class ComplianceAnalyzer:
 
     _KEYWORD_OBLIGATIONS = (
         ("kyc_renewal", "KYC renewal cadence must be enforced", "kyc"),
-        ("incident_reporting", "Cyber incidents must be reported within 6h", "cyber_security"),
-        ("data_localisation", "Customer data must be stored within India", "data_privacy"),
-        ("capital_adequacy", "Capital adequacy ratio to be maintained", "capital_adequacy"),
+        (
+            "incident_reporting",
+            "Cyber incidents must be reported within 6h",
+            "cyber_security",
+        ),
+        (
+            "data_localisation",
+            "Customer data must be stored within India",
+            "data_privacy",
+        ),
+        (
+            "capital_adequacy",
+            "Capital adequacy ratio to be maintained",
+            "capital_adequacy",
+        ),
         ("suspicious_transaction_reporting", "STRs must be filed promptly", "aml"),
-        ("grievance_redressal", "Customer grievance acknowledgement within 3 days", "customer_protection"),
-        ("outsourcing_due_diligence", "Vendor due-diligence required for outsourcing", "outsourcing"),
+        (
+            "grievance_redressal",
+            "Customer grievance acknowledgement within 3 days",
+            "customer_protection",
+        ),
+        (
+            "outsourcing_due_diligence",
+            "Vendor due-diligence required for outsourcing",
+            "outsourcing",
+        ),
     )
 
     def __init__(
@@ -613,11 +636,7 @@ class ComplianceAnalyzer:
         # 1) Pull from the risk assessment
         if assessment is not None:
             for area in getattr(assessment, "affected_areas", []) or []:
-                area_name = (
-                    area.area.value
-                    if hasattr(area, "area")
-                    else str(area)
-                )
+                area_name = area.area.value if hasattr(area, "area") else str(area)
                 if area_name not in affected_areas:
                     affected_areas.append(area_name)
             for g in getattr(assessment, "compliance_gaps", []) or []:
@@ -687,9 +706,7 @@ class ComplianceAnalyzer:
                         "compliant": result.compliant
                         if hasattr(result, "compliant")
                         else True,
-                        "violation_count": len(
-                            getattr(result, "violations", []) or []
-                        ),
+                        "violation_count": len(getattr(result, "violations", []) or []),
                         "rules_evaluated": len(
                             getattr(result, "rules_evaluated", []) or []
                         ),
@@ -700,10 +717,10 @@ class ComplianceAnalyzer:
                         ComplianceGapDetail(
                             title=getattr(v, "message", "policy_violation"),
                             description=getattr(v, "message", ""),
-                            risk_level=str(
-                                getattr(v, "severity", "medium")
-                            ),
-                            affected_areas=[getattr(assessment, "document_id", "document")],
+                            risk_level=str(getattr(v, "severity", "medium")),
+                            affected_areas=[
+                                getattr(assessment, "document_id", "document")
+                            ],
                             root_cause="policy",
                         )
                     )
@@ -769,7 +786,11 @@ class ComplianceRecommendationGenerator:
         if (
             self.recommendation_service is not None
             and request.include_recommendations
-            and (request.risk_assessment_id or request.diff_id or request.impact_report_id)
+            and (
+                request.risk_assessment_id
+                or request.diff_id
+                or request.impact_report_id
+            )
         ):
             try:
                 rr = RecommendationRequest(
@@ -808,9 +829,7 @@ class ComplianceRecommendationGenerator:
                     len(recs)
                 )
             except Exception as exc:  # pragma: no cover
-                logger.warning(
-                    "Recommendation service failed: %s", exc
-                )
+                logger.warning("Recommendation service failed: %s", exc)
         # 2) Build actions from gaps directly (always)
         for g in gaps:
             actions.append(
@@ -819,9 +838,7 @@ class ComplianceRecommendationGenerator:
                     description=g.description or g.title,
                     priority=g.risk_level,
                     affected_areas=g.affected_areas or ["compliance"],
-                    target_completion_days=self._PRIORITY_DAYS.get(
-                        g.risk_level, 30
-                    ),
+                    target_completion_days=self._PRIORITY_DAYS.get(g.risk_level, 30),
                     addresses_gap_ids=[g.gap_id],
                 )
             )
@@ -955,9 +972,7 @@ class ComplianceAgent(BaseAgent):
                     self._analyzer.analyze(request, assessment)
                 )
                 # 3) Reason
-                risk_level, risk_score = self._reasoner.reason(
-                    gaps, assessment
-                )
+                risk_level, risk_score = self._reasoner.reason(gaps, assessment)
                 # 4) Generate actions / recommendations
                 actions, rec_ids = self._action_gen.generate(request, gaps)
                 # 5) Confidence: derived from gap count + policy evals
@@ -1048,10 +1063,7 @@ class RiskAnalyzer:
         request: RiskAgentRequest,
     ) -> Tuple[Optional[Any], str, float, List[Dict[str, Any]]]:
         assessment = None
-        if (
-            self.compliance_risk_service is not None
-            and request.risk_assessment_id
-        ):
+        if self.compliance_risk_service is not None and request.risk_assessment_id:
             try:
                 assessment = self.compliance_risk_service.get(
                     request.risk_assessment_id
@@ -1063,15 +1075,10 @@ class RiskAnalyzer:
         risk_score = 0.5
         if assessment is not None:
             rl = getattr(assessment, "risk_level", None)
-            risk_level = (
-                rl.value if hasattr(rl, "value") else str(rl or "medium")
-            )
+            risk_level = rl.value if hasattr(rl, "value") else str(rl or "medium")
             risk_score = float(getattr(assessment, "risk_score", 0.5))
         trends: List[Dict[str, Any]] = []
-        if (
-            self.compliance_risk_service is not None
-            and request.document_id
-        ):
+        if self.compliance_risk_service is not None and request.document_id:
             try:
                 history = self.compliance_risk_service.history_for(
                     document_id=request.document_id
@@ -1127,15 +1134,20 @@ class RiskForecastCoordinator:
             HistoryPoint,
             ScenarioRequest,
         )
+
         try:
             history = [
-                HistoryPoint(timestamp=p.get("timestamp", _now()), value=p.get("value", 0.0))
+                HistoryPoint(
+                    timestamp=p.get("timestamp", _now()), value=p.get("value", 0.0)
+                )
                 for p in request.history
             ]
             if not history:
                 # Synthesise a tiny series from baseline
                 history = [
-                    HistoryPoint(timestamp=_now() - (3 - i) * 86400, value=baseline_score)
+                    HistoryPoint(
+                        timestamp=_now() - (3 - i) * 86400, value=baseline_score
+                    )
                     for i in range(3)
                 ]
             fr = ForecastRequest(
@@ -1342,15 +1354,11 @@ class RiskIntelligenceAgent(BaseAgent):
                 endpoint="/api/v1/agents/risk/run",
                 strategy="risk_agent",
             ):
-                assessment, risk_level, risk_score, trends = (
-                    self._analyzer.analyze(request)
+                assessment, risk_level, risk_score, trends = self._analyzer.analyze(
+                    request
                 )
-                projections, drift = self._forecast_coord.forecast(
-                    request, risk_score
-                )
-                scenarios = self._scenario_planner.plan(
-                    request, risk_score
-                )
+                projections, drift = self._forecast_coord.forecast(request, risk_score)
+                scenarios = self._scenario_planner.plan(request, risk_score)
                 recommended_actions: List[Dict[str, Any]] = []
                 if (
                     request.include_recommendations
@@ -1360,6 +1368,7 @@ class RiskIntelligenceAgent(BaseAgent):
                         from app.schemas.recommendations import (
                             RecommendationRequest,
                         )
+
                         rec_req = RecommendationRequest(
                             document_id=request.document_id,
                             diff_id=request.diff_id,
@@ -1381,11 +1390,10 @@ class RiskIntelligenceAgent(BaseAgent):
                             len(recs)
                         )
                     except Exception as exc:  # pragma: no cover
-                        logger.warning(
-                            "Recommendation generation failed: %s", exc
-                        )
+                        logger.warning("Recommendation generation failed: %s", exc)
                 confidence = _tokenize_confidence(
-                    0.55 + 0.1 * (1.0 if projections else 0.0)
+                    0.55
+                    + 0.1 * (1.0 if projections else 0.0)
                     + 0.1 * (1.0 if trends else 0.0)
                     - 0.05 * (1.0 if drift else 0.0),
                     baseline=0.55,
@@ -1674,9 +1682,7 @@ class IntelligenceAgentFactory:
             request_kind=request_kind,
             evidence_keys=sorted(evidence.keys()),
             result_keys=sorted(result.keys()),
-            shared_context_keys=sorted(
-                set(evidence.keys()) & set(result.keys())
-            ),
+            shared_context_keys=sorted(set(evidence.keys()) & set(result.keys())),
         )
         self.broker.record(collab)
         get_intelligence_agent_metrics().record_collaboration(
@@ -1726,7 +1732,9 @@ class CoordinatorDriver:
         research_output = research_result.output or {}
         compliance_req = ComplianceAgentRequest(
             query=request.query,
-            focus_areas=list({m.get("statement", "") for m in research_output.get("findings", [])})[:5]
+            focus_areas=list(
+                {m.get("statement", "") for m in research_output.get("findings", [])}
+            )[:5]
             or ["compliance"],
             metadata={"research_result_id": research_result.result_id},
         )
@@ -1777,8 +1785,8 @@ class CoordinatorDriver:
         """Convenience: research → compliance → risk pipeline."""
         context = context or AgentContext()
         research_req = ResearchAgentRequest(query=query, mode=mode)
-        research_result, comp_result, collabs = (
-            await self.run_research_then_compliance(research_req, context)
+        research_result, comp_result, collabs = await self.run_research_then_compliance(
+            research_req, context
         )
         # Now risk on the compliance output
         risk_req = RiskAgentRequest(
@@ -1914,8 +1922,7 @@ class IntelligenceAgentService:
         )
         return ResearchAgentHealth(
             healthy=(
-                self.factory.research_agent.health().healthy
-                and m.research_failed < 5
+                self.factory.research_agent.health().healthy and m.research_failed < 5
             ),
             total_invocations=m.research_invocations,
             successful_invocations=m.research_successful,
@@ -1955,20 +1962,13 @@ class IntelligenceAgentService:
     def health_risk(self) -> RiskAgentHealth:
         m = get_intelligence_agent_metrics()
         avg_dur = (
-            m.risk_total_duration_ms / m.risk_invocations
-            if m.risk_invocations
-            else 0.0
+            m.risk_total_duration_ms / m.risk_invocations if m.risk_invocations else 0.0
         )
         avg_conf = (
-            m.risk_confidence_total / m.risk_invocations
-            if m.risk_invocations
-            else 0.0
+            m.risk_confidence_total / m.risk_invocations if m.risk_invocations else 0.0
         )
         return RiskAgentHealth(
-            healthy=(
-                self.factory.risk_agent.health().healthy
-                and m.risk_failed < 5
-            ),
+            healthy=(self.factory.risk_agent.health().healthy and m.risk_failed < 5),
             total_invocations=m.risk_invocations,
             successful_invocations=m.risk_successful,
             failed_invocations=m.risk_failed,
@@ -1980,6 +1980,7 @@ class IntelligenceAgentService:
 
     def metrics(self) -> IntelligenceAgentMetrics:
         m = get_intelligence_agent_metrics()
+
         def _summary(agent_name: str, total: int, conf: float) -> AgentMetricsSummary:
             avg_conf = conf / total if total else 0.0
             return AgentMetricsSummary(
@@ -1988,6 +1989,7 @@ class IntelligenceAgentService:
                 average_confidence=round(avg_conf, 3),
                 last_invocation_at=None,
             )
+
         return IntelligenceAgentMetrics(
             total_invocations=m.total_invocations,
             total_successful=m.total_successful,
@@ -2014,9 +2016,7 @@ class IntelligenceAgentService:
         from_agent: Optional[str] = None,
         to_agent: Optional[str] = None,
     ) -> List[AgentCollaboration]:
-        return self.factory.broker.list(
-            from_agent=from_agent, to_agent=to_agent
-        )
+        return self.factory.broker.list(from_agent=from_agent, to_agent=to_agent)
 
     def reset(self) -> None:
         get_intelligence_agent_metrics().reset()

@@ -88,27 +88,43 @@ def test_estimate_cost_thousand_tokens():
 def _entry(content, tags=None):
     """Build a stub memory entry for classification tests."""
     from types import SimpleNamespace
+
     return SimpleNamespace(content=content, tags=tags or [])
 
 
 def test_classify_memory_definition():
-    assert _classify_memory(_entry("KYC means Know Your Customer")) == QueryCategory.DEFINITION
+    assert (
+        _classify_memory(_entry("KYC means Know Your Customer"))
+        == QueryCategory.DEFINITION
+    )
 
 
 def test_classify_memory_timeline():
-    assert _classify_memory(_entry("Effective from 1 April 2023")) == QueryCategory.TIMELINE
+    assert (
+        _classify_memory(_entry("Effective from 1 April 2023"))
+        == QueryCategory.TIMELINE
+    )
 
 
 def test_classify_memory_change():
-    assert _classify_memory(_entry("New amendment to the SEBI regulations")) == QueryCategory.CHANGE
+    assert (
+        _classify_memory(_entry("New amendment to the SEBI regulations"))
+        == QueryCategory.CHANGE
+    )
 
 
 def test_classify_memory_comparison():
-    assert _classify_memory(_entry("Difference between mutual fund and ETF")) == QueryCategory.COMPARISON
+    assert (
+        _classify_memory(_entry("Difference between mutual fund and ETF"))
+        == QueryCategory.COMPARISON
+    )
 
 
 def test_classify_memory_other_fallback():
-    assert _classify_memory(_entry("Random unrelated chatter about cats")) == QueryCategory.OTHER
+    assert (
+        _classify_memory(_entry("Random unrelated chatter about cats"))
+        == QueryCategory.OTHER
+    )
 
 
 # ─── Conversation analytics ──────────────────────────────────────────────
@@ -129,6 +145,7 @@ def _make_conv(conv_id, user_id, n_msgs, archived=False, with_followup=False):
         Message,
         Role,
     )
+
     msgs = []
     for i in range(n_msgs):
         role = Role.USER if i % 2 == 0 else Role.ASSISTANT
@@ -424,7 +441,9 @@ def test_usage_window_filtered():
 
         def answer_events(self):
             return [
-                _ev("old", 500, 100.0, datetime.now(timezone.utc) - timedelta(days=365)),
+                _ev(
+                    "old", 500, 100.0, datetime.now(timezone.utc) - timedelta(days=365)
+                ),
                 _ev("new", 1500, 200.0, datetime.now(timezone.utc)),
             ]
 

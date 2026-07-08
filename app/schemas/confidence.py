@@ -41,9 +41,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class ConfidenceLevel(str, Enum):
     """Discrete confidence bands."""
 
-    HIGH = "high"      # >= 0.9
+    HIGH = "high"  # >= 0.9
     MEDIUM = "medium"  # 0.7 - 0.9
-    LOW = "low"        # < 0.7
+    LOW = "low"  # < 0.7
 
 
 class ConfidenceFactorName(str, Enum):

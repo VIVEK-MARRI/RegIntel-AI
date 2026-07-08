@@ -84,7 +84,10 @@ async def scheduler_start(
     service: MonitoringService = Depends(get_monitoring_service),
 ) -> Dict[str, Any]:
     await service.start_scheduler()
-    return {"started": True, "status": service.scheduler_status().model_dump(mode="json")}
+    return {
+        "started": True,
+        "status": service.scheduler_status().model_dump(mode="json"),
+    }
 
 
 @router.post(
@@ -95,7 +98,10 @@ async def scheduler_stop(
     service: MonitoringService = Depends(get_monitoring_service),
 ) -> Dict[str, Any]:
     await service.stop_scheduler()
-    return {"stopped": True, "status": service.scheduler_status().model_dump(mode="json")}
+    return {
+        "stopped": True,
+        "status": service.scheduler_status().model_dump(mode="json"),
+    }
 
 
 @router.post(

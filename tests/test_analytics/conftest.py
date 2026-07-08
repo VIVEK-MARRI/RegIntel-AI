@@ -38,6 +38,7 @@ ANALYTICS_TABLES = [
 def event_loop():
     """Create an event loop for the test session."""
     import asyncio
+
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
@@ -122,28 +123,30 @@ def make_batch_metrics_data(count: int = 5) -> list:
     now = datetime.now(timezone.utc)
     items = []
     for i in range(count):
-        items.append({
-            "query_id": str(uuid.uuid4()),
-            "query_text": f"Test query {i}: What are the regulations?",
-            "query_category": categories[i % len(categories)],
-            "strategy": strategies[i % len(strategies)],
-            "dataset_name": "test_dataset",
-            "dense_recall_at_5": 0.5 + (i * 0.08),
-            "dense_recall_at_10": 0.6 + (i * 0.07),
-            "bm25_recall_at_5": 0.4 + (i * 0.09),
-            "bm25_recall_at_10": 0.5 + (i * 0.08),
-            "hybrid_recall_at_5": 0.55 + (i * 0.07),
-            "hybrid_recall_at_10": 0.65 + (i * 0.06),
-            "precision_at_5": 0.5 + (i * 0.06),
-            "precision_at_10": 0.45 + (i * 0.05),
-            "mrr": 0.6 + (i * 0.07),
-            "hit_rate": 1.0 if i % 3 != 0 else 0.0,
-            "retrieval_latency_ms": 30.0 + (i * 10),
-            "reranker_latency_ms": 100.0 + (i * 20),
-            "total_latency_ms": 130.0 + (i * 30),
-            "reranker_gain": 0.02 + (i * 0.01),
-            "results_returned": 10,
-            "relevant_count": 5 + i,
-            "metadata_json": {"batch_index": i},
-        })
+        items.append(
+            {
+                "query_id": str(uuid.uuid4()),
+                "query_text": f"Test query {i}: What are the regulations?",
+                "query_category": categories[i % len(categories)],
+                "strategy": strategies[i % len(strategies)],
+                "dataset_name": "test_dataset",
+                "dense_recall_at_5": 0.5 + (i * 0.08),
+                "dense_recall_at_10": 0.6 + (i * 0.07),
+                "bm25_recall_at_5": 0.4 + (i * 0.09),
+                "bm25_recall_at_10": 0.5 + (i * 0.08),
+                "hybrid_recall_at_5": 0.55 + (i * 0.07),
+                "hybrid_recall_at_10": 0.65 + (i * 0.06),
+                "precision_at_5": 0.5 + (i * 0.06),
+                "precision_at_10": 0.45 + (i * 0.05),
+                "mrr": 0.6 + (i * 0.07),
+                "hit_rate": 1.0 if i % 3 != 0 else 0.0,
+                "retrieval_latency_ms": 30.0 + (i * 10),
+                "reranker_latency_ms": 100.0 + (i * 20),
+                "total_latency_ms": 130.0 + (i * 30),
+                "reranker_gain": 0.02 + (i * 0.01),
+                "results_returned": 10,
+                "relevant_count": 5 + i,
+                "metadata_json": {"batch_index": i},
+            }
+        )
     return items

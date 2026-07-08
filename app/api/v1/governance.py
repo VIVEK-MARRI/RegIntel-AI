@@ -128,18 +128,14 @@ async def create_approval_policy(
     return svc.create_approval_policy(request)
 
 
-@router.get(
-    "/approval-policies", response_model=List[ApprovalPolicy]
-)
+@router.get("/approval-policies", response_model=List[ApprovalPolicy])
 async def list_approval_policies(
     svc: GovernanceService = _service_dep(),
 ) -> List[ApprovalPolicy]:
     return svc.list_approval_policies()
 
 
-@router.get(
-    "/approval-policies/{policy_id}", response_model=ApprovalPolicy
-)
+@router.get("/approval-policies/{policy_id}", response_model=ApprovalPolicy)
 async def get_approval_policy(
     policy_id: str, svc: GovernanceService = _service_dep()
 ) -> ApprovalPolicy:
@@ -154,9 +150,7 @@ async def delete_approval_policy(
     policy_id: str, svc: GovernanceService = _service_dep()
 ) -> Response:
     if not svc.delete_approval_policy(policy_id):
-        raise HTTPException(
-            status_code=404, detail="approval policy not found"
-        )
+        raise HTTPException(status_code=404, detail="approval policy not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

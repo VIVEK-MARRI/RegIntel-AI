@@ -65,9 +65,7 @@ async def run_research(
     svc: IntelligenceAgentService = _service_dep(),
 ) -> ResearchAgentResult:
     try:
-        return await svc.run_research(
-            request, context=AgentContext(actor="api")
-        )
+        return await svc.run_research(request, context=AgentContext(actor="api"))
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -81,9 +79,7 @@ async def run_compliance(
     svc: IntelligenceAgentService = _service_dep(),
 ) -> ComplianceAgentResult:
     try:
-        return await svc.run_compliance(
-            request, context=AgentContext(actor="api")
-        )
+        return await svc.run_compliance(request, context=AgentContext(actor="api"))
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -97,9 +93,7 @@ async def run_risk(
     svc: IntelligenceAgentService = _service_dep(),
 ) -> RiskAgentResult:
     try:
-        return await svc.run_risk(
-            request, context=AgentContext(actor="api")
-        )
+        return await svc.run_risk(request, context=AgentContext(actor="api"))
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -146,9 +140,7 @@ async def list_collaborations(
     to_agent: Optional[str] = None,
     svc: IntelligenceAgentService = _service_dep(),
 ) -> List[AgentCollaboration]:
-    return svc.collaborations(
-        from_agent=from_agent, to_agent=to_agent
-    )
+    return svc.collaborations(from_agent=from_agent, to_agent=to_agent)
 
 
 __all__ = ["router"]

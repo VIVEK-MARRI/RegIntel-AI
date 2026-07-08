@@ -85,7 +85,7 @@ class JWTConfig:
     issuer: str = "regintel-ai"
     audience: str = "regintel-api"
     algorithm: str = "HS256"
-    access_ttl_seconds: int = 900            # 15 min default
+    access_ttl_seconds: int = 900  # 15 min default
     refresh_ttl_seconds: int = 7 * 24 * 3600  # 7 days
     clock_skew_seconds: int = 30
     leeway_seconds: int = 5  # for backward compat with older leeway parameter
@@ -147,7 +147,9 @@ class TokenPair:
             "access_token": self.access_token,
             "refresh_token": self.refresh_token,
             "token_type": self.token_type,
-            "expires_in": int((self.access_expires_at - datetime.now(timezone.utc)).total_seconds()),
+            "expires_in": int(
+                (self.access_expires_at - datetime.now(timezone.utc)).total_seconds()
+            ),
             "access_expires_at": self.access_expires_at.isoformat(),
             "refresh_expires_at": self.refresh_expires_at.isoformat(),
         }
@@ -176,8 +178,14 @@ class JWTIssuer:
         refresh_ttl: Optional[int] = None,
     ) -> TokenPair:
         """Return a fresh :class:`TokenPair` for ``subject``."""
-        access_ttl = access_ttl if access_ttl is not None else (ttl_seconds or self.config.access_ttl_seconds)
-        refresh_ttl = refresh_ttl if refresh_ttl is not None else self.config.refresh_ttl_seconds
+        access_ttl = (
+            access_ttl
+            if access_ttl is not None
+            else (ttl_seconds or self.config.access_ttl_seconds)
+        )
+        refresh_ttl = (
+            refresh_ttl if refresh_ttl is not None else self.config.refresh_ttl_seconds
+        )
 
         now = int(time.time())
         access_exp = now + access_ttl
@@ -237,7 +245,9 @@ class JWTIssuer:
         ).digest()
         return signing_input + "." + _b64url(signature)
 
-    def verify(self, token: str, *, expected_audience: Optional[str] = None) -> JWTPrincipal:
+    def verify(
+        self, token: str, *, expected_audience: Optional[str] = None
+    ) -> JWTPrincipal:
         return decode_jwt(
             token,
             secret=self.config.secret,

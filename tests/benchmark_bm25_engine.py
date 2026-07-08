@@ -35,15 +35,53 @@ from app.services.bm25.index_manager import BM25IndexManager, IndexManagerConfig
 # ---------------------------------------------------------------------------
 
 REGULATORY_TERMS = [
-    "KYC", "AML", "PEP", "CDD", "EDD", "risk", "compliance", "regulation",
-    "banking", "securities", "mutual fund", "stock exchange", "disclosure",
-    "surveillance", "enforcement", "penalty", "governance", "audit",
-    "reporting", "monitoring", "assessment", "classification", "verification",
-    "identification", "authentication", "authorization", "documentation",
-    "due diligence", "customer", "investor", "financial institution",
-    "non-banking", "NBFC", "housing finance", "credit", "lending",
-    "borrowing", "capital", "liquidity", "solvency", "provision",
-    "reserve", "ratio", "limit", "threshold", "exemption", "waiver",
+    "KYC",
+    "AML",
+    "PEP",
+    "CDD",
+    "EDD",
+    "risk",
+    "compliance",
+    "regulation",
+    "banking",
+    "securities",
+    "mutual fund",
+    "stock exchange",
+    "disclosure",
+    "surveillance",
+    "enforcement",
+    "penalty",
+    "governance",
+    "audit",
+    "reporting",
+    "monitoring",
+    "assessment",
+    "classification",
+    "verification",
+    "identification",
+    "authentication",
+    "authorization",
+    "documentation",
+    "due diligence",
+    "customer",
+    "investor",
+    "financial institution",
+    "non-banking",
+    "NBFC",
+    "housing finance",
+    "credit",
+    "lending",
+    "borrowing",
+    "capital",
+    "liquidity",
+    "solvency",
+    "provision",
+    "reserve",
+    "ratio",
+    "limit",
+    "threshold",
+    "exemption",
+    "waiver",
 ]
 
 SECTION_TEMPLATES = [
@@ -63,11 +101,22 @@ DOCUMENT_TITLES = [
 ]
 
 TOPICS = [
-    "KYC Compliance", "AML Standards", "Risk Management", "Governance",
-    "Disclosure Requirements", "Investor Protection", "Market Surveillance",
-    "Capital Adequacy", "Liquidity Management", "Credit Risk",
-    "Operational Risk", "Cyber Security", "Data Protection",
-    "Consumer Protection", "Fair Practices", "Transparency",
+    "KYC Compliance",
+    "AML Standards",
+    "Risk Management",
+    "Governance",
+    "Disclosure Requirements",
+    "Investor Protection",
+    "Market Surveillance",
+    "Capital Adequacy",
+    "Liquidity Management",
+    "Credit Risk",
+    "Operational Risk",
+    "Cyber Security",
+    "Data Protection",
+    "Consumer Protection",
+    "Fair Practices",
+    "Transparency",
 ]
 
 
@@ -79,7 +128,9 @@ def _random_sentence(num_terms: int = 8) -> str:
     parts = []
     for i, term in enumerate(terms):
         if i == 0:
-            parts.append(f"Financial institutions {random.choice(fillers)} {term.lower()}")
+            parts.append(
+                f"Financial institutions {random.choice(fillers)} {term.lower()}"
+            )
         else:
             parts.append(term.lower())
     return " ".join(parts) + "."
@@ -106,7 +157,9 @@ def generate_benchmark_documents(
             num=random.randint(1, 20),
             title=topic,
         )
-        subsection_title = f"Subsection {random.randint(1, 5)}: {random.choice(REGULATORY_TERMS)}"
+        subsection_title = (
+            f"Subsection {random.randint(1, 5)}: {random.choice(REGULATORY_TERMS)}"
+        )
 
         content = _random_paragraph(random.randint(3, 10))
 
@@ -167,10 +220,12 @@ class TestBenchmarkIndexBuild:
         stats = manager.build_index(documents)
         elapsed_ms = (time.monotonic() - start) * 1000
 
-        print(f"\n[BUILD] Corpus: {corpus_size:>6d} | "
-              f"Time: {elapsed_ms:>10.1f} ms | "
-              f"Tokens: {stats.total_tokens:>8d} | "
-              f"Avg Doc Len: {stats.avg_doc_length:>8.1f}")
+        print(
+            f"\n[BUILD] Corpus: {corpus_size:>6d} | "
+            f"Time: {elapsed_ms:>10.1f} ms | "
+            f"Tokens: {stats.total_tokens:>8d} | "
+            f"Avg Doc Len: {stats.avg_doc_length:>8.1f}"
+        )
 
         assert stats.total_documents == corpus_size
         assert elapsed_ms < 60_000  # Should complete within 60 seconds
@@ -205,17 +260,25 @@ class TestBenchmarkSearchLatency:
 
         avg_latency = statistics.mean(latencies)
         p50 = statistics.median(latencies)
-        p95 = sorted(latencies)[int(len(latencies) * 0.95)] if len(latencies) > 1 else latencies[0]
+        p95 = (
+            sorted(latencies)[int(len(latencies) * 0.95)]
+            if len(latencies) > 1
+            else latencies[0]
+        )
         max_latency = max(latencies)
 
-        print(f"\n[SEARCH] Corpus: {corpus_size:>6d} | "
-              f"Avg: {avg_latency:>8.2f} ms | "
-              f"P50: {p50:>8.2f} ms | "
-              f"P95: {p95:>8.2f} ms | "
-              f"Max: {max_latency:>8.2f} ms")
+        print(
+            f"\n[SEARCH] Corpus: {corpus_size:>6d} | "
+            f"Avg: {avg_latency:>8.2f} ms | "
+            f"P50: {p50:>8.2f} ms | "
+            f"P95: {p95:>8.2f} ms | "
+            f"Max: {max_latency:>8.2f} ms"
+        )
 
         # Search should be fast even for large corpora
-        assert avg_latency < 1000, f"Average search latency {avg_latency}ms exceeds 1000ms"
+        assert (
+            avg_latency < 1000
+        ), f"Average search latency {avg_latency}ms exceeds 1000ms"
 
     @pytest.mark.parametrize("top_k", [1, 5, 10, 25, 50, 100])
     def test_search_latency_vs_top_k(self, top_k, tmp_path):
@@ -233,9 +296,11 @@ class TestBenchmarkSearchLatency:
             BM25SearchRequest(query="KYC compliance", top_k=top_k)
         )
 
-        print(f"\n[TOP-K] k: {top_k:>4d} | "
-              f"Latency: {response.latency_ms:>8.2f} ms | "
-              f"Results: {response.total_results:>4d}")
+        print(
+            f"\n[TOP-K] k: {top_k:>4d} | "
+            f"Latency: {response.latency_ms:>8.2f} ms | "
+            f"Results: {response.total_results:>4d}"
+        )
 
         assert response.total_results <= top_k
 
@@ -281,9 +346,11 @@ class TestBenchmarkFilters:
 
         overhead_pct = ((filtered_ms - unfiltered_ms) / unfiltered_ms) * 100
 
-        print(f"\n[FILTER] Unfiltered: {unfiltered_ms:.2f} ms | "
-              f"Filtered: {filtered_ms:.2f} ms | "
-              f"Overhead: {overhead_pct:+.1f}%")
+        print(
+            f"\n[FILTER] Unfiltered: {unfiltered_ms:.2f} ms | "
+            f"Filtered: {filtered_ms:.2f} ms | "
+            f"Overhead: {overhead_pct:+.1f}%"
+        )
 
     def test_score_threshold_filter(self, tmp_path):
         """Measure impact of score threshold on result count."""
@@ -305,10 +372,12 @@ class TestBenchmarkFilters:
                     score_threshold=threshold,
                 )
             )
-            print(f"\n[THRESHOLD] threshold={threshold:>6.1f} | "
-                  f"results={response.total_results:>4d} | "
-                  f"filtered={response.filtered_count:>6d} | "
-                  f"avg_score={response.average_score:.4f}")
+            print(
+                f"\n[THRESHOLD] threshold={threshold:>6.1f} | "
+                f"results={response.total_results:>4d} | "
+                f"filtered={response.filtered_count:>6d} | "
+                f"avg_score={response.average_score:.4f}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -374,9 +443,11 @@ class TestBenchmarkUpdate:
         stats = manager.update_index(new_docs)
         elapsed_ms = (time.monotonic() - start) * 1000
 
-        print(f"\n[UPDATE] Batch: {update_size:>5d} | "
-              f"Time: {elapsed_ms:>10.1f} ms | "
-              f"Total Docs: {stats.total_documents:>6d}")
+        print(
+            f"\n[UPDATE] Batch: {update_size:>5d} | "
+            f"Time: {elapsed_ms:>10.1f} ms | "
+            f"Total Docs: {stats.total_documents:>6d}"
+        )
 
         assert stats.total_documents == 1000 + update_size
 
@@ -414,9 +485,11 @@ class TestBenchmarkPersistence:
         stats = manager.load_index()
         load_ms = (time.monotonic() - start) * 1000
 
-        print(f"\n[PERSIST] Corpus: {corpus_size:>6d} | "
-              f"Save: {save_ms:>10.1f} ms | "
-              f"Load: {load_ms:>10.1f} ms")
+        print(
+            f"\n[PERSIST] Corpus: {corpus_size:>6d} | "
+            f"Save: {save_ms:>10.1f} ms | "
+            f"Load: {load_ms:>10.1f} ms"
+        )
 
         assert stats.total_documents == corpus_size
 
@@ -438,8 +511,10 @@ class TestBenchmarkTokenizer:
             BM25Tokenizer.tokenize(text)
         elapsed_ms = (time.monotonic() - start) * 1000
 
-        print(f"\n[TOKENIZER] 1000 texts in {elapsed_ms:.1f} ms "
-              f"({1000 / (elapsed_ms / 1000):.0f} texts/sec)")
+        print(
+            f"\n[TOKENIZER] 1000 texts in {elapsed_ms:.1f} ms "
+            f"({1000 / (elapsed_ms / 1000):.0f} texts/sec)"
+        )
 
         assert elapsed_ms < 5000  # Should be fast
 
@@ -488,11 +563,15 @@ class TestBenchmarkSummary:
             search_latencies.append(avg_search)
 
         # Print report
-        print(f"\n{'Corpus Size':>12} | {'Build (ms)':>12} | {'Avg Search (ms)':>16} | {'Docs/ms':>10}")
+        print(
+            f"\n{'Corpus Size':>12} | {'Build (ms)':>12} | {'Avg Search (ms)':>16} | {'Docs/ms':>10}"
+        )
         print("-" * 60)
         for i, size in enumerate(corpus_sizes):
             docs_per_ms = size / build_times[i] if build_times[i] > 0 else 0
-            print(f"{size:>12,d} | {build_times[i]:>12.1f} | {search_latencies[i]:>16.2f} | {docs_per_ms:>10.2f}")
+            print(
+                f"{size:>12,d} | {build_times[i]:>12.1f} | {search_latencies[i]:>16.2f} | {docs_per_ms:>10.2f}"
+            )
 
         print("\n" + "-" * 60)
         print("SCALABILITY ANALYSIS:")
@@ -501,8 +580,11 @@ class TestBenchmarkSummary:
             ratio_time = build_times[-1] / build_times[0] if build_times[0] > 0 else 0
             print(f"  Corpus size ratio (max/min): {ratio_size:.1f}x")
             print(f"  Build time ratio (max/min): {ratio_time:.1f}x")
-            print(f"  Build scales roughly as O(n^{ratio_time / ratio_size:.2f})"
-                  if ratio_size > 0 else "  N/A")
+            print(
+                f"  Build scales roughly as O(n^{ratio_time / ratio_size:.2f})"
+                if ratio_size > 0
+                else "  N/A"
+            )
 
         print("\n" + "=" * 80)
         print("  END OF BENCHMARK REPORT")

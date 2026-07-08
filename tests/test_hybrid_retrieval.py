@@ -31,7 +31,10 @@ from app.services.fusion.ranking import compute_overlap
 from app.services.hybrid.analytics_tracker import RetrievalAnalyticsTracker
 from app.services.hybrid.pipeline import HybridRerankPipeline, HybridRerankTelemetry
 from app.services.hybrid.service import HybridRetriever, RetrievalTelemetry
-from app.services.query_analysis.base import QueryType, RetrievalStrategy as QARetrievalStrategy
+from app.services.query_analysis.base import (
+    QueryType,
+    RetrievalStrategy as QARetrievalStrategy,
+)
 from app.services.query_analysis.service import (
     QueryAnalyzer,
     RuleBasedQueryClassifier,
@@ -42,6 +45,7 @@ from app.services.query_analysis.service import (
 # =====================================================================
 # Module 1: Query Understanding Tests
 # =====================================================================
+
 
 class TestQueryAnalyzer:
     """Test suite for QueryAnalyzer."""
@@ -104,7 +108,9 @@ class TestQueryAnalyzer:
 
     def test_semantic_with_explanation_verb(self):
         """Test classification with explanation verbs."""
-        result = self.analyzer.analyze("Explain the role of board in corporate governance")
+        result = self.analyzer.analyze(
+            "Explain the role of board in corporate governance"
+        )
         assert result.query_type == "semantic"
         assert result.optimal_strategy == "dense"
 
@@ -131,6 +137,7 @@ class TestQueryAnalyzer:
     def test_ml_classifier_fallback(self):
         """Test that ML classifier falls back to rule-based when no model."""
         from app.services.query_analysis.service import MLQueryClassifier
+
         ml = MLQueryClassifier(model_path=None)
         query_type, confidence = ml.classify("RBI Circular 17/2024")
         assert query_type == QueryType.CIRCULAR
@@ -142,35 +149,39 @@ class TestQueryClassifierRules:
     def setup_method(self):
         self.analyzer = QueryAnalyzer()
 
-    @pytest.mark.parametrize("query,expected_type", [
-        ("RBI Circular 17/2024", "circular"),
-        ("SEBI/HO/DDHS/P/CIR/2024/123", "circular"),
-        ("circular no 12", "circular"),
-        ("master circular on KYC", "circular"),
-        ("section 45 of RBI Act", "regulation"),
-        ("sec. 12", "regulation"),
-        ("chapter III regulation", "regulation"),
-        ("rule 9 of Companies Act", "regulation"),
-        ("What is KYC?", "definition"),
-        ("define mutual fund", "definition"),
-        ("RBI vs SEBI", "comparative"),
-        ("difference between KYC and CKYC", "comparative"),
-        ("How do we comply with AML?", "semantic"),
-        ("why did SEBI amend guidelines?", "semantic"),
-        ("KYC", "keyword_lookup"),
-        ("AML compliance", "keyword_lookup"),
-    ])
+    @pytest.mark.parametrize(
+        "query,expected_type",
+        [
+            ("RBI Circular 17/2024", "circular"),
+            ("SEBI/HO/DDHS/P/CIR/2024/123", "circular"),
+            ("circular no 12", "circular"),
+            ("master circular on KYC", "circular"),
+            ("section 45 of RBI Act", "regulation"),
+            ("sec. 12", "regulation"),
+            ("chapter III regulation", "regulation"),
+            ("rule 9 of Companies Act", "regulation"),
+            ("What is KYC?", "definition"),
+            ("define mutual fund", "definition"),
+            ("RBI vs SEBI", "comparative"),
+            ("difference between KYC and CKYC", "comparative"),
+            ("How do we comply with AML?", "semantic"),
+            ("why did SEBI amend guidelines?", "semantic"),
+            ("KYC", "keyword_lookup"),
+            ("AML compliance", "keyword_lookup"),
+        ],
+    )
     def test_classification_accuracy(self, query, expected_type):
         """Test that various query patterns are classified correctly."""
         result = self.analyzer.analyze(query)
-        assert result.query_type == expected_type, (
-            f"Query '{query}' classified as {result.query_type}, expected {expected_type}"
-        )
+        assert (
+            result.query_type == expected_type
+        ), f"Query '{query}' classified as {result.query_type}, expected {expected_type}"
 
 
 # =====================================================================
 # Module 2-3: BM25 + Hybrid Retrieval Tests
 # =====================================================================
+
 
 class TestHybridRetriever:
     """Test suite for HybridRetriever with concurrent retrieval."""
@@ -332,6 +343,7 @@ class TestHybridRetriever:
 # Module 4: Fusion Engine Tests
 # =====================================================================
 
+
 class TestFusionEngine:
     """Test suite for FusionEngine and RRF."""
 
@@ -356,7 +368,8 @@ class TestFusionEngine:
         ]
 
         result = self.engine.fuse_results(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
             dense_weight=0.5,
             bm25_weight=0.5,
@@ -378,7 +391,8 @@ class TestFusionEngine:
         ]
 
         result = self.engine.fuse_results(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -403,7 +417,8 @@ class TestFusionEngine:
         ]
 
         result = self.engine.fuse_results(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.WEIGHTED_SUM),
             dense_weight=0.6,
             bm25_weight=0.4,
@@ -431,7 +446,8 @@ class TestFusionEngine:
         ]
 
         fused, report = self.engine.fuse_results_with_report(
-            dense, bm25,
+            dense,
+            bm25,
             config=FusionConfig(method=FusionMethod.RRF),
         )
 
@@ -443,7 +459,8 @@ class TestFusionEngine:
     def test_empty_input_handling(self):
         """Test fusion with empty inputs."""
         result = self.engine.fuse_results(
-            [], [],
+            [],
+            [],
             config=FusionConfig(method=FusionMethod.RRF),
         )
         assert result == []
@@ -452,6 +469,7 @@ class TestFusionEngine:
 # =====================================================================
 # Module 5: Reranker Integration Tests
 # =====================================================================
+
 
 class TestRerankerIntegration:
     """Test reranker integration with fusion pipeline."""
@@ -550,6 +568,7 @@ class TestRerankerIntegration:
 # Hybrid + Rerank Pipeline Tests
 # =====================================================================
 
+
 class TestHybridRerankPipeline:
     """Test suite for the end-to-end HybridRerankPipeline."""
 
@@ -559,18 +578,36 @@ class TestHybridRerankPipeline:
         mock_hybrid_retriever = AsyncMock()
         mock_hybrid_retriever.retrieve_hybrid.return_value = MagicMock(
             results=[
-                MagicMock(chunk_id="c1", score=0.9, content="a",
-                          dense_score=0.9, bm25_score=None,
-                          dense_rank=1, bm25_rank=None,
-                          metadata={}),
-                MagicMock(chunk_id="c2", score=0.8, content="b",
-                          dense_score=None, bm25_score=15.0,
-                          dense_rank=None, bm25_rank=1,
-                          metadata={}),
-                MagicMock(chunk_id="c3", score=0.7, content="c",
-                          dense_score=0.6, bm25_score=12.0,
-                          dense_rank=3, bm25_rank=2,
-                          metadata={}),
+                MagicMock(
+                    chunk_id="c1",
+                    score=0.9,
+                    content="a",
+                    dense_score=0.9,
+                    bm25_score=None,
+                    dense_rank=1,
+                    bm25_rank=None,
+                    metadata={},
+                ),
+                MagicMock(
+                    chunk_id="c2",
+                    score=0.8,
+                    content="b",
+                    dense_score=None,
+                    bm25_score=15.0,
+                    dense_rank=None,
+                    bm25_rank=1,
+                    metadata={},
+                ),
+                MagicMock(
+                    chunk_id="c3",
+                    score=0.7,
+                    content="c",
+                    dense_score=0.6,
+                    bm25_score=12.0,
+                    dense_rank=3,
+                    bm25_rank=2,
+                    metadata={},
+                ),
             ],
             metrics={
                 "query_type": "semantic",
@@ -588,6 +625,7 @@ class TestHybridRerankPipeline:
 
         from app.services.reranker.service import RerankerService
         from app.services.reranker.model import BGERerankerProvider
+
         mock_provider = MagicMock(spec=BGERerankerProvider)
         mock_provider.get_model_name.return_value = "test-reranker"
         mock_provider.score_pairs_timed.return_value = MagicMock(
@@ -612,10 +650,16 @@ class TestHybridRerankPipeline:
         mock_hybrid_retriever = AsyncMock()
         mock_hybrid_retriever.retrieve_hybrid.return_value = MagicMock(
             results=[
-                MagicMock(chunk_id="c1", score=0.9, content="a",
-                          dense_score=0.9, bm25_score=None,
-                          dense_rank=1, bm25_rank=None,
-                          metadata={}),
+                MagicMock(
+                    chunk_id="c1",
+                    score=0.9,
+                    content="a",
+                    dense_score=0.9,
+                    bm25_score=None,
+                    dense_rank=1,
+                    bm25_rank=None,
+                    metadata={},
+                ),
             ],
             metrics={
                 "query_type": "keyword",
@@ -633,6 +677,7 @@ class TestHybridRerankPipeline:
 
         from app.services.reranker.service import RerankerService
         from app.services.reranker.model import BGERerankerProvider
+
         mock_provider = MagicMock(spec=BGERerankerProvider)
         mock_provider.get_model_name.return_value = "test-reranker"
         mock_provider.score_pairs_timed.return_value = MagicMock(
@@ -654,6 +699,7 @@ class TestHybridRerankPipeline:
 # =====================================================================
 # Analytics Tracker Tests
 # =====================================================================
+
 
 class TestRetrievalAnalyticsTracker:
     """Test suite for RetrievalAnalyticsTracker."""
@@ -727,18 +773,40 @@ class TestRetrievalAnalyticsTracker:
 
     def test_query_type_mapping(self):
         """Test query type to analytics category mapping."""
-        assert RetrievalAnalyticsTracker._map_query_type_to_category("keyword") == "navigational"
-        assert RetrievalAnalyticsTracker._map_query_type_to_category("circular") == "navigational"
-        assert RetrievalAnalyticsTracker._map_query_type_to_category("regulation") == "factual"
-        assert RetrievalAnalyticsTracker._map_query_type_to_category("semantic") == "analytical"
-        assert RetrievalAnalyticsTracker._map_query_type_to_category("comparative") == "comparative"
-        assert RetrievalAnalyticsTracker._map_query_type_to_category("definition") == "definitional"
-        assert RetrievalAnalyticsTracker._map_query_type_to_category("unknown") == "unknown"
+        assert (
+            RetrievalAnalyticsTracker._map_query_type_to_category("keyword")
+            == "navigational"
+        )
+        assert (
+            RetrievalAnalyticsTracker._map_query_type_to_category("circular")
+            == "navigational"
+        )
+        assert (
+            RetrievalAnalyticsTracker._map_query_type_to_category("regulation")
+            == "factual"
+        )
+        assert (
+            RetrievalAnalyticsTracker._map_query_type_to_category("semantic")
+            == "analytical"
+        )
+        assert (
+            RetrievalAnalyticsTracker._map_query_type_to_category("comparative")
+            == "comparative"
+        )
+        assert (
+            RetrievalAnalyticsTracker._map_query_type_to_category("definition")
+            == "definitional"
+        )
+        assert (
+            RetrievalAnalyticsTracker._map_query_type_to_category("unknown")
+            == "unknown"
+        )
 
 
 # =====================================================================
 # NDCG Metric Tests
 # =====================================================================
+
 
 class TestNDCGMetric:
     """Test NDCG computation in the MetricsEngine."""
@@ -779,12 +847,15 @@ class TestNDCGMetric:
         retrieved = ["c1", "c2", "c3"]
         relevant = {"c1", "c2", "c3"}
         scores = {"c1": 3.0, "c2": 2.0, "c3": 1.0}
-        ndcg = self.engine.compute_ndcg_at_k(retrieved, relevant, k=3, relevance_scores=scores)
+        ndcg = self.engine.compute_ndcg_at_k(
+            retrieved, relevant, k=3, relevance_scores=scores
+        )
         assert ndcg == pytest.approx(1.0, abs=1e-4)
 
     def test_compute_all_metrics_includes_ndcg(self):
         """Test that compute_all_metrics returns NDCG values."""
         from app.evaluation.schemas import RetrievalResult
+
         results = [
             RetrievalResult(chunk_id=f"c{i}", score=1.0 - i * 0.1, rank=i + 1)
             for i in range(10)
@@ -816,6 +887,7 @@ class TestNDCGMetric:
 # Performance Target Tests
 # =====================================================================
 
+
 class TestPerformanceCharacteristics:
     """Verify performance design characteristics."""
 
@@ -823,16 +895,30 @@ class TestPerformanceCharacteristics:
         """Test that RRF produces deterministic rankings."""
         engine = FusionEngine()
         dense = [
-            {"chunk_id": f"d{i}", "score": 1.0 - i * 0.01, "content": str(i), "metadata": {}}
+            {
+                "chunk_id": f"d{i}",
+                "score": 1.0 - i * 0.01,
+                "content": str(i),
+                "metadata": {},
+            }
             for i in range(10)
         ]
         bm25 = [
-            {"chunk_id": f"b{i}", "score": 20.0 - i, "content": str(i + 10), "metadata": {}}
+            {
+                "chunk_id": f"b{i}",
+                "score": 20.0 - i,
+                "content": str(i + 10),
+                "metadata": {},
+            }
             for i in range(10)
         ]
 
-        result1 = engine.fuse_results(dense, bm25, config=FusionConfig(method=FusionMethod.RRF))
-        result2 = engine.fuse_results(dense, bm25, config=FusionConfig(method=FusionMethod.RRF))
+        result1 = engine.fuse_results(
+            dense, bm25, config=FusionConfig(method=FusionMethod.RRF)
+        )
+        result2 = engine.fuse_results(
+            dense, bm25, config=FusionConfig(method=FusionMethod.RRF)
+        )
 
         ids1 = [r["chunk_id"] for r in result1]
         ids2 = [r["chunk_id"] for r in result2]
@@ -850,7 +936,9 @@ class TestPerformanceCharacteristics:
             {"chunk_id": "c3", "score": 12.0, "content": "c", "metadata": {}},
         ]
 
-        result = engine.fuse_results(dense, bm25, config=FusionConfig(method=FusionMethod.RRF))
+        result = engine.fuse_results(
+            dense, bm25, config=FusionConfig(method=FusionMethod.RRF)
+        )
 
         # Verify scores are consistent
         c2_entry = next(r for r in result if r["chunk_id"] == "c2")
@@ -881,7 +969,11 @@ class TestPerformanceCharacteristics:
         # Simulate 50ms latency each
         async def slow_retrieve(*a, **kw):
             await asyncio.sleep(0.05)
-            return {"results": [{"chunk_id": "d1", "score": 0.9, "content": "a", "metadata": {}}]}
+            return {
+                "results": [
+                    {"chunk_id": "d1", "score": 0.9, "content": "a", "metadata": {}}
+                ]
+            }
 
         async def slow_bm25(*a, **kw):
             await asyncio.sleep(0.05)
@@ -906,4 +998,6 @@ class TestPerformanceCharacteristics:
 
         # Concurrent should take ~50ms, not ~100ms
         # Allow generous margin for CI environments
-        assert elapsed < 0.15, f"Concurrent retrieval took {elapsed:.3f}s, expected < 0.15s"
+        assert (
+            elapsed < 0.15
+        ), f"Concurrent retrieval took {elapsed:.3f}s, expected < 0.15s"

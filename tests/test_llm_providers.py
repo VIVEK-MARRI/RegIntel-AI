@@ -23,12 +23,14 @@ import pytest_asyncio
 # MockLLMProvider (no external deps — always runnable)
 # ---------------------------------------------------------------------------
 
+
 class TestMockLLMProvider:
     """MockLLMProvider must be deterministic, have correct token accounting, and stream."""
 
     @pytest.fixture
     def provider(self):
         from app.services.answer_generation.providers import MockLLMProvider
+
         return MockLLMProvider(model="mock-test")
 
     @pytest.mark.asyncio
@@ -73,7 +75,9 @@ class TestMockLLMProvider:
     @pytest.mark.asyncio
     async def test_stream_yields_chunks(self, provider):
         chunks = []
-        async for chunk in provider.stream(system_prompt="s", user_prompt="Question:\nTest\nContent: x"):
+        async for chunk in provider.stream(
+            system_prompt="s", user_prompt="Question:\nTest\nContent: x"
+        ):
             chunks.append(chunk)
         assert len(chunks) > 0, "Stream must yield at least one chunk"
         full = "".join(chunks)
@@ -90,6 +94,7 @@ class TestMockLLMProvider:
 # OpenAIProvider with mock HTTP
 # ---------------------------------------------------------------------------
 
+
 class TestOpenAIProvider:
     """OpenAIProvider contract tests using patched HTTP client."""
 
@@ -97,6 +102,7 @@ class TestOpenAIProvider:
         """Build an OpenAIProvider with the given key, skipping if openai is not installed."""
         try:
             from app.services.answer_generation.providers import OpenAIProvider
+
             return OpenAIProvider(model="gpt-4o-mini", api_key=api_key, timeout=5.0)
         except Exception:
             pytest.skip("openai package not installed")
@@ -135,7 +141,9 @@ class TestOpenAIProvider:
         provider._client = MagicMock()
         provider._client.chat = MagicMock()
         provider._client.chat.completions = MagicMock()
-        provider._client.chat.completions.create = AsyncMock(return_value=mock_completion)
+        provider._client.chat.completions.create = AsyncMock(
+            return_value=mock_completion
+        )
 
         result = await provider.generate(
             system_prompt="You are a regulatory assistant.",
@@ -170,7 +178,9 @@ class TestOpenAIProvider:
             pytest.skip(f"OpenAIProvider init error: {provider._init_error}")
 
         provider._client = MagicMock()
-        provider._client.chat.completions.create = AsyncMock(return_value=mock_completion)
+        provider._client.chat.completions.create = AsyncMock(
+            return_value=mock_completion
+        )
 
         result = await provider.generate(system_prompt="s", user_prompt="u")
         assert result.prompt_tokens + result.completion_tokens == result.total_tokens
@@ -184,9 +194,9 @@ class TestOpenAIProvider:
             pytest.skip("openai package not installed")
 
         provider = OpenAIProvider(model="gpt-4o-mini", api_key="", timeout=5.0)
-        assert provider._init_error is not None, (
-            "Expected _init_error to be set when api_key is empty"
-        )
+        assert (
+            provider._init_error is not None
+        ), "Expected _init_error to be set when api_key is empty"
         with pytest.raises(Exception):
             await provider.generate(system_prompt="s", user_prompt="u")
 
@@ -195,12 +205,14 @@ class TestOpenAIProvider:
 # TF-IDF embedding fallback contract
 # ---------------------------------------------------------------------------
 
+
 class TestTFIDFEmbeddingProvider:
     """TFIDFEmbeddingProvider must satisfy the EmbeddingProvider interface completely."""
 
     @pytest.fixture
     def provider(self):
         from app.services.embedding.tfidf import TFIDFEmbeddingProvider
+
         return TFIDFEmbeddingProvider(dimension=384)
 
     def test_encode_text_returns_correct_dimension(self, provider):
@@ -257,27 +269,35 @@ class TestTFIDFEmbeddingProvider:
 # Embedding __init__ factory
 # ---------------------------------------------------------------------------
 
+
 class TestEmbeddingFactory:
     """Embedding module factory must produce a working provider regardless of ML stack."""
 
     def test_embedding_provider_is_not_none(self):
         from app.services.embedding import embedding_provider
+
         assert embedding_provider is not None
 
     def test_embedding_backend_name_is_valid(self):
         from app.services.embedding import EMBEDDING_BACKEND_NAME
-        assert EMBEDDING_BACKEND_NAME in ("bge", "tfidf_fallback"), (
-            f"Unexpected backend name: {EMBEDDING_BACKEND_NAME!r}"
-        )
+
+        assert EMBEDDING_BACKEND_NAME in (
+            "bge",
+            "tfidf_fallback",
+        ), f"Unexpected backend name: {EMBEDDING_BACKEND_NAME!r}"
 
     def test_embedding_provider_satisfies_interface(self):
         from app.services.embedding import embedding_provider
         from app.services.embedding.base import EmbeddingProvider
+
         assert isinstance(embedding_provider, EmbeddingProvider)
 
     def test_embedding_provider_health_check(self):
         from app.services.embedding import embedding_provider
+
         result = embedding_provider.health_check()
-        assert isinstance(result, bool), f"health_check must return bool, got {type(result)}"
+        assert isinstance(
+            result, bool
+        ), f"health_check must return bool, got {type(result)}"
         # Note: result may be False if the model can't initialise in CI — that's OK,
         # but the call must not raise.

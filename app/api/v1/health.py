@@ -69,15 +69,24 @@ async def readiness() -> JSONResponse:
     checker = get_health_checker()
     # Critical = liveness + registered "critical" components.
     critical_checks = [
-        name for name in checker.checks()
-        if name in {
-            "liveness", "storage", "config", "environment", "database",
-            "embedding_backend", "llm_provider",
+        name
+        for name in checker.checks()
+        if name
+        in {
+            "liveness",
+            "storage",
+            "config",
+            "environment",
+            "database",
+            "embedding_backend",
+            "llm_provider",
         }
     ]
     report = checker.run(names=critical_checks)
     if report.status == HealthStatus.UNHEALTHY:
-        return JSONResponse(report.to_dict(), status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return JSONResponse(
+            report.to_dict(), status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
     return JSONResponse(report.to_dict())
 
 
@@ -91,7 +100,9 @@ async def deep() -> JSONResponse:
     checker = get_health_checker()
     report = checker.run()
     if report.status == HealthStatus.UNHEALTHY:
-        return JSONResponse(report.to_dict(), status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return JSONResponse(
+            report.to_dict(), status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
     return JSONResponse(report.to_dict())
 
 

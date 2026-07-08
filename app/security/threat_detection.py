@@ -136,8 +136,12 @@ class ThreatDetector:
         self._lock = threading.RLock()
         self._subscribers: List[Any] = []
 
-        self._ua_re = [re.compile(p, re.IGNORECASE) for p in self.SUSPICIOUS_UA_PATTERNS]
-        self._hdr_re = [re.compile(p, re.IGNORECASE) for p in self.HEADER_ABUSE_PATTERNS]
+        self._ua_re = [
+            re.compile(p, re.IGNORECASE) for p in self.SUSPICIOUS_UA_PATTERNS
+        ]
+        self._hdr_re = [
+            re.compile(p, re.IGNORECASE) for p in self.HEADER_ABUSE_PATTERNS
+        ]
 
     # ─── Public API ───────────────────────────────────────────────
 
@@ -160,25 +164,29 @@ class ThreatDetector:
 
         # 1. Large payload
         if body_size > self._max_payload:
-            events.append(self._record(
-                ThreatType.LARGE_PAYLOAD,
-                ThreatLevel.MEDIUM,
-                identity,
-                f"payload size {body_size} bytes exceeds cap {self._max_payload}",
-                {"method": method, "path": path, "body_size": body_size},
-            ))
+            events.append(
+                self._record(
+                    ThreatType.LARGE_PAYLOAD,
+                    ThreatLevel.MEDIUM,
+                    identity,
+                    f"payload size {body_size} bytes exceeds cap {self._max_payload}",
+                    {"method": method, "path": path, "body_size": body_size},
+                )
+            )
 
         # 2. Suspicious UA
         ua = headers.get("user-agent") or headers.get("User-Agent") or ""
         for rx in self._ua_re:
             if rx.search(ua):
-                events.append(self._record(
-                    ThreatType.SUSPICIOUS_UA,
-                    ThreatLevel.HIGH,
-                    identity,
-                    f"suspicious user-agent: {ua[:60]!r}",
-                    {"user_agent": ua[:200]},
-                ))
+                events.append(
+                    self._record(
+                        ThreatType.SUSPICIOUS_UA,
+                        ThreatLevel.HIGH,
+                        identity,
+                        f"suspicious user-agent: {ua[:60]!r}",
+                        {"user_agent": ua[:200]},
+                    )
+                )
                 break
 
         # 3. Header abuse
@@ -187,17 +195,22 @@ class ThreatDetector:
                 continue
             for rx in self._hdr_re:
                 if rx.search(value):
-                    events.append(self._record(
-                        ThreatType.HEADER_ABUSE,
-                        ThreatLevel.HIGH,
-                        identity,
-                        f"header {name!r} contains exploit pattern",
-                        {"header": name, "value": value[:200]},
-                    ))
+                    events.append(
+                        self._record(
+                            ThreatType.HEADER_ABUSE,
+                            ThreatLevel.HIGH,
+                            identity,
+                            f"header {name!r} contains exploit pattern",
+                            {"header": name, "value": value[:200]},
+                        )
+                    )
                     break
 
         # 4. Path probing
-        if any(path.startswith(p) for p in self.SENSITIVE_PATHS) and method.upper() == "GET":
+        if (
+            any(path.startswith(p) for p in self.SENSITIVE_PATHS)
+            and method.upper() == "GET"
+        ):
             now = time.time()
             with self._lock:
                 dq = self._pp_hits.setdefault(identity, deque())
@@ -207,13 +220,15 @@ class ThreatDetector:
                     dq.popleft()
                 distinct_paths = {p for _, p in dq}
                 if len(distinct_paths) >= self._pp_threshold:
-                    events.append(self._record(
-                        ThreatType.PATH_PROBING,
-                        ThreatLevel.MEDIUM,
-                        identity,
-                        f"{len(distinct_paths)} distinct sensitive paths in {self._pp_window:.0f}s",
-                        {"distinct_paths": sorted(distinct_paths)[:10]},
-                    ))
+                    events.append(
+                        self._record(
+                            ThreatType.PATH_PROBING,
+                            ThreatLevel.MEDIUM,
+                            identity,
+                            f"{len(distinct_paths)} distinct sensitive paths in {self._pp_window:.0f}s",
+                            {"distinct_paths": sorted(distinct_paths)[:10]},
+                        )
+                    )
 
         return events
 
@@ -235,13 +250,15 @@ class ThreatDetector:
                 while dq and dq[0] < cutoff:
                     dq.popleft()
                 if len(dq) >= self._bf_threshold:
-                    events.append(self._record(
-                        ThreatType.BRUTE_FORCE,
-                        ThreatLevel.HIGH,
-                        identity,
-                        f"{len(dq)} auth failures in {self._bf_window:.0f}s",
-                        {"last_path": path, "count": len(dq)},
-                    ))
+                    events.append(
+                        self._record(
+                            ThreatType.BRUTE_FORCE,
+                            ThreatLevel.HIGH,
+                            identity,
+                            f"{len(dq)} auth failures in {self._bf_window:.0f}s",
+                            {"last_path": path, "count": len(dq)},
+                        )
+                    )
         return events
 
     def recent_events(self, limit: int = 50) -> List[ThreatEvent]:
@@ -258,9 +275,7 @@ class ThreatDetector:
     ) -> ThreatEvent:
         """Public helper to record an arbitrary threat event (e.g. one raised
         by the content-screening layer)."""
-        return self._record(
-            type_, level, identity, description, metadata or {}
-        )
+        return self._record(type_, level, identity, description, metadata or {})
 
     def stats(self) -> Dict[str, Any]:
         with self._lock:

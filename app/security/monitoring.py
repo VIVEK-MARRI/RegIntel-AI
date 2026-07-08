@@ -102,7 +102,10 @@ class SecurityMonitor:
     def dashboard(self) -> Dict[str, Any]:
         now = datetime.now(timezone.utc)
         threat_stats = self._threat.stats() if self._threat is not None else {}
-        threat_recent = [e.to_dict() for e in (self._threat.recent_events(10) if self._threat else [])]
+        threat_recent = [
+            e.to_dict()
+            for e in (self._threat.recent_events(10) if self._threat else [])
+        ]
         audit_summary = self._audit.review_summary() if self._audit is not None else {}
         secrets_diag = self._secrets.diagnostics() if self._secrets is not None else {}
 
@@ -116,21 +119,25 @@ class SecurityMonitor:
 
         # Decide whether to emit fresh alerts based on the rollup.
         if sev_counter.get("critical", 0) >= self._critical_threat_threshold:
-            self.record(Alert(
-                name="critical_threats",
-                severity=AlertSeverity.CRITICAL,
-                message=f"{sev_counter['critical']} critical threat(s) in window",
-                timestamp=now,
-                metadata={"by_type": dict(type_counter)},
-            ))
+            self.record(
+                Alert(
+                    name="critical_threats",
+                    severity=AlertSeverity.CRITICAL,
+                    message=f"{sev_counter['critical']} critical threat(s) in window",
+                    timestamp=now,
+                    metadata={"by_type": dict(type_counter)},
+                )
+            )
         if sev_counter.get("high", 0) >= self._high_threat_threshold:
-            self.record(Alert(
-                name="high_threats",
-                severity=AlertSeverity.WARNING,
-                message=f"{sev_counter['high']} high-severity threat(s) in window",
-                timestamp=now,
-                metadata={"by_type": dict(type_counter)},
-            ))
+            self.record(
+                Alert(
+                    name="high_threats",
+                    severity=AlertSeverity.WARNING,
+                    message=f"{sev_counter['high']} high-severity threat(s) in window",
+                    timestamp=now,
+                    metadata={"by_type": dict(type_counter)},
+                )
+            )
 
         return {
             "generated_at": now.isoformat(),

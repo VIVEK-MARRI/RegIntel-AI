@@ -123,8 +123,12 @@ async def test_dispatcher_email_success(tmp_store):
     sender = InMemoryEmailSender()
     d = NotificationDispatcher(store=tmp_store, email_sender=sender)
     a = Alert(
-        title="t", message="m", source="RBI", severity=AlertSeverity.HIGH,
-        channels=[AlertChannel.EMAIL], target="x@y.z",
+        title="t",
+        message="m",
+        source="RBI",
+        severity=AlertSeverity.HIGH,
+        channels=[AlertChannel.EMAIL],
+        target="x@y.z",
     )
     out = await d.dispatch(a)
     assert len(out) == 1
@@ -138,8 +142,12 @@ async def test_dispatcher_webhook_failure(tmp_store):
     sender.fail_next(1)
     d = NotificationDispatcher(store=tmp_store, webhook_sender=sender)
     a = Alert(
-        title="t", message="m", source="RBI", severity=AlertSeverity.HIGH,
-        channels=[AlertChannel.WEBHOOK], target="https://x",
+        title="t",
+        message="m",
+        source="RBI",
+        severity=AlertSeverity.HIGH,
+        channels=[AlertChannel.WEBHOOK],
+        target="https://x",
     )
     out = await d.dispatch(a)
     assert out[0].status == AlertStatus.FAILED
@@ -149,8 +157,12 @@ async def test_dispatcher_webhook_failure(tmp_store):
 async def test_dispatcher_in_app(tmp_store):
     d = NotificationDispatcher(store=tmp_store)
     a = Alert(
-        title="t", message="m", source="RBI", severity=AlertSeverity.HIGH,
-        channels=[AlertChannel.IN_APP], target="in_app",
+        title="t",
+        message="m",
+        source="RBI",
+        severity=AlertSeverity.HIGH,
+        channels=[AlertChannel.IN_APP],
+        target="in_app",
     )
     out = await d.dispatch(a)
     assert out[0].status == AlertStatus.DELIVERED
@@ -160,14 +172,18 @@ async def test_dispatcher_in_app(tmp_store):
 
 
 def test_manager_creates_alert(tmp_store):
-    mgr = AlertManager(store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store))
+    mgr = AlertManager(
+        store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store)
+    )
     a = mgr.create_alert(_alert_req())
     assert a.alert_id in [x.alert_id for x in tmp_store.list_alerts()]
     assert a.status == AlertStatus.PENDING
 
 
 def test_manager_dedup_within_window(tmp_store):
-    mgr = AlertManager(store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store))
+    mgr = AlertManager(
+        store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store)
+    )
     a1 = mgr.create_alert(_alert_req(title="dup"))
     a2 = mgr.create_alert(_alert_req(title="dup"))
     assert a1.status == AlertStatus.PENDING
@@ -176,7 +192,9 @@ def test_manager_dedup_within_window(tmp_store):
 
 @pytest.mark.asyncio
 async def test_manager_processes_pending(tmp_store):
-    mgr = AlertManager(store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store))
+    mgr = AlertManager(
+        store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store)
+    )
     mgr.create_alert(_alert_req())
     processed = await mgr.process_pending()
     assert len(processed) == 1
@@ -185,7 +203,9 @@ async def test_manager_processes_pending(tmp_store):
 
 @pytest.mark.asyncio
 async def test_manager_routes_to_subscribers(tmp_store):
-    mgr = AlertManager(store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store))
+    mgr = AlertManager(
+        store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store)
+    )
     sub = AlertSubscription(
         user_id="u1",
         email="u1@example.com",
@@ -202,7 +222,9 @@ async def test_manager_routes_to_subscribers(tmp_store):
 
 @pytest.mark.asyncio
 async def test_manager_no_match_subscriber_severity(tmp_store):
-    mgr = AlertManager(store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store))
+    mgr = AlertManager(
+        store=tmp_store, dispatcher=NotificationDispatcher(store=tmp_store)
+    )
     sub = AlertSubscription(
         user_id="u1",
         email="u1@example.com",
@@ -232,6 +254,7 @@ def test_digest_daily_empty(tmp_store):
 
 def test_digest_daily_with_items(tmp_store):
     import time
+
     a = Alert(
         title="Critical update",
         message="m",
@@ -248,7 +271,10 @@ def test_digest_daily_with_items(tmp_store):
 
 def test_digest_weekly_filters_after(tmp_store):
     a = Alert(
-        title="x", message="m", source="RBI", severity=AlertSeverity.LOW,
+        title="x",
+        message="m",
+        source="RBI",
+        severity=AlertSeverity.LOW,
         created_at=100.0,
     )
     tmp_store.add_alert(a)
@@ -259,9 +285,18 @@ def test_digest_weekly_filters_after(tmp_store):
 
 def test_digest_source_filter(tmp_store):
     import time
+
     now = time.time()
-    a1 = Alert(title="x", message="m", source="RBI", severity=AlertSeverity.LOW, created_at=now)
-    a2 = Alert(title="y", message="m", source="SEBI", severity=AlertSeverity.LOW, created_at=now)
+    a1 = Alert(
+        title="x", message="m", source="RBI", severity=AlertSeverity.LOW, created_at=now
+    )
+    a2 = Alert(
+        title="y",
+        message="m",
+        source="SEBI",
+        severity=AlertSeverity.LOW,
+        created_at=now,
+    )
     tmp_store.add_alert(a1)
     tmp_store.add_alert(a2)
     g = DigestGenerator(store=tmp_store)
@@ -275,7 +310,8 @@ def test_digest_source_filter(tmp_store):
 def test_subscription_create(tmp_store):
     s = SubscriptionService(store=tmp_store)
     req = SubscriptionCreateRequest(
-        user_id="u1", email="u@x.com",
+        user_id="u1",
+        email="u@x.com",
         channels=[AlertChannel.EMAIL],
     )
     sub = s.create(req)
@@ -286,7 +322,9 @@ def test_subscription_create(tmp_store):
 def test_subscription_remove(tmp_store):
     s = SubscriptionService(store=tmp_store)
     req = SubscriptionCreateRequest(
-        user_id="u1", email="u@x.com", channels=[AlertChannel.EMAIL],
+        user_id="u1",
+        email="u@x.com",
+        channels=[AlertChannel.EMAIL],
     )
     sub = s.create(req)
     assert s.remove(sub.subscription_id) is True
@@ -296,18 +334,27 @@ def test_subscription_remove(tmp_store):
 def test_subscription_match_severity_and_source(tmp_store):
     s = SubscriptionService(store=tmp_store)
     a = Alert(
-        title="x", message="m", source="RBI", severity=AlertSeverity.HIGH,
+        title="x",
+        message="m",
+        source="RBI",
+        severity=AlertSeverity.HIGH,
     )
-    s.create(SubscriptionCreateRequest(
-        user_id="u1", email="u@x.com",
-        channels=[AlertChannel.EMAIL],
-        severities=[AlertSeverity.CRITICAL],
-    ))
-    s.create(SubscriptionCreateRequest(
-        user_id="u2", email="u2@x.com",
-        channels=[AlertChannel.EMAIL],
-        sources=["RBI"],
-    ))
+    s.create(
+        SubscriptionCreateRequest(
+            user_id="u1",
+            email="u@x.com",
+            channels=[AlertChannel.EMAIL],
+            severities=[AlertSeverity.CRITICAL],
+        )
+    )
+    s.create(
+        SubscriptionCreateRequest(
+            user_id="u2",
+            email="u2@x.com",
+            channels=[AlertChannel.EMAIL],
+            sources=["RBI"],
+        )
+    )
     matches = s.match(a)
     assert len(matches) == 1
     assert matches[0].user_id == "u2"
@@ -315,9 +362,13 @@ def test_subscription_match_severity_and_source(tmp_store):
 
 def test_subscription_inactive_excluded(tmp_store):
     s = SubscriptionService(store=tmp_store)
-    sub = s.create(SubscriptionCreateRequest(
-        user_id="u1", email="u@x.com", channels=[AlertChannel.EMAIL],
-    ))
+    sub = s.create(
+        SubscriptionCreateRequest(
+            user_id="u1",
+            email="u@x.com",
+            channels=[AlertChannel.EMAIL],
+        )
+    )
     sub.active = False
     tmp_store.add_subscription(sub)
     a = Alert(title="x", message="m", source="RBI", severity=AlertSeverity.HIGH)
@@ -331,7 +382,10 @@ def test_store_persists_alerts(tmp_path):
     p = Path(tmp_path) / "alerts.jsonl"
     s1 = InMemoryAlertStore(persist_path=p)
     a = Alert(
-        title="x", message="m", source="RBI", severity=AlertSeverity.HIGH,
+        title="x",
+        message="m",
+        source="RBI",
+        severity=AlertSeverity.HIGH,
     )
     s1.add_alert(a)
     s2 = InMemoryAlertStore(persist_path=p)
@@ -344,7 +398,9 @@ def test_store_persists_subscriptions(tmp_path):
     p = Path(tmp_path) / "alerts.jsonl"
     s1 = InMemoryAlertStore(persist_path=p)
     sub = AlertSubscription(
-        user_id="u1", email="u@x.com", channels=[AlertChannel.EMAIL],
+        user_id="u1",
+        email="u@x.com",
+        channels=[AlertChannel.EMAIL],
     )
     s1.add_subscription(sub)
     s2 = InMemoryAlertStore(persist_path=p)
@@ -406,7 +462,9 @@ def test_service_stats(service):
 
 def test_service_subscription_create_get_remove(service):
     req = SubscriptionCreateRequest(
-        user_id="u1", email="u@x.com", channels=[AlertChannel.EMAIL],
+        user_id="u1",
+        email="u@x.com",
+        channels=[AlertChannel.EMAIL],
     )
     sub = service.create_subscription(req)
     assert service.get_subscription(sub.subscription_id) is not None
@@ -445,7 +503,9 @@ def test_build_default_service(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_api_health():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/alerts/health")
         assert r.status_code == 200
         assert r.json()["module"] == "alerting"
@@ -455,7 +515,9 @@ async def test_api_health():
 async def test_api_create_alert(tmp_store):
     app.dependency_overrides[get_alert_service] = lambda: AlertService(store=tmp_store)
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/alerts",
                 json={
@@ -481,7 +543,9 @@ async def test_api_list_alerts(tmp_store):
     svc.create_alert(_alert_req(title="T1"))
     app.dependency_overrides[get_alert_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/alerts?page=1&page_size=10")
             assert r.status_code == 200
             body = r.json()
@@ -495,7 +559,9 @@ async def test_api_list_alerts(tmp_store):
 async def test_api_get_alert_404(tmp_store):
     app.dependency_overrides[get_alert_service] = lambda: AlertService(store=tmp_store)
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/alerts/nope")
             assert r.status_code == 404
     finally:
@@ -506,7 +572,9 @@ async def test_api_get_alert_404(tmp_store):
 async def test_api_stats(tmp_store):
     app.dependency_overrides[get_alert_service] = lambda: AlertService(store=tmp_store)
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/alerts/stats")
             assert r.status_code == 200
             body = r.json()
@@ -519,7 +587,9 @@ async def test_api_stats(tmp_store):
 async def test_api_subscription_create_get_delete(tmp_store):
     app.dependency_overrides[get_alert_service] = lambda: AlertService(store=tmp_store)
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/alerts/subscriptions",
                 json={
@@ -549,7 +619,9 @@ async def test_api_subscription_create_get_delete(tmp_store):
 async def test_api_subscription_delete_404(tmp_store):
     app.dependency_overrides[get_alert_service] = lambda: AlertService(store=tmp_store)
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.delete("/api/v1/alerts/subscriptions/nope")
             assert r.status_code == 404
     finally:
@@ -562,7 +634,9 @@ async def test_api_digest_daily(tmp_store):
     svc.create_alert(_alert_req(title="T1"))
     app.dependency_overrides[get_alert_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/alerts/digest/daily")
             assert r.status_code == 200
             body = r.json()
@@ -577,7 +651,9 @@ async def test_api_digest_weekly(tmp_store):
     svc.create_alert(_alert_req(title="T1"))
     app.dependency_overrides[get_alert_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/alerts/digest/weekly")
             assert r.status_code == 200
             body = r.json()
@@ -592,7 +668,9 @@ async def test_api_process_pending(tmp_store):
     svc.create_alert(_alert_req(title="T1"))
     app.dependency_overrides[get_alert_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post("/api/v1/alerts/process")
             assert r.status_code == 200
             body = r.json()
@@ -607,7 +685,9 @@ async def test_api_alert_deliveries(tmp_store):
     a = svc.create_alert(_alert_req(title="T1"))
     app.dependency_overrides[get_alert_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get(f"/api/v1/alerts/{a.alert_id}/deliveries")
             assert r.status_code == 200
     finally:

@@ -78,9 +78,10 @@ def test_trend_analyzer_runs():
 def test_trend_analyzer_direction_flat():
     a = TrendAnalyzer()
     assert a._direction([]) == TrendDirection.FLAT
-    assert a._direction(
-        [TrendPoint(label="a", value=1.0, timestamp=0.0)]
-    ) == TrendDirection.FLAT
+    assert (
+        a._direction([TrendPoint(label="a", value=1.0, timestamp=0.0)])
+        == TrendDirection.FLAT
+    )
 
 
 def test_trend_analyzer_direction_up():
@@ -194,7 +195,9 @@ def test_build_default_service():
 
 @pytest.mark.asyncio
 async def test_api_health():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/health")
         assert r.status_code == 200
         assert r.json()["module"] == "dashboard"
@@ -202,7 +205,9 @@ async def test_api_health():
 
 @pytest.mark.asyncio
 async def test_api_snapshot():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/snapshot")
         assert r.status_code == 200
         body = r.json()
@@ -217,7 +222,9 @@ async def test_api_snapshot():
 
 @pytest.mark.asyncio
 async def test_api_compliance():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/compliance")
         assert r.status_code == 200
         assert "regulations_tracked" in r.json()
@@ -225,7 +232,9 @@ async def test_api_compliance():
 
 @pytest.mark.asyncio
 async def test_api_trends():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/trends")
         assert r.status_code == 200
         body = r.json()
@@ -234,7 +243,9 @@ async def test_api_trends():
 
 @pytest.mark.asyncio
 async def test_api_impact_distribution():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/impact-distribution")
         assert r.status_code == 200
         assert "counts" in r.json()
@@ -242,7 +253,9 @@ async def test_api_impact_distribution():
 
 @pytest.mark.asyncio
 async def test_api_alerts():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/alerts")
         assert r.status_code == 200
         assert "total" in r.json()
@@ -250,7 +263,9 @@ async def test_api_alerts():
 
 @pytest.mark.asyncio
 async def test_api_monitoring():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/monitoring")
         assert r.status_code == 200
         assert "sources_monitored" in r.json()
@@ -258,7 +273,9 @@ async def test_api_monitoring():
 
 @pytest.mark.asyncio
 async def test_api_system():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/system")
         assert r.status_code == 200
         body = r.json()
@@ -268,7 +285,9 @@ async def test_api_system():
 
 @pytest.mark.asyncio
 async def test_api_insights():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/insights")
         assert r.status_code == 200
         body = r.json()
@@ -278,7 +297,9 @@ async def test_api_insights():
 
 @pytest.mark.asyncio
 async def test_api_risk():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/dashboard/risk")
         assert r.status_code == 200
         body = r.json()

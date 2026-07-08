@@ -24,6 +24,7 @@ DEPENDABOT = REPO_ROOT / ".github" / "dependabot.yml"
 
 # ─── Helpers ────────────────────────────────────────────────────────
 
+
 def _load(path: Path) -> Dict[str, Any]:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
@@ -68,6 +69,7 @@ def dependabot() -> Dict[str, Any]:
 
 # ─── File presence ──────────────────────────────────────────────────
 
+
 class TestPipelineFiles:
     def test_ci_workflow_exists(self) -> None:
         assert (WORKFLOWS_DIR / "ci.yml").is_file()
@@ -99,6 +101,7 @@ class TestPipelineFiles:
 
 
 # ─── CI workflow ────────────────────────────────────────────────────
+
 
 class TestCI:
     def _jobs(self, ci: Dict[str, Any]) -> Dict[str, Any]:
@@ -179,6 +182,7 @@ class TestCI:
 
 # ─── Release workflow ──────────────────────────────────────────────
 
+
 class TestRelease:
     def _jobs(self, release: Dict[str, Any]) -> Dict[str, Any]:
         return release.get("jobs", {})
@@ -226,6 +230,7 @@ class TestRelease:
 
 # ─── Benchmark workflow ───────────────────────────────────────────
 
+
 class TestBenchmark:
     def _jobs(self, benchmark: Dict[str, Any]) -> Dict[str, Any]:
         return benchmark.get("jobs", {})
@@ -257,16 +262,13 @@ class TestBenchmark:
 
 # ─── Dependabot ───────────────────────────────────────────────────
 
+
 class TestDependabot:
     def test_has_pip_ecosystem(self, dependabot: Dict[str, Any]) -> None:
-        assert any(
-            u.get("package-ecosystem") == "pip" for u in dependabot["updates"]
-        )
+        assert any(u.get("package-ecosystem") == "pip" for u in dependabot["updates"])
 
     def test_has_npm_ecosystem(self, dependabot: Dict[str, Any]) -> None:
-        assert any(
-            u.get("package-ecosystem") == "npm" for u in dependabot["updates"]
-        )
+        assert any(u.get("package-ecosystem") == "npm" for u in dependabot["updates"])
 
     def test_has_github_actions_ecosystem(self, dependabot: Dict[str, Any]) -> None:
         assert any(

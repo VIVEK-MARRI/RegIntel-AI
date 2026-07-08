@@ -97,7 +97,9 @@ class LoadTester:
         for i in range(config.warmup):
             args = self._args_for(config, i)
             try:
-                await asyncio.wait_for(config.target(*args), timeout=config.timeout_seconds)
+                await asyncio.wait_for(
+                    config.target(*args), timeout=config.timeout_seconds
+                )
             except Exception:
                 pass
 

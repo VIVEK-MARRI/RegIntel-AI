@@ -109,9 +109,7 @@ async def list_conversations(
     query: Optional[str] = Query(None, description="Free-text search"),
     page: int = Query(1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(20, ge=1, le=200, description="Items per page"),
-    sort_by: str = Query(
-        "updated_at", description="Field to sort by"
-    ),
+    sort_by: str = Query("updated_at", description="Field to sort by"),
     sort_desc: bool = Query(True, description="Sort descending"),
     service: ConversationService = Depends(get_conversation_service),
 ) -> PaginatedConversations:
@@ -184,9 +182,7 @@ async def append_message(
 )
 async def delete_conversation(
     conversation_id: str,
-    hard: bool = Query(
-        False, description="If true, hard-delete; otherwise archive"
-    ),
+    hard: bool = Query(False, description="If true, hard-delete; otherwise archive"),
     service: ConversationService = Depends(get_conversation_service),
 ) -> Dict[str, Any]:
     conv = service.manager.get(conversation_id)
@@ -216,9 +212,7 @@ async def get_context(
     service: ConversationService = Depends(get_conversation_service),
 ) -> ConversationContext:
     try:
-        return service.manager.build_context(
-            conversation_id, token_budget=token_budget
-        )
+        return service.manager.build_context(conversation_id, token_budget=token_budget)
     except KeyError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

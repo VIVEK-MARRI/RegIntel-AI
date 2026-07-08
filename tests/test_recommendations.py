@@ -28,6 +28,7 @@ from app.services.recommendations import (
 @pytest.fixture(autouse=True)
 def _reset_singletons():
     from app.api import dependencies as deps
+
     deps.reset_recommendation_service()
     deps.reset_compliance_risk_service()
     yield
@@ -271,33 +272,36 @@ class TestRecommendationService:
             RecommendationRequest(document_id="D1", max_recommendations=1)
         )
         rid = recs[0].recommendation_id
-        rec = service.feedback(
-            rid,
-            type(recs[0]).__fields_set__ and type(recs[0])(
-                **{**recs[0].model_dump(), "status": ActionStatus.ACCEPTED}
+        rec = (
+            service.feedback(
+                rid,
+                type(recs[0]).__fields_set__
+                and type(recs[0])(
+                    **{**recs[0].model_dump(), "status": ActionStatus.ACCEPTED}
+                ),
             )
-        ) if False else None
+            if False
+            else None
+        )
         # Simpler:
         from app.schemas.recommendations import RecommendationFeedback
 
         rec = service.feedback(
             rid,
-            RecommendationFeedback(
-                status=ActionStatus.ACCEPTED, feedback="ok"
-            ),
+            RecommendationFeedback(status=ActionStatus.ACCEPTED, feedback="ok"),
         )
         assert rec is not None
         assert rec.status == ActionStatus.ACCEPTED
         assert rec.accepted_at is not None
 
-    def test_feedback_returns_none_for_missing(self, service: RecommendationService) -> None:
+    def test_feedback_returns_none_for_missing(
+        self, service: RecommendationService
+    ) -> None:
         from app.schemas.recommendations import RecommendationFeedback
 
         rec = service.feedback(
             "missing",
-            RecommendationFeedback(
-                status=ActionStatus.REJECTED, feedback=""
-            ),
+            RecommendationFeedback(status=ActionStatus.REJECTED, feedback=""),
         )
         assert rec is None
 
@@ -346,9 +350,7 @@ class TestRecommendationAPI:
 
     @pytest.mark.asyncio
     async def test_get_missing_404(self) -> None:
-        _override(
-            RecommendationService(store=InMemoryRecommendationStore())
-        )
+        _override(RecommendationService(store=InMemoryRecommendationStore()))
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
@@ -357,9 +359,7 @@ class TestRecommendationAPI:
 
     @pytest.mark.asyncio
     async def test_list_pagination(self) -> None:
-        _override(
-            RecommendationService(store=InMemoryRecommendationStore())
-        )
+        _override(RecommendationService(store=InMemoryRecommendationStore()))
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
@@ -371,9 +371,7 @@ class TestRecommendationAPI:
 
     @pytest.mark.asyncio
     async def test_stats(self) -> None:
-        _override(
-            RecommendationService(store=InMemoryRecommendationStore())
-        )
+        _override(RecommendationService(store=InMemoryRecommendationStore()))
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
@@ -464,9 +462,7 @@ class TestRecommendationAPI:
 
     @pytest.mark.asyncio
     async def test_feedback_missing_404(self) -> None:
-        _override(
-            RecommendationService(store=InMemoryRecommendationStore())
-        )
+        _override(RecommendationService(store=InMemoryRecommendationStore()))
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:

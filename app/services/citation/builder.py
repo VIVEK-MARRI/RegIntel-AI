@@ -52,7 +52,9 @@ def _detect_paragraph_locator(content: str) -> Optional[str]:
 class CitationBuilder:
     """Build annotated answers, reference entries, and citation maps."""
 
-    def __init__(self, *, style: CitationStyle = CitationStyle.BRACKETED_SOURCE) -> None:
+    def __init__(
+        self, *, style: CitationStyle = CitationStyle.BRACKETED_SOURCE
+    ) -> None:
         self.style = style
 
     # ── Reference list ──────────────────────────────────────────────────────
@@ -85,9 +87,7 @@ class CitationBuilder:
                 chunk.content
             )
             paragraph = (
-                _detect_paragraph_locator(chunk.content)
-                if include_paragraph
-                else None
+                _detect_paragraph_locator(chunk.content) if include_paragraph else None
             )
             references.append(
                 ReferenceEntry(
@@ -124,7 +124,9 @@ class CitationBuilder:
         sentence (before the trailing period if present).
         """
         if not text:
-            return AnnotatedText(text="", citations=[], claim_count=0, cited_claim_count=0)
+            return AnnotatedText(
+                text="", citations=[], claim_count=0, cited_claim_count=0
+            )
 
         ref_by_chunk: Dict[str, ReferenceEntry] = {r.chunk_id: r for r in references}
 

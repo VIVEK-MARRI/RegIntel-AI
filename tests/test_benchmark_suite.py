@@ -15,15 +15,20 @@ from app.repositories.embedding import ChunkEmbeddingRepository
 
 # 1. Mocking retrieval service for unit-level metric testing
 
+
 class MockEmbeddingProvider:
     def get_model_name(self) -> str:
         return "mock-model"
+
     def get_dimension(self) -> int:
         return 3
+
     def encode_query(self, query: str) -> List[float]:
         return [1.0, 0.0, 0.0]
+
     def encode_batch(self, texts: List[str]) -> List[List[float]]:
         return [[1.0, 0.0, 0.0]] * len(texts)
+
 
 class MockRetrievalService:
     def __init__(self, responses: Dict[str, List[Dict[str, Any]]]):
@@ -31,10 +36,7 @@ class MockRetrievalService:
         self.embedding_provider = MockEmbeddingProvider()
 
     async def retrieve(
-        self,
-        query: str,
-        top_k: int = 10,
-        distance_metric: str = "cosine"
+        self, query: str, top_k: int = 10, distance_metric: str = "cosine"
     ) -> Dict[str, Any]:
         results = self.responses.get(query, [])
         # Return sliced list based on top_k
@@ -46,9 +48,10 @@ class MockRetrievalService:
                 "metric": distance_metric,
                 "top_k": top_k,
                 "duration_ms": 12.5,
-                "candidates_scanned": len(results)
-            }
+                "candidates_scanned": len(results),
+            },
         }
+
 
 @pytest.mark.asyncio
 async def test_benchmark_metrics_math(tmp_path):
@@ -93,28 +96,22 @@ async def test_benchmark_metrics_math(tmp_path):
         {"chunk_id": "chunk_yza", "metadata": {"section": "Sec J"}},
     ]
 
-    responses = {
-        "query 1": query1_results,
-        "query 2": query2_results
-    }
+    responses = {"query 1": query1_results, "query 2": query2_results}
 
     mock_retrieval = MockRetrievalService(responses)
     runner = RetrievalBenchmarkRunner(
-        retrieval_service=mock_retrieval,
-        history_dir=str(tmp_path)
+        retrieval_service=mock_retrieval, history_dir=str(tmp_path)
     )
 
     golden_dataset = [
         GoldenEvaluationItem(
             query="query 1",
             expected_chunk_ids=["chunk1", "chunk2"],
-            expected_sections=[]
+            expected_sections=[],
         ),
         GoldenEvaluationItem(
-            query="query 2",
-            expected_chunk_ids=["chunk_xyz"],
-            expected_sections=[]
-        )
+            query="query 2", expected_chunk_ids=["chunk_xyz"], expected_sections=[]
+        ),
     ]
 
     report = await runner.run_benchmark(golden_dataset, top_k=10)
@@ -122,23 +119,23 @@ async def test_benchmark_metrics_math(tmp_path):
     # Assert individual query metrics
     # Query 1
     q1 = next(q for q in report.query_results if q.query == "query 1")
-    assert q1.precision_at_5 == 0.2    # 1 match in top 5
-    assert q1.precision_at_10 == 0.2   # 2 matches in top 10
-    assert q1.recall_at_5 == 0.5       # 1 out of 2 expected
-    assert q1.recall_at_10 == 1.0      # 2 out of 2 expected
+    assert q1.precision_at_5 == 0.2  # 1 match in top 5
+    assert q1.precision_at_10 == 0.2  # 2 matches in top 10
+    assert q1.recall_at_5 == 0.5  # 1 out of 2 expected
+    assert q1.recall_at_10 == 1.0  # 2 out of 2 expected
     assert q1.hit_at_5 is True
     assert q1.hit_at_10 is True
-    assert q1.mrr == 1.0               # First match is Rank 1
+    assert q1.mrr == 1.0  # First match is Rank 1
 
     # Query 2
     q2 = next(q for q in report.query_results if q.query == "query 2")
-    assert q2.precision_at_5 == 0.0    # 0 matches in top 5
-    assert q2.precision_at_10 == 0.1   # 1 match in top 10
-    assert q2.recall_at_5 == 0.0       # 0 out of 1 expected
-    assert q2.recall_at_10 == 1.0      # 1 out of 1 expected
+    assert q2.precision_at_5 == 0.0  # 0 matches in top 5
+    assert q2.precision_at_10 == 0.1  # 1 match in top 10
+    assert q2.recall_at_5 == 0.0  # 0 out of 1 expected
+    assert q2.recall_at_10 == 1.0  # 1 out of 1 expected
     assert q2.hit_at_5 is False
     assert q2.hit_at_10 is True
-    assert q2.mrr == 1.0 / 6.0         # First match is Rank 6
+    assert q2.mrr == 1.0 / 6.0  # First match is Rank 6
 
     # Assert aggregated metrics
     # Mean Precision@5: (0.2 + 0.0) / 2 = 0.1
@@ -171,33 +168,37 @@ async def test_benchmark_section_fallback(tmp_path):
     # Test matching by section title fallback (case-insensitive)
     query_results = [
         {"chunk_id": "chunk_other", "metadata": {"section": "Introduction to AML/CFT"}},
-        {"chunk_id": "chunk_target", "metadata": {"section": "Detailed KYC Guidelines Part II"}},
+        {
+            "chunk_id": "chunk_target",
+            "metadata": {"section": "Detailed KYC Guidelines Part II"},
+        },
     ]
-    responses = {
-        "aml and kyc": query_results
-    }
+    responses = {"aml and kyc": query_results}
     mock_retrieval = MockRetrievalService(responses)
     runner = RetrievalBenchmarkRunner(
-        retrieval_service=mock_retrieval,
-        history_dir=str(tmp_path)
+        retrieval_service=mock_retrieval, history_dir=str(tmp_path)
     )
 
     golden_dataset = [
         GoldenEvaluationItem(
             query="aml and kyc",
             expected_chunk_ids=["chunk_not_returned"],
-            expected_sections=["KYC Guidelines"]  # case-insensitive substring of "Detailed KYC Guidelines Part II"
+            expected_sections=[
+                "KYC Guidelines"
+            ],  # case-insensitive substring of "Detailed KYC Guidelines Part II"
         )
     ]
 
     report = await runner.run_benchmark(golden_dataset, top_k=2)
     q_res = report.query_results[0]
-    
+
     # "Detailed KYC Guidelines Part II" matches "KYC Guidelines" -> Rank 2 (index 1)
     assert q_res.hit_at_5 is True
     assert q_res.mrr == 0.5
     assert q_res.precision_at_5 == 0.2  # 1 match in top 5
-    assert q_res.recall_at_5 == 1.0     # 1 out of 1 expected (max(len(expected_chunk_ids), len(expected_sections)) = 1)
+    assert (
+        q_res.recall_at_5 == 1.0
+    )  # 1 out of 1 expected (max(len(expected_chunk_ids), len(expected_sections)) = 1)
 
 
 @pytest.mark.asyncio
@@ -206,23 +207,21 @@ async def test_benchmark_history_and_comparison(tmp_path):
     responses = {"q": []}
     mock_retrieval = MockRetrievalService(responses)
     runner = RetrievalBenchmarkRunner(
-        retrieval_service=mock_retrieval,
-        history_dir=str(tmp_path)
+        retrieval_service=mock_retrieval, history_dir=str(tmp_path)
     )
 
     golden_dataset = [
         GoldenEvaluationItem(
-            query="q",
-            expected_chunk_ids=["chunk_none"],
-            expected_sections=[]
+            query="q", expected_chunk_ids=["chunk_none"], expected_sections=[]
         )
     ]
 
     report1 = await runner.run_benchmark(golden_dataset, top_k=5)
-    
+
     import asyncio
+
     await asyncio.sleep(1.1)
-    
+
     report2 = await runner.run_benchmark(golden_dataset, top_k=5)
 
     history = runner.get_history()
@@ -238,6 +237,7 @@ async def test_benchmark_history_and_comparison(tmp_path):
 
 # 2. Integration Test using real DB Session + actual RetrievalService
 
+
 @pytest.mark.asyncio
 async def test_integration_benchmark_flow(db_session, tmp_path):
     # Setup standard database services
@@ -248,13 +248,16 @@ async def test_integration_benchmark_flow(db_session, tmp_path):
     class CustomMockEmbeddingProvider:
         def get_model_name(self) -> str:
             return "integration-3d-model"
+
         def get_dimension(self) -> int:
             return 3
+
         def encode_query(self, query: str) -> list[float]:
             # Simple query-to-vector routing for test
             if "KYC" in query:
                 return [1.0, 0.0, 0.0]
             return [0.0, 1.0, 0.0]
+
         def encode_batch(self, texts: list[str]) -> list[list[float]]:
             # Mock implementation
             results = []
@@ -276,15 +279,27 @@ async def test_integration_benchmark_flow(db_session, tmp_path):
         file_name="circular.pdf",
         file_path="RBI/circular.pdf",
         checksum="c" * 64,
-        status=StatusEnum.UPLOADED
+        status=StatusEnum.UPLOADED,
     )
     db_session.add(doc)
     await db_session.commit()
 
     # Add test chunks
     chunks_data = [
-        {"content": "This is KYC Guidelines details", "section": "KYC Sect", "subsection": "", "page_number": 1, "token_count": 10},
-        {"content": "This is General Information details", "section": "Gen Sect", "subsection": "", "page_number": 2, "token_count": 12}
+        {
+            "content": "This is KYC Guidelines details",
+            "section": "KYC Sect",
+            "subsection": "",
+            "page_number": 1,
+            "token_count": 10,
+        },
+        {
+            "content": "This is General Information details",
+            "section": "Gen Sect",
+            "subsection": "",
+            "page_number": 2,
+            "token_count": 12,
+        },
     ]
     registered_chunks = await chunk_service.register_chunks_bulk(doc.id, chunks_data)
     chunk_kyc = registered_chunks[0]
@@ -296,13 +311,13 @@ async def test_integration_benchmark_flow(db_session, tmp_path):
         chunk_id=chunk_kyc.id,
         embedding=[1.0, 0.0, 0.0],
         embedding_model="integration-3d-model",
-        embedding_dimension=3
+        embedding_dimension=3,
     )
     await repo.save_embedding(
         chunk_id=chunk_gen.id,
         embedding=[0.0, 1.0, 0.0],
         embedding_model="integration-3d-model",
-        embedding_dimension=3
+        embedding_dimension=3,
     )
     await db_session.commit()
 
@@ -311,13 +326,13 @@ async def test_integration_benchmark_flow(db_session, tmp_path):
         GoldenEvaluationItem(
             query="Tell me about KYC",
             expected_chunk_ids=[str(chunk_kyc.id)],
-            expected_sections=[]
+            expected_sections=[],
         ),
         GoldenEvaluationItem(
             query="Give me General section details",
             expected_chunk_ids=[str(chunk_gen.id)],
-            expected_sections=[]
-        )
+            expected_sections=[],
+        ),
     ]
 
     # Run Benchmark

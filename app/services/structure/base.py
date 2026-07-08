@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 from app.schemas.structure import StructureElement
 
+
 class BaseStructureExtractor(ABC):
     """Abstract Base Class defining the structure extractor interface."""
 

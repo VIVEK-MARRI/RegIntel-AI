@@ -48,21 +48,110 @@ _WORD_RE = re.compile(r"\b\w+\b", re.UNICODE)
 
 
 _STOPWORDS: Set[str] = {
-    "a", "an", "the", "and", "or", "but", "if", "then", "else", "of", "in",
-    "on", "at", "by", "for", "with", "to", "from", "as", "is", "are", "was",
-    "were", "be", "been", "being", "this", "that", "these", "those", "it",
-    "its", "i", "you", "he", "she", "we", "they", "them", "us", "me", "my",
-    "your", "his", "her", "their", "our", "have", "has", "had", "do", "does",
-    "did", "can", "could", "will", "would", "should", "may", "might", "shall",
-    "not", "no", "yes", "what", "which", "who", "whom", "how", "when", "where",
-    "why", "about", "into", "out", "up", "down", "over", "under", "again",
-    "further", "than", "so", "such", "any", "all", "some", "most", "more",
-    "less", "much", "many", "few", "each", "every", "other", "another",
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "but",
+    "if",
+    "then",
+    "else",
+    "of",
+    "in",
+    "on",
+    "at",
+    "by",
+    "for",
+    "with",
+    "to",
+    "from",
+    "as",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "this",
+    "that",
+    "these",
+    "those",
+    "it",
+    "its",
+    "i",
+    "you",
+    "he",
+    "she",
+    "we",
+    "they",
+    "them",
+    "us",
+    "me",
+    "my",
+    "your",
+    "his",
+    "her",
+    "their",
+    "our",
+    "have",
+    "has",
+    "had",
+    "do",
+    "does",
+    "did",
+    "can",
+    "could",
+    "will",
+    "would",
+    "should",
+    "may",
+    "might",
+    "shall",
+    "not",
+    "no",
+    "yes",
+    "what",
+    "which",
+    "who",
+    "whom",
+    "how",
+    "when",
+    "where",
+    "why",
+    "about",
+    "into",
+    "out",
+    "up",
+    "down",
+    "over",
+    "under",
+    "again",
+    "further",
+    "than",
+    "so",
+    "such",
+    "any",
+    "all",
+    "some",
+    "most",
+    "more",
+    "less",
+    "much",
+    "many",
+    "few",
+    "each",
+    "every",
+    "other",
+    "another",
 }
 
 
 def _tokenise(text: str) -> List[str]:
-    return [t.lower() for t in _WORD_RE.findall(text or "") if t.lower() not in _STOPWORDS]
+    return [
+        t.lower() for t in _WORD_RE.findall(text or "") if t.lower() not in _STOPWORDS
+    ]
 
 
 # ─── Store interface ──────────────────────────────────────────────────────
@@ -446,7 +535,10 @@ def _score_entry(
     overlap = token_overlap(" ".join(query_tokens), " ".join(entry_tokens))
     matched = [t for t in query_tokens if t in entry_tokens]
     phrase_boost = 0.0
-    if query_text and query_text.lower() in (entry.embedding_text or entry.content).lower():
+    if (
+        query_text
+        and query_text.lower() in (entry.embedding_text or entry.content).lower()
+    ):
         phrase_boost = 1.0
     elif len(matched) >= 3:
         phrase_boost = len(matched) / max(1, len(query_tokens))
@@ -455,15 +547,12 @@ def _score_entry(
         tag_set = {t.lower() for t in entry.tags}
         hits = sum(1 for t in query_tokens if t in tag_set)
         tag_overlap = hits / max(1, len(query_tokens))
-    age_seconds = max(0.0, (datetime.now(timezone.utc) - entry.created_at).total_seconds())
+    age_seconds = max(
+        0.0, (datetime.now(timezone.utc) - entry.created_at).total_seconds()
+    )
     # Decay: 1.0 for fresh, ~0.5 after a day, ~0.0 after a month.
     recency = 1.0 / (1.0 + age_seconds / (60 * 60 * 24 * 7))
-    score = (
-        0.6 * overlap
-        + 0.2 * phrase_boost
-        + 0.1 * tag_overlap
-        + 0.1 * recency
-    )
+    score = 0.6 * overlap + 0.2 * phrase_boost + 0.1 * tag_overlap + 0.1 * recency
     return min(1.0, score), matched
 
 

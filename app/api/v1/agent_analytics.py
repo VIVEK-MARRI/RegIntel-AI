@@ -109,9 +109,7 @@ async def get_cost(
 # ─── Record / reset helpers (for tests and the engine) ──────
 
 
-@router.post(
-    "/record", status_code=status.HTTP_200_OK
-)
+@router.post("/record", status_code=status.HTTP_200_OK)
 async def record(
     payload: Dict[str, Any],
     svc: AgentAnalyticsService = _service_dep(),
@@ -120,17 +118,13 @@ async def record(
     duration = float(payload.get("duration_ms", 0.0))
     status_ = str(payload.get("status", "succeeded"))
     confidence = payload.get("confidence")
-    svc.repo.record(
-        agent, duration, status_, confidence=confidence
-    )
+    svc.repo.record(agent, duration, status_, confidence=confidence)
     if status_ != "succeeded" and payload.get("error"):
         svc.repo.record_error(agent, str(payload["error"]))
     return {"status": "recorded", "agent_name": agent}
 
 
-@router.post(
-    "/reset", status_code=status.HTTP_200_OK
-)
+@router.post("/reset", status_code=status.HTTP_200_OK)
 async def reset(svc: AgentAnalyticsService = _service_dep()) -> Dict[str, Any]:
     svc.repo.reset()
     return {"status": "reset"}

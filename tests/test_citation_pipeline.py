@@ -42,6 +42,7 @@ from app.services.citation.mapper import section_boost, token_overlap
 
 # ─── Helpers ──────────────────────────────────────────────────────
 
+
 def _chunk(
     cid: str = "c-1",
     content: str = "RBI Master Circular 12/2024 requires KYC compliance for all NBFCs.",
@@ -67,7 +68,9 @@ def _chunk(
     )
 
 
-def _answer(text: str = "KYC compliance is mandatory for all financial entities.") -> AnswerSection:
+def _answer(
+    text: str = "KYC compliance is mandatory for all financial entities.",
+) -> AnswerSection:
     return AnswerSection(
         executive_summary=text,
         detailed_explanation=text,
@@ -86,21 +89,30 @@ class TestSchemaContracts:
 
     def test_reference_entry_valid(self):
         r = ReferenceEntry(
-            citation_id="cit-1", chunk_id="c-1", document_id="d-1",
-            document_title="RBI Circular", source="RBI", excerpt="Text.",
+            citation_id="cit-1",
+            chunk_id="c-1",
+            document_id="d-1",
+            document_title="RBI Circular",
+            source="RBI",
+            excerpt="Text.",
         )
         assert r.citation_id == "cit-1"
 
     def test_reference_entry_defaults(self):
         r = ReferenceEntry(
-            citation_id="c1", chunk_id="c1", document_id="d1",
-            document_title="Title", excerpt="Excerpt.",
+            citation_id="c1",
+            chunk_id="c1",
+            document_id="d1",
+            document_title="Title",
+            excerpt="Excerpt.",
         )
         assert r.source is None
         assert r.page_number is None
 
     def test_inline_citation_valid(self):
-        ic = InlineCitation(citation_id="c1", chunk_id="ck1", claim_id="cl1", marker="[1]")
+        ic = InlineCitation(
+            citation_id="c1", chunk_id="ck1", claim_id="cl1", marker="[1]"
+        )
         assert ic.marker == "[1]"
 
     def test_claim_minimal(self):
@@ -108,14 +120,20 @@ class TestSchemaContracts:
         assert c.section == "General"
 
     def test_annotated_text_structure(self):
-        at = AnnotatedText(text="Answer text.", citations=[], claim_count=2, cited_claim_count=2)
+        at = AnnotatedText(
+            text="Answer text.", citations=[], claim_count=2, cited_claim_count=2
+        )
         assert at.claim_count == 2
         assert at.cited_claim_count == 2
 
     def test_annotated_answer_fields(self):
         aa = AnnotatedAnswer(
-            executive_summary=AnnotatedText(text="Summary", citations=[], claim_count=1, cited_claim_count=1),
-            detailed_explanation=AnnotatedText(text="Detail", citations=[], claim_count=1, cited_claim_count=1),
+            executive_summary=AnnotatedText(
+                text="Summary", citations=[], claim_count=1, cited_claim_count=1
+            ),
+            detailed_explanation=AnnotatedText(
+                text="Detail", citations=[], claim_count=1, cited_claim_count=1
+            ),
             supporting_evidence=[],
             key_regulatory_references=[],
             references=[],
@@ -125,9 +143,13 @@ class TestSchemaContracts:
 
     def test_citation_metadata_valid(self):
         cm = CitationMetadata(
-            request_id="req-1", timestamp="2024-01-01T00:00:00Z",
-            latency_ms=12.3, chunks_used=3, claims_extracted=5,
-            citations_emitted=4, style=CitationStyle.BRACKETED_SOURCE,
+            request_id="req-1",
+            timestamp="2024-01-01T00:00:00Z",
+            latency_ms=12.3,
+            chunks_used=3,
+            claims_extracted=5,
+            citations_emitted=4,
+            style=CitationStyle.BRACKETED_SOURCE,
         )
         assert cm.latency_ms == 12.3
 
@@ -289,8 +311,14 @@ class TestCitationBuilder:
 
     def test_build_references_metadata(self):
         builder = CitationBuilder()
-        chunk = _chunk(doc_id="d1", doc_title="Circular", source="RBI",
-                       doc_type="circular", section="KYC", page=3)
+        chunk = _chunk(
+            doc_id="d1",
+            doc_title="Circular",
+            source="RBI",
+            doc_type="circular",
+            section="KYC",
+            page=3,
+        )
         refs = builder.build_references([chunk])
         assert len(refs) == 1
         r = refs[0]
@@ -343,9 +371,12 @@ class TestCitationBuilder:
         exec_claims = [Claim(claim_id="e1", text="KYC required.", section="Compliance")]
         det_claims = [Claim(claim_id="d1", text="AML required.", section="AML")]
         aa, cmap = builder.build_annotated_answer(
-            answer=answer, references=refs,
-            exec_claims=exec_claims, detailed_claims=det_claims,
-            exec_matches={"e1": []}, detailed_matches={"d1": []},
+            answer=answer,
+            references=refs,
+            exec_claims=exec_claims,
+            detailed_claims=det_claims,
+            exec_matches={"e1": []},
+            detailed_matches={"d1": []},
         )
         assert isinstance(aa, AnnotatedAnswer)
         assert isinstance(cmap, dict)
@@ -354,8 +385,12 @@ class TestCitationBuilder:
     def test_numeric_style_markers(self):
         builder = CitationBuilder(style=CitationStyle.NUMERIC_BRACKET)
         ref = ReferenceEntry(
-            citation_id="c1", chunk_id="ck1", document_id="d1",
-            document_title="Circular", source="RBI", excerpt="Text.",
+            citation_id="c1",
+            chunk_id="ck1",
+            document_id="d1",
+            document_title="Circular",
+            source="RBI",
+            excerpt="Text.",
         )
         marker = builder._marker_for(ref)
         assert "c1" in marker
@@ -383,8 +418,9 @@ class TestCitationService:
         content = "RBI Master Circular 12/2024 requires KYC compliance for all NBFCs."
         chunks = [_chunk(content=content)]
         answer = _answer(content)
-        resp = service.cite_answer(query="KYC", answer=answer, chunks=chunks,
-                                    require_full_coverage=True)
+        resp = service.cite_answer(
+            query="KYC", answer=answer, chunks=chunks, require_full_coverage=True
+        )
         assert resp.coverage.coverage_ratio >= 0.0
 
     def test_cite_partial_coverage(self):
@@ -423,25 +459,43 @@ class TestCitationService:
         service = build_default_citation_service()
         chunks = [_chunk(content="KYC required.")]
         answer = _answer("KYC required.")
-        resp = service.cite_answer(query="test", answer=answer, chunks=chunks,
-                                    style=CitationStyle.NUMERIC_BRACKET)
+        resp = service.cite_answer(
+            query="test",
+            answer=answer,
+            chunks=chunks,
+            style=CitationStyle.NUMERIC_BRACKET,
+        )
         assert resp.metadata.style == CitationStyle.NUMERIC_BRACKET
 
     def test_cite_bracketed_source_style(self):
         service = build_default_citation_service()
         chunks = [_chunk(content="KYC required.")]
         answer = _answer("KYC required.")
-        resp = service.cite_answer(query="test", answer=answer, chunks=chunks,
-                                    style=CitationStyle.BRACKETED_SOURCE)
+        resp = service.cite_answer(
+            query="test",
+            answer=answer,
+            chunks=chunks,
+            style=CitationStyle.BRACKETED_SOURCE,
+        )
         assert resp.metadata.style == CitationStyle.BRACKETED_SOURCE
 
     def test_cite_reference_dedup(self):
         service = build_default_citation_service()
         chunks = [
-            _chunk(cid="c1", doc_id="d1", doc_title="Circular", source="RBI",
-                   content="KYC rule 1."),
-            _chunk(cid="c2", doc_id="d1", doc_title="Circular", source="RBI",
-                   content="KYC rule 2."),
+            _chunk(
+                cid="c1",
+                doc_id="d1",
+                doc_title="Circular",
+                source="RBI",
+                content="KYC rule 1.",
+            ),
+            _chunk(
+                cid="c2",
+                doc_id="d1",
+                doc_title="Circular",
+                source="RBI",
+                content="KYC rule 2.",
+            ),
         ]
         answer = _answer("KYC rule 1. KYC rule 2.")
         resp = service.cite_answer(query="KYC", answer=answer, chunks=chunks)
@@ -483,7 +537,9 @@ class TestCitationAPI:
 
     @pytest.fixture(autouse=True)
     def _override_citation(self):
-        app.dependency_overrides[get_citation_service] = lambda: build_default_citation_service()
+        app.dependency_overrides[get_citation_service] = (
+            lambda: build_default_citation_service()
+        )
         yield
         app.dependency_overrides.pop(get_citation_service, None)
 
@@ -501,11 +557,16 @@ class TestCitationAPI:
 
     @pytest.mark.asyncio
     async def test_cite_endpoint_success(self, api_client):
-        resp = await api_client.post("/api/v1/citation/cite", json={
-            "query": "KYC compliance",
-            "answer": self._api_answer("KYC compliance is required."),
-            "chunks": [self._api_chunk(cid="c1", content="KYC compliance is required.")],
-        })
+        resp = await api_client.post(
+            "/api/v1/citation/cite",
+            json={
+                "query": "KYC compliance",
+                "answer": self._api_answer("KYC compliance is required."),
+                "chunks": [
+                    self._api_chunk(cid="c1", content="KYC compliance is required.")
+                ],
+            },
+        )
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert "annotated_answer" in body
@@ -514,11 +575,14 @@ class TestCitationAPI:
 
     @pytest.mark.asyncio
     async def test_cite_endpoint_response_shape(self, api_client):
-        resp = await api_client.post("/api/v1/citation/cite", json={
-            "query": "KYC",
-            "answer": self._api_answer("KYC required."),
-            "chunks": [self._api_chunk(cid="c1", content="KYC required.")],
-        })
+        resp = await api_client.post(
+            "/api/v1/citation/cite",
+            json={
+                "query": "KYC",
+                "answer": self._api_answer("KYC required."),
+                "chunks": [self._api_chunk(cid="c1", content="KYC required.")],
+            },
+        )
         assert resp.status_code == 200
         body = resp.json()
         assert "query" in body
@@ -530,37 +594,49 @@ class TestCitationAPI:
 
     @pytest.mark.asyncio
     async def test_cite_endpoint_empty_chunks(self, api_client):
-        resp = await api_client.post("/api/v1/citation/cite", json={
-            "query": "KYC",
-            "answer": self._api_answer("KYC required."),
-            "chunks": [],
-        })
+        resp = await api_client.post(
+            "/api/v1/citation/cite",
+            json={
+                "query": "KYC",
+                "answer": self._api_answer("KYC required."),
+                "chunks": [],
+            },
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_cite_endpoint_422_missing_field(self, api_client):
-        resp = await api_client.post("/api/v1/citation/cite", json={
-            "query": "KYC",
-        })
+        resp = await api_client.post(
+            "/api/v1/citation/cite",
+            json={
+                "query": "KYC",
+            },
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_cite_endpoint_empty_query(self, api_client):
-        resp = await api_client.post("/api/v1/citation/cite", json={
-            "query": "",
-            "answer": self._api_answer("KYC required."),
-            "chunks": [self._api_chunk(cid="c1", content="KYC required.")],
-        })
+        resp = await api_client.post(
+            "/api/v1/citation/cite",
+            json={
+                "query": "",
+                "answer": self._api_answer("KYC required."),
+                "chunks": [self._api_chunk(cid="c1", content="KYC required.")],
+            },
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_cite_endpoint_numeric_style(self, api_client):
-        resp = await api_client.post("/api/v1/citation/cite", json={
-            "query": "KYC",
-            "answer": self._api_answer("KYC required."),
-            "chunks": [self._api_chunk(cid="c1", content="KYC required.")],
-            "style": "numeric_bracket",
-        })
+        resp = await api_client.post(
+            "/api/v1/citation/cite",
+            json={
+                "query": "KYC",
+                "answer": self._api_answer("KYC required."),
+                "chunks": [self._api_chunk(cid="c1", content="KYC required.")],
+                "style": "numeric_bracket",
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["metadata"]["style"] == "numeric_bracket"
 
@@ -585,18 +661,27 @@ class TestCoverageGuarantees:
         content = "RBI Master Circular requires KYC compliance."
         chunks = [_chunk(content=content)]
         answer = _answer(content)
-        resp = service.cite_answer(query="KYC", answer=answer, chunks=chunks,
-                                    require_full_coverage=True)
+        resp = service.cite_answer(
+            query="KYC", answer=answer, chunks=chunks, require_full_coverage=True
+        )
         assert resp.coverage.coverage_ratio >= 0.0
 
     def test_coverage_ratio_depends_on_chunks(self):
         service = build_default_citation_service()
         answer = _answer("KYC compliance is mandatory for NBFCs.")
-        resp_no_match = service.cite_answer(query="KYC", answer=answer,
-                                              chunks=[_chunk(content="AML compliance required.")])
-        resp_match = service.cite_answer(query="KYC", answer=answer,
-                                          chunks=[_chunk(content="KYC compliance mandatory for NBFCs.")])
-        assert resp_match.coverage.coverage_ratio >= resp_no_match.coverage.coverage_ratio
+        resp_no_match = service.cite_answer(
+            query="KYC",
+            answer=answer,
+            chunks=[_chunk(content="AML compliance required.")],
+        )
+        resp_match = service.cite_answer(
+            query="KYC",
+            answer=answer,
+            chunks=[_chunk(content="KYC compliance mandatory for NBFCs.")],
+        )
+        assert (
+            resp_match.coverage.coverage_ratio >= resp_no_match.coverage.coverage_ratio
+        )
 
     def test_uncited_claims_reported(self):
         service = build_default_citation_service()
@@ -609,8 +694,20 @@ class TestCoverageGuarantees:
     def test_unique_references_counted(self):
         service = build_default_citation_service()
         chunks = [
-            _chunk(cid="c1", doc_id="d1", doc_title="Circular", source="RBI", content="Rule 1."),
-            _chunk(cid="c2", doc_id="d2", doc_title="Guidelines", source="SEBI", content="Rule 2."),
+            _chunk(
+                cid="c1",
+                doc_id="d1",
+                doc_title="Circular",
+                source="RBI",
+                content="Rule 1.",
+            ),
+            _chunk(
+                cid="c2",
+                doc_id="d2",
+                doc_title="Guidelines",
+                source="SEBI",
+                content="Rule 2.",
+            ),
         ]
         answer = _answer("Rule 1. Rule 2.")
         resp = service.cite_answer(query="rules", answer=answer, chunks=chunks)
@@ -641,8 +738,12 @@ class TestCitationMapIntegrity:
         answer = _answer("KYC compliance required.")
         resp = service.cite_answer(query="KYC", answer=answer, chunks=chunks)
         cmap = resp.annotated_answer.citation_map
-        cited = [ic.claim_id for ic in resp.annotated_answer.executive_summary.citations]
-        cited += [ic.claim_id for ic in resp.annotated_answer.detailed_explanation.citations]
+        cited = [
+            ic.claim_id for ic in resp.annotated_answer.executive_summary.citations
+        ]
+        cited += [
+            ic.claim_id for ic in resp.annotated_answer.detailed_explanation.citations
+        ]
         for claim_id in cited:
             assert claim_id in cmap
 
@@ -691,7 +792,10 @@ class TestCitationEdgeCases:
     def test_chunk_without_metadata(self):
         service = build_default_citation_service()
         chunk = RetrievedChunk(
-            chunk_id="c1", document_id="d1", content="KYC required.", score=0.5,
+            chunk_id="c1",
+            document_id="d1",
+            content="KYC required.",
+            score=0.5,
         )
         answer = _answer("KYC required.")
         resp = service.cite_answer(query="KYC", answer=answer, chunks=[chunk])
@@ -708,18 +812,27 @@ class TestIntegration:
 
     def test_coverage_feeds_confidence(self):
         from app.services.confidence.factors import citation_coverage_factor
-        result = citation_coverage_factor(coverage=1.0, answer={"text": "KYC required."})
+
+        result = citation_coverage_factor(
+            coverage=1.0, answer={"text": "KYC required."}
+        )
         assert "score" in result
         assert 0.0 <= result["score"] <= 1.0
 
     def test_coverage_factor_zero(self):
         from app.services.confidence.factors import citation_coverage_factor
-        result = citation_coverage_factor(coverage=0.0, answer={"text": "KYC required."})
+
+        result = citation_coverage_factor(
+            coverage=0.0, answer={"text": "KYC required."}
+        )
         assert result["score"] == 0.0
 
     def test_coverage_factor_partial(self):
         from app.services.confidence.factors import citation_coverage_factor
-        result = citation_coverage_factor(coverage=0.5, answer={"text": "KYC required."})
+
+        result = citation_coverage_factor(
+            coverage=0.5, answer={"text": "KYC required."}
+        )
         assert 0.0 < result["score"] < 1.0
 
     def test_evaluation_citation_accuracy(self):
@@ -729,6 +842,7 @@ class TestIntegration:
         from app.schemas.citation import AnnotatedAnswer, AnnotatedText, InlineCitation
         from app.schemas.confidence import ConfidenceLevel
         from app.schemas.hallucination import HallucinationRiskLevel
+
         engine = MetricsEngine()
         answer = AnswerSection(
             executive_summary="KYC required.",
@@ -742,21 +856,32 @@ class TestIntegration:
             citations=AnnotatedAnswer(
                 executive_summary=AnnotatedText(
                     text="KYC required.",
-                    citations=[InlineCitation(citation_id="c1", chunk_id="ck1", claim_id="cl1", marker=" [Test]")],
-                    claim_count=2, cited_claim_count=1,
+                    citations=[
+                        InlineCitation(
+                            citation_id="c1",
+                            chunk_id="ck1",
+                            claim_id="cl1",
+                            marker=" [Test]",
+                        )
+                    ],
+                    claim_count=2,
+                    cited_claim_count=1,
                 ),
                 detailed_explanation=AnnotatedText(
                     text="KYC required in detail.",
                     citations=[],
-                    claim_count=1, cited_claim_count=1,
+                    claim_count=1,
+                    cited_claim_count=1,
                 ),
                 supporting_evidence=[],
                 key_regulatory_references=[],
                 references=[],
                 citation_map={},
             ),
-            confidence_score=0.9, confidence_level=ConfidenceLevel.HIGH,
-            faithfulness_score=0.9, hallucination_detected=False,
+            confidence_score=0.9,
+            confidence_level=ConfidenceLevel.HIGH,
+            faithfulness_score=0.9,
+            hallucination_detected=False,
             hallucination_risk_level=HallucinationRiskLevel.NONE,
             source_attributions=[],
             metadata=OrchestratorMetadata(),
@@ -771,6 +896,7 @@ class TestIntegration:
         from app.schemas.citation import AnnotatedAnswer, AnnotatedText, InlineCitation
         from app.schemas.confidence import ConfidenceLevel
         from app.schemas.hallucination import HallucinationRiskLevel
+
         engine = MetricsEngine()
         answer = AnswerSection(
             executive_summary="All cited.",
@@ -784,21 +910,39 @@ class TestIntegration:
             citations=AnnotatedAnswer(
                 executive_summary=AnnotatedText(
                     text="All cited.",
-                    citations=[InlineCitation(citation_id="c1", chunk_id="ck1", claim_id="cl1", marker=" [Test]")],
-                    claim_count=1, cited_claim_count=1,
+                    citations=[
+                        InlineCitation(
+                            citation_id="c1",
+                            chunk_id="ck1",
+                            claim_id="cl1",
+                            marker=" [Test]",
+                        )
+                    ],
+                    claim_count=1,
+                    cited_claim_count=1,
                 ),
                 detailed_explanation=AnnotatedText(
                     text="All cited in detail.",
-                    citations=[InlineCitation(citation_id="c1", chunk_id="ck1", claim_id="cl1", marker=" [Test]")],
-                    claim_count=1, cited_claim_count=1,
+                    citations=[
+                        InlineCitation(
+                            citation_id="c1",
+                            chunk_id="ck1",
+                            claim_id="cl1",
+                            marker=" [Test]",
+                        )
+                    ],
+                    claim_count=1,
+                    cited_claim_count=1,
                 ),
                 supporting_evidence=[],
                 key_regulatory_references=[],
                 references=[],
                 citation_map={},
             ),
-            confidence_score=0.9, confidence_level=ConfidenceLevel.HIGH,
-            faithfulness_score=0.9, hallucination_detected=False,
+            confidence_score=0.9,
+            confidence_level=ConfidenceLevel.HIGH,
+            faithfulness_score=0.9,
+            hallucination_detected=False,
             hallucination_risk_level=HallucinationRiskLevel.NONE,
             source_attributions=[],
             metadata=OrchestratorMetadata(),
@@ -813,6 +957,7 @@ class TestIntegration:
         from app.schemas.citation import AnnotatedAnswer, AnnotatedText
         from app.schemas.confidence import ConfidenceLevel
         from app.schemas.hallucination import HallucinationRiskLevel
+
         engine = MetricsEngine()
         answer = AnswerSection(
             executive_summary="Nothing cited.",
@@ -825,18 +970,26 @@ class TestIntegration:
             answer=answer,
             citations=AnnotatedAnswer(
                 executive_summary=AnnotatedText(
-                    text="Nothing cited.", citations=[], claim_count=5, cited_claim_count=0,
+                    text="Nothing cited.",
+                    citations=[],
+                    claim_count=5,
+                    cited_claim_count=0,
                 ),
                 detailed_explanation=AnnotatedText(
-                    text="Nothing cited in detail.", citations=[], claim_count=5, cited_claim_count=0,
+                    text="Nothing cited in detail.",
+                    citations=[],
+                    claim_count=5,
+                    cited_claim_count=0,
                 ),
                 supporting_evidence=[],
                 key_regulatory_references=[],
                 references=[],
                 citation_map={},
             ),
-            confidence_score=0.9, confidence_level=ConfidenceLevel.HIGH,
-            faithfulness_score=0.9, hallucination_detected=False,
+            confidence_score=0.9,
+            confidence_level=ConfidenceLevel.HIGH,
+            faithfulness_score=0.9,
+            hallucination_detected=False,
             hallucination_risk_level=HallucinationRiskLevel.NONE,
             source_attributions=[],
             metadata=OrchestratorMetadata(),
@@ -847,6 +1000,7 @@ class TestIntegration:
     def test_confidence_service_accepts_coverage(self):
         from app.services.confidence.service import ConfidenceService
         from app.schemas.confidence import ConfidenceRequest
+
         svc = ConfidenceService()
         req = ConfidenceRequest(
             query="KYC",

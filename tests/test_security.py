@@ -69,6 +69,7 @@ from app.security.threat_detection import (
 
 # ─── Fixtures ──────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def jwt_config() -> JWTConfig:
     return JWTConfig(secret="x" * 64)
@@ -90,6 +91,7 @@ def _reset_singletons(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # ─── JWT ───────────────────────────────────────────────────────────
+
 
 class TestJWT:
     def test_issue_and_verify(self, issuer: JWTIssuer) -> None:
@@ -129,13 +131,23 @@ class TestJWT:
         # by hand because :class:`JWTConfig` enforces a 60-second floor on
         # ``access_ttl_seconds`` — we want a token that has *already*
         # expired, which is impossible to mint through the issuer.
-        import base64, hmac, hashlib, json, time
+        import base64
+        import hmac
+        import hashlib
+        import json
+        import time
+
         secret_bytes = jwt_config.secret.encode("utf-8")
         header = {"alg": "HS256", "typ": "JWT"}
         now = int(time.time()) - 100
         payload = {
-            "iss": jwt_config.issuer, "aud": jwt_config.audience,
-            "sub": "alice", "iat": now, "exp": now + 50, "roles": [], "scopes": [],
+            "iss": jwt_config.issuer,
+            "aud": jwt_config.audience,
+            "sub": "alice",
+            "iat": now,
+            "exp": now + 50,
+            "roles": [],
+            "scopes": [],
         }
 
         def b64(d: bytes) -> str:
@@ -193,14 +205,31 @@ class TestJWT:
         # Manually craft a token with aud=[a, b] and verify with "b" as the
         # expected audience. This exercises the "audience is a list" code
         # path in :func:`decode_jwt` while keeping the security check real.
-        import base64, hmac, hashlib, json, time
+        import base64
+        import hmac
+        import hashlib
+        import json
+        import time
+
         secret = issuer.config.secret.encode("utf-8")
         header = {"alg": "HS256", "typ": "JWT"}
         now = int(time.time())
-        payload = {"iss": issuer.config.issuer, "aud": ["a", "b"], "sub": "x", "iat": now, "exp": now + 60}
+        payload = {
+            "iss": issuer.config.issuer,
+            "aud": ["a", "b"],
+            "sub": "x",
+            "iat": now,
+            "exp": now + 60,
+        }
+
         def b64(d: bytes) -> str:
             return base64.urlsafe_b64encode(d).rstrip(b"=").decode("ascii")
-        s_in = b64(json.dumps(header, separators=(",", ":")).encode()) + "." + b64(json.dumps(payload, separators=(",", ":")).encode())
+
+        s_in = (
+            b64(json.dumps(header, separators=(",", ":")).encode())
+            + "."
+            + b64(json.dumps(payload, separators=(",", ":")).encode())
+        )
         sig = hmac.new(secret, s_in.encode(), hashlib.sha256).digest()
         token = s_in + "." + b64(sig)
         principal = issuer.verify(token, expected_audience="b")
@@ -208,6 +237,7 @@ class TestJWT:
 
 
 # ─── RBAC ──────────────────────────────────────────────────────────
+
 
 class TestRBAC:
     def test_default_role_grants(self) -> None:
@@ -305,6 +335,7 @@ class TestRBAC:
 
 # ─── Secrets ──────────────────────────────────────────────────────
 
+
 class TestSecrets:
     def test_resolve_from_explicit_override(self) -> None:
         sm = SecretsManager()
@@ -320,14 +351,18 @@ class TestSecrets:
         assert result.source == SecretSource.ENV
 
     def test_resolve_from_file(self, tmp_path: Path) -> None:
-        (tmp_path / "api-key.txt").write_text("API-KEY=from-file\nOTHER=ignored\n", encoding="utf-8")
+        (tmp_path / "api-key.txt").write_text(
+            "API-KEY=from-file\nOTHER=ignored\n", encoding="utf-8"
+        )
         sm = SecretsManager(file_root=tmp_path)
         result = sm.get("api-key")
         assert result.value == "from-file"
         assert result.source == SecretSource.FILE
 
     def test_resolve_from_json_file(self, tmp_path: Path) -> None:
-        (tmp_path / "secrets.json").write_text('{"openai": "sk-1234"}', encoding="utf-8")
+        (tmp_path / "secrets.json").write_text(
+            '{"openai": "sk-1234"}', encoding="utf-8"
+        )
         sm = SecretsManager(file_root=tmp_path)
         result = sm.get("openai")
         assert result.value == "sk-1234"
@@ -343,7 +378,9 @@ class TestSecrets:
         result = sm.get("missing", default="fallback")
         assert result.value == "fallback"
 
-    def test_precedence_override_beats_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_precedence_override_beats_env(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setenv("REGINTEL_X", "from-env")
         sm = SecretsManager()
         assert sm.get("x", override="from-override").value == "from-override"
@@ -352,7 +389,9 @@ class TestSecrets:
 
     def test_preview_does_not_leak_value(self) -> None:
         sm = SecretsManager()
-        result = sm.get("verylongsecretvalue", override="sk-1234567890ABCDEFabcdefghijklmnop")
+        result = sm.get(
+            "verylongsecretvalue", override="sk-1234567890ABCDEFabcdefghijklmnop"
+        )
         preview = result.preview(visible=4)
         assert "1234567890" not in preview
         assert "***" in preview or "…" in preview
@@ -400,7 +439,9 @@ class TestSecrets:
         assert "preview" in cached
         assert cached["preview"] != "hello-world"
 
-    def test_list_known_includes_env_and_file(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_list_known_includes_env_and_file(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         monkeypatch.setenv("REGINTEL_FOO", "bar")
         (tmp_path / "alpha.txt").write_text("alpha=1", encoding="utf-8")
         (tmp_path / "beta.txt").write_text("beta=2", encoding="utf-8")
@@ -412,6 +453,7 @@ class TestSecrets:
 
 
 # ─── API gateway ──────────────────────────────────────────────────
+
 
 class TestAPIGateway:
     def test_cors_strict_by_default(self) -> None:
@@ -460,19 +502,40 @@ class TestAPIGateway:
         signer = RequestSigner("a" * 32)
         body = b'{"x":1}'
         sig = signer.sign("POST", "/api/v1/x", body, timestamp=1000)
-        assert signer.verify("POST", "/api/v1/x", body, sig["X-Signature"], sig["X-Signature-Timestamp"], now=1000)[0]
+        assert signer.verify(
+            "POST",
+            "/api/v1/x",
+            body,
+            sig["X-Signature"],
+            sig["X-Signature-Timestamp"],
+            now=1000,
+        )[0]
 
     def test_request_signer_rejects_tampered_body(self) -> None:
         signer = RequestSigner("a" * 32)
         sig = signer.sign("POST", "/api/v1/x", b"a", timestamp=1000)
-        ok, reason = signer.verify("POST", "/api/v1/x", b"b", sig["X-Signature"], sig["X-Signature-Timestamp"], now=1000)
+        ok, reason = signer.verify(
+            "POST",
+            "/api/v1/x",
+            b"b",
+            sig["X-Signature"],
+            sig["X-Signature-Timestamp"],
+            now=1000,
+        )
         assert not ok
         assert reason == "signature mismatch"
 
     def test_request_signer_rejects_expired_timestamp(self) -> None:
         signer = RequestSigner("a" * 32, max_skew_seconds=10)
         sig = signer.sign("POST", "/api/v1/x", b"", timestamp=1000)
-        ok, reason = signer.verify("POST", "/api/v1/x", b"", sig["X-Signature"], sig["X-Signature-Timestamp"], now=2000)
+        ok, reason = signer.verify(
+            "POST",
+            "/api/v1/x",
+            b"",
+            sig["X-Signature"],
+            sig["X-Signature-Timestamp"],
+            now=2000,
+        )
         assert not ok
         assert "timestamp" in reason
 
@@ -482,7 +545,9 @@ class TestAPIGateway:
 
     def test_api_gateway_decision(self) -> None:
         gw = APIGateway(
-            ip_allow=IPAllowList.from_cidrs(allowed_cidrs=("127.0.0.0/8",), default_allow=False),
+            ip_allow=IPAllowList.from_cidrs(
+                allowed_cidrs=("127.0.0.0/8",), default_allow=False
+            ),
             require_signature_paths={"/api/v1/admin/keys"},
         )
         assert gw.check_ip("127.0.0.1")[0]
@@ -514,6 +579,7 @@ class TestAPIGateway:
 
 
 # ─── Threat detection ─────────────────────────────────────────────
+
 
 class TestThreatDetection:
     def test_suspicious_user_agent(self) -> None:
@@ -558,14 +624,20 @@ class TestThreatDetection:
     def test_brute_force_rolls_up(self) -> None:
         td = ThreatDetector(brute_force_threshold=3, brute_force_window_seconds=60.0)
         for _ in range(3):
-            td.inspect_response(identity="ip:1.2.3.4", status_code=401, path="/api/v1/x")
-        events = td.inspect_response(identity="ip:1.2.3.4", status_code=401, path="/api/v1/x")
+            td.inspect_response(
+                identity="ip:1.2.3.4", status_code=401, path="/api/v1/x"
+            )
+        events = td.inspect_response(
+            identity="ip:1.2.3.4", status_code=401, path="/api/v1/x"
+        )
         assert any(e.type == ThreatType.BRUTE_FORCE for e in events)
 
     def test_brute_force_below_threshold(self) -> None:
         td = ThreatDetector(brute_force_threshold=5)
         for _ in range(2):
-            td.inspect_response(identity="ip:1.2.3.4", status_code=401, path="/api/v1/x")
+            td.inspect_response(
+                identity="ip:1.2.3.4", status_code=401, path="/api/v1/x"
+            )
         events = td.recent_events()
         assert not any(e.type == ThreatType.BRUTE_FORCE for e in events)
 
@@ -573,7 +645,9 @@ class TestThreatDetection:
         td = ThreatDetector(path_probing_threshold=3, path_probing_window_seconds=60.0)
         for path in ["/admin/users", "/admin/keys", "/api/v1/security"]:
             td.inspect_request(identity="ip:1.2.3.4", method="GET", path=path)
-        events = td.inspect_request(identity="ip:1.2.3.4", method="GET", path="/admin/audit")
+        events = td.inspect_request(
+            identity="ip:1.2.3.4", method="GET", path="/admin/audit"
+        )
         assert any(e.type == ThreatType.PATH_PROBING for e in events)
 
     def test_recent_events_bounded(self) -> None:
@@ -591,13 +665,17 @@ class TestThreatDetection:
         td = ThreatDetector()
         captured: List[ThreatEvent] = []
         td.subscribe(captured.append)
-        td.inspect_request(identity="x", method="GET", path="/x", headers={"user-agent": "nikto"})
+        td.inspect_request(
+            identity="x", method="GET", path="/x", headers={"user-agent": "nikto"}
+        )
         assert captured
         assert captured[0].type == ThreatType.SUSPICIOUS_UA
 
     def test_stats_summary(self) -> None:
         td = ThreatDetector()
-        td.inspect_request(identity="x", method="GET", path="/x", headers={"user-agent": "sqlmap"})
+        td.inspect_request(
+            identity="x", method="GET", path="/x", headers={"user-agent": "sqlmap"}
+        )
         s = td.stats()
         assert s["total_events"] >= 1
         assert "suspicious_ua" in s["by_type"]
@@ -605,29 +683,35 @@ class TestThreatDetection:
 
 # ─── Audit review ─────────────────────────────────────────────────
 
+
 class TestAuditReview:
     @pytest.fixture
     def sample_audit_log(self):
         from app.middleware import AuditLog, AuditLogEntry
+
         log = AuditLog()
         now = datetime.now(timezone.utc)
-        for i, (status, method, path) in enumerate([
-            (200, "GET", "/api/v1/x"),
-            (401, "POST", "/api/v1/auth"),
-            (404, "GET", "/api/v1/missing"),
-            (500, "POST", "/api/v1/y"),
-        ]):
-            log.record(AuditLogEntry(
-                timestamp=now - timedelta(minutes=i),
-                request_id=f"req-{i}",
-                method=method,
-                path=path,
-                status_code=status,
-                duration_ms=10.0 + i,
-                api_key_id=None,
-                client_ip="10.0.0.1",
-                user_agent="test",
-            ))
+        for i, (status, method, path) in enumerate(
+            [
+                (200, "GET", "/api/v1/x"),
+                (401, "POST", "/api/v1/auth"),
+                (404, "GET", "/api/v1/missing"),
+                (500, "POST", "/api/v1/y"),
+            ]
+        ):
+            log.record(
+                AuditLogEntry(
+                    timestamp=now - timedelta(minutes=i),
+                    request_id=f"req-{i}",
+                    method=method,
+                    path=path,
+                    status_code=status,
+                    duration_ms=10.0 + i,
+                    api_key_id=None,
+                    client_ip="10.0.0.1",
+                    user_agent="test",
+                )
+            )
         return log
 
     def test_records_returns_all_by_default(self, sample_audit_log) -> None:
@@ -683,6 +767,7 @@ class TestAuditReview:
         text = review.export_jsonl()
         assert text.count("\n") == 4
         import json
+
         first = json.loads(text.splitlines()[0])
         assert "request_id" in first
 
@@ -702,6 +787,7 @@ class TestAuditReview:
 
 # ─── Security monitor ──────────────────────────────────────────────
 
+
 class TestSecurityMonitor:
     def test_dashboard_includes_threats_secrets_audit(self) -> None:
         sm = SecurityMonitor()
@@ -714,20 +800,36 @@ class TestSecurityMonitor:
     def test_alert_threshold_critical(self) -> None:
         sm = SecurityMonitor(critical_threat_threshold=1)
         # Record one critical threat event manually
-        sm.record(Alert(
-            name="manual",
-            severity=AlertSeverity.CRITICAL,
-            message="manual",
-            timestamp=datetime.now(timezone.utc),
-        ))
+        sm.record(
+            Alert(
+                name="manual",
+                severity=AlertSeverity.CRITICAL,
+                message="manual",
+                timestamp=datetime.now(timezone.utc),
+            )
+        )
         # Dashboard re-check should not crash and may record more alerts.
         dash = sm.dashboard()
         assert dash["alerts"]["counts"]["critical"] >= 1
 
     def test_alert_counts_and_recent(self) -> None:
         sm = SecurityMonitor()
-        sm.record(Alert(name="a", severity=AlertSeverity.INFO, message="x", timestamp=datetime.now(timezone.utc)))
-        sm.record(Alert(name="b", severity=AlertSeverity.WARNING, message="y", timestamp=datetime.now(timezone.utc)))
+        sm.record(
+            Alert(
+                name="a",
+                severity=AlertSeverity.INFO,
+                message="x",
+                timestamp=datetime.now(timezone.utc),
+            )
+        )
+        sm.record(
+            Alert(
+                name="b",
+                severity=AlertSeverity.WARNING,
+                message="y",
+                timestamp=datetime.now(timezone.utc),
+            )
+        )
         assert sm.alert_counts()["warning"] == 1
         assert sm.alert_counts()["info"] == 1
         assert len(sm.recent_alerts(10)) == 2

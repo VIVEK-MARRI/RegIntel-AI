@@ -29,6 +29,7 @@ DOCKERIGNORE = REPO_ROOT / ".dockerignore"
 
 # ─── Helpers ────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="module")
 def dockerfile_text() -> str:
     return DOCKERFILE.read_text(encoding="utf-8")
@@ -51,12 +52,15 @@ def nginx_text() -> str:
 
 # ─── File presence ──────────────────────────────────────────────────
 
+
 class TestFilePresence:
     def test_dockerfile_exists(self) -> None:
         assert DOCKERFILE.is_file(), "Dockerfile.production is missing"
 
     def test_frontend_dockerfile_exists(self) -> None:
-        assert FRONTEND_DOCKERFILE.is_file(), "frontend/Dockerfile.production is missing"
+        assert (
+            FRONTEND_DOCKERFILE.is_file()
+        ), "frontend/Dockerfile.production is missing"
 
     def test_compose_exists(self) -> None:
         assert COMPOSE.is_file(), "docker-compose.production.yml is missing"
@@ -88,6 +92,7 @@ class TestFilePresence:
 
 
 # ─── Backend Dockerfile ─────────────────────────────────────────────
+
 
 class TestBackendDockerfile:
     def test_uses_multi_stage(self, dockerfile_text: str) -> None:
@@ -131,6 +136,7 @@ class TestBackendDockerfile:
 
 # ─── Frontend Dockerfile ────────────────────────────────────────────
 
+
 class TestFrontendDockerfile:
     def test_multi_stage(self, frontend_dockerfile_text: str) -> None:
         assert frontend_dockerfile_text.count("FROM ") >= 2
@@ -157,6 +163,7 @@ class TestFrontendDockerfile:
 
 # ─── docker-compose ─────────────────────────────────────────────────
 
+
 class TestCompose:
     def test_compose_is_valid_yaml(self, compose_data: Dict[str, Any]) -> None:
         assert "services" in compose_data
@@ -168,11 +175,15 @@ class TestCompose:
     def test_has_frontend_service(self, compose_data: Dict[str, Any]) -> None:
         assert "frontend" in compose_data["services"]
 
-    def test_backend_uses_production_dockerfile(self, compose_data: Dict[str, Any]) -> None:
+    def test_backend_uses_production_dockerfile(
+        self, compose_data: Dict[str, Any]
+    ) -> None:
         backend = compose_data["services"]["backend"]
         assert backend["build"]["dockerfile"] == "Dockerfile.production"
 
-    def test_frontend_uses_production_dockerfile(self, compose_data: Dict[str, Any]) -> None:
+    def test_frontend_uses_production_dockerfile(
+        self, compose_data: Dict[str, Any]
+    ) -> None:
         frontend = compose_data["services"]["frontend"]
         assert "Dockerfile.production" in frontend["build"]["dockerfile"]
 
@@ -209,16 +220,16 @@ class TestCompose:
     def test_security_options(self, compose_data: Dict[str, Any]) -> None:
         for name in ("backend", "frontend"):
             svc = compose_data["services"][name]
-            assert "no-new-privileges:true" in svc.get("security_opt", []), (
-                f"{name} should set no-new-privileges"
-            )
+            assert "no-new-privileges:true" in svc.get(
+                "security_opt", []
+            ), f"{name} should set no-new-privileges"
 
     def test_capabilities_dropped(self, compose_data: Dict[str, Any]) -> None:
         for name in ("backend", "frontend"):
             svc = compose_data["services"][name]
-            assert "ALL" in svc.get("cap_drop", []), (
-                f"{name} should drop ALL capabilities"
-            )
+            assert "ALL" in svc.get(
+                "cap_drop", []
+            ), f"{name} should drop ALL capabilities"
 
     def test_named_volumes(self, compose_data: Dict[str, Any]) -> None:
         vols = compose_data.get("volumes", {})
@@ -232,6 +243,7 @@ class TestCompose:
 
 
 # ─── nginx ──────────────────────────────────────────────────────────
+
 
 class TestNginx:
     def test_has_user_directive(self, nginx_text: str) -> None:
@@ -267,7 +279,9 @@ class TestNginx:
         assert "expires 1y" in nginx_text or "immutable" in nginx_text
 
     def test_listen_port(self, nginx_text: str) -> None:
-        assert re.search(r"^\s*listen\s+80(\s+default_server)?\s*;", nginx_text, re.MULTILINE)
+        assert re.search(
+            r"^\s*listen\s+80(\s+default_server)?\s*;", nginx_text, re.MULTILINE
+        )
 
     def test_server_tokens_off(self, nginx_text: str) -> None:
         assert re.search(r"^\s*server_tokens\s+off\s*;", nginx_text, re.MULTILINE)
@@ -278,10 +292,13 @@ class TestNginx:
     def test_no_default_server_token(self, nginx_text: str) -> None:
         # The default_server marker must be set so we don't accidentally treat
         # a misconfigured vhost as the catch-all.
-        assert re.search(r"^\s*listen\s+80\s+default_server\s*;", nginx_text, re.MULTILINE)
+        assert re.search(
+            r"^\s*listen\s+80\s+default_server\s*;", nginx_text, re.MULTILINE
+        )
 
 
 # ─── .env example ──────────────────────────────────────────────────
+
 
 class TestEnvExample:
     def test_has_database_url(self) -> None:
@@ -307,6 +324,7 @@ class TestEnvExample:
 
 
 # ─── dockerignore ──────────────────────────────────────────────────
+
 
 class TestDockerignore:
     def test_excludes_git(self) -> None:

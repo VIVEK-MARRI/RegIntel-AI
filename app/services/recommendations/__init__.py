@@ -77,9 +77,7 @@ class ActionPlanner:
                     depends_on=raw.get("depends_on", []),
                 )
             )
-        effort = total_effort_hours or sum(
-            s.estimated_effort_hours for s in seq
-        )
+        effort = total_effort_hours or sum(s.estimated_effort_hours for s in seq)
         return ActionPlan(
             title=title,
             summary=f"Plan with {len(seq)} step(s)",
@@ -102,9 +100,7 @@ class RecommendationGenerator:
         RiskLevel.LOW: RecommendationPriority.P3,
     }
 
-    _AREA_TO_RECOMMENDATION: Dict[
-        AffectedArea, List[Dict[str, Any]]
-    ] = {
+    _AREA_TO_RECOMMENDATION: Dict[AffectedArea, List[Dict[str, Any]]] = {
         AffectedArea.KYC: [
             {
                 "type": RecommendationType.COMPLIANCE,
@@ -362,9 +358,7 @@ class RecommendationGenerator:
                 risk_assessment = self._build_default_risk_assessment(request)
             recs: List[Recommendation] = []
             for area_record in risk_assessment.affected_areas:
-                templates = self._AREA_TO_RECOMMENDATION.get(
-                    area_record.area, []
-                )
+                templates = self._AREA_TO_RECOMMENDATION.get(area_record.area, [])
                 for tpl in templates:
                     planner = ActionPlanner()
                     plan = planner.plan(
@@ -378,15 +372,9 @@ class RecommendationGenerator:
                         priority=self._priority_for(
                             risk_assessment.risk_level, area_record.area
                         ),
-                        confidence=min(
-                            1.0, 0.5 + area_record.exposure_score
-                        ),
-                        reasoning=self._build_reasoning(
-                            risk_assessment, area_record
-                        ),
-                        citations=self._build_citations(
-                            risk_assessment, area_record
-                        ),
+                        confidence=min(1.0, 0.5 + area_record.exposure_score),
+                        reasoning=self._build_reasoning(risk_assessment, area_record),
+                        citations=self._build_citations(risk_assessment, area_record),
                         action_plan=plan,
                         source="recommendation_engine",
                         document_id=request.document_id,
@@ -453,8 +441,7 @@ class RecommendationGenerator:
             ),
             ReasoningStep(
                 description=(
-                    f"Risk level {ra.risk_level.value} drives priority "
-                    f"mapping"
+                    f"Risk level {ra.risk_level.value} drives priority " f"mapping"
                 ),
                 rule="priority.map",
                 inputs={"risk_level": ra.risk_level.value},
@@ -641,8 +628,7 @@ class RecommendationRepository:
         items = self._store.list_all()
         if flt.recommendation_type:
             items = [
-                r for r in items
-                if r.recommendation_type == flt.recommendation_type
+                r for r in items if r.recommendation_type == flt.recommendation_type
             ]
         if flt.priority:
             items = [r for r in items if r.priority == flt.priority]
@@ -674,15 +660,11 @@ class RecommendationRepository:
         conf_total = 0.0
         for r in items:
             conf_total += r.confidence
-            s.by_priority[r.priority.value] = (
-                s.by_priority.get(r.priority.value, 0) + 1
-            )
+            s.by_priority[r.priority.value] = s.by_priority.get(r.priority.value, 0) + 1
             s.by_type[r.recommendation_type.value] = (
                 s.by_type.get(r.recommendation_type.value, 0) + 1
             )
-            s.by_status[r.status.value] = (
-                s.by_status.get(r.status.value, 0) + 1
-            )
+            s.by_status[r.status.value] = s.by_status.get(r.status.value, 0) + 1
             if r.status == ActionStatus.ACCEPTED:
                 s.accepted += 1
             elif r.status == ActionStatus.REJECTED:
@@ -693,14 +675,10 @@ class RecommendationRepository:
                 s.in_progress += 1
             elif r.status == ActionStatus.COMPLETED:
                 s.completed += 1
-            s.last_recommendation_at = max(
-                s.last_recommendation_at or 0, r.created_at
-            )
+            s.last_recommendation_at = max(s.last_recommendation_at or 0, r.created_at)
         s.average_confidence = round(conf_total / len(items), 4)
         decided = s.accepted + s.rejected
-        s.acceptance_rate = round(
-            s.accepted / decided, 4
-        ) if decided > 0 else 0.0
+        s.acceptance_rate = round(s.accepted / decided, 4) if decided > 0 else 0.0
         return s
 
 
@@ -714,9 +692,7 @@ class RecommendationService:
         self.generator = RecommendationGenerator()
         self.planner = ActionPlanner()
 
-    def generate(
-        self, request: RecommendationRequest
-    ) -> List[Recommendation]:
+    def generate(self, request: RecommendationRequest) -> List[Recommendation]:
         recs = self.generator.generate(
             request, max_recommendations=request.max_recommendations
         )
@@ -743,9 +719,7 @@ class RecommendationService:
     def get(self, rid: str) -> Optional[Recommendation]:
         return self.store.get(rid)
 
-    def search(
-        self, flt: RecommendationFilter
-    ) -> PaginatedRecommendations:
+    def search(self, flt: RecommendationFilter) -> PaginatedRecommendations:
         return self.repository.search(flt)
 
     def stats(self) -> RecommendationStats:
@@ -759,9 +733,7 @@ class RecommendationService:
 
 
 def build_default_recommendation_service() -> RecommendationService:
-    persist = os.path.join(
-        settings.STORAGE_ROOT, "recommendations", "recs.jsonl"
-    )
+    persist = os.path.join(settings.STORAGE_ROOT, "recommendations", "recs.jsonl")
     store = InMemoryRecommendationStore(persist_path=persist)
     return RecommendationService(store=store)
 

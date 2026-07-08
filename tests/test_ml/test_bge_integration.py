@@ -16,6 +16,7 @@ import pytest
 _ST_AVAILABLE = False
 try:
     import sentence_transformers  # noqa: F401
+
     _ST_AVAILABLE = True
 except ImportError:
     pass
@@ -36,6 +37,7 @@ class TestBGEEmbeddingProviderReal:
     @pytest.fixture(scope="class")
     def provider(self):
         from app.services.embedding.bge import BGEEmbeddingProvider
+
         return BGEEmbeddingProvider(
             model_name=_EMBEDDING_MODEL,
             device="cpu",
@@ -46,9 +48,9 @@ class TestBGEEmbeddingProviderReal:
         """encode_text must return a vector of the expected dimension."""
         vec = provider.encode_text("Reserve Bank of India digital lending guidelines")
         assert isinstance(vec, list), f"Expected list, got {type(vec)}"
-        assert len(vec) == _EXPECTED_DIMENSION, (
-            f"Expected dimension {_EXPECTED_DIMENSION}, got {len(vec)}"
-        )
+        assert (
+            len(vec) == _EXPECTED_DIMENSION
+        ), f"Expected dimension {_EXPECTED_DIMENSION}, got {len(vec)}"
         assert all(isinstance(v, float) for v in vec), "All elements must be floats"
 
     def test_get_dimension_returns_correct_value(self, provider):
@@ -59,6 +61,7 @@ class TestBGEEmbeddingProviderReal:
     def test_query_encoding_produces_unit_vector(self, provider):
         """Normalized embeddings must have L2 norm ≈ 1.0."""
         import math
+
         vec = provider.encode_query("what is digital lending?")
         norm = math.sqrt(sum(v * v for v in vec))
         assert abs(norm - 1.0) < 1e-3, f"Expected unit vector norm, got {norm}"
@@ -72,6 +75,7 @@ class TestBGEEmbeddingProviderReal:
         irrelevant = provider.encode_text(
             "The Eiffel Tower is a wrought-iron lattice tower in Paris, France"
         )
+
         # Cosine similarity (vectors are already normalized)
         def dot(a, b):
             return sum(x * y for x, y in zip(a, b))
@@ -91,11 +95,13 @@ class TestBGEEmbeddingProviderReal:
             "borrower consent requirements",
         ]
         vecs = provider.encode_batch(texts)
-        assert len(vecs) == len(texts), f"Expected {len(texts)} vectors, got {len(vecs)}"
+        assert len(vecs) == len(
+            texts
+        ), f"Expected {len(texts)} vectors, got {len(vecs)}"
         for i, vec in enumerate(vecs):
-            assert len(vec) == _EXPECTED_DIMENSION, (
-                f"Vector {i} has wrong dimension: {len(vec)}"
-            )
+            assert (
+                len(vec) == _EXPECTED_DIMENSION
+            ), f"Vector {i} has wrong dimension: {len(vec)}"
 
     def test_health_check_passes(self, provider):
         """health_check() must return True with the real model loaded."""
@@ -114,6 +120,7 @@ class TestBGERerankerProviderReal:
     @pytest.fixture(scope="class")
     def reranker(self):
         from app.services.reranker.model import BGERerankerProvider
+
         return BGERerankerProvider(
             model_name=_RERANKER_MODEL,
             device="cpu",
@@ -135,13 +142,17 @@ class TestBGERerankerProviderReal:
             "REs shall obtain explicit informed consent from borrowers "
             "before collecting, storing, or processing personal data."
         )
-        irrelevant_passage = "The capital of France is Paris, known for its art and culture."
+        irrelevant_passage = (
+            "The capital of France is Paris, known for its art and culture."
+        )
 
         # Use score_pairs for batch efficiency
-        scores = reranker.score_pairs([
-            (query, relevant_passage),
-            (query, irrelevant_passage),
-        ])
+        scores = reranker.score_pairs(
+            [
+                (query, relevant_passage),
+                (query, irrelevant_passage),
+            ]
+        )
         assert len(scores) == 2
         assert scores[0] > scores[1], (
             f"Relevant score ({scores[0]:.3f}) should be higher than "
@@ -156,9 +167,9 @@ class TestBGERerankerProviderReal:
             ("query three", "document three"),
         ]
         scores = reranker.score_pairs(pairs)
-        assert len(scores) == len(pairs), (
-            f"Expected {len(pairs)} scores, got {len(scores)}"
-        )
+        assert len(scores) == len(
+            pairs
+        ), f"Expected {len(pairs)} scores, got {len(scores)}"
 
     def test_empty_pairs_returns_empty_list(self, reranker):
         """score_pairs([]) must return []."""

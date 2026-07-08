@@ -22,13 +22,14 @@ class OperationKind(str, Enum):
 class BenchmarkSuite(str, Enum):
     """Pre-defined benchmark suites with sensible default scenarios."""
 
-    SMOKE = "smoke"           # 1 op, no concurrency
-    QUICK = "quick"           # 5 ops, 1 worker
-    STANDARD = "standard"     # 25 ops, 4 workers
-    FULL = "full"             # 100 ops, 8 workers
+    SMOKE = "smoke"  # 1 op, no concurrency
+    QUICK = "quick"  # 5 ops, 1 worker
+    STANDARD = "standard"  # 25 ops, 4 workers
+    FULL = "full"  # 100 ops, 8 workers
 
 
 # ─── Single-operation measurement ──────────────────────────────────────
+
 
 class LatencyMetric(BaseModel):
     """A single latency measurement in milliseconds."""
@@ -80,6 +81,7 @@ class OperationResult(BaseModel):
 
 # ─── System snapshot ──────────────────────────────────────────────────
 
+
 class SystemSnapshot(BaseModel):
     """Process- and host-level resource snapshot."""
 
@@ -96,6 +98,7 @@ class SystemSnapshot(BaseModel):
 
 
 # ─── Aggregate statistics ─────────────────────────────────────────────
+
 
 class LatencyStats(BaseModel):
     """Latency distribution statistics for a set of operations."""
@@ -127,6 +130,7 @@ class CostSummary(BaseModel):
 
 
 # ─── Request / response shapes ────────────────────────────────────────
+
 
 class BenchmarkRequest(BaseModel):
     """Run a benchmark."""

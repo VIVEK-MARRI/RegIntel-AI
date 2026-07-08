@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # 1. Classification Rules
 # =============================================================================
 
+
 class CircularSearchRule(ClassificationRule):
     """Rule matching circular and notification search intent.
 
@@ -41,21 +42,26 @@ class CircularSearchRule(ClassificationRule):
 
         # High-confidence: circular reference number patterns
         ref_patterns = [
-            r"\b\d+/\d{4}\b",                    # "17/2024", "12/2023"
-            r"\b\d{4}-\d{2,4}/\d+\b",             # "2024-25/123"
-            r"\brbi/\d{4}\b",                     # "rbi/2024"
-            r"\bsebi/\w+",                        # "sebi/ho/..."
-            r"\bho/d\w+\b",                       # "ho/dfd"
-            r"\bcircular\s+no\b\.?",              # "circular no 12"
-            r"\bcircular\s+no\.\s*\d+",           # "circular no. 12"
-            r"\bnotification\s+no\b\.?",          # "notification no 5"
-            r"\b\d{4}/\d+/\d+\b",                 # "2024/12/001"
+            r"\b\d+/\d{4}\b",  # "17/2024", "12/2023"
+            r"\b\d{4}-\d{2,4}/\d+\b",  # "2024-25/123"
+            r"\brbi/\d{4}\b",  # "rbi/2024"
+            r"\bsebi/\w+",  # "sebi/ho/..."
+            r"\bho/d\w+\b",  # "ho/dfd"
+            r"\bcircular\s+no\b\.?",  # "circular no 12"
+            r"\bcircular\s+no\.\s*\d+",  # "circular no. 12"
+            r"\bnotification\s+no\b\.?",  # "notification no 5"
+            r"\b\d{4}/\d+/\d+\b",  # "2024/12/001"
         ]
         if any(re.search(pat, q_lower) for pat in ref_patterns):
             return 0.95
 
         # Medium-confidence: general circular/notification terms
-        strong_terms = ["circular", "notification", "master circular", "master direction"]
+        strong_terms = [
+            "circular",
+            "notification",
+            "master circular",
+            "master direction",
+        ]
         if any(t in q_lower for t in strong_terms):
             return 0.80
 
@@ -87,29 +93,29 @@ class RegulationSearchRule(ClassificationRule):
 
         # High-confidence: section/clause/rule/chapter references
         sec_patterns = [
-            r"\bsection\s+\d+[a-z]?\b",           # "section 45", "section 12A"
-            r"\bsec\b\.?\s*\d+[a-z]?\b",          # "sec. 12", "sec 45"
-            r"\bclause\s+\d+\b",                   # "clause 4"
-            r"\brule\s+\d+\b",                     # "rule 9"
-            r"\bchapter\s+[ivxlcdm]+\b",           # "chapter III"
-            r"\bchapter\s+\d+\b",                  # "chapter 3"
-            r"\bsub-section\s+\d+\b",              # "sub-section 2"
-            r"\bsub-clause\s+\d+\b",               # "sub-clause 1"
-            r"\bschedule\s+[a-z\d]+\b",            # "schedule III"
-            r"\bpart\s+[a-z\d]+\b",                # "part A"
-            r"\bannexure\s+[a-z\d]+\b",            # "annexure 1"
-            r"\bregulation\s+\d+\b",               # "regulation 12"
+            r"\bsection\s+\d+[a-z]?\b",  # "section 45", "section 12A"
+            r"\bsec\b\.?\s*\d+[a-z]?\b",  # "sec. 12", "sec 45"
+            r"\bclause\s+\d+\b",  # "clause 4"
+            r"\brule\s+\d+\b",  # "rule 9"
+            r"\bchapter\s+[ivxlcdm]+\b",  # "chapter III"
+            r"\bchapter\s+\d+\b",  # "chapter 3"
+            r"\bsub-section\s+\d+\b",  # "sub-section 2"
+            r"\bsub-clause\s+\d+\b",  # "sub-clause 1"
+            r"\bschedule\s+[a-z\d]+\b",  # "schedule III"
+            r"\bpart\s+[a-z\d]+\b",  # "part A"
+            r"\bannexure\s+[a-z\d]+\b",  # "annexure 1"
+            r"\bregulation\s+\d+\b",  # "regulation 12"
         ]
         if any(re.search(pat, q_lower) for pat in sec_patterns):
             return 0.95
 
         # Medium-confidence: act/regulation references
         act_patterns = [
-            r"\bact\b",                            # "RBI Act", "Companies Act"
-            r"\bregulations?\b",                   # "SEBI Regulations"
-            r"\bguidelines?\b",                    # "RBI Guidelines"
-            r"\bdirections?\b",                    # "RBI Directions"
-            r"\bframework\b",                      # "regulatory framework"
+            r"\bact\b",  # "RBI Act", "Companies Act"
+            r"\bregulations?\b",  # "SEBI Regulations"
+            r"\bguidelines?\b",  # "RBI Guidelines"
+            r"\bdirections?\b",  # "RBI Directions"
+            r"\bframework\b",  # "regulatory framework"
         ]
         if any(re.search(pat, q_lower) for pat in act_patterns):
             return 0.75
@@ -209,7 +215,14 @@ class ComparativeQueryRule(ClassificationRule):
         # e.g., "RBI and SEBI guidelines"
         if re.search(r"\b(\w+)\s+and\s+(\w+)\b", q_lower):
             # Check if query also contains regulatory terms
-            reg_terms = ["guidelines", "regulations", "act", "rules", "circular", "notification"]
+            reg_terms = [
+                "guidelines",
+                "regulations",
+                "act",
+                "rules",
+                "circular",
+                "notification",
+            ]
             if any(t in q_lower for t in reg_terms):
                 return 0.65
 
@@ -235,21 +248,48 @@ class SemanticQuestionRule(ClassificationRule):
 
         # High-confidence: starts with WH-question words
         q_words = [
-            "how ", "how do", "how does", "how can", "how should", "how to",
-            "why ", "why did", "why is", "why are", "why was",
-            "who ", "who is", "who are",
-            "where ", "where is", "where can",
-            "when ", "when did", "when is", "when should",
-            "what ", "what is", "what are", "what was", "what were",
-            "which ", "which is", "which are",
+            "how ",
+            "how do",
+            "how does",
+            "how can",
+            "how should",
+            "how to",
+            "why ",
+            "why did",
+            "why is",
+            "why are",
+            "why was",
+            "who ",
+            "who is",
+            "who are",
+            "where ",
+            "where is",
+            "where can",
+            "when ",
+            "when did",
+            "when is",
+            "when should",
+            "what ",
+            "what is",
+            "what are",
+            "what was",
+            "what were",
+            "which ",
+            "which is",
+            "which are",
         ]
         if any(q_lower.startswith(w) for w in q_words):
             return 0.85
 
         # High-confidence: starts with imperative explanation verbs
         explain_verbs = [
-            "explain ", "describe ", "elaborate ", "clarify ",
-            "illustrate ", "summarize ", "outline ",
+            "explain ",
+            "describe ",
+            "elaborate ",
+            "clarify ",
+            "illustrate ",
+            "summarize ",
+            "outline ",
         ]
         if any(q_lower.startswith(v) for v in explain_verbs):
             return 0.85
@@ -260,10 +300,20 @@ class SemanticQuestionRule(ClassificationRule):
 
         # Medium-confidence: contains query helper phrases
         helpers = [
-            "change", "amendment", "update", "impact of",
-            "requirements for", "compliance with", "process for",
-            "procedure for", "steps to", "way to", "method for",
-            "implications of", "consequences of", "effect of",
+            "change",
+            "amendment",
+            "update",
+            "impact of",
+            "requirements for",
+            "compliance with",
+            "process for",
+            "procedure for",
+            "steps to",
+            "way to",
+            "method for",
+            "implications of",
+            "consequences of",
+            "effect of",
         ]
         if any(h in q_lower for h in helpers):
             return 0.70
@@ -316,6 +366,7 @@ class KeywordLookupRule(ClassificationRule):
 # =============================================================================
 # 2. Classifier Implementation
 # =============================================================================
+
 
 class RuleBasedQueryClassifier(QueryClassifier):
     """Classifies user queries using a prioritized set of rules.
@@ -406,7 +457,9 @@ class MLQueryClassifier(QueryClassifier):
             # Example:
             # import joblib
             # self._model = joblib.load(self.model_path)
-            logger.info(f"ML model loading not yet implemented. Path: {self.model_path}")
+            logger.info(
+                f"ML model loading not yet implemented. Path: {self.model_path}"
+            )
         return self._model
 
     def classify(self, query: str) -> Tuple[QueryType, float]:
@@ -439,6 +492,7 @@ class MLQueryClassifier(QueryClassifier):
 # 3. Strategy Recommender
 # =============================================================================
 
+
 class RuleBasedStrategyRecommender(StrategyRecommender):
     """Recommends retrieval strategy based on query classification.
 
@@ -454,7 +508,12 @@ class RuleBasedStrategyRecommender(StrategyRecommender):
     """
 
     # Query types that benefit most from BM25 (exact match)
-    BM25_TYPES = {QueryType.KEYWORD, QueryType.KEYWORD_LOOKUP, QueryType.CIRCULAR, QueryType.REGULATION}
+    BM25_TYPES = {
+        QueryType.KEYWORD,
+        QueryType.KEYWORD_LOOKUP,
+        QueryType.CIRCULAR,
+        QueryType.REGULATION,
+    }
 
     # Query types that benefit most from dense (semantic) retrieval
     DENSE_TYPES = {QueryType.SEMANTIC, QueryType.DEFINITION}
@@ -466,10 +525,7 @@ class RuleBasedStrategyRecommender(StrategyRecommender):
     HYBRID_CONFIDENCE_THRESHOLD = 0.5
 
     def recommend(
-        self,
-        query_type: QueryType,
-        confidence: float,
-        query: str
+        self, query_type: QueryType, confidence: float, query: str
     ) -> RetrievalStrategy:
         """Recommends a retrieval strategy.
 
@@ -500,6 +556,7 @@ class RuleBasedStrategyRecommender(StrategyRecommender):
 # =============================================================================
 # 4. Analytics Integration
 # =============================================================================
+
 
 class AnalyticsManager:
     """Logs classified query telemetry to disk for analytics reporting.
@@ -564,6 +621,7 @@ class AnalyticsManager:
 # =============================================================================
 # 5. Query Analyzer (Main Entry Point)
 # =============================================================================
+
 
 class QueryAnalyzer:
     """Main entry point for query understanding.

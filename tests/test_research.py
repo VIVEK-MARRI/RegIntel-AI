@@ -185,8 +185,11 @@ def test_store_reset(tmp_store):
     from app.schemas.research import ResearchReport
 
     r = ResearchReport(
-        plan_id="p1", query="x", kind=ResearchKind.GENERAL,
-        summary="s", generated_at=0.0,
+        plan_id="p1",
+        query="x",
+        kind=ResearchKind.GENERAL,
+        summary="s",
+        generated_at=0.0,
     )
     tmp_store.add_report(r)
     assert len(tmp_store.list_reports()) == 1
@@ -208,9 +211,7 @@ async def test_service_run_generates_report(service):
 
 @pytest.mark.asyncio
 async def test_service_run_timeline(service):
-    req = ResearchRequest(
-        query="Show all KYC changes between 2020 and 2025"
-    )
+    req = ResearchRequest(query="Show all KYC changes between 2020 and 2025")
     report = await service.run(req)
     assert report.kind == ResearchKind.TIMELINE
     assert report.summary
@@ -272,7 +273,9 @@ def test_build_default_service(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_api_health():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/research/health")
         assert r.status_code == 200
         assert r.json()["module"] == "research"
@@ -284,7 +287,9 @@ async def test_api_run(tmp_store):
         store=tmp_store
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/research/run",
                 json={"query": "KYC rules"},
@@ -303,7 +308,9 @@ async def test_api_plan(tmp_store):
         store=tmp_store
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post(
                 "/api/v1/research/plan",
                 json={"query": "KYC rules"},
@@ -320,7 +327,9 @@ async def test_api_list_reports(tmp_store):
     await svc.run(ResearchRequest(query="KYC"))
     app.dependency_overrides[get_research_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/research?page=1&page_size=10")
             assert r.status_code == 200
             assert r.json()["total"] >= 1
@@ -334,7 +343,9 @@ async def test_api_get_report_404(tmp_store):
         store=tmp_store
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/research/nope")
             assert r.status_code == 404
     finally:
@@ -347,7 +358,9 @@ async def test_api_stats(tmp_store):
         store=tmp_store
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/research/stats")
             assert r.status_code == 200
             assert "total_reports" in r.json()

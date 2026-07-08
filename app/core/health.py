@@ -102,9 +102,11 @@ class HealthChecker:
 
     def run(self, *, names: Optional[List[str]] = None) -> HealthReport:
         with self._lock:
-            selected = list(self._checks.items()) if names is None else [
-                (n, self._checks[n]) for n in names if n in self._checks
-            ]
+            selected = (
+                list(self._checks.items())
+                if names is None
+                else [(n, self._checks[n]) for n in names if n in self._checks]
+            )
         components: List[ComponentHealth] = []
         agg = HealthStatus.HEALTHY
         for name, fn in selected:

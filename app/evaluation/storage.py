@@ -169,9 +169,7 @@ class MetricsStorage:
 
         return history
 
-    def get_latest(
-        self, strategy: RetrievalStrategy
-    ) -> Optional[HistoricalMetrics]:
+    def get_latest(self, strategy: RetrievalStrategy) -> Optional[HistoricalMetrics]:
         """Get the latest metrics for a strategy.
 
         Args:
@@ -211,17 +209,17 @@ class MetricsStorage:
         for record in recent:
             value = getattr(record, metric, None)
             if value is not None:
-                trend.append({
-                    "timestamp": record.timestamp.isoformat(),
-                    "value": value,
-                    "dataset": record.dataset_name,
-                })
+                trend.append(
+                    {
+                        "timestamp": record.timestamp.isoformat(),
+                        "value": value,
+                        "dataset": record.dataset_name,
+                    }
+                )
 
         return trend
 
-    def compare_strategies(
-        self, metric: str = "recall_at_5"
-    ) -> Dict[str, Any]:
+    def compare_strategies(self, metric: str = "recall_at_5") -> Dict[str, Any]:
         """Compare latest metrics across all strategies.
 
         Args:
@@ -263,7 +261,9 @@ class MetricsStorage:
                     file_path = self._get_storage_path(s)
                     if file_path.exists():
                         file_path.unlink()
-            logger.info(f"Cleared history for {strategy.value if strategy else 'all strategies'}")
+            logger.info(
+                f"Cleared history for {strategy.value if strategy else 'all strategies'}"
+            )
             return True
         except Exception as e:
             logger.error(f"Error clearing history: {e}")

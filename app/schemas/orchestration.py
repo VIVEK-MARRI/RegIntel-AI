@@ -77,9 +77,7 @@ class AgentMessage(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    message_id: str = Field(
-        default_factory=lambda: f"msg-{secrets.token_hex(4)}"
-    )
+    message_id: str = Field(default_factory=lambda: f"msg-{secrets.token_hex(4)}")
     from_agent: str  # "research" | "compliance" | "risk" | "audit" | "orchestrator" | "coordinator"
     to_agent: str
     kind: MessageKind
@@ -95,9 +93,7 @@ class SharedEvidenceItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    evidence_id: str = Field(
-        default_factory=lambda: f"sevi-{secrets.token_hex(4)}"
-    )
+    evidence_id: str = Field(default_factory=lambda: f"sevi-{secrets.token_hex(4)}")
     producer: str  # agent name
     kind: str = "data"  # "data" | "citation" | "violation" | "score" | "summary"
     title: str
@@ -113,9 +109,7 @@ class SharedExecutionContext(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    context_id: str = Field(
-        default_factory=lambda: f"octx-{uuid.uuid4().hex[:12]}"
-    )
+    context_id: str = Field(default_factory=lambda: f"octx-{uuid.uuid4().hex[:12]}")
     session_id: str = ""
     actor: str = "system"
     timeout_ms: int = Field(60_000, ge=1_000, le=600_000)
@@ -132,9 +126,7 @@ class AgentExecutionStep(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    step_id: str = Field(
-        default_factory=lambda: f"stp-{secrets.token_hex(4)}"
-    )
+    step_id: str = Field(default_factory=lambda: f"stp-{secrets.token_hex(4)}")
     agent_name: str  # "research" | "compliance" | "risk" | "audit" | "*"
     capability: str = "reasoning"  # free-form for routing
     description: str = ""
@@ -149,9 +141,7 @@ class AgentExecutionGraph(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    graph_id: str = Field(
-        default_factory=lambda: f"grf-{uuid.uuid4().hex[:12]}"
-    )
+    graph_id: str = Field(default_factory=lambda: f"grf-{uuid.uuid4().hex[:12]}")
     steps: List[AgentExecutionStep] = Field(default_factory=list)
     mode: ExecutionMode = ExecutionMode.SEQUENTIAL
     created_at: float = Field(default_factory=time.time)
@@ -188,9 +178,7 @@ class OrchestrationRequest(BaseModel):
     desired_agents: List[str] = Field(default_factory=list)
     desired_capabilities: List[str] = Field(default_factory=list)
     mode: ExecutionMode = ExecutionMode.SEQUENTIAL
-    context: SharedExecutionContext = Field(
-        default_factory=SharedExecutionContext
-    )
+    context: SharedExecutionContext = Field(default_factory=SharedExecutionContext)
     graph: Optional[AgentExecutionGraph] = None
     allow_parallel: bool = True
     consensus_threshold: float = Field(0.5, ge=0.0, le=1.0)
@@ -202,9 +190,7 @@ class OrchestrationResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    execution_id: str = Field(
-        default_factory=lambda: f"exec-{uuid.uuid4().hex[:12]}"
-    )
+    execution_id: str = Field(default_factory=lambda: f"exec-{uuid.uuid4().hex[:12]}")
     query: str
     status: WorkflowStatus = WorkflowStatus.SUCCEEDED
     mode: ExecutionMode
@@ -233,9 +219,7 @@ class WorkflowDefinition(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    workflow_id: str = Field(
-        default_factory=lambda: f"wf-{secrets.token_hex(6)}"
-    )
+    workflow_id: str = Field(default_factory=lambda: f"wf-{secrets.token_hex(6)}")
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     graph: AgentExecutionGraph
@@ -250,9 +234,7 @@ class AgentWorkflow(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str = Field(
-        default_factory=lambda: f"wfrun-{uuid.uuid4().hex[:12]}"
-    )
+    run_id: str = Field(default_factory=lambda: f"wfrun-{uuid.uuid4().hex[:12]}")
     workflow_id: str
     workflow_name: str
     status: WorkflowStatus = WorkflowStatus.PENDING

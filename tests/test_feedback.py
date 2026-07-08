@@ -71,9 +71,7 @@ def test_feedback_filter_validates_page():
 
 
 def test_paginated_feedback_model():
-    p = PaginatedFeedback(
-        items=[], total=0, page=1, page_size=10, has_more=False
-    )
+    p = PaginatedFeedback(items=[], total=0, page=1, page_size=10, has_more=False)
     assert p.total == 0
 
 
@@ -153,11 +151,13 @@ def test_repository_search_by_type():
 def test_repository_search_by_category():
     store = InMemoryFeedbackStore()
     repo = FeedbackRepository(store=store)
-    repo.add(FeedbackRequest(
-        request_id="r1",
-        feedback_type=FeedbackType.COMMENT,
-        category=FeedbackCategory.HALLUCINATION,
-    ))
+    repo.add(
+        FeedbackRequest(
+            request_id="r1",
+            feedback_type=FeedbackType.COMMENT,
+            category=FeedbackCategory.HALLUCINATION,
+        )
+    )
     flt = FeedbackFilter(category=FeedbackCategory.HALLUCINATION)
     res = repo.search(flt)
     assert res.total == 1
@@ -167,10 +167,12 @@ def test_repository_search_pagination():
     store = InMemoryFeedbackStore()
     repo = FeedbackRepository(store=store)
     for i in range(7):
-        repo.add(FeedbackRequest(
-            request_id=f"r{i}",
-            feedback_type=FeedbackType.COMMENT,
-        ))
+        repo.add(
+            FeedbackRequest(
+                request_id=f"r{i}",
+                feedback_type=FeedbackType.COMMENT,
+            )
+        )
     flt = FeedbackFilter(page=2, page_size=3, sort_desc=False)
     res = repo.search(flt)
     assert res.page == 2
@@ -235,7 +237,9 @@ def test_manager_record():
     store = InMemoryFeedbackStore()
     repo = FeedbackRepository(store=store)
     mgr = FeedbackManager(repository=repo, analytics=FeedbackAnalytics())
-    e = mgr.record(FeedbackRequest(request_id="r1", feedback_type=FeedbackType.THUMBS_UP))
+    e = mgr.record(
+        FeedbackRequest(request_id="r1", feedback_type=FeedbackType.THUMBS_UP)
+    )
     assert e.request_id == "r1"
 
 
@@ -243,7 +247,9 @@ def test_manager_get():
     store = InMemoryFeedbackStore()
     repo = FeedbackRepository(store=store)
     mgr = FeedbackManager(repository=repo, analytics=FeedbackAnalytics())
-    e = mgr.record(FeedbackRequest(request_id="r1", feedback_type=FeedbackType.THUMBS_UP))
+    e = mgr.record(
+        FeedbackRequest(request_id="r1", feedback_type=FeedbackType.THUMBS_UP)
+    )
     assert mgr.get(e.feedback_id) is not None
     assert mgr.get("nope") is None
 
@@ -261,16 +267,20 @@ def test_manager_stats_with_filters():
     store = InMemoryFeedbackStore()
     repo = FeedbackRepository(store=store)
     mgr = FeedbackManager(repository=repo, analytics=FeedbackAnalytics())
-    mgr.record(FeedbackRequest(
-        request_id="r1",
-        user_id="u1",
-        feedback_type=FeedbackType.THUMBS_UP,
-    ))
-    mgr.record(FeedbackRequest(
-        request_id="r2",
-        user_id="u2",
-        feedback_type=FeedbackType.THUMBS_DOWN,
-    ))
+    mgr.record(
+        FeedbackRequest(
+            request_id="r1",
+            user_id="u1",
+            feedback_type=FeedbackType.THUMBS_UP,
+        )
+    )
+    mgr.record(
+        FeedbackRequest(
+            request_id="r2",
+            user_id="u2",
+            feedback_type=FeedbackType.THUMBS_DOWN,
+        )
+    )
     s = mgr.stats(user_id="u1")
     assert s.total == 1
     assert s.thumbs_up == 1
@@ -301,7 +311,9 @@ def fresh_service():
     store = InMemoryFeedbackStore()
     repo = FeedbackRepository(store=store)
     mgr = FeedbackManager(repository=repo, analytics=FeedbackAnalytics())
-    return FeedbackService(store=store, repository=repo, manager=mgr, analytics=FeedbackAnalytics())
+    return FeedbackService(
+        store=store, repository=repo, manager=mgr, analytics=FeedbackAnalytics()
+    )
 
 
 @pytest.fixture

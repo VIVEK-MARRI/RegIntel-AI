@@ -59,6 +59,7 @@ async def stats(
     service: FeedbackService = Depends(get_feedback_service),
 ) -> FeedbackStats:
     from datetime import timedelta
+
     window = timedelta(hours=window_hours) if window_hours else None
     return service.manager.stats(
         window=window, user_id=user_id, conversation_id=conversation_id

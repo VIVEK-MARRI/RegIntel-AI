@@ -137,9 +137,7 @@ class ChangeDetectionRequest(BaseModel):
     old_text: Optional[str] = Field(
         None, description="Plain text of the previous version."
     )
-    new_text: Optional[str] = Field(
-        None, description="Plain text of the new version."
-    )
+    new_text: Optional[str] = Field(None, description="Plain text of the new version.")
     old_version: Optional[str] = None
     new_version: Optional[str] = None
     old_publication_date: Optional[datetime] = None

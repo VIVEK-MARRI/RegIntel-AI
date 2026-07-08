@@ -42,6 +42,7 @@ class RetrievalTelemetry:
 
     Captured by the analytics layer for observability and performance tracking.
     """
+
     query: str
     query_type: str = "unknown"
     query_confidence: float = 0.0
@@ -194,13 +195,17 @@ class HybridRetriever:
                     strategy = strategy_map.get(analysis.optimal_strategy, strategy)
                     logger.info(
                         "Query analyzer override: type=%s, strategy=%s (confidence=%.2f)",
-                        query_type, strategy.value, query_confidence,
+                        query_type,
+                        strategy.value,
+                        query_confidence,
                     )
             except Exception as exc:
                 logger.warning("Query analysis failed, using defaults: %s", exc)
 
         # Balance / normalise weights
-        d_weight, b_weight = RetrievalStrategyManager.balance_weights(dense_weight, bm25_weight)
+        d_weight, b_weight = RetrievalStrategyManager.balance_weights(
+            dense_weight, bm25_weight
+        )
 
         # ------------------------------------------------------------------
         # 1. Concurrent retrieval
@@ -273,7 +278,9 @@ class HybridRetriever:
                 bm25_weight=b_weight,
             )
             merged = self.fusion_engine.fuse_results(
-                dense_results, bm25_results, config=config,
+                dense_results,
+                bm25_results,
+                config=config,
             )
 
         # Sort deterministically & slice to top_n
@@ -289,7 +296,7 @@ class HybridRetriever:
 
         overall_latency = (time.perf_counter() - start_overall) * 1000.0
 
-        telemetry = RetrievalTelemetry(
+        RetrievalTelemetry(
             query=query,
             query_type=query_type,
             query_confidence=query_confidence,
@@ -366,18 +373,20 @@ class HybridRetriever:
                 if key not in meta and key in r:
                     meta[key] = r[key]
 
-            wrapped.append({
-                "chunk_id": r["chunk_id"],
-                "score": r["score"],
-                "rrf_score": None,
-                "dense_score": r["score"] if source_name == "dense" else None,
-                "bm25_score": r["score"] if source_name == "bm25" else None,
-                "dense_rank": (idx + 1) if source_name == "dense" else None,
-                "bm25_rank": (idx + 1) if source_name == "bm25" else None,
-                "sources": [source_name],
-                "content": r["content"],
-                "metadata": meta,
-            })
+            wrapped.append(
+                {
+                    "chunk_id": r["chunk_id"],
+                    "score": r["score"],
+                    "rrf_score": None,
+                    "dense_score": r["score"] if source_name == "dense" else None,
+                    "bm25_score": r["score"] if source_name == "bm25" else None,
+                    "dense_rank": (idx + 1) if source_name == "dense" else None,
+                    "bm25_rank": (idx + 1) if source_name == "bm25" else None,
+                    "sources": [source_name],
+                    "content": r["content"],
+                    "metadata": meta,
+                }
+            )
         return wrapped
 
     @staticmethod

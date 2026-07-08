@@ -57,9 +57,7 @@ async def generate_plan(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"plan generation failed: {exc}",
         ) from exc
-    return QueryPlanResponse(
-        plan=plan, validation=validation, explanation=explanation
-    )
+    return QueryPlanResponse(plan=plan, validation=validation, explanation=explanation)
 
 
 @router.post(

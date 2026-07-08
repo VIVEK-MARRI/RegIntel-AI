@@ -30,7 +30,11 @@ os.environ.setdefault("ENV", "test")
 os.environ.setdefault("LLM_PROVIDER", "mock")
 os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "100000")  # no throttling in tests
 
-_SEED_DOC = Path(__file__).parent.parent.parent / "seed_data" / "rbi_digital_lending_guidelines.txt"
+_SEED_DOC = (
+    Path(__file__).parent.parent.parent
+    / "seed_data"
+    / "rbi_digital_lending_guidelines.txt"
+)
 _KNOWN_QUESTION = "What is a Lending Service Provider?"
 _KNOWN_ANSWER_SUBSTRING = "agent"  # from the actual definition in the seed doc
 _FALSE_STATEMENT = (
@@ -52,7 +56,10 @@ def e2e_client():
         yield client
 
 
-@pytest.mark.skipif(not _SEED_DOC.exists(), reason="seed_data/rbi_digital_lending_guidelines.txt not found")
+@pytest.mark.skipif(
+    not _SEED_DOC.exists(),
+    reason="seed_data/rbi_digital_lending_guidelines.txt not found",
+)
 class TestRegulatoryPipelineE2E:
     """Full ingest → retrieve → generate → verify pipeline test."""
 
@@ -64,30 +71,45 @@ class TestRegulatoryPipelineE2E:
         t0 = time.perf_counter()
         resp = e2e_client.post(
             "/api/v1/documents/upload",
-            files={"file": ("rbi_digital_lending_guidelines.txt", io.BytesIO(content), "text/plain")},
+            files={
+                "file": (
+                    "rbi_digital_lending_guidelines.txt",
+                    io.BytesIO(content),
+                    "text/plain",
+                )
+            },
             data={
                 "title": "RBI Digital Lending Guidelines 2025",
                 "source": "RBI",
             },
         )
         elapsed = time.perf_counter() - t0
-        assert resp.status_code in (200, 201), (
-            f"Document upload failed ({resp.status_code}): {resp.text}"
-        )
+        assert resp.status_code in (
+            200,
+            201,
+        ), f"Document upload failed ({resp.status_code}): {resp.text}"
         body = resp.json()
-        assert "document_id" in body or "id" in body, f"No document_id in response: {body}"
+        assert (
+            "document_id" in body or "id" in body
+        ), f"No document_id in response: {body}"
         doc_id = body.get("document_id") or body.get("id")
         TestRegulatoryPipelineE2E._document_id = str(doc_id)
-        assert elapsed < _LATENCY_BUDGET_S, f"Document upload took {elapsed:.1f}s, budget={_LATENCY_BUDGET_S}s"
+        assert (
+            elapsed < _LATENCY_BUDGET_S
+        ), f"Document upload took {elapsed:.1f}s, budget={_LATENCY_BUDGET_S}s"
 
     def test_02_document_appears_in_listing(self, e2e_client: TestClient):
         """Stage 2: Confirm the ingested document is retrievable."""
         assert self._document_id is not None, "Previous test must pass first"
         resp = e2e_client.get(f"/api/v1/documents/{self._document_id}")
-        assert resp.status_code == 200, f"Document not found ({resp.status_code}): {resp.text}"
+        assert (
+            resp.status_code == 200
+        ), f"Document not found ({resp.status_code}): {resp.text}"
         body = resp.json()
         title = body.get("title", "")
-        assert "Digital Lending" in title or "RBI" in title, f"Unexpected title: {title!r}"
+        assert (
+            "Digital Lending" in title or "RBI" in title
+        ), f"Unexpected title: {title!r}"
 
     def test_03_chunks_are_created(self, e2e_client: TestClient):
         """Stage 3: Confirm the document was chunked into non-empty, sane chunks."""
@@ -106,9 +128,9 @@ class TestRegulatoryPipelineE2E:
         for chunk in chunks:
             text = chunk.get("text") or chunk.get("content") or ""
             char_count = len(text)
-            assert 10 <= char_count <= 5000, (
-                f"Chunk text length {char_count} out of expected range [10, 5000]: {text[:80]!r}"
-            )
+            assert (
+                10 <= char_count <= 5000
+            ), f"Chunk text length {char_count} out of expected range [10, 5000]: {text[:80]!r}"
 
     def test_04_search_returns_relevant_result(self, e2e_client: TestClient):
         """Stage 4: Query the search endpoint and confirm a relevant result is returned."""
@@ -123,16 +145,20 @@ class TestRegulatoryPipelineE2E:
             },
         )
         elapsed = time.perf_counter() - t0
-        assert resp.status_code == 200, f"Search failed ({resp.status_code}): {resp.text}"
+        assert (
+            resp.status_code == 200
+        ), f"Search failed ({resp.status_code}): {resp.text}"
         body = resp.json()
         results = body.get("results", [])
         assert len(results) > 0, "Search returned no results"
         # At least one result should reference the ingested document.
         doc_ids = [r.get("document_id") for r in results]
-        assert self._document_id in [str(d) for d in doc_ids if d], (
-            f"Expected document_id {self._document_id} in search results; got: {doc_ids}"
-        )
-        assert elapsed < _LATENCY_BUDGET_S, f"Search took {elapsed:.1f}s, budget={_LATENCY_BUDGET_S}s"
+        assert self._document_id in [
+            str(d) for d in doc_ids if d
+        ], f"Expected document_id {self._document_id} in search results; got: {doc_ids}"
+        assert (
+            elapsed < _LATENCY_BUDGET_S
+        ), f"Search took {elapsed:.1f}s, budget={_LATENCY_BUDGET_S}s"
 
     def test_05_answer_generation_produces_answer(self, e2e_client: TestClient):
         """Stage 5: Answer generation returns a non-empty answer with citations."""
@@ -149,10 +175,13 @@ class TestRegulatoryPipelineE2E:
         elapsed = time.perf_counter() - t0
         # 200 or 201 both valid; 404 if answer endpoint path differs
         if resp.status_code == 404:
-            pytest.skip("Answer generation endpoint path differs from /api/v1/answer — adjust path")
-        assert resp.status_code in (200, 201), (
-            f"Answer generation failed ({resp.status_code}): {resp.text}"
-        )
+            pytest.skip(
+                "Answer generation endpoint path differs from /api/v1/answer — adjust path"
+            )
+        assert resp.status_code in (
+            200,
+            201,
+        ), f"Answer generation failed ({resp.status_code}): {resp.text}"
         body = resp.json()
         answer = body.get("answer") or body.get("text") or ""
         assert len(answer) > 0, f"Answer generation returned empty answer: {body}"
@@ -171,21 +200,28 @@ class TestRegulatoryPipelineE2E:
         )
         if resp.status_code == 404:
             pytest.skip("Hallucination endpoint path differs — adjust path")
-        assert resp.status_code in (200, 201), (
-            f"Hallucination check failed ({resp.status_code}): {resp.text}"
-        )
+        assert resp.status_code in (
+            200,
+            201,
+        ), f"Hallucination check failed ({resp.status_code}): {resp.text}"
         body = resp.json()
         # The false statement should either be flagged or have a low confidence/support score.
-        flagged = body.get("flagged") or body.get("is_hallucination") or body.get("unsupported")
+        flagged = (
+            body.get("flagged")
+            or body.get("is_hallucination")
+            or body.get("unsupported")
+        )
         score = body.get("score") or body.get("confidence") or body.get("support_score")
         if flagged is not None:
             assert flagged, f"False statement was NOT flagged as hallucination: {body}"
         elif score is not None:
-            assert float(score) < 0.5, (
-                f"False statement has suspiciously high support score {score}: {body}"
-            )
+            assert (
+                float(score) < 0.5
+            ), f"False statement has suspiciously high support score {score}: {body}"
         else:
-            pytest.skip("Hallucination response format differs — add assertions matching actual schema")
+            pytest.skip(
+                "Hallucination response format differs — add assertions matching actual schema"
+            )
 
     def test_07_full_pipeline_latency_within_budget(self, e2e_client: TestClient):
         """Stage 7: Complete ingest→search round trip completes within the latency budget."""
@@ -198,7 +234,7 @@ class TestRegulatoryPipelineE2E:
         )
         elapsed = time.perf_counter() - t0
         assert resp.status_code == 200
-        assert elapsed < _LATENCY_BUDGET_S, (
-            f"Search latency {elapsed:.2f}s exceeded budget of {_LATENCY_BUDGET_S}s"
-        )
+        assert (
+            elapsed < _LATENCY_BUDGET_S
+        ), f"Search latency {elapsed:.2f}s exceeded budget of {_LATENCY_BUDGET_S}s"
         print(f"\n[E2E] Search latency: {elapsed*1000:.1f}ms")

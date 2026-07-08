@@ -68,9 +68,7 @@ class AuditViolation(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    violation_id: str = Field(
-        default_factory=lambda: f"avl-{secrets.token_hex(4)}"
-    )
+    violation_id: str = Field(default_factory=lambda: f"avl-{secrets.token_hex(4)}")
     title: str
     description: str = ""
     severity: AuditViolationSeverity = AuditViolationSeverity.MEDIUM
@@ -86,11 +84,11 @@ class AuditEvidenceItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    evidence_id: str = Field(
-        default_factory=lambda: f"evi-{secrets.token_hex(4)}"
-    )
+    evidence_id: str = Field(default_factory=lambda: f"evi-{secrets.token_hex(4)}")
     title: str
-    evidence_kind: str = "document"  # "document" | "policy" | "rule" | "record" | "kg_node"
+    evidence_kind: str = (
+        "document"  # "document" | "policy" | "rule" | "record" | "kg_node"
+    )
     source: str = ""
     content_hash: str = ""
     citation_ids: List[str] = Field(default_factory=list)
@@ -104,9 +102,7 @@ class AuditLineageNode(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    node_id: str = Field(
-        default_factory=lambda: f"lin-{secrets.token_hex(4)}"
-    )
+    node_id: str = Field(default_factory=lambda: f"lin-{secrets.token_hex(4)}")
     kind: str  # "audit_record" | "governance_decision" | "recommendation" | "policy"
     label: str
     subject_id: str = ""
@@ -140,9 +136,7 @@ class AuditAgentResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(
-        default_factory=lambda: f"ares-{uuid.uuid4().hex[:12]}"
-    )
+    result_id: str = Field(default_factory=lambda: f"ares-{uuid.uuid4().hex[:12]}")
     agent: str = "audit"
     agent_id: str = ""
     task_kind: AuditTaskKind

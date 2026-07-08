@@ -2,6 +2,7 @@ from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
+
 class HierarchyNode(BaseModel):
     node_id: str
     node_type: str  # document, chapter, section, subsection, clause
@@ -13,6 +14,7 @@ class HierarchyNode(BaseModel):
     children: List["HierarchyNode"] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class DocumentHierarchyResponse(BaseModel):
     document_id: UUID

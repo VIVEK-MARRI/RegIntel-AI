@@ -215,9 +215,9 @@ class SourceRegistry:
 
     def __init__(self) -> None:
         self._configs: Dict[RegulatorySource, SourceConfig] = {}
-        self._factories: Dict[RegulatorySource, Callable[[SourceConfig], SourceAdapter]] = dict(
-            _DEFAULT_FACTORIES
-        )
+        self._factories: Dict[
+            RegulatorySource, Callable[[SourceConfig], SourceAdapter]
+        ] = dict(_DEFAULT_FACTORIES)
         self._lock = threading.RLock()
 
     # ── Registration ────────────────────────────────────────────────────
@@ -458,7 +458,9 @@ class MonitoringRepository:
         self.store.add_run(run)
         return run
 
-    def list_runs(self, source: Optional[RegulatorySource] = None) -> List[MonitoringRun]:
+    def list_runs(
+        self, source: Optional[RegulatorySource] = None
+    ) -> List[MonitoringRun]:
         runs = self.store.list_runs()
         if source is not None:
             runs = [r for r in runs if r.source == source]
@@ -557,7 +559,11 @@ class MonitoringHealthChecker:
                     last_run_at=last.started_at,
                     last_success_at=(
                         next(
-                            (r.started_at for r in s_runs if r.status == MonitoringStatus.HEALTHY),
+                            (
+                                r.started_at
+                                for r in s_runs
+                                if r.status == MonitoringStatus.HEALTHY
+                            ),
                             None,
                         )
                     ),
@@ -733,7 +739,9 @@ class MonitoringScheduler:
                 raise
             except Exception as exc:  # pragma: no cover
                 logger.exception("scheduler tick failed: %s", exc)
-            self.next_tick_at = datetime.now(timezone.utc).timestamp() + self.interval_seconds
+            self.next_tick_at = (
+                datetime.now(timezone.utc).timestamp() + self.interval_seconds
+            )
             try:
                 await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
@@ -772,9 +780,7 @@ class MonitoringService:
         scheduler: Optional[MonitoringScheduler] = None,
     ) -> None:
         self.store = store or InMemoryMonitoringStore(
-            persist_path=Path(settings.STORAGE_ROOT)
-            / "monitoring"
-            / "monitoring.jsonl"
+            persist_path=Path(settings.STORAGE_ROOT) / "monitoring" / "monitoring.jsonl"
         )
         self.registry = registry or SourceRegistry()
         # Register default configs so listing-enabled_sources works.
@@ -791,9 +797,7 @@ class MonitoringService:
         self.health_checker = health_checker or MonitoringHealthChecker(
             self.registry, self.repository
         )
-        self.scheduler = scheduler or MonitoringScheduler(
-            self.monitor, self.registry
-        )
+        self.scheduler = scheduler or MonitoringScheduler(self.monitor, self.registry)
 
     # ── Run / discovery ────────────────────────────────────────────────
 
@@ -804,7 +808,6 @@ class MonitoringService:
         except Exception:  # pragma: no cover
             return {}
 
-    
     async def run_source(
         self, source: RegulatorySource, *, force: bool = False
     ) -> RunMonitorResponse:
@@ -819,7 +822,9 @@ class MonitoringService:
     def get_discovery(self, discovery_id: str) -> Optional[DiscoveredDocument]:
         return self.repository.get(discovery_id)
 
-    def list_runs(self, source: Optional[RegulatorySource] = None) -> List[MonitoringRun]:
+    def list_runs(
+        self, source: Optional[RegulatorySource] = None
+    ) -> List[MonitoringRun]:
         return self.repository.list_runs(source=source)
 
     def get_run(self, run_id: str) -> Optional[MonitoringRun]:

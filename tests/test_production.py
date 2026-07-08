@@ -83,9 +83,11 @@ async def test_security_headers_added_to_response():
 async def test_security_headers_custom():
     app = FastAPI()
     app.add_middleware(SecurityHeadersMiddleware, headers={"X-Custom": "yes"})
+
     @app.get("/x")
     async def x():
         return {}
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         r = await ac.get("/x")
@@ -284,14 +286,16 @@ async def test_api_key_middleware_valid_key():
 
 def test_audit_log_in_memory():
     log = AuditLog()
-    log.record(AuditLogEntry(
-        timestamp=datetime.now(timezone.utc),
-        request_id="r1",
-        method="GET",
-        path="/x",
-        status_code=200,
-        duration_ms=1.0,
-    ))
+    log.record(
+        AuditLogEntry(
+            timestamp=datetime.now(timezone.utc),
+            request_id="r1",
+            method="GET",
+            path="/x",
+            status_code=200,
+            duration_ms=1.0,
+        )
+    )
     entries = log.all()
     assert len(entries) == 1
     assert entries[0].request_id == "r1"
@@ -299,18 +303,21 @@ def test_audit_log_in_memory():
 
 def test_audit_log_thread_safe():
     import threading
+
     log = AuditLog()
 
     def worker(n):
         for i in range(n):
-            log.record(AuditLogEntry(
-                timestamp=datetime.now(timezone.utc),
-                request_id=f"r{i}",
-                method="GET",
-                path="/x",
-                status_code=200,
-                duration_ms=1.0,
-            ))
+            log.record(
+                AuditLogEntry(
+                    timestamp=datetime.now(timezone.utc),
+                    request_id=f"r{i}",
+                    method="GET",
+                    path="/x",
+                    status_code=200,
+                    duration_ms=1.0,
+                )
+            )
 
     threads = [threading.Thread(target=worker, args=(50,)) for _ in range(5)]
     for t in threads:
@@ -323,24 +330,28 @@ def test_audit_log_thread_safe():
 def test_audit_log_persists_to_file(tmp_path: Path):
     log_path = tmp_path / "audit.log"
     log = AuditLog(persist_path=log_path)
-    log.record(AuditLogEntry(
-        timestamp=datetime.now(timezone.utc),
-        request_id="r1",
-        method="GET",
-        path="/x",
-        status_code=200,
-        duration_ms=1.0,
-    ))
-    log.record(AuditLogEntry(
-        timestamp=datetime.now(timezone.utc),
-        request_id="r2",
-        method="POST",
-        path="/y",
-        status_code=201,
-        duration_ms=2.0,
-    ))
+    log.record(
+        AuditLogEntry(
+            timestamp=datetime.now(timezone.utc),
+            request_id="r1",
+            method="GET",
+            path="/x",
+            status_code=200,
+            duration_ms=1.0,
+        )
+    )
+    log.record(
+        AuditLogEntry(
+            timestamp=datetime.now(timezone.utc),
+            request_id="r2",
+            method="POST",
+            path="/y",
+            status_code=201,
+            duration_ms=2.0,
+        )
+    )
     text = log_path.read_text(encoding="utf-8")
-    lines = [l for l in text.splitlines() if l.strip()]
+    lines = [line for line in text.splitlines() if line.strip()]
     assert len(lines) == 2
     parsed = json.loads(lines[0])
     assert parsed["request_id"] == "r1"
@@ -383,8 +394,12 @@ def test_component_health_to_dict():
 
 def test_health_checker_run_healthy():
     checker = HealthChecker()
-    checker.register("a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY))
-    checker.register("b", lambda: ComponentHealth(name="b", status=HealthStatus.HEALTHY))
+    checker.register(
+        "a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY)
+    )
+    checker.register(
+        "b", lambda: ComponentHealth(name="b", status=HealthStatus.HEALTHY)
+    )
     report = checker.run()
     assert report.status == HealthStatus.HEALTHY
     assert {c.name for c in report.components} == {"a", "b"}
@@ -392,16 +407,24 @@ def test_health_checker_run_healthy():
 
 def test_health_checker_run_degraded():
     checker = HealthChecker()
-    checker.register("a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY))
-    checker.register("b", lambda: ComponentHealth(name="b", status=HealthStatus.DEGRADED))
+    checker.register(
+        "a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY)
+    )
+    checker.register(
+        "b", lambda: ComponentHealth(name="b", status=HealthStatus.DEGRADED)
+    )
     report = checker.run()
     assert report.status == HealthStatus.DEGRADED
 
 
 def test_health_checker_run_unhealthy():
     checker = HealthChecker()
-    checker.register("a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY))
-    checker.register("b", lambda: ComponentHealth(name="b", status=HealthStatus.UNHEALTHY))
+    checker.register(
+        "a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY)
+    )
+    checker.register(
+        "b", lambda: ComponentHealth(name="b", status=HealthStatus.UNHEALTHY)
+    )
     report = checker.run()
     assert report.status == HealthStatus.UNHEALTHY
 
@@ -420,15 +443,21 @@ def test_health_checker_handles_exception_in_check():
 
 def test_health_checker_run_named_subset():
     checker = HealthChecker()
-    checker.register("a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY))
-    checker.register("b", lambda: ComponentHealth(name="b", status=HealthStatus.HEALTHY))
+    checker.register(
+        "a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY)
+    )
+    checker.register(
+        "b", lambda: ComponentHealth(name="b", status=HealthStatus.HEALTHY)
+    )
     report = checker.run(names=["a"])
     assert {c.name for c in report.components} == {"a"}
 
 
 def test_health_checker_unregister():
     checker = HealthChecker()
-    checker.register("a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY))
+    checker.register(
+        "a", lambda: ComponentHealth(name="a", status=HealthStatus.HEALTHY)
+    )
     checker.unregister("a")
     assert "a" not in checker.checks()
 
@@ -469,7 +498,10 @@ def test_storage_writable_helper_unwritable(tmp_path: Path):
 @pytest.mark.asyncio
 async def test_health_live():
     checker = HealthChecker()
-    checker.register("liveness", lambda: ComponentHealth(name="liveness", status=HealthStatus.HEALTHY))
+    checker.register(
+        "liveness",
+        lambda: ComponentHealth(name="liveness", status=HealthStatus.HEALTHY),
+    )
     set_health_checker(checker)
     app = FastAPI()
     app.include_router(health_router)
@@ -494,8 +526,13 @@ async def test_health_root():
 @pytest.mark.asyncio
 async def test_health_ready_all_healthy():
     checker = HealthChecker()
-    checker.register("liveness", lambda: ComponentHealth(name="liveness", status=HealthStatus.HEALTHY))
-    checker.register("storage", lambda: ComponentHealth(name="storage", status=HealthStatus.HEALTHY))
+    checker.register(
+        "liveness",
+        lambda: ComponentHealth(name="liveness", status=HealthStatus.HEALTHY),
+    )
+    checker.register(
+        "storage", lambda: ComponentHealth(name="storage", status=HealthStatus.HEALTHY)
+    )
     set_health_checker(checker)
     app = FastAPI()
     app.include_router(health_router)
@@ -510,8 +547,14 @@ async def test_health_ready_all_healthy():
 @pytest.mark.asyncio
 async def test_health_ready_unhealthy_returns_503():
     checker = HealthChecker()
-    checker.register("liveness", lambda: ComponentHealth(name="liveness", status=HealthStatus.HEALTHY))
-    checker.register("storage", lambda: ComponentHealth(name="storage", status=HealthStatus.UNHEALTHY))
+    checker.register(
+        "liveness",
+        lambda: ComponentHealth(name="liveness", status=HealthStatus.HEALTHY),
+    )
+    checker.register(
+        "storage",
+        lambda: ComponentHealth(name="storage", status=HealthStatus.UNHEALTHY),
+    )
     set_health_checker(checker)
     app = FastAPI()
     app.include_router(health_router)
@@ -524,7 +567,9 @@ async def test_health_ready_unhealthy_returns_503():
 @pytest.mark.asyncio
 async def test_health_deep_unhealthy_returns_503():
     checker = HealthChecker()
-    checker.register("a", lambda: ComponentHealth(name="a", status=HealthStatus.UNHEALTHY))
+    checker.register(
+        "a", lambda: ComponentHealth(name="a", status=HealthStatus.UNHEALTHY)
+    )
     set_health_checker(checker)
     app = FastAPI()
     app.include_router(health_router)

@@ -138,21 +138,25 @@ def _build_generator():
 
 def _build_citation():
     from app.services.citation import build_default_citation_service
+
     return build_default_citation_service()
 
 
 def _build_confidence():
     from app.services.confidence import build_default_confidence_service
+
     return build_default_confidence_service()
 
 
 def _build_hallucination():
     from app.services.hallucination import build_default_hallucination_guard
+
     return build_default_hallucination_guard()
 
 
 def _build_attribution():
     from app.services.attribution import build_default_attribution_service
+
     return build_default_attribution_service()
 
 
@@ -310,9 +314,7 @@ class TestPipelineCoordinator:
             hallucination_guard=_build_hallucination(),
             attribution=_build_attribution(),
         )
-        req = OrchestratorRequest(
-            query="q", chunks=sample_chunks, fail_open=True
-        )
+        req = OrchestratorRequest(query="q", chunks=sample_chunks, fail_open=True)
         resp = await coord.run(req)
         citation_step = next(
             s for s in resp.metadata.step_results if s.step == PipelineStep.CITATION
@@ -335,9 +337,7 @@ class TestPipelineCoordinator:
             hallucination_guard=_build_hallucination(),
             attribution=_build_attribution(),
         )
-        req = OrchestratorRequest(
-            query="q", chunks=sample_chunks, fail_open=False
-        )
+        req = OrchestratorRequest(query="q", chunks=sample_chunks, fail_open=False)
         with pytest.raises(RuntimeError, match="boom"):
             await coord.run(req)
 
@@ -412,7 +412,9 @@ class TestPipelineCoordinator:
         assert resp.latency_ms > 0
 
     @pytest.mark.asyncio
-    async def test_all_steps_disabled_uses_synthesised_answer(self, coordinator, sample_chunks):
+    async def test_all_steps_disabled_uses_synthesised_answer(
+        self, coordinator, sample_chunks
+    ):
         req = OrchestratorRequest(
             query="q",
             chunks=sample_chunks,
@@ -439,6 +441,7 @@ class TestResponseBuilder:
             return await coordinator.run(
                 OrchestratorRequest(query="q", chunks=sample_chunks)
             )
+
         resp = asyncio.run(_run())
         d = ResponseBuilder.to_dict(resp)
         for k in (
@@ -464,14 +467,18 @@ class TestResponseBuilder:
 class TestOrchestratorAPI:
     @pytest.mark.asyncio
     async def test_health(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/orchestrator/health")
             assert r.status_code == 200
             assert r.json()["module"] == "response_orchestrator"
 
     @pytest.mark.asyncio
     async def test_answer(self, app, sample_chunks):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "What is KYC?",
                 "chunks": [c.model_dump() for c in sample_chunks],
@@ -496,7 +503,9 @@ class TestOrchestratorAPI:
 
     @pytest.mark.asyncio
     async def test_answer_empty_query_rejected(self, app, sample_chunks):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "  ",
                 "chunks": [c.model_dump() for c in sample_chunks],
@@ -506,7 +515,9 @@ class TestOrchestratorAPI:
 
     @pytest.mark.asyncio
     async def test_answer_no_chunks_rejected(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {"query": "q", "chunks": []}
             r = await c.post("/api/v1/orchestrator/answer", json=payload)
             assert r.status_code == 422

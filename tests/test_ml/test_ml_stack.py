@@ -119,8 +119,14 @@ def test_copilot_e2e_with_real_embeddings():
         pytest.skip("seed document not found — cannot run e2e copilot test")
 
     with open(seed, "rb") as f:
-        resp = client.post("/api/v1/documents/upload", files={"file": ("guidelines.txt", f, "text/plain")})
-    assert resp.status_code in (200, 201), f"upload failed: {resp.status_code} {resp.text}"
+        resp = client.post(
+            "/api/v1/documents/upload",
+            files={"file": ("guidelines.txt", f, "text/plain")},
+        )
+    assert resp.status_code in (
+        200,
+        201,
+    ), f"upload failed: {resp.status_code} {resp.text}"
     doc_id = resp.json().get("document_id") or resp.json().get("id")
 
     # ── Wait for background chunking + embedding (model downloads can be slow) ──
@@ -156,15 +162,17 @@ def test_copilot_e2e_with_real_embeddings():
             "conversation_id": "e2e-test-copilot",
         },
     )
-    assert resp.status_code == 200, f"/copilot/query failed: {resp.status_code} {resp.text}"
+    assert (
+        resp.status_code == 200
+    ), f"/copilot/query failed: {resp.status_code} {resp.text}"
     data = resp.json()
     answer = data.get("answer", {})
     assert answer.get("executive_summary"), "copilot returned empty answer"
     metadata = data.get("metadata", {})
     extra = metadata.get("extra", {})
-    assert extra.get("retrieval_invoked") is True, (
-        "retrieval was not invoked — copilot took degraded path"
-    )
+    assert (
+        extra.get("retrieval_invoked") is True
+    ), "retrieval was not invoked — copilot took degraded path"
     assert len(data.get("sources", [])) > 0, "no source attributions in response"
 
     # ── Cleanup ──────────────────────────────────────────────────────────

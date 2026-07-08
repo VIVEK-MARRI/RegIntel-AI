@@ -38,18 +38,61 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 ALL_CHUNK_IDS = [
-    "chunk_cap_001", "chunk_cap_002", "chunk_cap_003", "chunk_cap_004", "chunk_cap_005",
-    "chunk_npa_001", "chunk_npa_002", "chunk_npa_003", "chunk_npa_004",
-    "chunk_kyc_001", "chunk_kyc_002", "chunk_kyc_003", "chunk_kyc_004", "chunk_kyc_005", "chunk_kyc_006",
-    "chunk_mf_001", "chunk_mf_002", "chunk_mf_003", "chunk_mf_004",
-    "chunk_lodr_001", "chunk_lodr_002", "chunk_lodr_003", "chunk_lodr_004", "chunk_lodr_005",
-    "chunk_lcr_001", "chunk_lcr_002", "chunk_lcr_003",
-    "chunk_stress_001", "chunk_stress_002", "chunk_stress_003", "chunk_stress_004",
-    "chunk_pit_001", "chunk_pit_002", "chunk_pit_003", "chunk_pit_004", "chunk_pit_005",
-    "chunk_psl_001", "chunk_psl_002", "chunk_psl_003", "chunk_psl_004",
-    "chunk_sast_001", "chunk_sast_002", "chunk_sast_003", "chunk_sast_004", "chunk_sast_005",
-    "chunk_noise_001", "chunk_noise_002", "chunk_noise_003", "chunk_noise_004", "chunk_noise_005",
-    "chunk_noise_006", "chunk_noise_007", "chunk_noise_008", "chunk_noise_009", "chunk_noise_010",
+    "chunk_cap_001",
+    "chunk_cap_002",
+    "chunk_cap_003",
+    "chunk_cap_004",
+    "chunk_cap_005",
+    "chunk_npa_001",
+    "chunk_npa_002",
+    "chunk_npa_003",
+    "chunk_npa_004",
+    "chunk_kyc_001",
+    "chunk_kyc_002",
+    "chunk_kyc_003",
+    "chunk_kyc_004",
+    "chunk_kyc_005",
+    "chunk_kyc_006",
+    "chunk_mf_001",
+    "chunk_mf_002",
+    "chunk_mf_003",
+    "chunk_mf_004",
+    "chunk_lodr_001",
+    "chunk_lodr_002",
+    "chunk_lodr_003",
+    "chunk_lodr_004",
+    "chunk_lodr_005",
+    "chunk_lcr_001",
+    "chunk_lcr_002",
+    "chunk_lcr_003",
+    "chunk_stress_001",
+    "chunk_stress_002",
+    "chunk_stress_003",
+    "chunk_stress_004",
+    "chunk_pit_001",
+    "chunk_pit_002",
+    "chunk_pit_003",
+    "chunk_pit_004",
+    "chunk_pit_005",
+    "chunk_psl_001",
+    "chunk_psl_002",
+    "chunk_psl_003",
+    "chunk_psl_004",
+    "chunk_sast_001",
+    "chunk_sast_002",
+    "chunk_sast_003",
+    "chunk_sast_004",
+    "chunk_sast_005",
+    "chunk_noise_001",
+    "chunk_noise_002",
+    "chunk_noise_003",
+    "chunk_noise_004",
+    "chunk_noise_005",
+    "chunk_noise_006",
+    "chunk_noise_007",
+    "chunk_noise_008",
+    "chunk_noise_009",
+    "chunk_noise_010",
 ]
 
 STRATEGY_PROFILES = {
@@ -122,12 +165,14 @@ class SimulatedRetriever:
         for rank, chunk_id in enumerate(combined[:top_k]):
             score = self.rng.uniform(score_lo, score_hi)
             score -= rank * 0.02
-            results.append({
-                "chunk_id": chunk_id,
-                "score": round(max(score_lo, score), 4),
-                "content": f"[Simulated content for {chunk_id}]",
-                "metadata": {"simulated": True, "strategy": strategy.value},
-            })
+            results.append(
+                {
+                    "chunk_id": chunk_id,
+                    "score": round(max(score_lo, score), 4),
+                    "content": f"[Simulated content for {chunk_id}]",
+                    "metadata": {"simulated": True, "strategy": strategy.value},
+                }
+            )
 
         results.sort(key=lambda x: x["score"], reverse=True)
         return results[:top_k]
@@ -156,6 +201,7 @@ class StandaloneEvaluator:
     ) -> StrategyEvaluationResult:
         """Evaluate a single strategy against the dataset."""
         import time
+
         query_results: List[QueryEvaluationResult] = []
 
         for query in dataset.queries:
@@ -206,13 +252,19 @@ class StandaloneEvaluator:
             **aggregated,
         )
 
-    def _aggregate(self, query_results: List[QueryEvaluationResult]) -> Dict[str, float]:
+    def _aggregate(
+        self, query_results: List[QueryEvaluationResult]
+    ) -> Dict[str, float]:
         if not query_results:
             return {
-                "avg_recall_at_5": 0.0, "avg_recall_at_10": 0.0,
-                "avg_mrr": 0.0, "avg_precision_at_5": 0.0,
-                "avg_precision_at_10": 0.0, "avg_hit_rate": 0.0,
-                "avg_ndcg_at_5": 0.0, "avg_ndcg_at_10": 0.0,
+                "avg_recall_at_5": 0.0,
+                "avg_recall_at_10": 0.0,
+                "avg_mrr": 0.0,
+                "avg_precision_at_5": 0.0,
+                "avg_precision_at_10": 0.0,
+                "avg_hit_rate": 0.0,
+                "avg_ndcg_at_5": 0.0,
+                "avg_ndcg_at_10": 0.0,
                 "avg_latency_ms": 0.0,
             }
         n = len(query_results)
@@ -282,18 +334,20 @@ class StandaloneEvaluator:
                     "ndcg_at_10": result.avg_ndcg_at_10,
                 }
             )
-            entries.append({
-                "strategy": result.strategy.value,
-                "avg_recall_at_5": round(result.avg_recall_at_5, 4),
-                "avg_recall_at_10": round(result.avg_recall_at_10, 4),
-                "avg_mrr": round(result.avg_mrr, 4),
-                "avg_precision_at_5": round(result.avg_precision_at_5, 4),
-                "avg_ndcg_at_5": round(result.avg_ndcg_at_5, 4),
-                "avg_ndcg_at_10": round(result.avg_ndcg_at_10, 4),
-                "avg_hit_rate": round(result.avg_hit_rate, 4),
-                "avg_latency_ms": round(result.avg_latency_ms, 2),
-                "composite_score": round(composite_score, 4),
-            })
+            entries.append(
+                {
+                    "strategy": result.strategy.value,
+                    "avg_recall_at_5": round(result.avg_recall_at_5, 4),
+                    "avg_recall_at_10": round(result.avg_recall_at_10, 4),
+                    "avg_mrr": round(result.avg_mrr, 4),
+                    "avg_precision_at_5": round(result.avg_precision_at_5, 4),
+                    "avg_ndcg_at_5": round(result.avg_ndcg_at_5, 4),
+                    "avg_ndcg_at_10": round(result.avg_ndcg_at_10, 4),
+                    "avg_hit_rate": round(result.avg_hit_rate, 4),
+                    "avg_latency_ms": round(result.avg_latency_ms, 2),
+                    "composite_score": round(composite_score, 4),
+                }
+            )
 
         entries.sort(key=lambda x: x["composite_score"], reverse=True)
         for idx, entry in enumerate(entries, start=1):
@@ -400,9 +454,7 @@ async def run_standalone_evaluation(
             def score_pairs(self, pairs: List[tuple[str, str]]) -> List[float]:
                 return [self.score_pair(q, t) for q, t in pairs]
 
-            def score_pairs_timed(
-                self, pairs: List[tuple[str, str]]
-            ) -> ScoringResult:
+            def score_pairs_timed(self, pairs: List[tuple[str, str]]) -> ScoringResult:
                 return ScoringResult(
                     scores=self.score_pairs(pairs),
                     scoring_latency_ms=0.0,
@@ -421,8 +473,16 @@ async def run_standalone_evaluation(
         dataset_version = None
         dataset_type = None
         if dataset_obj:
-            dataset_version = dataset_obj.metadata.get("version") if isinstance(dataset_obj.metadata, dict) else None
-            dataset_type = dataset_obj.metadata.get("type") if isinstance(dataset_obj.metadata, dict) else None
+            dataset_version = (
+                dataset_obj.metadata.get("version")
+                if isinstance(dataset_obj.metadata, dict)
+                else None
+            )
+            dataset_type = (
+                dataset_obj.metadata.get("type")
+                if isinstance(dataset_obj.metadata, dict)
+                else None
+            )
 
         async with async_session_factory() as db_session:
             embedding_provider = get_embedding_provider()
@@ -462,7 +522,11 @@ async def run_standalone_evaluation(
 
             report = await evaluator.run_evaluation(config)
 
-            embedding_model_name = embedding_provider.get_model_name() if hasattr(embedding_provider, "get_model_name") else None
+            embedding_model_name = (
+                embedding_provider.get_model_name()
+                if hasattr(embedding_provider, "get_model_name")
+                else None
+            )
             report.metadata = {
                 **report.metadata,
                 "mode": "production",
@@ -532,11 +596,13 @@ def main():
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir) if args.output_dir else None
-    asyncio.run(run_standalone_evaluation(
-        dataset_name=args.dataset,
-        strategies=args.strategies,
-        output_dir=output_dir,
-    ))
+    asyncio.run(
+        run_standalone_evaluation(
+            dataset_name=args.dataset,
+            strategies=args.strategies,
+            output_dir=output_dir,
+        )
+    )
 
 
 if __name__ == "__main__":

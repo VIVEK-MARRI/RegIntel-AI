@@ -62,7 +62,9 @@ class AuditLogEntry:
 class AuditLog:
     """Thread-safe audit log (in-memory + optional JSONL)."""
 
-    def __init__(self, *, persist_path: Optional[Path] = None, max_size: int = 10_000) -> None:
+    def __init__(
+        self, *, persist_path: Optional[Path] = None, max_size: int = 10_000
+    ) -> None:
         self._entries: Deque[AuditLogEntry] = deque(maxlen=max_size)
         self._lock = threading.RLock()
         self._persist_path = persist_path
@@ -260,7 +262,9 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.store = store
         self.header = header
-        self.exempt_paths = set(exempt_paths or {"/", "/health", "/docs", "/openapi.json", "/redoc"})
+        self.exempt_paths = set(
+            exempt_paths or {"/", "/health", "/docs", "/openapi.json", "/redoc"}
+        )
         self.enabled = enabled
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
@@ -269,6 +273,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         secret = request.headers.get(self.header)
         if not secret:
             from starlette.responses import JSONResponse
+
             return JSONResponse(
                 {"detail": f"missing {self.header} header"},
                 status_code=401,
@@ -276,6 +281,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         key = self.store.lookup(secret)
         if key is None or not key.enabled:
             from starlette.responses import JSONResponse
+
             return JSONResponse(
                 {"detail": "invalid API key"},
                 status_code=401,
@@ -284,6 +290,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
             request.url.path.startswith(p) for p in key.allowed_paths
         ):
             from starlette.responses import JSONResponse
+
             return JSONResponse(
                 {"detail": "API key not authorized for this path"},
                 status_code=403,
@@ -312,7 +319,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.limiter = limiter or SlidingWindowRateLimiter()
         self.default_limit = default_limit
         self.window_seconds = window_seconds
-        self.exempt_paths = set(exempt_paths or {"/", "/health", "/docs", "/openapi.json", "/redoc"})
+        self.exempt_paths = set(
+            exempt_paths or {"/", "/health", "/docs", "/openapi.json", "/redoc"}
+        )
         self.enabled = enabled
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
@@ -332,6 +341,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         )
         if not allowed:
             from starlette.responses import JSONResponse
+
             return JSONResponse(
                 {"detail": "rate limit exceeded"},
                 status_code=429,

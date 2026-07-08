@@ -97,9 +97,7 @@ async def list_records(
 
 
 @router.get("/records/{audit_id}", response_model=AuditRecord)
-async def get_record(
-    audit_id: str, svc: AuditService = _service_dep()
-) -> AuditRecord:
+async def get_record(audit_id: str, svc: AuditService = _service_dep()) -> AuditRecord:
     rec = svc.get_record(audit_id)
     if rec is None:
         raise HTTPException(status_code=404, detail="record not found")

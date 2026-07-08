@@ -45,6 +45,7 @@ def set_bm25_service(service: BM25Service) -> None:
 
 # ----- Search Endpoints -----
 
+
 @router.post("/search", response_model=BM25SearchResponseSchema)
 async def bm25_search(
     request: BM25SearchRequestSchema,
@@ -52,7 +53,7 @@ async def bm25_search(
 ) -> BM25SearchResponseSchema:
     """
     Execute a BM25 keyword search.
-    
+
     Supports:
     - Top-K retrieval
     - Source filtering (RBI/SEBI)
@@ -114,6 +115,7 @@ async def bm25_search_get(
 
 
 # ----- Index Management Endpoints -----
+
 
 @router.post("/index/build", response_model=BM25IndexActionResponse)
 async def bm25_build_index(
@@ -192,6 +194,7 @@ async def bm25_clear_index(
 
 
 # ----- Helpers -----
+
 
 def _stats_to_schema(stats) -> BM25IndexStatsSchema:
     """Convert BM25IndexStats to BM25IndexStatsSchema."""

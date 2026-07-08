@@ -97,12 +97,12 @@ def _split_sections(text: str) -> List[Tuple[str, str]]:
     out: List[Tuple[str, str]] = []
     section_re = re.compile(
         r"^\s*(?:"
-        r"(?:\d+\.)+\d*\s+[A-Z][^\n]+"        # 1. 1.1  1.1.1  title
-        r"|Section\s+\d+[^\n]*"               # Section 12
-        r"|Article\s+\d+[^\n]*"               # Article 12
-        r"|Regulation\s+\d+[^\n]*"            # Regulation 12
-        r"|Chapter\s+\d+[^\n]*"               # Chapter 12
-        r"|(?:[A-Z][A-Z\s\-]{3,})$"           # ALL CAPS LINE
+        r"(?:\d+\.)+\d*\s+[A-Z][^\n]+"  # 1. 1.1  1.1.1  title
+        r"|Section\s+\d+[^\n]*"  # Section 12
+        r"|Article\s+\d+[^\n]*"  # Article 12
+        r"|Regulation\s+\d+[^\n]*"  # Regulation 12
+        r"|Chapter\s+\d+[^\n]*"  # Chapter 12
+        r"|(?:[A-Z][A-Z\s\-]{3,})$"  # ALL CAPS LINE
         r")",
         re.MULTILINE,
     )
@@ -117,7 +117,7 @@ def _split_sections(text: str) -> List[Tuple[str, str]]:
         start = m.start()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         header = m.group(0).strip()
-        body = text[start + len(m.group(0)): end].strip()
+        body = text[start + len(m.group(0)) : end].strip()
         out.append((header, body))
     return out
 
@@ -132,10 +132,10 @@ def _split_clauses(section_body: str) -> List[str]:
         return []
     clause_re = re.compile(
         r"(?:^|\n)\s*(?:"
-        r"\([a-z]\)"            # (a)
-        r"|\(\d+\)"              # (1)
-        r"|\(\d+\.\d+\)"         # (1.1)
-        r"|\(\d+\.\d+\.\d+\)"    # (1.1.1)
+        r"\([a-z]\)"  # (a)
+        r"|\(\d+\)"  # (1)
+        r"|\(\d+\.\d+\)"  # (1.1)
+        r"|\(\d+\.\d+\.\d+\)"  # (1.1.1)
         r")\s+",
     )
     matches = list(clause_re.finditer(section_body))
@@ -230,7 +230,15 @@ _LOW_SEVERITY_KEYWORDS = {
 _CATEGORY_KEYWORDS: Dict[ChangeCategory, Tuple[float, set]] = {
     ChangeCategory.PENALTY_CHANGE: (
         1.0,
-        {"penalty", "penalties", "fine", "fines", "sanction", "sanctions", "punishable"},
+        {
+            "penalty",
+            "penalties",
+            "fine",
+            "fines",
+            "sanction",
+            "sanctions",
+            "punishable",
+        },
     ),
     ChangeCategory.COMPLIANCE_DEADLINE: (
         1.0,
@@ -238,11 +246,30 @@ _CATEGORY_KEYWORDS: Dict[ChangeCategory, Tuple[float, set]] = {
     ),
     ChangeCategory.REPORTING_REQUIREMENT: (
         1.0,
-        {"report", "reports", "reporting", "submit", "disclose", "disclosure", "notify", "notification"},
+        {
+            "report",
+            "reports",
+            "reporting",
+            "submit",
+            "disclose",
+            "disclosure",
+            "notify",
+            "notification",
+        },
     ),
     ChangeCategory.CAPITAL_REQUIREMENT: (
         1.0,
-        {"capital", "tier", "car", "leverage", "liquidity", "lcr", "nsfr", "crr", "slr"},
+        {
+            "capital",
+            "tier",
+            "car",
+            "leverage",
+            "liquidity",
+            "lcr",
+            "nsfr",
+            "crr",
+            "slr",
+        },
     ),
     ChangeCategory.SCOPE_CHANGE: (
         1.0,
@@ -254,7 +281,14 @@ _CATEGORY_KEYWORDS: Dict[ChangeCategory, Tuple[float, set]] = {
     ),
     ChangeCategory.CLARIFICATION: (
         0.7,
-        {"clarify", "clarification", "explain", "interpret", "interpretation", "meaning"},
+        {
+            "clarify",
+            "clarification",
+            "explain",
+            "interpret",
+            "interpretation",
+            "meaning",
+        },
     ),
     ChangeCategory.REGULATORY_AMENDMENT: (
         0.8,
@@ -321,7 +355,12 @@ def _classify_category(text: str) -> ChangeCategory:
     return best_cat
 
 
-def _rationale(change_type: ChangeType, severity: ChangeSeverity, old: Optional[str], new: Optional[str]) -> str:
+def _rationale(
+    change_type: ChangeType,
+    severity: ChangeSeverity,
+    old: Optional[str],
+    new: Optional[str],
+) -> str:
     if change_type == ChangeType.ADDED:
         return f"New content added. Severity: {severity.value}."
     if change_type == ChangeType.REMOVED:
@@ -414,10 +453,7 @@ class VersionComparator:
                 a_block = old_units[i1:i2]
                 b_block = new_units[j1:j2]
                 sim_matrix = [
-                    [
-                        SequenceMatcher(a=a, b=b, autojunk=False).ratio()
-                        for b in b_block
-                    ]
+                    [SequenceMatcher(a=a, b=b, autojunk=False).ratio() for b in b_block]
                     for a in a_block
                 ]
                 used_b = set()
@@ -511,9 +547,7 @@ class ClauseComparator:
             seen_new.add(old_header)
             old_clauses = _split_clauses(old_sec.get("text", ""))
             new_clauses = _split_clauses(new_sec.get("text", ""))
-            inner_pairs = self.version_comparator._align_units(
-                old_clauses, new_clauses
-            )
+            inner_pairs = self.version_comparator._align_units(old_clauses, new_clauses)
             for p in inner_pairs:
                 pairs.append(
                     _ClausePair(
@@ -567,10 +601,14 @@ class ChangeClassifier:
         severity = _classify_severity(text_blob, pair.change_type)
         category = _classify_category(text_blob)
         # Severity floor for high-impact categories
-        if category in {
-            ChangeCategory.PENALTY_CHANGE,
-            ChangeCategory.COMPLIANCE_DEADLINE,
-        } and pair.change_type != ChangeType.UNCHANGED:
+        if (
+            category
+            in {
+                ChangeCategory.PENALTY_CHANGE,
+                ChangeCategory.COMPLIANCE_DEADLINE,
+            }
+            and pair.change_type != ChangeType.UNCHANGED
+        ):
             if severity == ChangeSeverity.LOW:
                 severity = ChangeSeverity.MEDIUM
             elif severity == ChangeSeverity.MEDIUM:
@@ -669,15 +707,11 @@ class DocumentDiffEngine:
                     request.old_text or "", request.new_text or ""
                 )
             # Classify each pair.
-            changes: List[ClauseChange] = [
-                self.classifier.classify(p) for p in pairs
-            ]
+            changes: List[ClauseChange] = [self.classifier.classify(p) for p in pairs]
             added = sum(1 for c in changes if c.change_type == ChangeType.ADDED)
             removed = sum(1 for c in changes if c.change_type == ChangeType.REMOVED)
             modified = sum(1 for c in changes if c.change_type == ChangeType.MODIFIED)
-            unchanged = sum(
-                1 for c in changes if c.change_type == ChangeType.UNCHANGED
-            )
+            unchanged = sum(1 for c in changes if c.change_type == ChangeType.UNCHANGED)
             overall_sev = _overall_severity(changes)
             overall_cat = _overall_category(changes)
             diff = DocumentDiff(
@@ -790,9 +824,7 @@ class ChangeRepository:
                 ChangeSeverity.CRITICAL: 3,
             }
             threshold = order[flt.min_severity]
-            items = [
-                d for d in items if order[d.overall_severity] >= threshold
-            ]
+            items = [d for d in items if order[d.overall_severity] >= threshold]
         if flt.after is not None:
             items = [d for d in items if d.computed_at >= flt.after]
         if flt.before is not None:
@@ -863,8 +895,10 @@ class ChangeDetectionService:
         self.repository = repository or ChangeRepository(self.store)
 
     def detect(self, request: ChangeDetectionRequest) -> ChangeDetectionResult:
-        if not request.old_text and not request.new_text and not (
-            request.old_sections and request.new_sections
+        if (
+            not request.old_text
+            and not request.new_text
+            and not (request.old_sections and request.new_sections)
         ):
             raise ValueError(
                 "either (old_text, new_text) or (old_sections, new_sections) "

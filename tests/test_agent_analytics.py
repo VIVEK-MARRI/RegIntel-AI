@@ -100,6 +100,7 @@ def test_repo_reset_clears():
 
 def test_percentile_basic():
     from app.services.agent_analytics import _percentile
+
     assert _percentile([], 50) == 0.0
     assert _percentile([10], 50) == 10
     assert abs(_percentile([1, 2, 3, 4, 5], 50) - 3) < 0.01
@@ -179,9 +180,7 @@ def test_health_monitor_mixed_overall_degraded():
 
 
 def test_health_monitor_empty():
-    m = AgentHealthMonitor(
-        AgentPerformanceAnalyzer(AgentMetricsRepository())
-    )
+    m = AgentHealthMonitor(AgentPerformanceAnalyzer(AgentMetricsRepository()))
     h = m.ecosystem_health()
     assert h.total_agents == 0
     assert h.overall_health == HealthLevel.UNKNOWN
@@ -215,9 +214,7 @@ def test_leaderboard_top_n_truncates():
 
 
 def test_leaderboard_empty():
-    lb = AgentLeaderboard(
-        AgentPerformanceAnalyzer(AgentMetricsRepository())
-    )
+    lb = AgentLeaderboard(AgentPerformanceAnalyzer(AgentMetricsRepository()))
     assert lb.rank(top_n=5) == []
 
 
@@ -326,9 +323,7 @@ def test_service_pre_seed_agents():
                 AgentMetadata(name="audit-agent"),
             ]
 
-    svc = build_default_agent_analytics_service(
-        framework_service=_FW()
-    )
+    svc = build_default_agent_analytics_service(framework_service=_FW())
     assert "echo-agent" in svc.repo.all_agent_names()
     assert "audit-agent" in svc.repo.all_agent_names()
 
@@ -342,18 +337,15 @@ async def test_api_overview_and_health():
         get_agent_analytics_service,
         reset_agent_analytics_service,
     )
+
     reset_agent_analytics_service()
     svc = _build_service()
-    app.dependency_overrides[
-        get_agent_analytics_service
-    ] = lambda: svc
+    app.dependency_overrides[get_agent_analytics_service] = lambda: svc
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as ac:
-            r = await ac.get(
-                "/api/v1/agents/analytics/overview"
-            )
+            r = await ac.get("/api/v1/agents/analytics/overview")
             assert r.status_code == 200
             assert "total_agents" in r.json()
             r2 = await ac.get("/api/v1/agents/analytics/health")
@@ -369,11 +361,10 @@ async def test_api_record_and_performance():
         get_agent_analytics_service,
         reset_agent_analytics_service,
     )
+
     reset_agent_analytics_service()
     svc = _build_service()
-    app.dependency_overrides[
-        get_agent_analytics_service
-    ] = lambda: svc
+    app.dependency_overrides[get_agent_analytics_service] = lambda: svc
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -388,26 +379,15 @@ async def test_api_record_and_performance():
                 },
             )
             assert r.status_code == 200
-            r2 = await ac.get(
-                "/api/v1/agents/analytics/performance"
-            )
+            r2 = await ac.get("/api/v1/agents/analytics/performance")
             assert r2.status_code == 200
-            assert any(
-                p["agent_name"] == "test-agent"
-                for p in r2.json()
-            )
-            r3 = await ac.get(
-                "/api/v1/agents/analytics/performance/test-agent"
-            )
+            assert any(p["agent_name"] == "test-agent" for p in r2.json())
+            r3 = await ac.get("/api/v1/agents/analytics/performance/test-agent")
             assert r3.status_code == 200
             assert r3.json()["agent_name"] == "test-agent"
-            r4 = await ac.get(
-                "/api/v1/agents/analytics/performance/test-agent/latency"
-            )
+            r4 = await ac.get("/api/v1/agents/analytics/performance/test-agent/latency")
             assert r4.status_code == 200
-            r5 = await ac.get(
-                "/api/v1/agents/analytics/performance/nope-agent"
-            )
+            r5 = await ac.get("/api/v1/agents/analytics/performance/nope-agent")
             assert r5.status_code == 404
     finally:
         app.dependency_overrides.clear()
@@ -419,18 +399,15 @@ async def test_api_leaderboard_and_cost():
         get_agent_analytics_service,
         reset_agent_analytics_service,
     )
+
     reset_agent_analytics_service()
     svc = _build_service()
-    app.dependency_overrides[
-        get_agent_analytics_service
-    ] = lambda: svc
+    app.dependency_overrides[get_agent_analytics_service] = lambda: svc
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as ac:
-            r = await ac.get(
-                "/api/v1/agents/analytics/leaderboard?top_n=5"
-            )
+            r = await ac.get("/api/v1/agents/analytics/leaderboard?top_n=5")
             assert r.status_code == 200
             assert isinstance(r.json(), list)
             r2 = await ac.get("/api/v1/agents/analytics/cost")
@@ -446,11 +423,10 @@ async def test_api_reset():
         get_agent_analytics_service,
         reset_agent_analytics_service,
     )
+
     reset_agent_analytics_service()
     svc = _build_service()
-    app.dependency_overrides[
-        get_agent_analytics_service
-    ] = lambda: svc
+    app.dependency_overrides[get_agent_analytics_service] = lambda: svc
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -463,9 +439,7 @@ async def test_api_reset():
                     "status": "succeeded",
                 },
             )
-            r = await ac.post(
-                "/api/v1/agents/analytics/reset"
-            )
+            r = await ac.post("/api/v1/agents/analytics/reset")
             assert r.status_code == 200
             assert "x" not in svc.repo.all_agent_names()
     finally:

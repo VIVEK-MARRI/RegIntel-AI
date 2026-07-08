@@ -128,12 +128,8 @@ class AnswerGenerationRequest(BaseModel):
         description="Model identifier passed to the provider.",
     )
     max_tokens: int = Field(1200, ge=64, le=8000, description="Generation budget.")
-    temperature: float = Field(
-        0.1, ge=0.0, le=2.0, description="Sampling temperature."
-    )
-    tone: AnswerTone = Field(
-        AnswerTone.REGULATORY, description="Output tone preset."
-    )
+    temperature: float = Field(0.1, ge=0.0, le=2.0, description="Sampling temperature.")
+    tone: AnswerTone = Field(AnswerTone.REGULATORY, description="Output tone preset.")
     stream: bool = Field(False, description="If true, return a streaming response.")
     include_raw: bool = Field(
         False, description="Include the raw LLM output in the response."
@@ -150,9 +146,7 @@ class EvidenceChunk(BaseModel):
 
     chunk_id: str = Field(..., description="UUID of the source chunk.")
     document_id: str = Field(..., description="UUID of the source document.")
-    source: Optional[str] = Field(
-        None, description="Regulator source (RBI / SEBI)."
-    )
+    source: Optional[str] = Field(None, description="Regulator source (RBI / SEBI).")
     page_number: Optional[int] = Field(
         None, description="Page number the chunk came from."
     )
@@ -190,13 +184,19 @@ class AnswerMetadata(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    provider: str = Field(..., description="Provider used (openai, gemini, litellm, mock).")
+    provider: str = Field(
+        ..., description="Provider used (openai, gemini, litellm, mock)."
+    )
     model: str = Field(..., description="Model identifier.")
     prompt_tokens: int = Field(0, ge=0, description="Approx. prompt tokens consumed.")
-    completion_tokens: int = Field(0, ge=0, description="Approx. completion tokens generated.")
+    completion_tokens: int = Field(
+        0, ge=0, description="Approx. completion tokens generated."
+    )
     total_tokens: int = Field(0, ge=0, description="Total tokens consumed.")
     latency_ms: float = Field(0.0, ge=0.0, description="Generation latency in ms.")
-    chunks_used: int = Field(..., ge=0, description="Number of chunks included in the prompt.")
+    chunks_used: int = Field(
+        ..., ge=0, description="Number of chunks included in the prompt."
+    )
     sources: List[str] = Field(
         default_factory=list,
         description="Distinct regulator sources represented in the answer.",
@@ -246,4 +246,6 @@ class AnswerStreamChunk(BaseModel):
     metadata: Optional[AnswerMetadata] = Field(
         None, description="Final metadata (emitted on 'end')."
     )
-    error: Optional[str] = Field(None, description="Error message (for 'error' events).")
+    error: Optional[str] = Field(
+        None, description="Error message (for 'error' events)."
+    )

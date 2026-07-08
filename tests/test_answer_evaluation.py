@@ -91,8 +91,7 @@ def _make_response(
     answer = AnswerSection(
         executive_summary="Banks perform KYC at onboarding.",
         detailed_explanation=(
-            "KYC includes identity verification, address proof, and risk "
-            "profiling."
+            "KYC includes identity verification, address proof, and risk " "profiling."
         ),
         supporting_evidence=[],
         key_regulatory_references=[],
@@ -150,7 +149,9 @@ def _make_response(
 
 @pytest.fixture
 def good_response() -> FinalAnswerResponse:
-    return _make_response(faithfulness=0.95, hallucination_detected=False, confidence=0.92)
+    return _make_response(
+        faithfulness=0.95, hallucination_detected=False, confidence=0.92
+    )
 
 
 @pytest.fixture
@@ -307,7 +308,9 @@ class TestAnswerEvaluator:
     def test_evaluate_returns_envelope(self, good_response, sample_chunks):
         evaluator = AnswerEvaluator()
         request = EvaluationRequest(
-            response=good_response, query="q", chunks=[c.model_dump() for c in sample_chunks]
+            response=good_response,
+            query="q",
+            chunks=[c.model_dump() for c in sample_chunks],
         )
         resp = evaluator.evaluate(request)
         assert isinstance(resp, EvaluationResponse)
@@ -331,7 +334,11 @@ class TestAnswerBenchmarkRunner:
     def test_run_benchmark(self, good_response, bad_response, sample_chunks):
         runner = AnswerBenchmarkRunner()
         cases = [
-            {"response": good_response, "query": "q1", "chunks": [c.model_dump() for c in sample_chunks]},
+            {
+                "response": good_response,
+                "query": "q1",
+                "chunks": [c.model_dump() for c in sample_chunks],
+            },
             {"response": bad_response, "query": "q2", "chunks": []},
         ]
         report = runner.run(cases)
@@ -345,7 +352,11 @@ class TestAnswerBenchmarkRunner:
     def test_regression_detection(self, good_response, bad_response, sample_chunks):
         runner = AnswerBenchmarkRunner()
         baseline_cases = [
-            {"response": good_response, "query": "q", "chunks": [c.model_dump() for c in sample_chunks]},
+            {
+                "response": good_response,
+                "query": "q",
+                "chunks": [c.model_dump() for c in sample_chunks],
+            },
         ]
         candidate_cases = [
             {"response": bad_response, "query": "q", "chunks": []},
@@ -358,7 +369,11 @@ class TestAnswerBenchmarkRunner:
     def test_no_regression_when_equivalent(self, good_response, sample_chunks):
         runner = AnswerBenchmarkRunner()
         cases = [
-            {"response": good_response, "query": "q", "chunks": [c.model_dump() for c in sample_chunks]},
+            {
+                "response": good_response,
+                "query": "q",
+                "chunks": [c.model_dump() for c in sample_chunks],
+            },
         ]
         baseline = runner.run(cases)
         candidate = runner.run(cases, baseline_results=baseline.results)
@@ -373,7 +388,9 @@ class TestAnswerEvaluationService:
     def test_evaluate_via_service(self, good_response, sample_chunks):
         service = build_default_evaluation_service()
         request = EvaluationRequest(
-            response=good_response, query="q", chunks=[c.model_dump() for c in sample_chunks]
+            response=good_response,
+            query="q",
+            chunks=[c.model_dump() for c in sample_chunks],
         )
         resp = service.evaluate(request)
         assert resp.result.aggregate_score > 0.0
@@ -381,7 +398,11 @@ class TestAnswerEvaluationService:
     def test_benchmark_via_service(self, good_response, bad_response, sample_chunks):
         service = build_default_evaluation_service()
         cases = [
-            {"response": good_response, "query": "q1", "chunks": [c.model_dump() for c in sample_chunks]},
+            {
+                "response": good_response,
+                "query": "q1",
+                "chunks": [c.model_dump() for c in sample_chunks],
+            },
             {"response": bad_response, "query": "q2", "chunks": []},
         ]
         report = service.benchmark(cases)
@@ -394,14 +415,18 @@ class TestAnswerEvaluationService:
 class TestEvaluationAPI:
     @pytest.mark.asyncio
     async def test_health(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/evaluation/health")
             assert r.status_code == 200
             assert r.json()["module"] == "answer_evaluation"
 
     @pytest.mark.asyncio
     async def test_evaluate(self, app, good_response, sample_chunks):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "response": good_response.model_dump(mode="json"),
                 "query": "What is KYC?",
@@ -415,7 +440,9 @@ class TestEvaluationAPI:
 
     @pytest.mark.asyncio
     async def test_evaluate_empty_query_rejected(self, app, good_response):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "response": good_response.model_dump(mode="json"),
                 "query": "  ",
@@ -426,7 +453,9 @@ class TestEvaluationAPI:
 
     @pytest.mark.asyncio
     async def test_benchmark(self, app, good_response, bad_response, sample_chunks):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "cases": [
                     {
@@ -449,6 +478,8 @@ class TestEvaluationAPI:
 
     @pytest.mark.asyncio
     async def test_benchmark_empty_cases_rejected(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post("/api/v1/evaluation/benchmark", json={"cases": []})
             assert r.status_code == 422

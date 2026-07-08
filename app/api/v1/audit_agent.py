@@ -34,9 +34,7 @@ async def run_audit(
     svc: AuditAgentService = _service_dep(),
 ) -> AuditAgentResult:
     try:
-        return await svc.run(
-            request, context=AgentContext(actor="api")
-        )
+        return await svc.run(request, context=AgentContext(actor="api"))
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

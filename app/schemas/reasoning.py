@@ -27,9 +27,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class DiffType(str, Enum):
     """Type of difference between two chunks / documents."""
 
-    ADDED = "added"          # Present in B, missing in A.
-    REMOVED = "removed"      # Present in A, missing in B.
-    CHANGED = "changed"      # Present in both, materially different.
+    ADDED = "added"  # Present in B, missing in A.
+    REMOVED = "removed"  # Present in A, missing in B.
+    CHANGED = "changed"  # Present in both, materially different.
     UNCHANGED = "unchanged"  # Cosine-similar enough to skip.
     CONTRADICTS = "contradicts"  # Same topic, opposite claim.
 
@@ -37,9 +37,9 @@ class DiffType(str, Enum):
 class ChangeType(str, Enum):
     """Type of regulatory change detected."""
 
-    NEW = "new"              # Net new rule.
-    AMENDED = "amended"      # Modified rule.
-    REPEALED = "repealed"    # Removed rule.
+    NEW = "new"  # Net new rule.
+    AMENDED = "amended"  # Modified rule.
+    REPEALED = "repealed"  # Removed rule.
     SUPERSEDED = "superseded"  # Replaced by another rule.
     CLARIFIED = "clarified"  # Language clarifications only.
 
@@ -60,7 +60,7 @@ class ReasoningMode(str, Enum):
     CHANGES = "changes"
     CONTRADICTIONS = "contradictions"
     CROSS_SUMMARY = "cross_summary"
-    FULL = "full"            # run all of the above in one pass
+    FULL = "full"  # run all of the above in one pass
 
 
 # ─── Differences ───────────────────────────────────────────────────────────
@@ -76,10 +76,16 @@ class DiffItem(BaseModel):
     section: str = Field("", description="Section title where the diff lives.")
     before: Optional[str] = Field(None, description="Text from document A (or None).")
     after: Optional[str] = Field(None, description="Text from document B (or None).")
-    similarity: float = Field(0.0, ge=0.0, le=1.0, description="Token overlap (0=distinct, 1=identical).")
+    similarity: float = Field(
+        0.0, ge=0.0, le=1.0, description="Token overlap (0=distinct, 1=identical)."
+    )
     severity: ContradictionSeverity = ContradictionSeverity.LOW
-    citation_a: Optional[str] = Field(None, description="Citation (chunk_id) for side A.")
-    citation_b: Optional[str] = Field(None, description="Citation (chunk_id) for side B.")
+    citation_a: Optional[str] = Field(
+        None, description="Citation (chunk_id) for side A."
+    )
+    citation_b: Optional[str] = Field(
+        None, description="Citation (chunk_id) for side B."
+    )
     explanation: str = Field("", description="Human-readable explanation.")
 
 
@@ -221,7 +227,9 @@ class ReasoningRequest(BaseModel):
     mode: ReasoningMode = ReasoningMode.FULL
     # Chunks to reason over.  At least one chunk is required.
     chunks: List[Dict[str, Any]] = Field(
-        ..., min_length=2, max_length=200,
+        ...,
+        min_length=2,
+        max_length=200,
         description="Chunks to reason over.  Each must have at least chunk_id, document_id, content.",
     )
     # Optional: pre-group chunks by document.

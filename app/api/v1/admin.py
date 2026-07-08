@@ -127,9 +127,7 @@ async def list_users(
 
 
 @router.get("/users/{user_id}", response_model=User)
-async def get_user(
-    user_id: str, svc: AdminService = _service_dep()
-) -> User:
+async def get_user(user_id: str, svc: AdminService = _service_dep()) -> User:
     u = svc.get_user(user_id)
     if u is None:
         raise HTTPException(status_code=404, detail="user not found")
@@ -149,18 +147,14 @@ async def update_user(
 
 
 @router.delete("/users/{user_id}")
-async def delete_user(
-    user_id: str, svc: AdminService = _service_dep()
-) -> Response:
+async def delete_user(user_id: str, svc: AdminService = _service_dep()) -> Response:
     if not svc.delete_user(user_id):
         raise HTTPException(status_code=404, detail="user not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/users/{user_id}/login", response_model=User)
-async def record_login(
-    user_id: str, svc: AdminService = _service_dep()
-) -> User:
+async def record_login(user_id: str, svc: AdminService = _service_dep()) -> User:
     u = svc.record_login(user_id)
     if u is None:
         raise HTTPException(status_code=404, detail="user not found")
@@ -200,9 +194,7 @@ async def list_roles(
 
 
 @router.get("/roles/{role_id}", response_model=Role)
-async def get_role(
-    role_id: str, svc: AdminService = _service_dep()
-) -> Role:
+async def get_role(role_id: str, svc: AdminService = _service_dep()) -> Role:
     r = svc.get_role(role_id)
     if r is None:
         raise HTTPException(status_code=404, detail="role not found")
@@ -222,13 +214,9 @@ async def update_role_permissions(
 
 
 @router.delete("/roles/{role_id}")
-async def delete_role(
-    role_id: str, svc: AdminService = _service_dep()
-) -> Response:
+async def delete_role(role_id: str, svc: AdminService = _service_dep()) -> Response:
     if not svc.delete_role(role_id):
-        raise HTTPException(
-            status_code=404, detail="role not found or built-in"
-        )
+        raise HTTPException(status_code=404, detail="role not found or built-in")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -286,9 +274,7 @@ async def list_settings(
 
 
 @router.get("/settings/{key}", response_model=PlatformSetting)
-async def get_setting(
-    key: str, svc: AdminService = _service_dep()
-) -> PlatformSetting:
+async def get_setting(key: str, svc: AdminService = _service_dep()) -> PlatformSetting:
     s = svc.get_setting(key)
     if s is None:
         raise HTTPException(status_code=404, detail="setting not found")
@@ -305,9 +291,7 @@ async def set_setting(
 
 
 @router.delete("/settings/{key}")
-async def delete_setting(
-    key: str, svc: AdminService = _service_dep()
-) -> Response:
+async def delete_setting(key: str, svc: AdminService = _service_dep()) -> Response:
     if not svc.delete_setting(key):
         raise HTTPException(status_code=404, detail="setting not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)

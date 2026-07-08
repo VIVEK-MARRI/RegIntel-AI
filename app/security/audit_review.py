@@ -125,7 +125,13 @@ class AuditReview:
         return out[q.offset : q.offset + q.limit]
 
     def count(self, query: Optional[AuditQuery] = None) -> int:
-        return len(self.records(AuditQuery(limit=10_000_000, offset=0) if query is None else AuditQuery(**{**asdict(query), "limit": 10_000_000, "offset": 0})))
+        return len(
+            self.records(
+                AuditQuery(limit=10_000_000, offset=0)
+                if query is None
+                else AuditQuery(**{**asdict(query), "limit": 10_000_000, "offset": 0})
+            )
+        )
 
     def find(self, request_id: str) -> Optional[AuditRecord]:
         for entry in self._audit_log.all():
@@ -243,6 +249,7 @@ def get_audit_review() -> AuditReview:
         if _audit_review_singleton is None:
             # Late import avoids a hard cycle at app boot.
             from app.main import _audit_log  # type: ignore[attr-defined]
+
             _audit_review_singleton = AuditReview(_audit_log)
         return _audit_review_singleton
 

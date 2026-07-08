@@ -84,7 +84,7 @@ class PIIDetector:
                     ScreenHit(
                         kind="pii",
                         pattern=pat.pattern,
-                        snippet=text[max(0, m.start() - 10):m.end() + 10],
+                        snippet=text[max(0, m.start() - 10) : m.end() + 10],
                     )
                 )
         return ScreeningResult(flagged=bool(hits), hits=hits)
@@ -120,14 +120,50 @@ def detect_pii(*texts: Any) -> bool:
 # ─── Prompt-injection detection ──────────────────────────────────────────
 
 _INJECTION_PATTERNS: List[tuple] = [
-    (re.compile(r"ignore\s+(?:previous|prior|above|all|earlier)\s+(?:instructions|prompts|context)", re.IGNORECASE), "ignore_instructions"),
-    (re.compile(r"disregard\s+(?:previous|prior|above|all|earlier)\s+(?:instructions|prompts|context)", re.IGNORECASE), "disregard_instructions"),
-    (re.compile(r"forget\s+(?:everything|all|previous|prior)", re.IGNORECASE), "forget_context"),
+    (
+        re.compile(
+            r"ignore\s+(?:previous|prior|above|all|earlier)\s+(?:instructions|prompts|context)",
+            re.IGNORECASE,
+        ),
+        "ignore_instructions",
+    ),
+    (
+        re.compile(
+            r"disregard\s+(?:previous|prior|above|all|earlier)\s+(?:instructions|prompts|context)",
+            re.IGNORECASE,
+        ),
+        "disregard_instructions",
+    ),
+    (
+        re.compile(r"forget\s+(?:everything|all|previous|prior)", re.IGNORECASE),
+        "forget_context",
+    ),
     (re.compile(r"you\s+are\s+now\b", re.IGNORECASE), "role_reassignment"),
-    (re.compile(r"(?:act|pretend|behave)\s+as\s+(?:if\s+you\s+are|though\s+you\s+are|a|an)\b", re.IGNORECASE), "role_reassignment"),
-    (re.compile(r"reveal\s+(?:your|the)\s+(?:system\s+)?(?:prompt|instructions)", re.IGNORECASE), "extract_system_prompt"),
-    (re.compile(r"<\s*/?(?:system|assistant|user)\s*>", re.IGNORECASE), "delimiter_break"),
-    (re.compile(r"(?:new\s+instructions|override\s+(?:all|previous)|system\s*:\s)", re.IGNORECASE), "delimiter_break"),
+    (
+        re.compile(
+            r"(?:act|pretend|behave)\s+as\s+(?:if\s+you\s+are|though\s+you\s+are|a|an)\b",
+            re.IGNORECASE,
+        ),
+        "role_reassignment",
+    ),
+    (
+        re.compile(
+            r"reveal\s+(?:your|the)\s+(?:system\s+)?(?:prompt|instructions)",
+            re.IGNORECASE,
+        ),
+        "extract_system_prompt",
+    ),
+    (
+        re.compile(r"<\s*/?(?:system|assistant|user)\s*>", re.IGNORECASE),
+        "delimiter_break",
+    ),
+    (
+        re.compile(
+            r"(?:new\s+instructions|override\s+(?:all|previous)|system\s*:\s)",
+            re.IGNORECASE,
+        ),
+        "delimiter_break",
+    ),
 ]
 
 
@@ -144,7 +180,7 @@ class PromptInjectionScreen:
                     ScreenHit(
                         kind=kind,
                         pattern=pat.pattern,
-                        snippet=text[max(0, m.start() - 10):m.end() + 10],
+                        snippet=text[max(0, m.start() - 10) : m.end() + 10],
                     )
                 )
         return ScreeningResult(flagged=bool(hits), hits=hits)
@@ -184,9 +220,7 @@ def record_screening_threat(
     det = detector or get_threat_detector()
     for hit in result.hits:
         if hit.kind == "pii":
-            logger.warning(
-                "PII shape detected in %s (snippet=%r)", source, hit.snippet
-            )
+            logger.warning("PII shape detected in %s (snippet=%r)", source, hit.snippet)
         else:
             det.record_event(
                 ThreatType.PROMPT_INJECTION,

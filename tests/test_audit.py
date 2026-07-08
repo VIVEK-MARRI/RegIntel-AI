@@ -69,9 +69,7 @@ def service(store: InMemoryAuditStore) -> AuditService:
 
 
 class TestAuditServiceRecords:
-    def test_append_assigns_sequence_and_hash(
-        self, service: AuditService
-    ) -> None:
+    def test_append_assigns_sequence_and_hash(self, service: AuditService) -> None:
         r1 = service.create_record(
             AuditRecordCreateRequest(
                 actor="alice",
@@ -113,9 +111,7 @@ class TestAuditServiceRecords:
         assert out.total == 3
         assert out.items[0].sequence == 1
 
-    def test_filter_by_severity_and_module(
-        self, service: AuditService
-    ) -> None:
+    def test_filter_by_severity_and_module(self, service: AuditService) -> None:
         from app.schemas.audit import AuditFilter
 
         service.create_record(
@@ -135,9 +131,7 @@ class TestAuditServiceRecords:
             )
         )
         out = service.search_records(
-            AuditFilter(
-                source_module="governance", page=1, page_size=10
-            )
+            AuditFilter(source_module="governance", page=1, page_size=10)
         )
         assert out.total == 1
         assert out.items[0].action == AuditAction.POLICY_CHECK
@@ -160,9 +154,7 @@ class TestAuditServiceRecords:
 
 
 class TestChainIntegrity:
-    def test_chain_is_intact_initially(
-        self, service: AuditService
-    ) -> None:
+    def test_chain_is_intact_initially(self, service: AuditService) -> None:
         service.create_record(
             AuditRecordCreateRequest(actor="x", action=AuditAction.CREATE)
         )
@@ -213,9 +205,7 @@ class TestEvidence:
 
 
 class TestLineage:
-    def test_lineage_for_isolated_decision(
-        self, service: AuditService
-    ) -> None:
+    def test_lineage_for_isolated_decision(self, service: AuditService) -> None:
         rec = service.create_record(
             AuditRecordCreateRequest(
                 actor="alice",
@@ -228,9 +218,7 @@ class TestLineage:
         assert lineage.node_count >= 1
         assert any(n.ref_id == rec.audit_id for n in lineage.nodes)
 
-    def test_lineage_for_missing_decision_is_empty(
-        self, service: AuditService
-    ) -> None:
+    def test_lineage_for_missing_decision_is_empty(self, service: AuditService) -> None:
         lineage = service.build_lineage("does-not-exist")
         assert lineage.node_count == 0
         assert lineage.edge_count == 0
@@ -246,9 +234,7 @@ class TestComplianceReports:
             service.create_record(
                 AuditRecordCreateRequest(
                     actor="alice",
-                    action=AuditAction.APPROVE
-                    if i % 2 == 0
-                    else AuditAction.REJECT,
+                    action=AuditAction.APPROVE if i % 2 == 0 else AuditAction.REJECT,
                     subject_id=f"r{i}",
                 )
             )
@@ -272,25 +258,14 @@ class TestComplianceReports:
         # Stored
         assert service.get_report(report.report_id) is not None
         # Listed
-        assert any(
-            r.report_id == report.report_id
-            for r in service.list_reports()
-        )
+        assert any(r.report_id == report.report_id for r in service.list_reports())
 
-    def test_report_default_sections(
-        self, service: AuditService
-    ) -> None:
-        report = service.generate_report(
-            ComplianceReportCreateRequest(title="Default")
-        )
+    def test_report_default_sections(self, service: AuditService) -> None:
+        report = service.generate_report(ComplianceReportCreateRequest(title="Default"))
         assert len(report.sections) >= 5
 
-    def test_report_attestation_default(
-        self, service: AuditService
-    ) -> None:
-        report = service.generate_report(
-            ComplianceReportCreateRequest(title="A")
-        )
+    def test_report_attestation_default(self, service: AuditService) -> None:
+        report = service.generate_report(ComplianceReportCreateRequest(title="A"))
         assert report.attestation == ""
 
 
@@ -300,9 +275,7 @@ class TestComplianceReports:
 class TestAuditStats:
     def test_stats_aggregate(self, service: AuditService) -> None:
         service.create_record(
-            AuditRecordCreateRequest(
-                actor="alice", action=AuditAction.CREATE
-            )
+            AuditRecordCreateRequest(actor="alice", action=AuditAction.CREATE)
         )
         service.create_record(
             AuditRecordCreateRequest(
@@ -324,17 +297,13 @@ class TestAuditStats:
 
 
 class TestCrossModule:
-    def test_record_governance(
-        self, service: AuditService
-    ) -> None:
+    def test_record_governance(self, service: AuditService) -> None:
         rec = service.record_governance("alice", "dec-1", "policy ok")
         assert rec is not None
         assert rec.subject_id == "dec-1"
         assert rec.source_module == "governance"
 
-    def test_record_admin_valid_action(
-        self, service: AuditService
-    ) -> None:
+    def test_record_admin_valid_action(self, service: AuditService) -> None:
         rec = service.record_admin(
             "admin-1",
             "config_change",
@@ -344,12 +313,8 @@ class TestCrossModule:
         assert rec is not None
         assert rec.action == AuditAction.CONFIG_CHANGE
 
-    def test_record_admin_unknown_action(
-        self, service: AuditService
-    ) -> None:
-        rec = service.record_admin(
-            "admin-1", "this-action-does-not-exist"
-        )
+    def test_record_admin_unknown_action(self, service: AuditService) -> None:
+        rec = service.record_admin("admin-1", "this-action-does-not-exist")
         assert rec is not None
         assert rec.action == AuditAction.OTHER
 
@@ -360,9 +325,7 @@ class TestCrossModule:
 @pytest_asyncio.fixture
 async def client() -> AsyncClient:
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
@@ -417,9 +380,7 @@ async def test_api_list_records(
             "/api/v1/audit/records",
             json={"actor": "alice", "action": "create"},
         )
-    r = await client.get(
-        "/api/v1/audit/records?page=1&page_size=2"
-    )
+    r = await client.get("/api/v1/audit/records?page=1&page_size=2")
     assert r.status_code == 200
     body = r.json()
     assert len(body["items"]) == 2
@@ -507,9 +468,7 @@ async def test_api_generate_report(
     body = r.json()
     assert body["status"] == "complete"
     assert body["report_id"].startswith("rpt-")
-    assert any(
-        s["title"] == "Executive Summary" for s in body["sections"]
-    )
+    assert any(s["title"] == "Executive Summary" for s in body["sections"])
     rid = body["report_id"]
     r2 = await client.get(f"/api/v1/audit/reports/{rid}")
     assert r2.status_code == 200

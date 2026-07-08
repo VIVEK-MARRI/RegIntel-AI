@@ -153,26 +153,56 @@ def app(monkeypatch):
 
 class TestSchemas:
     def test_risk_level_for_high_score(self):
-        assert risk_level_for(0.95, hallucination_detected=False) == HallucinationRiskLevel.NONE
-        assert risk_level_for(1.0, hallucination_detected=False) == HallucinationRiskLevel.NONE
+        assert (
+            risk_level_for(0.95, hallucination_detected=False)
+            == HallucinationRiskLevel.NONE
+        )
+        assert (
+            risk_level_for(1.0, hallucination_detected=False)
+            == HallucinationRiskLevel.NONE
+        )
 
     def test_risk_level_for_medium_score(self):
-        assert risk_level_for(0.8, hallucination_detected=False) == HallucinationRiskLevel.LOW
-        assert risk_level_for(0.7, hallucination_detected=False) == HallucinationRiskLevel.LOW
+        assert (
+            risk_level_for(0.8, hallucination_detected=False)
+            == HallucinationRiskLevel.LOW
+        )
+        assert (
+            risk_level_for(0.7, hallucination_detected=False)
+            == HallucinationRiskLevel.LOW
+        )
 
     def test_risk_level_for_low_score(self):
-        assert risk_level_for(0.5, hallucination_detected=False) == HallucinationRiskLevel.MEDIUM
-        assert risk_level_for(0.4, hallucination_detected=False) == HallucinationRiskLevel.MEDIUM
+        assert (
+            risk_level_for(0.5, hallucination_detected=False)
+            == HallucinationRiskLevel.MEDIUM
+        )
+        assert (
+            risk_level_for(0.4, hallucination_detected=False)
+            == HallucinationRiskLevel.MEDIUM
+        )
 
     def test_risk_level_for_very_low(self):
-        assert risk_level_for(0.3, hallucination_detected=False) == HallucinationRiskLevel.HIGH
-        assert risk_level_for(0.0, hallucination_detected=False) == HallucinationRiskLevel.HIGH
+        assert (
+            risk_level_for(0.3, hallucination_detected=False)
+            == HallucinationRiskLevel.HIGH
+        )
+        assert (
+            risk_level_for(0.0, hallucination_detected=False)
+            == HallucinationRiskLevel.HIGH
+        )
 
     def test_hallucination_bumps_risk(self):
         # Single unsupported claim bumps NONE→LOW at minimum.
-        assert risk_level_for(0.99, hallucination_detected=True) == HallucinationRiskLevel.LOW
+        assert (
+            risk_level_for(0.99, hallucination_detected=True)
+            == HallucinationRiskLevel.LOW
+        )
         # Already-LOW stays LOW.
-        assert risk_level_for(0.8, hallucination_detected=True) == HallucinationRiskLevel.LOW
+        assert (
+            risk_level_for(0.8, hallucination_detected=True)
+            == HallucinationRiskLevel.LOW
+        )
 
     def test_verification_method_values(self):
         assert VerificationMethod.LLM.value == "llm"
@@ -233,7 +263,11 @@ class TestPromptBuilder:
         from app.schemas.citation import Claim
 
         claims = [
-            Claim(claim_id="clm-aaa", text="Banks perform KYC.", section="executive_summary"),
+            Claim(
+                claim_id="clm-aaa",
+                text="Banks perform KYC.",
+                section="executive_summary",
+            ),
         ]
         bundle = build_verification_prompts(
             query="What is KYC?",
@@ -251,8 +285,16 @@ class TestPromptBuilder:
         from app.schemas.citation import Claim
 
         claims = [
-            Claim(claim_id="clm-a", text="Banks perform KYC at onboarding.", section="executive_summary"),
-            Claim(claim_id="clm-b", text="KYC includes identity verification.", section="detailed_explanation"),
+            Claim(
+                claim_id="clm-a",
+                text="Banks perform KYC at onboarding.",
+                section="executive_summary",
+            ),
+            Claim(
+                claim_id="clm-b",
+                text="KYC includes identity verification.",
+                section="detailed_explanation",
+            ),
         ]
         bundle = build_verification_prompts(
             query="q", answer=good_answer, chunks=sample_chunks, claims=claims
@@ -276,55 +318,87 @@ class TestPromptBuilder:
 class TestResponseParser:
     def _claims(self):
         from app.schemas.citation import Claim
+
         return [
-            Claim(claim_id="clm-1", text="Banks perform KYC at onboarding.", section="executive_summary"),
-            Claim(claim_id="clm-2", text="Identity verification is required.", section="detailed_explanation"),
+            Claim(
+                claim_id="clm-1",
+                text="Banks perform KYC at onboarding.",
+                section="executive_summary",
+            ),
+            Claim(
+                claim_id="clm-2",
+                text="Identity verification is required.",
+                section="detailed_explanation",
+            ),
         ]
 
     def test_parse_valid_json(self):
-        raw = json.dumps({
-            "supported_claims": [
-                {"claim_id": "clm-1", "claim": "Banks perform KYC at onboarding.", "cited_chunk_ids": ["chk-1"]},
-            ],
-            "unsupported_claims": [
-                {"claim_id": "clm-2", "claim": "Identity verification is required.", "reason": "no evidence"},
-            ],
-            "overall_faithfulness": 0.5,
-        })
+        raw = json.dumps(
+            {
+                "supported_claims": [
+                    {
+                        "claim_id": "clm-1",
+                        "claim": "Banks perform KYC at onboarding.",
+                        "cited_chunk_ids": ["chk-1"],
+                    },
+                ],
+                "unsupported_claims": [
+                    {
+                        "claim_id": "clm-2",
+                        "claim": "Identity verification is required.",
+                        "reason": "no evidence",
+                    },
+                ],
+                "overall_faithfulness": 0.5,
+            }
+        )
         sup, unsup, score = parse_verification_response(raw, self._claims())
         assert len(sup) == 1 and sup[0].claim_id == "clm-1"
         assert len(unsup) == 1 and unsup[0].claim_id == "clm-2"
         assert score == 0.5
 
     def test_parse_fenced_json(self):
-        raw = "```json\n" + json.dumps({
-            "supported_claims": [],
-            "unsupported_claims": [
-                {"claim_id": "clm-1", "claim": "x", "reason": "y"},
-                {"claim_id": "clm-2", "claim": "z", "reason": "w"},
-            ],
-            "overall_faithfulness": 0.0,
-        }) + "\n```"
+        raw = (
+            "```json\n"
+            + json.dumps(
+                {
+                    "supported_claims": [],
+                    "unsupported_claims": [
+                        {"claim_id": "clm-1", "claim": "x", "reason": "y"},
+                        {"claim_id": "clm-2", "claim": "z", "reason": "w"},
+                    ],
+                    "overall_faithfulness": 0.0,
+                }
+            )
+            + "\n```"
+        )
         sup, unsup, score = parse_verification_response(raw, self._claims())
         assert sup == []
         assert len(unsup) == 2
         assert score == 0.0
 
     def test_parse_malformed_returns_all_unsupported(self):
-        sup, unsup, score = parse_verification_response("not json at all", self._claims())
+        sup, unsup, score = parse_verification_response(
+            "not json at all", self._claims()
+        )
         assert sup == []
         assert len(unsup) == 2
         assert score == 0.0
-        assert all("LLM did not return" in v.reason or "could not" in v.reason.lower() for v in unsup)
+        assert all(
+            "LLM did not return" in v.reason or "could not" in v.reason.lower()
+            for v in unsup
+        )
 
     def test_missing_verdict_marked_unsupported(self):
-        raw = json.dumps({
-            "supported_claims": [
-                {"claim_id": "clm-1", "claim": "Banks perform KYC at onboarding."},
-            ],
-            "unsupported_claims": [],
-            "overall_faithfulness": 1.0,
-        })
+        raw = json.dumps(
+            {
+                "supported_claims": [
+                    {"claim_id": "clm-1", "claim": "Banks perform KYC at onboarding."},
+                ],
+                "unsupported_claims": [],
+                "overall_faithfulness": 1.0,
+            }
+        )
         sup, unsup, score = parse_verification_response(raw, self._claims())
         # clm-1 is supported, but clm-2 is missing — must be marked unsupported.
         assert len(sup) == 1
@@ -335,14 +409,20 @@ class TestResponseParser:
         assert score == 0.5
 
     def test_brace_balanced_extraction(self):
-        raw = "noise before " + json.dumps({
-            "supported_claims": [
-                {"claim_id": "clm-1", "claim": "x", "cited_chunk_ids": ["c1"]},
-                {"claim_id": "clm-2", "claim": "y", "cited_chunk_ids": ["c1"]},
-            ],
-            "unsupported_claims": [],
-            "overall_faithfulness": 1.0,
-        }) + " noise after"
+        raw = (
+            "noise before "
+            + json.dumps(
+                {
+                    "supported_claims": [
+                        {"claim_id": "clm-1", "claim": "x", "cited_chunk_ids": ["c1"]},
+                        {"claim_id": "clm-2", "claim": "y", "cited_chunk_ids": ["c1"]},
+                    ],
+                    "unsupported_claims": [],
+                    "overall_faithfulness": 1.0,
+                }
+            )
+            + " noise after"
+        )
         sup, unsup, _ = parse_verification_response(raw, self._claims())
         assert len(sup) == 2
         assert unsup == []
@@ -385,7 +465,9 @@ class TestLexicalChecker:
 
 class TestLLMEvaluator:
     @pytest.mark.asyncio
-    async def test_evaluator_with_mock_provider(self, sample_chunks, good_answer, bad_answer):
+    async def test_evaluator_with_mock_provider(
+        self, sample_chunks, good_answer, bad_answer
+    ):
         provider = MockFaithfulnessProvider()
         evaluator = FaithfulnessEvaluator(provider=provider)
         result = await evaluator.verify(
@@ -451,7 +533,9 @@ class TestHallucinationGuardService:
     async def test_lexical_method(self, sample_chunks, good_answer, bad_answer):
         guard = HallucinationGuardService()
         request = FaithfulnessRequest(
-            query="q", answer=bad_answer, chunks=sample_chunks,
+            query="q",
+            answer=bad_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LEXICAL,
         )
         resp = await guard.verify(request)
@@ -467,7 +551,9 @@ class TestHallucinationGuardService:
     async def test_lexical_method_all_supported(self, sample_chunks, good_answer):
         guard = HallucinationGuardService()
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LEXICAL,
         )
         resp = await guard.verify(request)
@@ -479,7 +565,9 @@ class TestHallucinationGuardService:
     async def test_mock_method(self, sample_chunks, bad_answer):
         guard = HallucinationGuardService()
         request = FaithfulnessRequest(
-            query="q", answer=bad_answer, chunks=sample_chunks,
+            query="q",
+            answer=bad_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.MOCK,
         )
         resp = await guard.verify(request)
@@ -490,7 +578,9 @@ class TestHallucinationGuardService:
     async def test_llm_method(self, sample_chunks, good_answer):
         guard = HallucinationGuardService(provider=MockFaithfulnessProvider())
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LLM,
         )
         resp = await guard.verify(request)
@@ -505,7 +595,9 @@ class TestHallucinationGuardService:
 
         guard = HallucinationGuardService(provider=BrokenProvider())
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LLM,
             fail_open_on_provider_error=True,
         )
@@ -523,7 +615,9 @@ class TestHallucinationGuardService:
 
         guard = HallucinationGuardService(provider=BrokenProvider())
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LLM,
             fail_open_on_provider_error=False,
         )
@@ -534,7 +628,9 @@ class TestHallucinationGuardService:
     async def test_hybrid_method(self, sample_chunks, bad_answer):
         guard = HallucinationGuardService(provider=MockFaithfulnessProvider())
         request = FaithfulnessRequest(
-            query="q", answer=bad_answer, chunks=sample_chunks,
+            query="q",
+            answer=bad_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.HYBRID,
         )
         resp = await guard.verify(request)
@@ -547,7 +643,9 @@ class TestHallucinationGuardService:
     async def test_no_provider_falls_back_to_lexical(self, sample_chunks, good_answer):
         guard = HallucinationGuardService(provider=None)
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LLM,
         )
         resp = await guard.verify(request)
@@ -559,7 +657,9 @@ class TestHallucinationGuardService:
         guard = HallucinationGuardService(provider=None)
         guard.set_provider(MockFaithfulnessProvider())
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LLM,
         )
         resp = await guard.verify(request)
@@ -569,7 +669,9 @@ class TestHallucinationGuardService:
     async def test_verify_answer_convenience(self, sample_chunks, good_answer):
         guard = HallucinationGuardService()
         resp = await guard.verify_answer(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LEXICAL,
         )
         assert resp.report.faithfulness_score == 1.0
@@ -578,7 +680,9 @@ class TestHallucinationGuardService:
     async def test_risk_level_for_low_score(self, sample_chunks, bad_answer):
         guard = HallucinationGuardService()
         request = FaithfulnessRequest(
-            query="q", answer=bad_answer, chunks=sample_chunks,
+            query="q",
+            answer=bad_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LEXICAL,
         )
         resp = await guard.verify(request)
@@ -594,7 +698,9 @@ class TestHallucinationGuardService:
         # No chunks → all claims unsupported → score=0.0 → risk HIGH.
         guard = HallucinationGuardService()
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=[],
+            query="q",
+            answer=good_answer,
+            chunks=[],
             method=VerificationMethod.LEXICAL,
             min_faithfulness=0.9,
         )
@@ -612,6 +718,7 @@ class TestHallucinationGuardService:
         class _SoftMock(MockFaithfulnessProvider):
             async def generate(self, **kwargs):
                 from app.services.answer_generation.providers import LLMResponse
+
                 # Mark every claim as supported with overall 0.5 — score
                 # is MEDIUM but min_faithfulness should clamp risk to LOW.
                 sup, unsup = _extract_claims_from_prompt(kwargs["user_prompt"]), []
@@ -635,7 +742,9 @@ class TestHallucinationGuardService:
 
         guard = HallucinationGuardService(provider=_SoftMock())
         request = FaithfulnessRequest(
-            query="q", answer=good_answer, chunks=sample_chunks,
+            query="q",
+            answer=good_answer,
+            chunks=sample_chunks,
             method=VerificationMethod.LLM,
             min_faithfulness=0.9,
         )
@@ -652,7 +761,9 @@ class TestHallucinationGuardService:
 class TestHallucinationAPI:
     @pytest.mark.asyncio
     async def test_health(self, app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/hallucination/health")
             assert r.status_code == 200
             data = r.json()
@@ -662,7 +773,9 @@ class TestHallucinationAPI:
 
     @pytest.mark.asyncio
     async def test_verify_lexical_supported(self, app, sample_chunks, good_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "What is KYC?",
                 "answer": good_answer.model_dump(),
@@ -679,7 +792,9 @@ class TestHallucinationAPI:
 
     @pytest.mark.asyncio
     async def test_verify_lexical_unsupported(self, app, sample_chunks, bad_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "What is KYC?",
                 "answer": bad_answer.model_dump(),
@@ -691,11 +806,16 @@ class TestHallucinationAPI:
             data = r.json()
             assert data["report"]["hallucination_detected"] is True
             assert data["report"]["unsupported_count"] >= 1
-            assert any("monthly tax" in c["claim"] for c in data["report"]["unsupported_claims"])
+            assert any(
+                "monthly tax" in c["claim"]
+                for c in data["report"]["unsupported_claims"]
+            )
 
     @pytest.mark.asyncio
     async def test_verify_empty_query_rejected(self, app, good_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "   ",
                 "answer": good_answer.model_dump(),
@@ -707,7 +827,9 @@ class TestHallucinationAPI:
 
     @pytest.mark.asyncio
     async def test_verify_empty_summary_rejected(self, app, good_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "q",
                 "answer": {
@@ -724,7 +846,9 @@ class TestHallucinationAPI:
 
     @pytest.mark.asyncio
     async def test_verify_empty_chunks(self, app, good_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "q",
                 "answer": good_answer.model_dump(),
@@ -739,7 +863,9 @@ class TestHallucinationAPI:
 
     @pytest.mark.asyncio
     async def test_verify_metadata_populated(self, app, sample_chunks, good_answer):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "q",
                 "answer": good_answer.model_dump(),
@@ -763,7 +889,9 @@ class TestHallucinationAPI:
 
         guard = build_default_hallucination_guard(provider=MockFaithfulnessProvider())
         app.dependency_overrides[get_hallucination_guard_service] = lambda: guard
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             payload = {
                 "query": "q",
                 "answer": bad_answer.model_dump(),

@@ -1,4 +1,4 @@
-﻿"""Report generators for the M10.5 benchmark platform.
+"""Report generators for the M10.5 benchmark platform.
 
 Produces four kinds of JSON reports plus an aggregate ``summary.md`` and
 ``summary.html``:
@@ -39,7 +39,7 @@ class Reporter:
     # â”€â”€â”€ Latency â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def latency_report(self, response: BenchmarkResponse) -> Dict[str, Any]:
-        all_lat = [r.latency.total_ms for r in response.results]
+        [r.latency.total_ms for r in response.results]
         by_kind: Dict[str, List[float]] = defaultdict(list)
         for r in response.results:
             by_kind[r.kind.value].append(r.latency.total_ms)
@@ -73,7 +73,9 @@ class Reporter:
             "generated_at": _now_iso(),
         }
 
-    def _cost_by_kind(self, results: Sequence[OperationResult]) -> Dict[str, Dict[str, Any]]:
+    def _cost_by_kind(
+        self, results: Sequence[OperationResult]
+    ) -> Dict[str, Dict[str, Any]]:
         buckets: Dict[str, List[OperationResult]] = defaultdict(list)
         for r in results:
             buckets[r.kind.value].append(r)
@@ -110,16 +112,18 @@ class Reporter:
             tokens_in = sum(r.tokens.input_tokens for r in rs)
             tokens_out = sum(r.tokens.output_tokens for r in rs)
             cost = sum(r.cost_units for r in rs)
-            per_agent.append({
-                "agent": name,
-                "invocations": len(rs),
-                "successful": success,
-                "failed": len(rs) - success,
-                "error_rate": ((len(rs) - success) / len(rs)) if rs else 0.0,
-                "latency": compute_latency_stats(latencies).model_dump(mode="json"),
-                "tokens": {"input": tokens_in, "output": tokens_out},
-                "cost_units": round(cost, 8),
-            })
+            per_agent.append(
+                {
+                    "agent": name,
+                    "invocations": len(rs),
+                    "successful": success,
+                    "failed": len(rs) - success,
+                    "error_rate": ((len(rs) - success) / len(rs)) if rs else 0.0,
+                    "latency": compute_latency_stats(latencies).model_dump(mode="json"),
+                    "tokens": {"input": tokens_in, "output": tokens_out},
+                    "cost_units": round(cost, 8),
+                }
+            )
 
         # Sort leaderboard-style: composite score = 0.6*success + 0.3*invocations_normalized + 0.1*speed
         if per_agent:
@@ -161,7 +165,9 @@ class Reporter:
         cpu_values = [s.process_cpu_percent for s in snaps]
         threads_values = [s.process_threads for s in snaps]
         host_cpu = [s.host_cpu_percent for s in snaps if s.host_cpu_percent is not None]
-        host_mem = [s.host_memory_percent for s in snaps if s.host_memory_percent is not None]
+        host_mem = [
+            s.host_memory_percent for s in snaps if s.host_memory_percent is not None
+        ]
 
         return {
             "report": "system_performance",
@@ -202,7 +208,9 @@ class Reporter:
         _write("latency_report.json", self.latency_report(response))
         _write("cost_report.json", self.cost_report(response))
         _write("agent_performance_report.json", self.agent_performance_report(response))
-        _write("system_performance_report.json", self.system_performance_report(response))
+        _write(
+            "system_performance_report.json", self.system_performance_report(response)
+        )
 
         # Save the raw run for later inspection.
         raw_path = os.path.join(out_dir, "run.json")
@@ -298,6 +306,7 @@ class Reporter:
 
 
 # â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 def response_cost_factor(_results: Iterable[OperationResult], _kind: str) -> float:
     """Best-effort cost factor pull from per-result metadata; falls back to default."""

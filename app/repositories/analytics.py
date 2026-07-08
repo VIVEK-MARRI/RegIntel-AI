@@ -38,7 +38,9 @@ class RetrievalMetricsRepository:
 
     async def get_by_id(self, record_id: uuid.UUID) -> Optional[RetrievalMetricsRecord]:
         """Get a metrics record by ID."""
-        stmt = select(RetrievalMetricsRecord).where(RetrievalMetricsRecord.id == record_id)
+        stmt = select(RetrievalMetricsRecord).where(
+            RetrievalMetricsRecord.id == record_id
+        )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -99,42 +101,68 @@ class RetrievalMetricsRepository:
 
         base_select = [
             func.count(RetrievalMetricsRecord.id).label("total_queries"),
-            func.count(func.distinct(RetrievalMetricsRecord.query_id)).label("unique_queries"),
-            func.avg(RetrievalMetricsRecord.dense_recall_at_5).label("avg_dense_recall_at_5"),
-            func.avg(RetrievalMetricsRecord.dense_recall_at_10).label("avg_dense_recall_at_10"),
-            func.avg(RetrievalMetricsRecord.bm25_recall_at_5).label("avg_bm25_recall_at_5"),
-            func.avg(RetrievalMetricsRecord.bm25_recall_at_10).label("avg_bm25_recall_at_10"),
-            func.avg(RetrievalMetricsRecord.hybrid_recall_at_5).label("avg_hybrid_recall_at_5"),
-            func.avg(RetrievalMetricsRecord.hybrid_recall_at_10).label("avg_hybrid_recall_at_10"),
+            func.count(func.distinct(RetrievalMetricsRecord.query_id)).label(
+                "unique_queries"
+            ),
+            func.avg(RetrievalMetricsRecord.dense_recall_at_5).label(
+                "avg_dense_recall_at_5"
+            ),
+            func.avg(RetrievalMetricsRecord.dense_recall_at_10).label(
+                "avg_dense_recall_at_10"
+            ),
+            func.avg(RetrievalMetricsRecord.bm25_recall_at_5).label(
+                "avg_bm25_recall_at_5"
+            ),
+            func.avg(RetrievalMetricsRecord.bm25_recall_at_10).label(
+                "avg_bm25_recall_at_10"
+            ),
+            func.avg(RetrievalMetricsRecord.hybrid_recall_at_5).label(
+                "avg_hybrid_recall_at_5"
+            ),
+            func.avg(RetrievalMetricsRecord.hybrid_recall_at_10).label(
+                "avg_hybrid_recall_at_10"
+            ),
             func.avg(RetrievalMetricsRecord.precision_at_5).label("avg_precision_at_5"),
-            func.avg(RetrievalMetricsRecord.precision_at_10).label("avg_precision_at_10"),
+            func.avg(RetrievalMetricsRecord.precision_at_10).label(
+                "avg_precision_at_10"
+            ),
             func.avg(RetrievalMetricsRecord.mrr).label("avg_mrr"),
             func.avg(RetrievalMetricsRecord.hit_rate).label("avg_hit_rate"),
-            func.avg(RetrievalMetricsRecord.retrieval_latency_ms).label("avg_retrieval_latency_ms"),
-            func.avg(RetrievalMetricsRecord.reranker_latency_ms).label("avg_reranker_latency_ms"),
-            func.avg(RetrievalMetricsRecord.total_latency_ms).label("avg_total_latency_ms"),
+            func.avg(RetrievalMetricsRecord.retrieval_latency_ms).label(
+                "avg_retrieval_latency_ms"
+            ),
+            func.avg(RetrievalMetricsRecord.reranker_latency_ms).label(
+                "avg_reranker_latency_ms"
+            ),
+            func.avg(RetrievalMetricsRecord.total_latency_ms).label(
+                "avg_total_latency_ms"
+            ),
             func.avg(RetrievalMetricsRecord.reranker_gain).label("avg_reranker_gain"),
         ]
 
         if dialect_name == "postgresql":
-            base_select.extend([
-                func.percentile_cont(0.5).within_group(
-                    RetrievalMetricsRecord.retrieval_latency_ms
-                ).label("p50_latency"),
-                func.percentile_cont(0.95).within_group(
-                    RetrievalMetricsRecord.retrieval_latency_ms
-                ).label("p95_latency"),
-                func.percentile_cont(0.99).within_group(
-                    RetrievalMetricsRecord.retrieval_latency_ms
-                ).label("p99_latency"),
-            ])
+            base_select.extend(
+                [
+                    func.percentile_cont(0.5)
+                    .within_group(RetrievalMetricsRecord.retrieval_latency_ms)
+                    .label("p50_latency"),
+                    func.percentile_cont(0.95)
+                    .within_group(RetrievalMetricsRecord.retrieval_latency_ms)
+                    .label("p95_latency"),
+                    func.percentile_cont(0.99)
+                    .within_group(RetrievalMetricsRecord.retrieval_latency_ms)
+                    .label("p99_latency"),
+                ]
+            )
         else:
             # SQLite (and other backends) don't support percentile_cont/within_group.
-            base_select.extend([
-                literal(None).label("p50_latency"),
-                literal(None).label("p95_latency"),
-                literal(None).label("p99_latency"),
-            ])
+            base_select.extend(
+                [
+                    literal(None).label("p50_latency"),
+                    literal(None).label("p95_latency"),
+                    literal(None).label("p99_latency"),
+                ]
+            )
 
         stmt = select(*base_select).where(RetrievalMetricsRecord.strategy == strategy)
 
@@ -151,20 +179,44 @@ class RetrievalMetricsRepository:
         return {
             "total_queries": row.total_queries or 0,
             "unique_queries": row.unique_queries or 0,
-            "avg_dense_recall_at_5": float(row.avg_dense_recall_at_5) if row.avg_dense_recall_at_5 else None,
-            "avg_dense_recall_at_10": float(row.avg_dense_recall_at_10) if row.avg_dense_recall_at_10 else None,
-            "avg_bm25_recall_at_5": float(row.avg_bm25_recall_at_5) if row.avg_bm25_recall_at_5 else None,
-            "avg_bm25_recall_at_10": float(row.avg_bm25_recall_at_10) if row.avg_bm25_recall_at_10 else None,
-            "avg_hybrid_recall_at_5": float(row.avg_hybrid_recall_at_5) if row.avg_hybrid_recall_at_5 else None,
-            "avg_hybrid_recall_at_10": float(row.avg_hybrid_recall_at_10) if row.avg_hybrid_recall_at_10 else None,
-            "avg_precision_at_5": float(row.avg_precision_at_5) if row.avg_precision_at_5 else None,
-            "avg_precision_at_10": float(row.avg_precision_at_10) if row.avg_precision_at_10 else None,
+            "avg_dense_recall_at_5": float(row.avg_dense_recall_at_5)
+            if row.avg_dense_recall_at_5
+            else None,
+            "avg_dense_recall_at_10": float(row.avg_dense_recall_at_10)
+            if row.avg_dense_recall_at_10
+            else None,
+            "avg_bm25_recall_at_5": float(row.avg_bm25_recall_at_5)
+            if row.avg_bm25_recall_at_5
+            else None,
+            "avg_bm25_recall_at_10": float(row.avg_bm25_recall_at_10)
+            if row.avg_bm25_recall_at_10
+            else None,
+            "avg_hybrid_recall_at_5": float(row.avg_hybrid_recall_at_5)
+            if row.avg_hybrid_recall_at_5
+            else None,
+            "avg_hybrid_recall_at_10": float(row.avg_hybrid_recall_at_10)
+            if row.avg_hybrid_recall_at_10
+            else None,
+            "avg_precision_at_5": float(row.avg_precision_at_5)
+            if row.avg_precision_at_5
+            else None,
+            "avg_precision_at_10": float(row.avg_precision_at_10)
+            if row.avg_precision_at_10
+            else None,
             "avg_mrr": float(row.avg_mrr) if row.avg_mrr else None,
             "avg_hit_rate": float(row.avg_hit_rate) if row.avg_hit_rate else None,
-            "avg_retrieval_latency_ms": float(row.avg_retrieval_latency_ms) if row.avg_retrieval_latency_ms else None,
-            "avg_reranker_latency_ms": float(row.avg_reranker_latency_ms) if row.avg_reranker_latency_ms else None,
-            "avg_total_latency_ms": float(row.avg_total_latency_ms) if row.avg_total_latency_ms else None,
-            "avg_reranker_gain": float(row.avg_reranker_gain) if row.avg_reranker_gain else None,
+            "avg_retrieval_latency_ms": float(row.avg_retrieval_latency_ms)
+            if row.avg_retrieval_latency_ms
+            else None,
+            "avg_reranker_latency_ms": float(row.avg_reranker_latency_ms)
+            if row.avg_reranker_latency_ms
+            else None,
+            "avg_total_latency_ms": float(row.avg_total_latency_ms)
+            if row.avg_total_latency_ms
+            else None,
+            "avg_reranker_gain": float(row.avg_reranker_gain)
+            if row.avg_reranker_gain
+            else None,
             "p50_latency": float(row.p50_latency) if row.p50_latency else None,
             "p95_latency": float(row.p95_latency) if row.p95_latency else None,
             "p99_latency": float(row.p99_latency) if row.p99_latency else None,
@@ -189,13 +241,20 @@ class RetrievalMetricsRepository:
 
         # Validate metric column name to prevent SQL injection
         valid_metrics = {
-            "dense_recall_at_5", "dense_recall_at_10",
-            "bm25_recall_at_5", "bm25_recall_at_10",
-            "hybrid_recall_at_5", "hybrid_recall_at_10",
-            "precision_at_5", "precision_at_10",
-            "mrr", "hit_rate",
-            "retrieval_latency_ms", "reranker_latency_ms",
-            "total_latency_ms", "reranker_gain",
+            "dense_recall_at_5",
+            "dense_recall_at_10",
+            "bm25_recall_at_5",
+            "bm25_recall_at_10",
+            "hybrid_recall_at_5",
+            "hybrid_recall_at_10",
+            "precision_at_5",
+            "precision_at_10",
+            "mrr",
+            "hit_rate",
+            "retrieval_latency_ms",
+            "reranker_latency_ms",
+            "total_latency_ms",
+            "reranker_gain",
         }
         if metric not in valid_metrics:
             logger.warning(f"Invalid metric requested for trend: {metric}")
@@ -256,20 +315,23 @@ class RetrievalMetricsRepository:
 
         trend_data = []
         for row in result:
-            trend_data.append({
-                "timestamp": row.window_time,
-                "value": float(row.avg_value) if row.avg_value else 0.0,
-                "query_count": row.query_count,
-            })
+            trend_data.append(
+                {
+                    "timestamp": row.window_time,
+                    "value": float(row.avg_value) if row.avg_value else 0.0,
+                    "query_count": row.query_count,
+                }
+            )
 
         return trend_data
 
     async def delete_old_records(self, before: datetime) -> int:
         """Delete records older than the specified timestamp."""
-        stmt = (
+        (text("DELETE FROM retrieval_metrics_records WHERE timestamp < :before"),)
+        result = await self.db.execute(
             text("DELETE FROM retrieval_metrics_records WHERE timestamp < :before"),
+            {"before": before},
         )
-        result = await self.db.execute(text("DELETE FROM retrieval_metrics_records WHERE timestamp < :before"), {"before": before})
         return result.rowcount
 
 
@@ -366,9 +428,7 @@ class QueryDistributionRepository:
         await self.db.refresh(record)
         return record
 
-    async def get_latest(
-        self, window_type: str
-    ) -> Optional[QueryDistributionRecord]:
+    async def get_latest(self, window_type: str) -> Optional[QueryDistributionRecord]:
         """Get the latest distribution record for a window type."""
         stmt = (
             select(QueryDistributionRecord)
@@ -443,7 +503,9 @@ class QueryDistributionRepository:
             func.sum(QueryDistributionRecord.dense_count).label("dense"),
             func.sum(QueryDistributionRecord.bm25_count).label("bm25"),
             func.sum(QueryDistributionRecord.hybrid_count).label("hybrid"),
-            func.sum(QueryDistributionRecord.hybrid_rerank_count).label("hybrid_rerank"),
+            func.sum(QueryDistributionRecord.hybrid_rerank_count).label(
+                "hybrid_rerank"
+            ),
             func.sum(QueryDistributionRecord.total_count).label("total"),
         )
 
@@ -492,7 +554,10 @@ class RerankerGainRepository:
             select(RerankerGainRecord)
             .where(RerankerGainRecord.window_type == window_type)
             # Order by both bounds to be deterministic across backends.
-            .order_by(RerankerGainRecord.window_start.desc(), RerankerGainRecord.window_end.desc())
+            .order_by(
+                RerankerGainRecord.window_start.desc(),
+                RerankerGainRecord.window_end.desc(),
+            )
             .limit(1)
         )
 
@@ -504,7 +569,6 @@ class RerankerGainRepository:
 
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
-
 
     async def get_range(
         self,

@@ -4,6 +4,7 @@ from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
+
 class ChunkResponse(BaseModel):
     chunk_id: str
     section: str
@@ -14,11 +15,13 @@ class ChunkResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class DocumentChunkingResponse(BaseModel):
     document_id: UUID
     chunks: List[ChunkResponse]
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ChunkMetadata(BaseModel):
     document_id: UUID
@@ -30,13 +33,12 @@ class ChunkMetadata(BaseModel):
     publication_date: Optional[date] = None
     chunk_size: int
     token_count: int
-    
+
     # Allow extra fields for dynamic metadata extensions
     model_config = ConfigDict(
-        populate_by_name=True,
-        extra="allow",
-        from_attributes=True
+        populate_by_name=True, extra="allow", from_attributes=True
     )
+
 
 class EnrichedChunkResponse(BaseModel):
     chunk_id: str
@@ -45,16 +47,19 @@ class EnrichedChunkResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class DocumentEnrichedChunkingResponse(BaseModel):
     document_id: UUID
     chunks: List[EnrichedChunkResponse]
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ChunkSortByEnum(str, Enum):
     page_number = "page_number"
     token_count = "token_count"
     created_at = "created_at"
+
 
 class StoredChunkResponse(BaseModel):
     id: UUID

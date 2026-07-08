@@ -259,7 +259,9 @@ def test_summary_generator_high():
     s = RegulatorySummaryGenerator().generate(diff, entities, ImpactLevel.HIGH)
     assert s.headline
     assert len(s.key_points) > 0
-    assert "escalate" in s.recommendation.lower() or "review" in s.recommendation.lower()
+    assert (
+        "escalate" in s.recommendation.lower() or "review" in s.recommendation.lower()
+    )
 
 
 def test_summary_generator_low():
@@ -446,7 +448,9 @@ def test_build_default_service(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_api_health():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         r = await c.get("/api/v1/impact/health")
         assert r.status_code == 200
         assert r.json()["module"] == "impact_analysis"
@@ -454,11 +458,13 @@ async def test_api_health():
 
 @pytest.mark.asyncio
 async def test_api_analyze_success(tmp_store):
-    app.dependency_overrides[get_impact_analysis_service] = lambda: ImpactAnalysisService(
-        store=tmp_store
+    app.dependency_overrides[get_impact_analysis_service] = (
+        lambda: ImpactAnalysisService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             diff = _make_diff()
             r = await c.post(
                 "/api/v1/impact/analyze",
@@ -473,11 +479,13 @@ async def test_api_analyze_success(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_analyze_validation_error(tmp_store):
-    app.dependency_overrides[get_impact_analysis_service] = lambda: ImpactAnalysisService(
-        store=tmp_store
+    app.dependency_overrides[get_impact_analysis_service] = (
+        lambda: ImpactAnalysisService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.post("/api/v1/impact/analyze", json={})
             assert r.status_code == 400
     finally:
@@ -491,7 +499,9 @@ async def test_api_list_reports(tmp_store):
     svc.analyze(ImpactAnalysisRequest(), diff=diff)
     app.dependency_overrides[get_impact_analysis_service] = lambda: svc
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/impact?page=1&page_size=10")
             assert r.status_code == 200
             body = r.json()
@@ -502,11 +512,13 @@ async def test_api_list_reports(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_get_report_404(tmp_store):
-    app.dependency_overrides[get_impact_analysis_service] = lambda: ImpactAnalysisService(
-        store=tmp_store
+    app.dependency_overrides[get_impact_analysis_service] = (
+        lambda: ImpactAnalysisService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/impact/nope")
             assert r.status_code == 404
     finally:
@@ -515,11 +527,13 @@ async def test_api_get_report_404(tmp_store):
 
 @pytest.mark.asyncio
 async def test_api_stats(tmp_store):
-    app.dependency_overrides[get_impact_analysis_service] = lambda: ImpactAnalysisService(
-        store=tmp_store
+    app.dependency_overrides[get_impact_analysis_service] = (
+        lambda: ImpactAnalysisService(store=tmp_store)
     )
     try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
             r = await c.get("/api/v1/impact/stats")
             assert r.status_code == 200
             body = r.json()

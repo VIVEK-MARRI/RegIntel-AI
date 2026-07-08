@@ -84,7 +84,8 @@ class FaithfulnessEvaluator:
         )
         if not claims:
             provider_label = (
-                self.provider.name if isinstance(self.provider.name, str)
+                self.provider.name
+                if isinstance(self.provider.name, str)
                 else getattr(self.provider.name, "value", "unknown")
             )
             return VerificationResult(
@@ -108,7 +109,8 @@ class FaithfulnessEvaluator:
         except Exception as exc:
             logger.exception("LLM verification provider call failed")
             provider_label = (
-                self.provider.name if isinstance(self.provider.name, str)
+                self.provider.name
+                if isinstance(self.provider.name, str)
                 else getattr(self.provider.name, "value", "unknown")
             )
             return VerificationResult(
@@ -124,7 +126,8 @@ class FaithfulnessEvaluator:
             response.text, expected_claims=claims
         )
         provider_label = (
-            self.provider.name if isinstance(self.provider.name, str)
+            self.provider.name
+            if isinstance(self.provider.name, str)
             else getattr(self.provider.name, "value", "unknown")
         )
         return VerificationResult(
@@ -186,18 +189,22 @@ class MockFaithfulnessProvider(BaseLLMProvider):
                 if best is None or score > best[1]:
                     best = (chid, score)
             if best is None or best[1] < self.threshold:
-                unsupported.append({
-                    "claim_id": cid,
-                    "claim": ctext,
-                    "reason": f"no chunk exceeded threshold ({self.threshold:.2f})",
-                })
+                unsupported.append(
+                    {
+                        "claim_id": cid,
+                        "claim": ctext,
+                        "reason": f"no chunk exceeded threshold ({self.threshold:.2f})",
+                    }
+                )
             else:
-                supported.append({
-                    "claim_id": cid,
-                    "claim": ctext,
-                    "cited_chunk_ids": [best[0]],
-                    "reason": f"lexical overlap {best[1]:.2f}",
-                })
+                supported.append(
+                    {
+                        "claim_id": cid,
+                        "claim": ctext,
+                        "cited_chunk_ids": [best[0]],
+                        "reason": f"lexical overlap {best[1]:.2f}",
+                    }
+                )
         total = len(supported) + len(unsupported)
         overall = (len(supported) / total) if total else 1.0
         payload = {
@@ -207,7 +214,8 @@ class MockFaithfulnessProvider(BaseLLMProvider):
         }
         text = json.dumps(payload, indent=2)
         provider_label = (
-            self.name if isinstance(self.name, str)
+            self.name
+            if isinstance(self.name, str)
             else getattr(self.name, "value", "mock-faithfulness")
         )
         return LLMResponse(
@@ -238,22 +246,26 @@ def _extract_claims_from_prompt(prompt: str) -> List[Tuple[str, str, str]]:
         if line.startswith("[") and "] claim_id=" in line:
             # Start of a new claim block.
             if current:
-                out.append((
-                    current_meta.get("claim_id", ""),
-                    "\n".join(current).strip(),
-                    current_meta.get("section", "unknown"),
-                ))
+                out.append(
+                    (
+                        current_meta.get("claim_id", ""),
+                        "\n".join(current).strip(),
+                        current_meta.get("section", "unknown"),
+                    )
+                )
             current = []
             current_meta = _parse_claim_header(line)
             continue
         if line:
             current.append(line)
     if current:
-        out.append((
-            current_meta.get("claim_id", ""),
-            "\n".join(current).strip(),
-            current_meta.get("section", "unknown"),
-        ))
+        out.append(
+            (
+                current_meta.get("claim_id", ""),
+                "\n".join(current).strip(),
+                current_meta.get("section", "unknown"),
+            )
+        )
     return out
 
 

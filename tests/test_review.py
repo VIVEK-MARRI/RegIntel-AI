@@ -29,6 +29,7 @@ from app.services.review import (
 @pytest.fixture(autouse=True)
 def _reset_singletons():
     from app.api import dependencies as deps
+
     deps.reset_review_service()
     deps.reset_automation_service()
     yield
@@ -89,12 +90,8 @@ class TestReviewEngine:
     def test_create_with_explicit_requirements(self) -> None:
         eng = ReviewEngine()
         reqs = [
-            ApprovalRequirement(
-                approver_role="risk_manager", min_approvals=2
-            ),
-            ApprovalRequirement(
-                approver_role="compliance_head", min_approvals=1
-            ),
+            ApprovalRequirement(approver_role="risk_manager", min_approvals=2),
+            ApprovalRequirement(approver_role="compliance_head", min_approvals=1),
         ]
         review = eng.create(_make_request(required_approvers=reqs))
         assert len(review.required_approvers) == 2
@@ -203,9 +200,7 @@ class TestApprovalCoordinator:
         review = eng.create(
             _make_request(
                 required_approvers=[
-                    ApprovalRequirement(
-                        approver_role="risk_manager", min_approvals=1
-                    ),
+                    ApprovalRequirement(approver_role="risk_manager", min_approvals=1),
                     ApprovalRequirement(
                         approver_role="compliance_head", min_approvals=1
                     ),
@@ -235,9 +230,7 @@ class TestApprovalCoordinator:
         review = eng.create(
             _make_request(
                 required_approvers=[
-                    ApprovalRequirement(
-                        approver_role="risk_manager", min_approvals=2
-                    )
+                    ApprovalRequirement(approver_role="risk_manager", min_approvals=2)
                 ]
             )
         )
@@ -351,9 +344,15 @@ class TestReviewService:
         assert len(result.corrections) == 1
 
     def test_decide_unknown(self, service: ReviewService) -> None:
-        assert service.decide("missing", ReviewDecisionRequest(
-            decision=ReviewDecision.APPROVED,
-        )) is None
+        assert (
+            service.decide(
+                "missing",
+                ReviewDecisionRequest(
+                    decision=ReviewDecision.APPROVED,
+                ),
+            )
+            is None
+        )
 
     def test_get_missing(self, service: ReviewService) -> None:
         assert service.get("missing") is None
@@ -441,13 +440,9 @@ class TestReviewAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            s = await client.post(
-                f"/api/v1/review/{r.review_id}/start?actor=alice"
-            )
+            s = await client.post(f"/api/v1/review/{r.review_id}/start?actor=alice")
             assert s.json()["status"] == "in_review"
-            a = await client.post(
-                f"/api/v1/review/{r.review_id}/approve?actor=alice"
-            )
+            a = await client.post(f"/api/v1/review/{r.review_id}/approve?actor=alice")
             assert a.json()["status"] == "approved"
             w = await client.get(f"/api/v1/review/{r.review_id}")
             assert w.json()["status"] == "approved"
@@ -503,14 +498,10 @@ class TestReviewAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            a = await client.get(
-                f"/api/v1/review/{r.review_id}/audit"
-            )
+            a = await client.get(f"/api/v1/review/{r.review_id}/audit")
             assert a.status_code == 200
             assert isinstance(a.json(), list)
-            h = await client.get(
-                f"/api/v1/review/{r.review_id}/history"
-            )
+            h = await client.get(f"/api/v1/review/{r.review_id}/history")
             assert h.json()["review_id"] == r.review_id
             assert h.json()["comments"]
 
@@ -556,9 +547,7 @@ class TestReviewAPI:
         r = svc.create(
             _make_request(
                 required_approvers=[
-                    ApprovalRequirement(
-                        approver_role="risk_manager", min_approvals=1
-                    ),
+                    ApprovalRequirement(approver_role="risk_manager", min_approvals=1),
                     ApprovalRequirement(
                         approver_role="compliance_head", min_approvals=1
                     ),

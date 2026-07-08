@@ -31,6 +31,7 @@ ANALYTICS_TABLES = [
 def event_loop():
     """Create an event loop for the test session."""
     import asyncio
+
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
@@ -80,7 +81,9 @@ async def client(api_engine, clean_api_db) -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides[get_db_session] = override_get_db
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         yield ac
 
     app.dependency_overrides.clear()
@@ -153,8 +156,12 @@ class TestAggregatedMetricsAPI:
         response = await client.get(
             "/api/v1/analytics/metrics/aggregated/dense",
             params={
-                "start_time": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-                "end_time": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "start_time": (
+                    datetime.now(timezone.utc) - timedelta(days=1)
+                ).isoformat(),
+                "end_time": (
+                    datetime.now(timezone.utc) + timedelta(days=1)
+                ).isoformat(),
             },
         )
         assert response.status_code == 200
@@ -173,8 +180,12 @@ class TestTrendAnalysisAPI:
             params={
                 "strategies": ["dense"],
                 "window_type": "daily",
-                "start_time": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(),
-                "end_time": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "start_time": (
+                    datetime.now(timezone.utc) - timedelta(days=30)
+                ).isoformat(),
+                "end_time": (
+                    datetime.now(timezone.utc) + timedelta(days=1)
+                ).isoformat(),
             },
         )
         assert response.status_code == 200
@@ -193,8 +204,12 @@ class TestPerformanceSummaryAPI:
             "/api/v1/analytics/performance/summary",
             params={
                 "window_type": "daily",
-                "start_time": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-                "end_time": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "start_time": (
+                    datetime.now(timezone.utc) - timedelta(days=1)
+                ).isoformat(),
+                "end_time": (
+                    datetime.now(timezone.utc) + timedelta(days=1)
+                ).isoformat(),
             },
         )
         assert response.status_code == 200
@@ -214,8 +229,12 @@ class TestStrategyComparisonAPI:
             params={
                 "metric_name": "dense_recall_at_5",
                 "window_type": "daily",
-                "start_time": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-                "end_time": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "start_time": (
+                    datetime.now(timezone.utc) - timedelta(days=1)
+                ).isoformat(),
+                "end_time": (
+                    datetime.now(timezone.utc) + timedelta(days=1)
+                ).isoformat(),
             },
         )
         assert response.status_code == 200
@@ -235,8 +254,12 @@ class TestQueryDistributionAPI:
             "/api/v1/analytics/distribution/queries",
             params={
                 "window_type": "daily",
-                "start_time": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-                "end_time": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "start_time": (
+                    datetime.now(timezone.utc) - timedelta(days=1)
+                ).isoformat(),
+                "end_time": (
+                    datetime.now(timezone.utc) + timedelta(days=1)
+                ).isoformat(),
             },
         )
         assert response.status_code == 200
@@ -355,8 +378,12 @@ class TestReportAPI:
             "/api/v1/analytics/reports/summary",
             params={
                 "window_type": "daily",
-                "start_time": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-                "end_time": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "start_time": (
+                    datetime.now(timezone.utc) - timedelta(days=1)
+                ).isoformat(),
+                "end_time": (
+                    datetime.now(timezone.utc) + timedelta(days=1)
+                ).isoformat(),
             },
         )
         assert response.status_code == 200

@@ -51,39 +51,103 @@ logger = logging.getLogger(__name__)
 
 _INTENT_KEYWORDS: Dict[QueryType, List[str]] = {
     QueryType.COMPARISON: [
-        "compare", "comparison", "versus", "vs", "vs.", "difference",
-        "differences", "differ", "contrast", "vs ", "compared to",
-        "compared with", "in contrast to",
+        "compare",
+        "comparison",
+        "versus",
+        "vs",
+        "vs.",
+        "difference",
+        "differences",
+        "differ",
+        "contrast",
+        "vs ",
+        "compared to",
+        "compared with",
+        "in contrast to",
     ],
     QueryType.TIMELINE: [
-        "timeline", "evolution", "history", "chronology", "over the years",
-        "since", "from when", "over time", "evolution of", "progression",
+        "timeline",
+        "evolution",
+        "history",
+        "chronology",
+        "over the years",
+        "since",
+        "from when",
+        "over time",
+        "evolution of",
+        "progression",
     ],
     QueryType.REGULATORY_CHANGE: [
-        "what changed", "changes in", "amendment", "amended", "new circular",
-        "new regulation", "what's new", "modified", "revised", "updated",
-        "repealed", "superseded", "new rules",
+        "what changed",
+        "changes in",
+        "amendment",
+        "amended",
+        "new circular",
+        "new regulation",
+        "what's new",
+        "modified",
+        "revised",
+        "updated",
+        "repealed",
+        "superseded",
+        "new rules",
     ],
     QueryType.CROSS_DOCUMENT: [
-        "across", "both rbi and sebi", "between rbi and sebi",
-        "rbi and sebi", "rbi/sebi", "all regulators", "both regulators",
-        "across all", "from all", "from various",
+        "across",
+        "both rbi and sebi",
+        "between rbi and sebi",
+        "rbi and sebi",
+        "rbi/sebi",
+        "all regulators",
+        "both regulators",
+        "across all",
+        "from all",
+        "from various",
     ],
     QueryType.MULTI_STEP: [
-        "first", "then", "next", "after that", "finally", "step by step",
-        "and then", "followed by", "subsequently",
+        "first",
+        "then",
+        "next",
+        "after that",
+        "finally",
+        "step by step",
+        "and then",
+        "followed by",
+        "subsequently",
     ],
     QueryType.DEFINITION: [
-        "what is", "what are", "define", "definition of", "meaning of",
-        "explain what", "tell me about", "what does", "what do",
+        "what is",
+        "what are",
+        "define",
+        "definition of",
+        "meaning of",
+        "explain what",
+        "tell me about",
+        "what does",
+        "what do",
     ],
     QueryType.PROCEDURAL: [
-        "how to", "how do i", "procedure", "process", "steps to", "method",
-        "approach to", "how can i", "how should",
+        "how to",
+        "how do i",
+        "procedure",
+        "process",
+        "steps to",
+        "method",
+        "approach to",
+        "how can i",
+        "how should",
     ],
     QueryType.FACTUAL: [
-        "when was", "when did", "when is", "where is", "who issued",
-        "which regulator", "date of", "year of", "how many", "how much",
+        "when was",
+        "when did",
+        "when is",
+        "where is",
+        "who issued",
+        "which regulator",
+        "date of",
+        "year of",
+        "how many",
+        "how much",
     ],
 }
 
@@ -145,9 +209,7 @@ class TaskDecomposer:
     def __init__(self, *, classifier: Optional[IntentClassifier] = None) -> None:
         self.classifier = classifier or IntentClassifier()
 
-    def decompose(
-        self, query: str, query_type: QueryType
-    ) -> List[PlanStepDefinition]:
+    def decompose(self, query: str, query_type: QueryType) -> List[PlanStepDefinition]:
         if query_type == QueryType.COMPARISON:
             return self._decompose_comparison(query)
         if query_type == QueryType.TIMELINE:
@@ -158,7 +220,11 @@ class TaskDecomposer:
             return self._decompose_cross(query)
         if query_type == QueryType.MULTI_STEP:
             return self._decompose_multi_step(query)
-        if query_type in (QueryType.DEFINITION, QueryType.PROCEDURAL, QueryType.FACTUAL):
+        if query_type in (
+            QueryType.DEFINITION,
+            QueryType.PROCEDURAL,
+            QueryType.FACTUAL,
+        ):
             return self._decompose_simple(query)
         return self._decompose_simple(query)
 
@@ -349,16 +415,18 @@ class StrategySelector:
     """Pick a :class:`PlanStrategy` from the query type + expected docs."""
 
     def __init__(self) -> None:
-        self._single_doc_types = {QueryType.DEFINITION, QueryType.FACTUAL, QueryType.PROCEDURAL}
+        self._single_doc_types = {
+            QueryType.DEFINITION,
+            QueryType.FACTUAL,
+            QueryType.PROCEDURAL,
+        }
         self._multi_doc_types = {
             QueryType.COMPARISON,
             QueryType.CROSS_DOCUMENT,
             QueryType.REGULATORY_CHANGE,
         }
 
-    def select(
-        self, query_type: QueryType, expected_documents: int
-    ) -> PlanStrategy:
+    def select(self, query_type: QueryType, expected_documents: int) -> PlanStrategy:
         if query_type in self._single_doc_types and expected_documents <= 1:
             return PlanStrategy.SINGLE_DOC
         if query_type in self._multi_doc_types:
@@ -662,9 +730,7 @@ class PlanExecutor:
             progressed = False
             for step in list(remaining):
                 if all(dep in completed for dep in step.depends_on):
-                    res = await self._run_step(
-                        step, completed, citations, warnings
-                    )
+                    res = await self._run_step(step, completed, citations, warnings)
                     results.append(res)
                     completed[step.step_id] = res
                     remaining.remove(step)
@@ -739,9 +805,7 @@ class PlanExecutor:
         except Exception as exc:  # pragma: no cover
             latency = (time.perf_counter() - start) * 1000.0
             status = (
-                PlanStepStatus.FAILED
-                if not step.optional
-                else PlanStepStatus.SKIPPED
+                PlanStepStatus.FAILED if not step.optional else PlanStepStatus.SKIPPED
             )
             return PlanStepResult(
                 step_id=step.step_id,
@@ -845,11 +909,11 @@ class QueryPlanner:
         self.validator = validator or PlanValidator()
         self.explainer = explainer or PlanExplainer()
         # Default executor uses the pluggable retriever / reasoner.
-        self.executor = executor or PlanExecutor(
-            retriever=retriever, reasoner=reasoner
-        )
+        self.executor = executor or PlanExecutor(retriever=retriever, reasoner=reasoner)
 
-    def plan(self, request: QueryPlanRequest) -> tuple[ExecutionPlan, PlanValidationResult, PlanExplanation]:
+    def plan(
+        self, request: QueryPlanRequest
+    ) -> tuple[ExecutionPlan, PlanValidationResult, PlanExplanation]:
         plan = self.generator.generate(request)
         validation = self.validator.validate(plan)
         explanation = self.explainer.explain(plan)
@@ -857,7 +921,9 @@ class QueryPlanner:
 
     async def plan_and_execute(
         self, request: QueryPlanRequest
-    ) -> tuple[ExecutionPlan, PlanValidationResult, PlanExplanation, PlanExecutionResult]:
+    ) -> tuple[
+        ExecutionPlan, PlanValidationResult, PlanExplanation, PlanExecutionResult
+    ]:
         plan, validation, explanation = self.plan(request)
         # If pre-supplied chunks are present, share them with the executor.
         executor = self.executor

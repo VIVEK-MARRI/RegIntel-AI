@@ -42,9 +42,16 @@ from app.services.fusion.ranking import (
 # Test fixtures / helpers
 # ======================================================================
 
-def _make_result(chunk_id: str, score: float, content: str = "", **extra) -> Dict[str, Any]:
+
+def _make_result(
+    chunk_id: str, score: float, content: str = "", **extra
+) -> Dict[str, Any]:
     """Build a minimal retrieval result dict."""
-    r: Dict[str, Any] = {"chunk_id": chunk_id, "score": score, "content": content or f"content-{chunk_id}"}
+    r: Dict[str, Any] = {
+        "chunk_id": chunk_id,
+        "score": score,
+        "content": content or f"content-{chunk_id}",
+    }
     r.update(extra)
     return r
 
@@ -56,7 +63,9 @@ DENSE_RESULTS = [
 ]
 
 BM25_RESULTS = [
-    _make_result("c2", 12.4, "bm25 chunk 2", section="KYC Guidelines", subsection="Part A"),
+    _make_result(
+        "c2", 12.4, "bm25 chunk 2", section="KYC Guidelines", subsection="Part A"
+    ),
     _make_result("c4", 10.1, "bm25 chunk 4", section="AML Rules"),
     _make_result("c5", 8.0, "bm25 chunk 5"),
 ]
@@ -65,6 +74,7 @@ BM25_RESULTS = [
 # ======================================================================
 # 1. calculate_rrf_score()
 # ======================================================================
+
 
 class TestCalculateRRFScore:
     def test_rank_1_default_k(self):
@@ -80,7 +90,9 @@ class TestCalculateRRFScore:
         assert RRFStrategy.calculate_rrf_score(-5) == 0.0
 
     def test_high_rank_diminishes(self):
-        assert RRFStrategy.calculate_rrf_score(1000, k=60) < RRFStrategy.calculate_rrf_score(1, k=60)
+        assert RRFStrategy.calculate_rrf_score(
+            1000, k=60
+        ) < RRFStrategy.calculate_rrf_score(1, k=60)
 
     def test_engine_convenience_accessor(self):
         """``FusionEngine.calculate_rrf_score`` should delegate correctly."""
@@ -91,6 +103,7 @@ class TestCalculateRRFScore:
 # 2. RRF Fusion
 # ======================================================================
 
+
 class TestRRFFusion:
     """Tests for ``RRFStrategy`` and the ``FusionEngine`` using RRF."""
 
@@ -99,8 +112,12 @@ class TestRRFFusion:
 
     def test_basic_rrf(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS,
-            method=FusionMethod.RRF, rrf_k=60, dense_weight=0.5, bm25_weight=0.5,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
+            rrf_k=60,
+            dense_weight=0.5,
+            bm25_weight=0.5,
         )
         ids = [r["chunk_id"] for r in results]
         # Union should contain c1..c5
@@ -108,7 +125,9 @@ class TestRRFFusion:
 
     def test_rrf_scores_are_positive(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         for r in results:
             assert r["score"] > 0
@@ -116,7 +135,9 @@ class TestRRFFusion:
     def test_overlap_chunk_gets_higher_score(self):
         """Chunk c2 appears in both lists – should get contributions from both."""
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         scores = {r["chunk_id"]: r["score"] for r in results}
         # c2 is in both; it should score ≥ each single-source chunk
@@ -124,8 +145,12 @@ class TestRRFFusion:
 
     def test_deterministic_ordering(self):
         """Two calls with the same data should produce identical output."""
-        a = self.engine.fuse_results(DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF)
-        b = self.engine.fuse_results(DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF)
+        a = self.engine.fuse_results(
+            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF
+        )
+        b = self.engine.fuse_results(
+            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF
+        )
         assert [r["chunk_id"] for r in a] == [r["chunk_id"] for r in b]
 
     def test_disjoint_lists(self):
@@ -151,31 +176,42 @@ class TestRRFFusion:
 # 3. Weighted Sum Fusion
 # ======================================================================
 
+
 class TestWeightedSumFusion:
     def setup_method(self):
         self.engine = FusionEngine()
 
     def test_basic_weighted_sum(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.WEIGHTED_SUM,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.WEIGHTED_SUM,
         )
         assert len(results) == 5
 
     def test_weighted_sum_scores_non_negative(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.WEIGHTED_SUM,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.WEIGHTED_SUM,
         )
         for r in results:
             assert r["score"] >= 0.0
 
     def test_weighted_sum_with_unequal_weights(self):
         results_dense = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS,
-            method=FusionMethod.WEIGHTED_SUM, dense_weight=0.9, bm25_weight=0.1,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.WEIGHTED_SUM,
+            dense_weight=0.9,
+            bm25_weight=0.1,
         )
         results_bm25 = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS,
-            method=FusionMethod.WEIGHTED_SUM, dense_weight=0.1, bm25_weight=0.9,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.WEIGHTED_SUM,
+            dense_weight=0.1,
+            bm25_weight=0.9,
         )
         # Different weight profiles should produce different score orderings
         ids_dense = [r["chunk_id"] for r in results_dense]
@@ -192,7 +228,9 @@ class TestWeightedSumFusion:
 
     def test_weighted_sum_rrf_score_is_none(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.WEIGHTED_SUM,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.WEIGHTED_SUM,
         )
         for r in results:
             assert r["rrf_score"] is None
@@ -202,42 +240,55 @@ class TestWeightedSumFusion:
 # 4. Score Fusion
 # ======================================================================
 
+
 class TestScoreFusion:
     def setup_method(self):
         self.engine = FusionEngine()
 
     def test_score_fusion_produces_results(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.SCORE_FUSION,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.SCORE_FUSION,
         )
         assert len(results) == 5
 
     def test_score_fusion_scores_non_negative(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.SCORE_FUSION,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.SCORE_FUSION,
         )
         for r in results:
             assert r["score"] >= 0.0
 
     def test_score_fusion_rrf_score_is_none(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.SCORE_FUSION,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.SCORE_FUSION,
         )
         for r in results:
             assert r["rrf_score"] is None
 
     def test_score_fusion_deterministic(self):
         a = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.SCORE_FUSION,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.SCORE_FUSION,
         )
         b = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.SCORE_FUSION,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.SCORE_FUSION,
         )
         assert [r["chunk_id"] for r in a] == [r["chunk_id"] for r in b]
 
     def test_score_fusion_preserves_provenance(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.SCORE_FUSION,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.SCORE_FUSION,
         )
         c2 = next(r for r in results if r["chunk_id"] == "c2")
         assert set(c2["sources"]) == {"dense", "bm25"}
@@ -248,7 +299,9 @@ class TestScoreFusion:
 
     def test_score_fusion_dense_only(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, [], method=FusionMethod.SCORE_FUSION,
+            DENSE_RESULTS,
+            [],
+            method=FusionMethod.SCORE_FUSION,
         )
         assert len(results) == 3
         for r in results:
@@ -256,7 +309,9 @@ class TestScoreFusion:
 
     def test_score_fusion_bm25_only(self):
         results = self.engine.fuse_results(
-            [], BM25_RESULTS, method=FusionMethod.SCORE_FUSION,
+            [],
+            BM25_RESULTS,
+            method=FusionMethod.SCORE_FUSION,
         )
         assert len(results) == 3
         for r in results:
@@ -267,34 +322,43 @@ class TestScoreFusion:
 # 5. Provenance Tracking
 # ======================================================================
 
+
 class TestProvenance:
     def setup_method(self):
         self.engine = FusionEngine()
 
     def test_overlap_chunk_has_both_sources(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         c2 = next(r for r in results if r["chunk_id"] == "c2")
         assert set(c2["sources"]) == {"dense", "bm25"}
 
     def test_dense_only_chunk_has_dense_source(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         c1 = next(r for r in results if r["chunk_id"] == "c1")
         assert c1["sources"] == ["dense"]
 
     def test_bm25_only_chunk_has_bm25_source(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         c4 = next(r for r in results if r["chunk_id"] == "c4")
         assert c4["sources"] == ["bm25"]
 
     def test_provenance_preserved_in_weighted_sum(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.WEIGHTED_SUM,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.WEIGHTED_SUM,
         )
         c2 = next(r for r in results if r["chunk_id"] == "c2")
         assert set(c2["sources"]) == {"dense", "bm25"}
@@ -304,11 +368,14 @@ class TestProvenance:
 # 6. Duplicate / Overlap Handling
 # ======================================================================
 
+
 class TestDuplicateHandling:
     def test_overlapping_chunk_merged_once(self):
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         chunk_ids = [r["chunk_id"] for r in results]
         # c2 appears in both inputs but should only be in the output once
@@ -317,7 +384,9 @@ class TestDuplicateHandling:
     def test_overlapping_metadata_merged(self):
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         c2 = next(r for r in results if r["chunk_id"] == "c2")
         # Dense had section=Sec B; BM25 had section=KYC Guidelines (in metadata)
@@ -327,7 +396,9 @@ class TestDuplicateHandling:
     def test_duplicate_ranks_assigned_per_source(self):
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         c2 = next(r for r in results if r["chunk_id"] == "c2")
         assert c2["dense_rank"] is not None
@@ -340,11 +411,14 @@ class TestDuplicateHandling:
 # 7. Evaluation Hooks
 # ======================================================================
 
+
 class TestEvaluationHooks:
     def test_before_hook_fires(self):
         calls = []
 
-        def before_hook(*, dense_results, bm25_results, config, fused=None, report=None):
+        def before_hook(
+            *, dense_results, bm25_results, config, fused=None, report=None
+        ):
             calls.append(("before", len(dense_results), len(bm25_results)))
 
         engine = FusionEngine()
@@ -358,10 +432,12 @@ class TestEvaluationHooks:
         calls = []
 
         def after_hook(*, dense_results, bm25_results, config, fused=None, report=None):
-            calls.append({
-                "fused_count": len(fused) if fused else 0,
-                "report_method": report.method.value if report else None,
-            })
+            calls.append(
+                {
+                    "fused_count": len(fused) if fused else 0,
+                    "report_method": report.method.value if report else None,
+                }
+            )
 
         engine = FusionEngine()
         engine.add_after_hook(after_hook)
@@ -389,19 +465,23 @@ class TestEvaluationHooks:
 
     def test_hook_exception_does_not_break_fusion(self):
         """A misbehaving hook should be caught, not crash the pipeline."""
+
         def bad_hook(*, dense_results, bm25_results, config, **kw):
             raise RuntimeError("boom")
 
         engine = FusionEngine()
         engine.add_before_hook(bad_hook)
         # Should not raise
-        results = engine.fuse_results(DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF)
+        results = engine.fuse_results(
+            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF
+        )
         assert len(results) == 5
 
 
 # ======================================================================
 # 8. Ranking Utilities
 # ======================================================================
+
 
 class TestRankingUtilities:
     def test_sort_candidates_descending(self):
@@ -468,7 +548,9 @@ class TestRankingUtilities:
 
     def test_merge_metadata_bm25_section_promotion(self):
         dense_map = {"c1": {"content": "dense text", "metadata": {}}}
-        bm25_map = {"c1": {"content": "bm25 text", "section": "KYC", "subsection": "Part 1"}}
+        bm25_map = {
+            "c1": {"content": "bm25 text", "section": "KYC", "subsection": "Part 1"}
+        }
         content, meta = merge_metadata("c1", dense_map, bm25_map)
         assert meta["section"] == "KYC"
         assert meta["subsection"] == "Part 1"
@@ -477,6 +559,7 @@ class TestRankingUtilities:
 # ======================================================================
 # 9. Edge Cases
 # ======================================================================
+
 
 class TestEdgeCases:
     def setup_method(self):
@@ -488,7 +571,9 @@ class TestEdgeCases:
 
     def test_single_dense_result(self):
         results = self.engine.fuse_results(
-            [_make_result("only", 0.99)], [], method=FusionMethod.RRF,
+            [_make_result("only", 0.99)],
+            [],
+            method=FusionMethod.RRF,
         )
         assert len(results) == 1
         assert results[0]["chunk_id"] == "only"
@@ -496,7 +581,9 @@ class TestEdgeCases:
 
     def test_single_bm25_result(self):
         results = self.engine.fuse_results(
-            [], [_make_result("only", 7.5)], method=FusionMethod.RRF,
+            [],
+            [_make_result("only", 7.5)],
+            method=FusionMethod.RRF,
         )
         assert len(results) == 1
         assert results[0]["chunk_id"] == "only"
@@ -518,11 +605,14 @@ class TestEdgeCases:
 # 10. FusionReport via fuse_results_with_report()
 # ======================================================================
 
+
 class TestFusionReport:
     def test_report_fields(self):
         engine = FusionEngine()
         fused, report = engine.fuse_results_with_report(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         assert isinstance(report, FusionReport)
         assert report.method == FusionMethod.RRF
@@ -533,10 +623,14 @@ class TestFusionReport:
         assert report.overlap_percentage == pytest.approx(20.0)  # 1/5 * 100
 
     def test_report_config_matches(self):
-        config = FusionConfig(method=FusionMethod.WEIGHTED_SUM, dense_weight=0.7, bm25_weight=0.3)
+        config = FusionConfig(
+            method=FusionMethod.WEIGHTED_SUM, dense_weight=0.7, bm25_weight=0.3
+        )
         engine = FusionEngine()
         _, report = engine.fuse_results_with_report(
-            DENSE_RESULTS, BM25_RESULTS, config=config,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            config=config,
         )
         assert report.config.method == FusionMethod.WEIGHTED_SUM
         assert report.config.dense_weight == pytest.approx(0.7)
@@ -545,6 +639,7 @@ class TestFusionReport:
 # ======================================================================
 # 11. Strategy Registration
 # ======================================================================
+
 
 class TestStrategyRegistration:
     def teardown_method(self):
@@ -556,12 +651,22 @@ class TestStrategyRegistration:
     def test_register_custom_strategy(self):
         class CustomStrategy(BaseFusionStrategy):
             def fuse(self, dense_results, bm25_results, config):
-                return [{"chunk_id": "custom", "score": 99.0, "sources": ["custom"], "content": "", "metadata": {}}]
+                return [
+                    {
+                        "chunk_id": "custom",
+                        "score": 99.0,
+                        "sources": ["custom"],
+                        "content": "",
+                        "metadata": {},
+                    }
+                ]
 
         FusionEngine.register_strategy(FusionMethod.LEARNING_TO_RANK, CustomStrategy())
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         assert results[0]["chunk_id"] == "custom"
         assert results[0]["score"] == 99.0
@@ -582,15 +687,20 @@ class TestStrategyRegistration:
 # 12. FusionConfig via config kwarg
 # ======================================================================
 
+
 class TestFusionConfig:
     def test_config_object_overrides_kwargs(self):
         engine = FusionEngine()
-        config = FusionConfig(method=FusionMethod.RRF, rrf_k=10, dense_weight=0.8, bm25_weight=0.2)
+        config = FusionConfig(
+            method=FusionMethod.RRF, rrf_k=10, dense_weight=0.8, bm25_weight=0.2
+        )
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS,
+            DENSE_RESULTS,
+            BM25_RESULTS,
             config=config,
             # These kwargs should be ignored when config is provided
-            method=FusionMethod.WEIGHTED_SUM, rrf_k=60,
+            method=FusionMethod.WEIGHTED_SUM,
+            rrf_k=60,
         )
         # If RRF was used (not weighted_sum), rrf_score should be set
         for r in results:
@@ -599,9 +709,11 @@ class TestFusionConfig:
     def test_legacy_kwargs_work_without_config(self):
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS,
+            DENSE_RESULTS,
+            BM25_RESULTS,
             method=FusionMethod.WEIGHTED_SUM,
-            dense_weight=0.6, bm25_weight=0.4,
+            dense_weight=0.6,
+            bm25_weight=0.4,
         )
         # Weighted sum used → rrf_score should be None
         for r in results:
@@ -612,13 +724,16 @@ class TestFusionConfig:
 # 13. Output shape matches spec
 # ======================================================================
 
+
 class TestOutputShape:
     """Verify the output matches the required schema shape."""
 
     def test_output_has_required_fields(self):
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         for r in results:
             assert "chunk_id" in r
@@ -633,7 +748,9 @@ class TestOutputShape:
         """Output dicts should be directly parseable into ``FusedCandidate``."""
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         for r in results:
             fc = FusedCandidate(**r)
@@ -645,6 +762,7 @@ class TestOutputShape:
 # 14. Learning-to-Rank Strategy
 # ======================================================================
 
+
 class TestLearningToRank:
     def setup_method(self):
         self.engine = FusionEngine()
@@ -655,20 +773,26 @@ class TestLearningToRank:
 
     def test_ltr_produces_results(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         assert len(results) == 5
 
     def test_ltr_scores_non_negative(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         for r in results:
             assert r["score"] >= 0.0
 
     def test_ltr_rrf_score_is_none(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         for r in results:
             assert r["rrf_score"] is None
@@ -676,23 +800,31 @@ class TestLearningToRank:
     def test_ltr_marks_fallback(self):
         """LTR fallback flag should be True when using default strategy."""
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         for r in results:
             assert r.get("ltr_fallback") is True
 
     def test_ltr_deterministic(self):
         a = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         b = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         assert [r["chunk_id"] for r in a] == [r["chunk_id"] for r in b]
 
     def test_ltr_preserves_provenance(self):
         results = self.engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.LEARNING_TO_RANK,
         )
         c2 = next(r for r in results if r["chunk_id"] == "c2")
         assert set(c2["sources"]) == {"dense", "bm25"}
@@ -708,25 +840,29 @@ class TestLearningToRank:
             def fuse(self, dense_results, bm25_results, config):
                 merged = []
                 for r in dense_results:
-                    merged.append({
-                        "chunk_id": r["chunk_id"],
-                        "score": 0.99,
-                        "rrf_score": None,
-                        "dense_score": r["score"],
-                        "bm25_score": None,
-                        "dense_rank": 1,
-                        "bm25_rank": None,
-                        "sources": ["dense"],
-                        "content": r["content"],
-                        "metadata": {},
-                        "ltr_fallback": False,
-                    })
+                    merged.append(
+                        {
+                            "chunk_id": r["chunk_id"],
+                            "score": 0.99,
+                            "rrf_score": None,
+                            "dense_score": r["score"],
+                            "bm25_score": None,
+                            "dense_rank": 1,
+                            "bm25_rank": None,
+                            "sources": ["dense"],
+                            "content": r["content"],
+                            "metadata": {},
+                            "ltr_fallback": False,
+                        }
+                    )
                 return merged
 
         FusionEngine.register_strategy(FusionMethod.LEARNING_TO_RANK, MockLTRStrategy())
         try:
             results = self.engine.fuse_results(
-                DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.LEARNING_TO_RANK,
+                DENSE_RESULTS,
+                BM25_RESULTS,
+                method=FusionMethod.LEARNING_TO_RANK,
             )
             assert results[0]["score"] == 0.99
             assert results[0]["ltr_fallback"] is False
@@ -740,6 +876,7 @@ class TestLearningToRank:
 # ======================================================================
 # 15. Rank Conflict Resolution
 # ======================================================================
+
 
 class TestRankConflictResolution:
     def test_no_conflict_when_ranks_close(self):
@@ -795,7 +932,9 @@ class TestRankConflictResolution:
     def test_rrf_output_has_conflict_fields(self):
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         for r in results:
             assert "rank_discrepancy" in r
@@ -806,63 +945,77 @@ class TestRankConflictResolution:
 # 16. Multi-Source Overlap
 # ======================================================================
 
+
 class TestMultiSourceOverlap:
     def test_two_sources_partial_overlap(self):
-        result = compute_multi_source_overlap({
-            "dense": {"a", "b", "c"},
-            "bm25": {"b", "c", "d"},
-        })
+        result = compute_multi_source_overlap(
+            {
+                "dense": {"a", "b", "c"},
+                "bm25": {"b", "c", "d"},
+            }
+        )
         assert result["overlap_count"] == 2
         assert result["overlap_ids"] == {"b", "c"}
         assert result["union_count"] == 4
         assert result["source_coverage"] == {"dense": 3, "bm25": 3}
 
     def test_three_sources(self):
-        result = compute_multi_source_overlap({
-            "dense": {"a", "b"},
-            "bm25": {"b", "c"},
-            "reranker": {"b", "d"},
-        })
+        result = compute_multi_source_overlap(
+            {
+                "dense": {"a", "b"},
+                "bm25": {"b", "c"},
+                "reranker": {"b", "d"},
+            }
+        )
         # Only "b" appears in 2+ sources
         assert result["overlap_count"] == 1
         assert result["overlap_ids"] == {"b"}
         assert result["union_count"] == 4
 
     def test_no_overlap(self):
-        result = compute_multi_source_overlap({
-            "dense": {"a"},
-            "bm25": {"b"},
-        })
+        result = compute_multi_source_overlap(
+            {
+                "dense": {"a"},
+                "bm25": {"b"},
+            }
+        )
         assert result["overlap_count"] == 0
         assert result["overlap_ids"] == set()
         assert result["union_count"] == 2
 
     def test_empty_sources(self):
-        result = compute_multi_source_overlap({
-            "dense": set(),
-            "bm25": set(),
-        })
+        result = compute_multi_source_overlap(
+            {
+                "dense": set(),
+                "bm25": set(),
+            }
+        )
         assert result["overlap_count"] == 0
         assert result["union_count"] == 0
 
     def test_single_source(self):
-        result = compute_multi_source_overlap({
-            "dense": {"a", "b"},
-        })
+        result = compute_multi_source_overlap(
+            {
+                "dense": {"a", "b"},
+            }
+        )
         assert result["overlap_count"] == 0
         assert result["union_count"] == 2
 
     def test_engine_helper(self):
-        result = FusionEngine.get_multi_source_overlap({
-            "dense": {"a", "b", "c"},
-            "bm25": {"b", "c", "d"},
-        })
+        result = FusionEngine.get_multi_source_overlap(
+            {
+                "dense": {"a", "b", "c"},
+                "bm25": {"b", "c", "d"},
+            }
+        )
         assert result["overlap_count"] == 2
 
 
 # ======================================================================
 # 17. Source Attribution Summary
 # ======================================================================
+
 
 class TestSourceAttribution:
     def test_counts_per_source(self):
@@ -884,7 +1037,9 @@ class TestSourceAttribution:
     def test_engine_helper(self):
         engine = FusionEngine()
         results = engine.fuse_results(
-            DENSE_RESULTS, BM25_RESULTS, method=FusionMethod.RRF,
+            DENSE_RESULTS,
+            BM25_RESULTS,
+            method=FusionMethod.RRF,
         )
         summary = FusionEngine.get_source_attribution(results)
         assert "dense" in summary
@@ -896,6 +1051,7 @@ class TestSourceAttribution:
 # ======================================================================
 # 18. Score Normalisation
 # ======================================================================
+
 
 class TestScoreNormalization:
     def test_basic_normalisation(self):
@@ -921,6 +1077,7 @@ class TestScoreNormalization:
 # ======================================================================
 # 19. Tie-Breaking
 # ======================================================================
+
 
 class TestTieBreaking:
     def test_break_ties_by_chunk_id(self):
@@ -964,41 +1121,51 @@ class TestTieBreaking:
 # 20. Deterministic Rankings Across All Methods
 # ======================================================================
 
+
 class TestCrossMethodDeterminism:
     """Every fusion method must produce deterministic output."""
 
     def setup_method(self):
         self.engine = FusionEngine()
 
-    @pytest.mark.parametrize("method", [
-        FusionMethod.RRF,
-        FusionMethod.WEIGHTED_SUM,
-        FusionMethod.SCORE_FUSION,
-        FusionMethod.LEARNING_TO_RANK,
-    ])
+    @pytest.mark.parametrize(
+        "method",
+        [
+            FusionMethod.RRF,
+            FusionMethod.WEIGHTED_SUM,
+            FusionMethod.SCORE_FUSION,
+            FusionMethod.LEARNING_TO_RANK,
+        ],
+    )
     def test_deterministic(self, method):
         a = self.engine.fuse_results(DENSE_RESULTS, BM25_RESULTS, method=method)
         b = self.engine.fuse_results(DENSE_RESULTS, BM25_RESULTS, method=method)
         assert [r["chunk_id"] for r in a] == [r["chunk_id"] for r in b]
         assert [r["score"] for r in a] == [r["score"] for r in b]
 
-    @pytest.mark.parametrize("method", [
-        FusionMethod.RRF,
-        FusionMethod.WEIGHTED_SUM,
-        FusionMethod.SCORE_FUSION,
-        FusionMethod.LEARNING_TO_RANK,
-    ])
+    @pytest.mark.parametrize(
+        "method",
+        [
+            FusionMethod.RRF,
+            FusionMethod.WEIGHTED_SUM,
+            FusionMethod.SCORE_FUSION,
+            FusionMethod.LEARNING_TO_RANK,
+        ],
+    )
     def test_sorted_descending(self, method):
         results = self.engine.fuse_results(DENSE_RESULTS, BM25_RESULTS, method=method)
         for i in range(len(results) - 1):
             assert results[i]["score"] >= results[i + 1]["score"]
 
-    @pytest.mark.parametrize("method", [
-        FusionMethod.RRF,
-        FusionMethod.WEIGHTED_SUM,
-        FusionMethod.SCORE_FUSION,
-        FusionMethod.LEARNING_TO_RANK,
-    ])
+    @pytest.mark.parametrize(
+        "method",
+        [
+            FusionMethod.RRF,
+            FusionMethod.WEIGHTED_SUM,
+            FusionMethod.SCORE_FUSION,
+            FusionMethod.LEARNING_TO_RANK,
+        ],
+    )
     def test_all_candidates_present(self, method):
         results = self.engine.fuse_results(DENSE_RESULTS, BM25_RESULTS, method=method)
         ids = {r["chunk_id"] for r in results}
@@ -1008,6 +1175,7 @@ class TestCrossMethodDeterminism:
 # ======================================================================
 # 21. Score Fusion vs Weighted Sum Differences
 # ======================================================================
+
 
 class TestScoreFusionVsWeightedSum:
     """Verify that ScoreFusion and WeightedSum produce different results."""
@@ -1026,27 +1194,39 @@ class TestScoreFusionVsWeightedSum:
             _make_result("x2", 10.0),
         ]
         score_results = self.engine.fuse_results(
-            dense, bm25, method=FusionMethod.SCORE_FUSION,
-            dense_weight=0.5, bm25_weight=0.5,
+            dense,
+            bm25,
+            method=FusionMethod.SCORE_FUSION,
+            dense_weight=0.5,
+            bm25_weight=0.5,
         )
         weighted_results = self.engine.fuse_results(
-            dense, bm25, method=FusionMethod.WEIGHTED_SUM,
-            dense_weight=0.5, bm25_weight=0.5,
+            dense,
+            bm25,
+            method=FusionMethod.WEIGHTED_SUM,
+            dense_weight=0.5,
+            bm25_weight=0.5,
         )
         score_scores = {r["chunk_id"]: r["score"] for r in score_results}
         weighted_scores = {r["chunk_id"]: r["score"] for r in weighted_results}
         # Score fusion uses raw scores; weighted sum normalises first.
         # With these extreme BM25 scores, the ranking may differ.
         # At minimum, the score values should differ.
-        assert score_scores["x1"] != weighted_scores["x1"] or score_scores["x2"] != weighted_scores["x2"]
+        assert (
+            score_scores["x1"] != weighted_scores["x1"]
+            or score_scores["x2"] != weighted_scores["x2"]
+        )
 
     def test_score_fusion_respects_magnitude(self):
         """Score fusion should preserve score magnitude differences."""
         dense = [_make_result("d1", 0.9)]
         bm25 = [_make_result("b1", 1000.0)]
         results = self.engine.fuse_results(
-            dense, bm25, method=FusionMethod.SCORE_FUSION,
-            dense_weight=0.5, bm25_weight=0.5,
+            dense,
+            bm25,
+            method=FusionMethod.SCORE_FUSION,
+            dense_weight=0.5,
+            bm25_weight=0.5,
         )
         scores = {r["chunk_id"]: r["score"] for r in results}
         # BM25 score is much larger, so b1 should score higher

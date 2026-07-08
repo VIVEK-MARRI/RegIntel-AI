@@ -47,8 +47,11 @@ def _check_lockout(identity: str) -> None:
 
 def _record_failure(identity: str) -> None:
     import os
+
     max_attempts = int(os.environ.get("AUTH_MAX_FAILED_ATTEMPTS", str(_LOCKOUT_MAX)))
-    duration = int(float(os.environ.get("AUTH_LOCKOUT_DURATION_SECONDS", str(_LOCKOUT_DURATION))))
+    duration = int(
+        float(os.environ.get("AUTH_LOCKOUT_DURATION_SECONDS", str(_LOCKOUT_DURATION)))
+    )
     if max_attempts <= 0:
         return
     with _lockout_lock:
@@ -76,6 +79,7 @@ def _revoke_refresh_token(jti: str) -> None:
 def _is_refresh_token_revoked(jti: str) -> bool:
     with _revocation_lock:
         return jti in _revoked_refresh_tokens
+
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +156,7 @@ def _demo_principal() -> Principal:
         roles={Role.ADMIN, Role.ANALYST, Role.OPERATOR, Role.AUDITOR, Role.ADMIN},
     )
 
+
 def _principal_from_request(request: Request) -> Optional[Principal]:
     """Best-effort principal resolution from a JWT in the Authorization header."""
     if not settings.AUTH_ENABLED:
@@ -161,6 +166,7 @@ def _principal_from_request(request: Request) -> Optional[Principal]:
         return None
     token = auth.split(" ", 1)[1].strip()
     from app.main import _security_jwt_issuer  # type: ignore[attr-defined]
+
     try:
         jwt_principal = _security_jwt_issuer.verify(token)
     except Exception:
@@ -327,6 +333,7 @@ async def login(body: LoginRequest) -> LoginResponse:
 def _demo_login_response() -> LoginResponse:
     """Return a fake admin login response used when AUTH_ENABLED=False."""
     from app.main import _security_jwt_issuer
+
     pair = _security_jwt_issuer.issue(
         "demo-user",
         roles=["admin", "analyst", "operator", "auditor"],
@@ -359,10 +366,15 @@ async def issue_token(request: TokenRequest) -> TokenResponse:
     """
     import os
 
-    if os.environ.get("SECURITY_DEV_TOKEN_ENDPOINT", "true").lower() not in ("1", "true", "yes"):
+    if os.environ.get("SECURITY_DEV_TOKEN_ENDPOINT", "true").lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
         raise HTTPException(status_code=404, detail="endpoint disabled")
 
     from app.main import _security_jwt_issuer  # type: ignore[attr-defined]
+
     pair = _security_jwt_issuer.issue(
         request.subject,
         roles=request.roles,
@@ -392,6 +404,7 @@ async def refresh_token(body: Dict[str, str]) -> TokenResponse:
             )
         raise HTTPException(status_code=400, detail="missing refresh_token")
     from app.main import _security_jwt_issuer  # type: ignore[attr-defined]
+
     try:
         principal = _security_jwt_issuer.verify(refresh)
     except Exception as exc:
@@ -413,14 +426,18 @@ async def refresh_token(body: Dict[str, str]) -> TokenResponse:
     "/auth/me",
     summary="Inspect the current principal",
 )
-async def me(principal: Optional[Principal] = Depends(_principal_from_request)) -> Dict[str, Any]:
+async def me(
+    principal: Optional[Principal] = Depends(_principal_from_request),
+) -> Dict[str, Any]:
     if principal is None:
         raise HTTPException(status_code=401, detail="missing or invalid bearer token")
     return {
         "subject_id": principal.subject_id,
         "roles": [r.value for r in principal.roles],
         "scopes": [p.value for p in principal.scopes],
-        "permissions": [p.value for p in sorted(principal.permissions(), key=lambda x: x.value)],
+        "permissions": [
+            p.value for p in sorted(principal.permissions(), key=lambda x: x.value)
+        ],
     }
 
 
@@ -433,6 +450,7 @@ async def me(principal: Optional[Principal] = Depends(_principal_from_request)) 
 )
 async def list_roles() -> Dict[str, Any]:
     from app.security.rbac import role_permissions
+
     out = {}
     for role in Role:
         out[role.value] = sorted(p.value for p in role_permissions(role))
@@ -445,6 +463,7 @@ async def list_roles() -> Dict[str, Any]:
 )
 async def api_gateway_summary() -> Dict[str, Any]:
     from app.main import _api_gateway  # type: ignore[attr-defined]
+
     return _api_gateway.summary()
 
 
@@ -555,7 +574,9 @@ async def audit_export(
             content={"format": "jsonl", "text": text, "count": text.count("\n")},
         )
     text = review.export_csv(query)
-    return JSONResponse(content={"format": "csv", "text": text, "count": text.count("\n")})
+    return JSONResponse(
+        content={"format": "csv", "text": text, "count": text.count("\n")}
+    )
 
 
 # ─── Threats ──────────────────────────────────────────────────────
@@ -565,7 +586,9 @@ async def audit_export(
     "/threats/recent",
     summary="List recent threat events",
 )
-async def threats_recent(limit: int = Query(default=50, ge=1, le=500)) -> Dict[str, Any]:
+async def threats_recent(
+    limit: int = Query(default=50, ge=1, le=500),
+) -> Dict[str, Any]:
     detector = get_threat_detector()
     return {
         "stats": detector.stats(),
@@ -614,7 +637,9 @@ async def selftest() -> Dict[str, Any]:
     issue_ok = False
     decode_ok = False
     try:
-        pair = _security_jwt_issuer.issue("selftest", roles=[Role.VIEWER.value], scopes=[])
+        pair = _security_jwt_issuer.issue(
+            "selftest", roles=[Role.VIEWER.value], scopes=[]
+        )
         principal = _security_jwt_issuer.verify(pair.access_token)
         issue_ok = True
         decode_ok = principal.sub == "selftest"
@@ -635,7 +660,9 @@ async def selftest() -> Dict[str, Any]:
     return {
         "jwt_issue": issue_ok,
         "jwt_decode": decode_ok,
-        "threat_detector_works": any(e.type.value == "suspicious_ua" for e in bad_ua_events),
+        "threat_detector_works": any(
+            e.type.value == "suspicious_ua" for e in bad_ua_events
+        ),
         "secrets_manager_configured": bool(secrets_diag),
         "dashboard": get_security_monitor().dashboard(),
     }

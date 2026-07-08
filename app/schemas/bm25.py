@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 class BM25SearchRequestSchema(BaseModel):
     """Request schema for BM25 search."""
+
     query: str = Field(..., min_length=1, description="Search query string")
     top_k: int = Field(10, ge=1, le=100, description="Maximum number of results")
     source_filter: Optional[List[str]] = Field(
@@ -30,6 +31,7 @@ class BM25SearchRequestSchema(BaseModel):
 
 class BM25SearchResultSchema(BaseModel):
     """Single BM25 search result."""
+
     chunk_id: str
     bm25_score: float
     section: str = ""
@@ -59,6 +61,7 @@ class BM25SearchResultSchema(BaseModel):
 
 class BM25SearchResponseSchema(BaseModel):
     """BM25 search response with results and telemetry."""
+
     query: str
     results: List[BM25SearchResultSchema]
     total_results: int
@@ -69,6 +72,7 @@ class BM25SearchResponseSchema(BaseModel):
 
 class BM25IndexStatsSchema(BaseModel):
     """BM25 index statistics."""
+
     status: str
     total_documents: int
     total_tokens: int
@@ -80,6 +84,7 @@ class BM25IndexStatsSchema(BaseModel):
 
 class BM25IndexActionResponse(BaseModel):
     """Response for index management actions (build, update, rebuild)."""
+
     success: bool
     message: str
     stats: BM25IndexStatsSchema

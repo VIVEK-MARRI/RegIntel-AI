@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 # Lift rate-limit ceiling for the test sweep
 os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "100000")
@@ -103,9 +104,7 @@ class FakeGovernanceService:
 
         class _R:
             def __init__(self):
-                self.violations = [
-                    _V("exceeded confidence threshold", "high")
-                ]
+                self.violations = [_V("exceeded confidence threshold", "high")]
 
         return _R()
 
@@ -186,16 +185,12 @@ def test_analyzer_keyword_violation():
     titles = [v.title.lower() for v in violations]
     assert any("kyc" in t for t in titles)
     # policies entry is always present for governance source
-    assert any(
-        p.get("source") == "governance" for p in policies
-    )
+    assert any(p.get("source") == "governance" for p in policies)
 
 
 def test_analyzer_policy_violation_via_governance():
     a = AuditAnalyzer(governance_service=FakeGovernanceService())
-    req = AuditAgentRequest(
-        query="check policy compliance", subject_id="doc-1"
-    )
+    req = AuditAgentRequest(query="check policy compliance", subject_id="doc-1")
     violations, policies = a.analyze(req)
     assert any(v.source == "policy" for v in violations)
     assert policies and policies[0]["violation_count"] == 1
@@ -211,9 +206,7 @@ def test_analyzer_risk_violation_high_score():
     )
     cr.add(a)
     a2 = AuditAnalyzer(compliance_risk_service=cr)
-    req = AuditAgentRequest(
-        query="check risk", risk_assessment_id=a.assessment_id
-    )
+    req = AuditAgentRequest(query="check risk", risk_assessment_id=a.assessment_id)
     violations, _ = a2.analyze(req)
     severities = [v.severity for v in violations]
     assert AuditViolationSeverity.CRITICAL in severities
@@ -243,7 +236,8 @@ def test_evidence_collector_pulls_audit_kg_and_decisions():
     gov = FakeGovernanceService()
     kg = FakeKGService()
     c = AuditEvidenceCollector(
-        audit_service=audit, governance_service=gov,
+        audit_service=audit,
+        governance_service=gov,
         knowledge_graph_service=kg,
     )
     req = AuditAgentRequest(
@@ -274,9 +268,7 @@ def test_reasoner_compliant():
 
 def test_reasoner_non_compliant_chain_broken():
     r = AuditReasoner()
-    status_, conf, _ = r.reason(
-        [], [], {"verified": False, "break_at": "abc"}
-    )
+    status_, conf, _ = r.reason([], [], {"verified": False, "break_at": "abc"})
     assert status_ == AuditStatus.NON_COMPLIANT
     assert conf >= 0.9
 
@@ -286,19 +278,16 @@ def test_reasoner_partially_compliant_medium_violations():
     v = AuditViolation(
         title="x", description="", severity=AuditViolationSeverity.MEDIUM
     )
-    status_, _, _ = r.reason(
-        [v], [], {"verified": None, "break_at": ""}
-    )
+    status_, _, _ = r.reason([v], [], {"verified": None, "break_at": ""})
     assert status_ == AuditStatus.PARTIALLY_COMPLIANT
 
 
 def test_report_generator_builds_markdown():
     g = AuditReportGenerator()
-    req = AuditAgentRequest(
-        query="kyc", subject_id="x", include_evidence=True
-    )
+    req = AuditAgentRequest(query="kyc", subject_id="x", include_evidence=True)
     v = AuditViolation(
-        title="KYC", description="d",
+        title="KYC",
+        description="d",
         severity=AuditViolationSeverity.HIGH,
     )
     res = g.build(
@@ -328,9 +317,7 @@ def test_report_generator_builds_markdown():
 @pytest.mark.asyncio
 async def test_audit_agent_execute_returns_result():
     svc = _build_service()
-    req = AuditAgentRequest(
-        query="kyc renewal is overdue", subject_id="doc-1"
-    )
+    req = AuditAgentRequest(query="kyc renewal is overdue", subject_id="doc-1")
     result = await svc.run(req, context=AgentContext(actor="t"))
     assert isinstance(result, AuditAgentResult)
     assert result.audit_status in (
@@ -349,9 +336,7 @@ async def test_audit_agent_with_full_services_writes_record_and_recommendation()
     kg = FakeKGService()
     cr = FakeComplianceRiskService()
     rec = FakeRecommendationService()
-    svc = _build_service(
-        audit=audit, gov=gov, kg=kg, cr=cr, rec=rec
-    )
+    svc = _build_service(audit=audit, gov=gov, kg=kg, cr=cr, rec=rec)
     a = RiskAssessment(
         document_id="d",
         risk_level=RiskLevel.MEDIUM,
@@ -360,8 +345,11 @@ async def test_audit_agent_with_full_services_writes_record_and_recommendation()
     )
     cr.add(a)
     req = AuditAgentRequest(
-        query="kyc", subject_id="d", risk_assessment_id=a.assessment_id,
-        include_evidence=True, include_lineage=True,
+        query="kyc",
+        subject_id="d",
+        risk_assessment_id=a.assessment_id,
+        include_evidence=True,
+        include_lineage=True,
     )
     result = await svc.run(req)
     assert result.audit_record_ids  # wrote an audit record
@@ -420,6 +408,7 @@ async def test_audit_chain_break_sets_non_compliant():
 async def test_api_audit_run():
     from app.api.dependencies import get_audit_agent_service
     from app.api.dependencies import reset_audit_agent_service
+
     reset_audit_agent_service()
     svc = build_default_audit_agent_service()
     app.dependency_overrides[get_audit_agent_service] = lambda: svc
@@ -442,6 +431,7 @@ async def test_api_audit_run():
 @pytest.mark.asyncio
 async def test_api_audit_health():
     from app.api.dependencies import get_audit_agent_service, reset_audit_agent_service
+
     reset_audit_agent_service()
     svc = build_default_audit_agent_service()
     app.dependency_overrides[get_audit_agent_service] = lambda: svc
@@ -464,6 +454,7 @@ async def test_api_audit_health():
 
 def test_running_mean_helper():
     from app.services.audit_agent import _running_mean
+
     assert _running_mean(0.0, 5.0, 1) == 5.0
     assert _running_mean(5.0, 7.0, 2) == 6.0
     assert _running_mean(6.0, 8.0, 3) == 6.667

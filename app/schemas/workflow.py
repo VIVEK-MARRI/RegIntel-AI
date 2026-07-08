@@ -83,9 +83,7 @@ class AuditEntry(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    audit_id: str = Field(
-        default_factory=lambda: f"aud-{secrets.token_hex(6)}"
-    )
+    audit_id: str = Field(default_factory=lambda: f"aud-{secrets.token_hex(6)}")
     action: str
     actor: str
     timestamp: float = Field(default_factory=time.time)
@@ -101,9 +99,7 @@ class WorkflowStep(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    step_id: str = Field(
-        default_factory=lambda: f"stp-{secrets.token_hex(4)}"
-    )
+    step_id: str = Field(default_factory=lambda: f"stp-{secrets.token_hex(4)}")
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     step_type: StepType = StepType.TASK
@@ -121,9 +117,7 @@ class TaskAssignment(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    task_id: str = Field(
-        default_factory=lambda: f"tsk-{secrets.token_hex(4)}"
-    )
+    task_id: str = Field(default_factory=lambda: f"tsk-{secrets.token_hex(4)}")
     workflow_id: str
     step_id: str
     title: str = Field(..., min_length=1, max_length=300)
@@ -145,9 +139,7 @@ class EscalationRule(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    rule_id: str = Field(
-        default_factory=lambda: f"esc-{secrets.token_hex(4)}"
-    )
+    rule_id: str = Field(default_factory=lambda: f"esc-{secrets.token_hex(4)}")
     trigger: EscalationTrigger
     threshold_hours: int = Field(24, ge=0, le=8760)
     action: EscalationAction = EscalationAction.ESCALATE
@@ -165,9 +157,7 @@ class Workflow(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    workflow_id: str = Field(
-        default_factory=lambda: f"wf-{uuid.uuid4().hex[:12]}"
-    )
+    workflow_id: str = Field(default_factory=lambda: f"wf-{uuid.uuid4().hex[:12]}")
     name: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     workflow_type: WorkflowType

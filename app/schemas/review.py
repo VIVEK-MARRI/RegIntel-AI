@@ -52,9 +52,7 @@ class AuditEntry(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    audit_id: str = Field(
-        default_factory=lambda: f"aud-{secrets.token_hex(6)}"
-    )
+    audit_id: str = Field(default_factory=lambda: f"aud-{secrets.token_hex(6)}")
     action: str
     actor: str
     timestamp: float = Field(default_factory=time.time)
@@ -70,9 +68,7 @@ class ReviewComment(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    comment_id: str = Field(
-        default_factory=lambda: f"cmt-{secrets.token_hex(4)}"
-    )
+    comment_id: str = Field(default_factory=lambda: f"cmt-{secrets.token_hex(4)}")
     author: str
     role: str = "reviewer"
     text: str = Field(..., min_length=1, max_length=4000)
@@ -85,9 +81,7 @@ class ReviewCorrection(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    correction_id: str = Field(
-        default_factory=lambda: f"cor-{secrets.token_hex(4)}"
-    )
+    correction_id: str = Field(default_factory=lambda: f"cor-{secrets.token_hex(4)}")
     field: str
     original_value: str
     corrected_value: str
@@ -116,9 +110,7 @@ class Review(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    review_id: str = Field(
-        default_factory=lambda: f"rev-{uuid.uuid4().hex[:12]}"
-    )
+    review_id: str = Field(default_factory=lambda: f"rev-{uuid.uuid4().hex[:12]}")
     title: str = Field(..., min_length=1, max_length=300)
     description: str = ""
     subject_type: str = "document"  # "workflow" | "task" | "recommendation" | "risk_assessment" | "document" | "policy"
@@ -130,9 +122,7 @@ class Review(BaseModel):
     decision: ReviewDecision = ReviewDecision.PENDING
     assigned_to: str = ""
     assigned_role: str = ""
-    required_approvers: List[ApprovalRequirement] = Field(
-        default_factory=list
-    )
+    required_approvers: List[ApprovalRequirement] = Field(default_factory=list)
     comments: List[ReviewComment] = Field(default_factory=list)
     corrections: List[ReviewCorrection] = Field(default_factory=list)
     created_at: float = Field(default_factory=time.time)
@@ -161,9 +151,7 @@ class ReviewCreateRequest(BaseModel):
     task_id: Optional[str] = None
     assigned_to: str = ""
     assigned_role: str = ""
-    required_approvers: List[ApprovalRequirement] = Field(
-        default_factory=list
-    )
+    required_approvers: List[ApprovalRequirement] = Field(default_factory=list)
     priority: ReviewPriority = ReviewPriority.MEDIUM
     due_at: Optional[float] = None
     created_by: str = "system"
@@ -190,9 +178,7 @@ class ReviewDecisionRequest(BaseModel):
     approver_role: str = ""
     comment_text: str = ""
     reason: str = ""
-    corrections: List[ReviewCorrectionPayload] = Field(
-        default_factory=list
-    )
+    corrections: List[ReviewCorrectionPayload] = Field(default_factory=list)
 
 
 class ReviewAssignmentRequest(BaseModel):

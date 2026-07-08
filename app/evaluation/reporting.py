@@ -41,12 +41,17 @@ class ReportGenerator:
             Path to the saved report file.
         """
         # Save JSON report
-        report_path = self.reports_dir / f"report_{report.timestamp.strftime('%Y%m%d_%H%M%S')}.json"
+        report_path = (
+            self.reports_dir
+            / f"report_{report.timestamp.strftime('%Y%m%d_%H%M%S')}.json"
+        )
         with open(report_path, "w", encoding="utf-8") as f:
             json.dump(report.model_dump(), f, indent=2, default=str)
 
         # Generate markdown summary
-        md_path = self.reports_dir / f"report_{report.timestamp.strftime('%Y%m%d_%H%M%S')}.md"
+        md_path = (
+            self.reports_dir / f"report_{report.timestamp.strftime('%Y%m%d_%H%M%S')}.md"
+        )
         md_content = self._generate_markdown(report)
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(md_content)
@@ -67,15 +72,21 @@ class ReportGenerator:
         lines.append("# Retrieval Evaluation Report")
         lines.append("")
         lines.append(f"**Dataset:** {report.dataset_name}")
-        lines.append(f"**Generated:** {report.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        lines.append(
+            f"**Generated:** {report.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}"
+        )
         lines.append(f"**Report ID:** {report.report_id}")
         lines.append("")
 
         # Leaderboard
         lines.append("## Leaderboard")
         lines.append("")
-        lines.append("| Rank | Strategy | Recall@5 | Recall@10 | MRR | Precision@5 | Hit Rate | NDCG@5 | NDCG@10 | Latency (ms) | Composite |")
-        lines.append("|------|----------|----------|-----------|-----|-------------|----------|--------|---------|--------------|-----------|")
+        lines.append(
+            "| Rank | Strategy | Recall@5 | Recall@10 | MRR | Precision@5 | Hit Rate | NDCG@5 | NDCG@10 | Latency (ms) | Composite |"
+        )
+        lines.append(
+            "|------|----------|----------|-----------|-----|-------------|----------|--------|---------|--------------|-----------|"
+        )
 
         for entry in report.leaderboard:
             lines.append(
@@ -120,7 +131,11 @@ class ReportGenerator:
             lines.append("|----------|------------|----------|-----|----------|")
 
             for qr in result.query_results:
-                query_text = qr.query_text[:50] + "..." if len(qr.query_text) > 50 else qr.query_text
+                query_text = (
+                    qr.query_text[:50] + "..."
+                    if len(qr.query_text) > 50
+                    else qr.query_text
+                )
                 lines.append(
                     f"| {qr.query_id} "
                     f"| {query_text} "
@@ -133,9 +148,7 @@ class ReportGenerator:
 
         return "\n".join(lines)
 
-    def generate_comparison_table(
-        self, reports: List[EvaluationReport]
-    ) -> str:
+    def generate_comparison_table(self, reports: List[EvaluationReport]) -> str:
         """Generate a comparison table across multiple reports.
 
         Args:
@@ -147,11 +160,15 @@ class ReportGenerator:
         lines = []
         lines.append("# Strategy Comparison Across Evaluations")
         lines.append("")
-        lines.append("| Report | Strategy | Recall@5 | Recall@10 | MRR | Hit Rate | NDCG@5 |")
-        lines.append("|--------|----------|----------|-----------|-----|----------|--------|")
+        lines.append(
+            "| Report | Strategy | Recall@5 | Recall@10 | MRR | Hit Rate | NDCG@5 |"
+        )
+        lines.append(
+            "|--------|----------|----------|-----------|-----|----------|--------|"
+        )
 
         for report in reports:
-            timestamp = report.timestamp.strftime('%Y-%m-%d %H:%M')
+            timestamp = report.timestamp.strftime("%Y-%m-%d %H:%M")
             for result in report.strategy_results:
                 lines.append(
                     f"| {timestamp} "
