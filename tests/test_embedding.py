@@ -5,7 +5,10 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 from app.services.embedding.bge import BGEEmbeddingProvider
 
-pytest.importorskip("sentence_transformers", reason="sentence_transformers not installed — ML deps missing")
+pytest.importorskip(
+    "sentence_transformers",
+    reason="sentence_transformers not installed — ML deps missing",
+)
 
 
 @pytest.fixture
