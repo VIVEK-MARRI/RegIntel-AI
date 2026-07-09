@@ -26,12 +26,14 @@ WORKDIR /opt/build
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt requirements-ml.txt ./
+COPY requirements.txt requirements-ml.txt requirements-llm.txt ./
 # Installs the full ML stack by default (torch CPU wheel + transformers +
 # sentence-transformers + reranker) — see requirements-ml.txt for the single
 # source of truth for those versions.
+# LLM provider SDKs (requirements-llm.txt) are optional runtime deps;
+# they enable real LLM_PROVIDER values at deploy time without a rebuild.
 RUN pip install --upgrade pip wheel \
-    && pip install -r requirements.txt -r requirements-ml.txt \
+    && pip install -r requirements.txt -r requirements-ml.txt -r requirements-llm.txt \
     && pip install "uvicorn[standard]==0.32.0" "gunicorn==23.0.0"
 
 # ─── Stage 2: runtime ────────────────────────────────────────────────────

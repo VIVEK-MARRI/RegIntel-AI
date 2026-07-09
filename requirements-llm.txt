@@ -1,0 +1,10 @@
+# RegIntel AI — LLM Provider SDKs (optional runtime deps)
+# Installed separately so they don't affect the CI test suite
+# (CI uses LLM_PROVIDER=mock).
+#
+# Once LLM_PROVIDER is set to a non-mock value, install this file too:
+#   pip install -r requirements.txt -r requirements-llm.txt
+#
+openai>=2.30.0
+google-genai>=2.10.0
+litellm>=1.83.7
