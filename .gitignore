@@ -14,10 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-# Anchor to repo root so the bare `lib/` rule does not swallow
-# frontend/src/lib (real source imported as @/lib/* by the frontend).
-/lib/
-/lib64/
+lib/
+lib64/
 parts/
 sdist/
 var/
