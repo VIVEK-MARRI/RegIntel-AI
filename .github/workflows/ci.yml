@@ -120,7 +120,7 @@ jobs:
             --maxfail=20 \
             --cov=app \
             --cov-report=xml:coverage-backend.xml \
-            --cov-report=json-summary:coverage-backend.json \
+            --cov-report=json:coverage-backend.json \
             --cov-fail-under=80 \
             -o junit_family=xunit1 \
             --junitxml=junit-backend.xml
