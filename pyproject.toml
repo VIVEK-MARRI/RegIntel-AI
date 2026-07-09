@@ -1,3 +1,7 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+
 [tool.ruff]
 # Forward-reference type names used in `Mapped["X"]` relationship and
 # parameter annotations; ruff cannot resolve them without the import graph.

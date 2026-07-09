@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
@@ -32,16 +31,6 @@ ANALYTICS_TABLES = [
     "reranker_gain_records",
     "system_health_snapshots",
 ]
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an event loop for the test session."""
-    import asyncio
-
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture(scope="session")

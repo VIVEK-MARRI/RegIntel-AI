@@ -253,6 +253,8 @@ backend.err
 # Runtime storage — newly generated subdirectories and extracted text
 storage/memory/
 storage/research/
+storage/RBI/
+storage/SEBI/
 storage/**/*.txt
 
 # Coverage files

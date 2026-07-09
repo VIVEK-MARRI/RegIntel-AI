@@ -55,7 +55,7 @@ describe("Pages render", () => {
   it("DashboardPage", async () => {
     renderPage(<DashboardPage />);
     expect(
-      await screen.findByText(/Welcome back/i, {}, { timeout: 2000 })
+      await screen.findByText(/Documents Indexed/i, {}, { timeout: 2000 })
     ).toBeInTheDocument();
   });
 

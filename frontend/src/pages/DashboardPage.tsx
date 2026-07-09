@@ -26,9 +26,9 @@ export function DashboardPage() {
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-surface-dark-2">
           <p className="text-[10px] uppercase tracking-wider text-slate-500">Documents Indexed</p>
           <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
-            {docs.data?.filter((d) => d.status === "INDEXED").length ?? "—"}
+            {Array.isArray(docs.data) ? docs.data.filter((d) => d.status === "INDEXED").length : "—"}
           </p>
-          <p className="mt-0.5 text-[11px] text-slate-400">{docs.data?.length ?? 0} total documents</p>
+          <p className="mt-0.5 text-[11px] text-slate-400">{Array.isArray(docs.data) ? docs.data.length : 0} total documents</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-surface-dark-2">
           <p className="text-[10px] uppercase tracking-wider text-slate-500">Open Reviews</p>
@@ -84,7 +84,7 @@ export function DashboardPage() {
           <div className="card-body">
             {changes.isLoading ? <Skeleton lines={4} />
             : changes.isError ? <ErrorState error={changes.error} onRetry={() => changes.refetch()} />
-            : !changes.data || changes.data.length === 0 ? <EmptyState title="No recent changes" description="Regulatory updates will appear here." />
+            : !Array.isArray(changes.data) || changes.data.length === 0 ? <EmptyState title="No recent changes" description="Regulatory updates will appear here." />
             : <ul className="space-y-2">
                 {changes.data.slice(0, 5).map((c) => (
                   <li key={c.change_id} className="flex items-center gap-2 text-xs">
@@ -107,7 +107,7 @@ export function DashboardPage() {
           <div className="card-body">
             {docs.isLoading ? <Skeleton lines={4} />
             : docs.isError ? <ErrorState error={docs.error} onRetry={() => docs.refetch()} />
-            : !docs.data || docs.data.length === 0 ? <EmptyState title="No documents yet" description="Upload a document to get started." />
+            : !Array.isArray(docs.data) || docs.data.length === 0 ? <EmptyState title="No documents yet" description="Upload a document to get started." />
             : <ul className="space-y-2">
                 {docs.data.slice(0, 5).map((d) => (
                   <li key={d.id} className="flex items-center gap-2 text-xs">
@@ -130,7 +130,7 @@ export function DashboardPage() {
           <div className="card-body">
             {reports.isLoading ? <Skeleton lines={4} />
             : reports.isError ? <ErrorState error={reports.error} onRetry={() => reports.refetch()} />
-            : !reports.data || reports.data.length === 0 ? <EmptyState title="No research yet" description="Run a research query to generate reports." />
+            : !Array.isArray(reports.data) || reports.data.length === 0 ? <EmptyState title="No research yet" description="Run a research query to generate reports." />
             : <ul className="space-y-2">
                 {reports.data.slice(0, 5).map((r) => (
                   <li key={r.report_id} className="flex items-center gap-2 text-xs">
