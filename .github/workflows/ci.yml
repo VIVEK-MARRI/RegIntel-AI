@@ -295,6 +295,8 @@ jobs:
           ENV: test
           LLM_PROVIDER: "mock"
           ML_INTEGRATION_TESTS: "1"
+          DATABASE_URL: sqlite+aiosqlite:///./regintel_ml_test.db
+          DATABASE_URL_SYNC: sqlite:///./regintel_ml_test.db
         run: |
           python -m pytest tests/test_ml -v --maxfail=5
 
