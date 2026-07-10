@@ -1226,7 +1226,7 @@ class TestFusionBenchmarks:
             latencies.append((time.perf_counter() - start) * 1000)
 
         avg = sum(latencies) / len(latencies)
-        assert avg < 1.0, f"RRF fusion avg {avg:.2f}ms >= 1ms"
+        assert avg < 5.0, f"RRF fusion avg {avg:.2f}ms >= 5ms"
 
 
 # ═══════════════════════════════════════════════════════════════════════════

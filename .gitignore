@@ -260,6 +260,10 @@ storage/**/*.txt
 # Coverage files
 .coverage
 .coverage.*
+coverage-backend.*
+junit-backend.*
+frontend/junit.xml
+landing/index.html
 
 # Third-party tool artifacts
 .kilo/

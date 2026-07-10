@@ -113,7 +113,7 @@ jobs:
           LLM_PROVIDER: "mock"
           RATE_LIMIT_PER_MINUTE: "100000"
         run: |
-          pytest tests \
+          python -m pytest tests \
             --ignore=tests/test_e2e \
             --ignore=tests/test_ml \
             -q \
@@ -170,7 +170,7 @@ jobs:
           LLM_PROVIDER: "mock"
           RATE_LIMIT_PER_MINUTE: "100000"
         run: |
-          pytest tests/test_evaluation tests/test_analytics -q --maxfail=20 2>&1 | tee pytest-evaluation.log; exit ${PIPESTATUS[0]}
+          python -m pytest tests/test_evaluation tests/test_analytics -q --maxfail=20 2>&1 | tee pytest-evaluation.log; exit ${PIPESTATUS[0]}
 
       - name: Upload stdout log (evaluation)
         if: always()
@@ -256,7 +256,7 @@ jobs:
           LLM_PROVIDER: "mock"
           RATE_LIMIT_PER_MINUTE: "100000"
         run: |
-          pytest tests/test_e2e -v --maxfail=5
+          python -m pytest tests/test_e2e -v --maxfail=5
 
   # ─── 4c. ML model integration tests ───────────────────────────────
   ml-tests:
@@ -290,7 +290,7 @@ jobs:
           LLM_PROVIDER: "mock"
           ML_INTEGRATION_TESTS: "1"
         run: |
-          pytest tests/test_ml -v --maxfail=5
+          python -m pytest tests/test_ml -v --maxfail=5
 
   # ─── 4d. Migration verification ──────────────────────────────────
   migrations:
