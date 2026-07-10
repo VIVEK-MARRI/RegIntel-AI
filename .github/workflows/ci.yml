@@ -396,7 +396,7 @@ jobs:
           cat /tmp/ready.json
           echo ""
           test "$(jq -r .status /tmp/live.json)" = "alive"
-          test "$(jq -r .status /tmp/ready.json)" = "ready" || test "$(jq -r .status /tmp/ready.json)" = "degraded"
+          test "$(jq -r .status /tmp/ready.json)" = "healthy" || test "$(jq -r .status /tmp/ready.json)" = "degraded"
 
       - name: Run benchmark smoke
         env:
