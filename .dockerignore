@@ -58,5 +58,7 @@ frontend/.DS_Store
 # --- Docker self-references (keep Dockerfile for dev builds) ---
 docker-compose.production.yml
 .dockerignore
-nginx.conf
+# nginx.conf is intentionally NOT excluded: frontend/Dockerfile.production
+# needs it in its build context (context: . in ci.yml). The backend
+# Dockerfile never COPYs it, so it is harmless in that context too.
 .env.production.example

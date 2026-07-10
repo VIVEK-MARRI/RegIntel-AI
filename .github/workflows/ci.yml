@@ -488,7 +488,7 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@v6
         with:
-          context: frontend
+          context: .
           file: frontend/Dockerfile.production
           tags: regintel/frontend:ci-${{ github.sha }}
           load: true
