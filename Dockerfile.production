@@ -27,8 +27,8 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Build-arg: set to "1" to include the full ML/CUDA stack (adds ~2.5 GB).
-# Leave unset (default) for the slim base image used in CI smoke builds.
-ARG INSTALL_ML_STACK=0
+# Set to "0" to skip the ML stack (used in CI smoke builds for speed).
+ARG INSTALL_ML_STACK=1
 
 COPY requirements.txt requirements-ml.txt requirements-llm.txt ./
 # Always install the core app + LLM SDKs.

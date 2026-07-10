@@ -94,7 +94,6 @@ class _FakeOrchestrator:
         self.calls: List[OrchestratorRequest] = []  # type: ignore[name-defined]
 
     async def answer(self, request):  # type: ignore[no-untyped-def]
-
         self.calls.append(request)
         return FinalAnswerResponse(
             query=request.query,

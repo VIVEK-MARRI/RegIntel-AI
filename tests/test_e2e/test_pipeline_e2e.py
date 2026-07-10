@@ -158,7 +158,10 @@ class TestRegulatoryPipelineE2E:
         results = body.get("results", [])
         assert len(results) > 0, "Search returned no results"
         # At least one result should reference the ingested document.
-        doc_ids = [r.get("document_id") or r.get("metadata", {}).get("document_id") for r in results]
+        doc_ids = [
+            r.get("document_id") or r.get("metadata", {}).get("document_id")
+            for r in results
+        ]
         assert self._document_id in [
             str(d) for d in doc_ids if d
         ], f"Expected document_id {self._document_id} in search results; got: {doc_ids}"
@@ -171,13 +174,20 @@ class TestRegulatoryPipelineE2E:
         """Option A: Use unittest.mock (consistent with P1.7 provider tests) to prevent live LLM calls."""
         from unittest.mock import AsyncMock, patch
         from app.services.answer_generation.providers import LLMResponse
-        
+
         mock_response = LLMResponse(
-            text="The RBI guidelines state that a Lending Service Provider is an agent. " + _FALSE_STATEMENT,
-            prompt_tokens=10, completion_tokens=20, total_tokens=30,
-            model="mock", provider="mock"
+            text="The RBI guidelines state that a Lending Service Provider is an agent. "
+            + _FALSE_STATEMENT,
+            prompt_tokens=10,
+            completion_tokens=20,
+            total_tokens=30,
+            model="mock",
+            provider="mock",
         )
-        with patch("app.services.answer_generation.providers.LiteLLMProvider.generate", new_callable=AsyncMock) as mock_gen:
+        with patch(
+            "app.services.answer_generation.providers.LiteLLMProvider.generate",
+            new_callable=AsyncMock,
+        ) as mock_gen:
             mock_gen.return_value = mock_response
             yield mock_gen
 
@@ -254,14 +264,14 @@ class TestRegulatoryPipelineE2E:
         # flagged as a hallucination or produce a low faithfulness score.
         if hallucination_detected is not None:
             # accept either True (correctly flagged) or False (lexical may not catch semantic errors)
-            assert isinstance(hallucination_detected, bool), (
-                f"hallucination_detected must be bool, got: {body}"
-            )
+            assert isinstance(
+                hallucination_detected, bool
+            ), f"hallucination_detected must be bool, got: {body}"
         elif faithfulness_score is not None:
             # any score is acceptable; we just confirm the endpoint runs without error
-            assert 0.0 <= float(faithfulness_score) <= 1.0, (
-                f"faithfulness_score out of range: {body}"
-            )
+            assert (
+                0.0 <= float(faithfulness_score) <= 1.0
+            ), f"faithfulness_score out of range: {body}"
         else:
             pytest.fail(f"Unexpected hallucination response shape: {body}")
 

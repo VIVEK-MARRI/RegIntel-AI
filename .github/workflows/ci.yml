@@ -471,6 +471,8 @@ jobs:
           file: Dockerfile.production
           tags: regintel/backend:ci-${{ github.sha }}
           load: true
+          build-args: |
+            INSTALL_ML_STACK=0
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

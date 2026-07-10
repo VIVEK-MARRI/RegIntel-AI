@@ -9,7 +9,6 @@ schemas, and performance trace patterns.
 from __future__ import annotations
 
 
-
 # ══════════════════════════════════════════════════════════════════
 # 10.1 — Observability Primitives
 # ══════════════════════════════════════════════════════════════════
