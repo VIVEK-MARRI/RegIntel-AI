@@ -123,9 +123,7 @@ jobs:
             --cov-report=json:coverage-backend.json \
             --cov-fail-under=80 \
             -o junit_family=xunit1 \
-            --junitxml=junit-backend.xml
-          echo "Actual coverage:"
-          python -c "import json; d=json.load(open('coverage-backend.json')); print(f'{d[\"totals\"][\"percent_covered\"]:.1f}%')"
+            --junitxml=junit-backend.xml 2>&1 | tee pytest-backend.log; exit ${PIPESTATUS[0]}
 
       - name: Upload coverage (backend)
         if: always()
@@ -136,6 +134,7 @@ jobs:
             coverage-backend.xml
             coverage-backend.json
             junit-backend.xml
+            pytest-backend.log
 
   # ─── 2b. Evaluation + analytics tests (previously excluded) ──────────
   evaluation-tests:
@@ -171,7 +170,14 @@ jobs:
           LLM_PROVIDER: "mock"
           RATE_LIMIT_PER_MINUTE: "100000"
         run: |
-          pytest tests/test_evaluation tests/test_analytics -q --maxfail=20
+          pytest tests/test_evaluation tests/test_analytics -q --maxfail=20 2>&1 | tee pytest-evaluation.log; exit ${PIPESTATUS[0]}
+
+      - name: Upload stdout log (evaluation)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-stdout
+          path: pytest-evaluation.log
 
   # ─── 3. Unit tests (frontend) ──────────────────────────────────────────
   frontend-tests:
