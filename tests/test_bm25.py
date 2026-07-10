@@ -230,7 +230,9 @@ def test_index_manager_path_is_internal_only():
     manager = BM25IndexManager()
     assert manager._config.storage_dir == "storage/bm25"
     assert manager._config.index_filename == "bm25_index.pkl"
-    assert f"{config.storage_dir}/{config.index_filename}" == "storage/bm25/bm25_index.pkl"
+    assert (
+        f"{config.storage_dir}/{config.index_filename}" == "storage/bm25/bm25_index.pkl"
+    )
 
 
 def test_bm25_service_path_is_internal_only():
