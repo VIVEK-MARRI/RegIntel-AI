@@ -336,6 +336,7 @@ jobs:
           DATABASE_URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/regintel_migration_test"
           DATABASE_URL_SYNC: "postgresql+psycopg2://postgres:postgres@localhost:5432/regintel_migration_test"
           ENV: test
+          USE_PGVECTOR_FALLBACK: "false"
         run: |
           alembic upgrade head
 
@@ -344,6 +345,7 @@ jobs:
           DATABASE_URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/regintel_migration_test"
           DATABASE_URL_SYNC: "postgresql+psycopg2://postgres:postgres@localhost:5432/regintel_migration_test"
           ENV: test
+          USE_PGVECTOR_FALLBACK: "false"
         run: |
           # alembic check returns non-zero if autogenerate would produce a diff.
           alembic check && echo "No model drift detected."
@@ -405,6 +407,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 

@@ -60,7 +60,6 @@ class RetrievalMetricsRecord(Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        index=True,
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -129,7 +128,6 @@ class AggregatedMetricsSnapshot(Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        index=True,
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -211,7 +209,6 @@ class QueryDistributionRecord(Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        index=True,
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -275,7 +272,6 @@ class RerankerGainRecord(Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        index=True,
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -340,7 +336,6 @@ class SystemHealthSnapshot(Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        index=True,
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

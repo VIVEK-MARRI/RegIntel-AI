@@ -1,7 +1,7 @@
 """Create analytics tables for Retrieval Analytics Platform.
 
 Revision ID: 001_create_analytics_tables
-Revises: 
+Revises: 9346ecbe6ad3
 Create Date: 2024-01-01 00:00:00.000000
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "001_create_analytics_tables"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "9346ecbe6ad3"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
