@@ -382,6 +382,8 @@ jobs:
       - name: Boot the app and probe /health
         env:
           ENV: test
+          DATABASE_URL: sqlite+aiosqlite:///./regintel_smoke.db
+          DATABASE_URL_SYNC: sqlite:///./regintel_smoke.db
         run: |
           (uvicorn app.main:app --host 127.0.0.1 --port 8000 &) && \
             for i in $(seq 1 30); do
@@ -389,13 +391,18 @@ jobs:
               sleep 1
             done
           curl -fsS http://127.0.0.1:8000/health/live | tee /tmp/live.json
-          curl -fsS http://127.0.0.1:8000/health/ready | tee /tmp/ready.json
+          curl -sS http://127.0.0.1:8000/health/ready | tee /tmp/ready.json
+          echo "Health ready probe body:"
+          cat /tmp/ready.json
+          echo ""
           test "$(jq -r .status /tmp/live.json)" = "alive"
           test "$(jq -r .status /tmp/ready.json)" = "ready" || test "$(jq -r .status /tmp/ready.json)" = "degraded"
 
       - name: Run benchmark smoke
         env:
           ENV: test
+          DATABASE_URL: sqlite+aiosqlite:///./regintel_smoke.db
+          DATABASE_URL_SYNC: sqlite:///./regintel_smoke.db
         run: |
           python -m app.benchmark.cli --quick --output /tmp/bench.json
           test -f /tmp/bench.json
