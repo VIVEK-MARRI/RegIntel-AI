@@ -12,12 +12,10 @@ Covers:
 
 from __future__ import annotations
 
-import os
 import tempfile
-import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, List
 
 import pytest
 
@@ -29,7 +27,6 @@ from app.security.api_gateway import (
 )
 from app.security.audit_review import (
     AuditQuery,
-    AuditRecord,
     AuditReview,
 )
 from app.security.jwt_auth import (
@@ -61,7 +58,6 @@ from app.security.secrets import (
 from app.security.threat_detection import (
     ThreatDetector,
     ThreatEvent,
-    ThreatLevel,
     ThreatType,
     reset_threat_detector,
 )

@@ -26,15 +26,20 @@ WORKDIR /opt/build
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Build-arg: set to "1" to include the full ML/CUDA stack (adds ~2.5 GB).
+# Leave unset (default) for the slim base image used in CI smoke builds.
+ARG INSTALL_ML_STACK=0
+
 COPY requirements.txt requirements-ml.txt requirements-llm.txt ./
-# Installs the full ML stack by default (torch CPU wheel + transformers +
-# sentence-transformers + reranker) — see requirements-ml.txt for the single
-# source of truth for those versions.
-# LLM provider SDKs (requirements-llm.txt) are optional runtime deps;
-# they enable real LLM_PROVIDER values at deploy time without a rebuild.
+# Always install the core app + LLM SDKs.
+# ML stack (torch + transformers + sentence-transformers) is opt-in so that
+# the CI smoke build stays fast and network-reliable.
 RUN pip install --upgrade pip wheel \
-    && pip install -r requirements.txt -r requirements-ml.txt -r requirements-llm.txt \
-    && pip install "uvicorn[standard]==0.32.0" "gunicorn==23.0.0"
+    && pip install -r requirements.txt -r requirements-llm.txt \
+    && pip install "uvicorn[standard]==0.32.0" "gunicorn==23.0.0" \
+    && if [ "$INSTALL_ML_STACK" = "1" ]; then \
+           pip install -r requirements-ml.txt; \
+       fi
 
 # ─── Stage 2: runtime ────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
@@ -101,4 +106,4 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Default launch: uvicorn behind a small async pool. Use gunicorn for sync
 # workers; the FastAPI app is async-native, so uvicorn is preferred.
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS} --timeout-keep-alive ${KEEP_ALIVE} --log-level ${LOG_LEVEL} --limit-max-requests ${WORKER_MAX_REQUESTS}"
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS} --timeout-keep-alive ${KEEP_ALIVE} --log-level ${LOG_LEVEL} --limit-max-requests ${WORKER_MAX_REQUESTS}"]

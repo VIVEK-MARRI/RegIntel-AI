@@ -1,11 +1,8 @@
 import pytest
 import os
-import uuid
 import json
-from datetime import datetime, timezone
 from typing import List, Dict, Any
-from app.core.config import settings
-from app.schemas.evaluation import GoldenEvaluationItem, BenchmarkReport
+from app.schemas.evaluation import GoldenEvaluationItem
 from app.services.embedding.benchmark_suite import RetrievalBenchmarkRunner
 from app.services.embedding.retrieval import RetrievalService
 from app.models.document import Document, SourceEnum, StatusEnum

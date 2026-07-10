@@ -15,7 +15,6 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 from app.schemas.agents import (
     AgentContext,
-    AgentResult,
     AgentTask,
     CapabilityKind,
     TaskStatus,
@@ -29,11 +28,7 @@ from app.schemas.audit import (
 from app.schemas.audit_agent import (
     AuditAgentRequest,
     AuditAgentResult,
-    AuditEvidenceItem,
-    AuditLineageNode,
-    AuditMetricsSummary,
     AuditStatus,
-    AuditTaskKind,
     AuditViolation,
     AuditViolationSeverity,
 )
@@ -54,7 +49,6 @@ from app.schemas.recommendations import (
 )
 from app.schemas.risk import RiskAssessment, RiskExplanation, RiskLevel
 from app.services.audit_agent import (
-    AuditAgent,
     AuditAgentService,
     AuditAnalyzer,
     AuditEvidenceCollector,
@@ -62,7 +56,6 @@ from app.services.audit_agent import (
     AuditReportGenerator,
     build_default_audit_agent_service,
 )
-from app.services.agents import AgentMetadata
 
 
 # ─── Fakes ───────────────────────────────────────────────────

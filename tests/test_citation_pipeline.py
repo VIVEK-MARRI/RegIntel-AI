@@ -8,20 +8,18 @@ with confidence and evaluation metrics.
 
 from __future__ import annotations
 
-from typing import Dict, List
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-from app.api.dependencies import get_citation_service, get_reranker_service
+from app.api.dependencies import get_citation_service
 from app.main import app
 from app.schemas.answer_generation import AnswerSection, RetrievedChunk
 from app.schemas.citation import (
     AnnotatedAnswer,
     AnnotatedText,
     CitationMetadata,
-    CitationRequest,
     CitationResponse,
     CitationStyle,
     Claim,
@@ -31,7 +29,6 @@ from app.schemas.citation import (
 from app.services.citation import (
     CitationBuilder,
     CitationMapper,
-    CitationService,
     ClaimExtractor,
     TokenOverlapScorer,
     build_default_citation_service,

@@ -1,9 +1,7 @@
 import pytest
 import time
-import os
 import numpy as np
 from app.models.document import Document, SourceEnum, StatusEnum
-from app.models.chunk import DocumentChunk
 from app.services.document import DocumentService
 from app.services.chunk_registry import ChunkRegistryService
 from app.services.bm25.service import BM25IndexManager, BM25RetrieverService

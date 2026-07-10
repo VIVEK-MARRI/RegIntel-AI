@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime, timezone
 
 import pytest
 from fastapi import FastAPI
@@ -16,23 +15,18 @@ if ROOT not in sys.path:
 
 from app.api.dependencies import (  # noqa: E402
     get_monitoring_service,
-    reset_monitoring_service,
 )
 from app.api.v1.monitoring import router as monitoring_router  # noqa: E402
 from app.core.http_client import HTTPClient, HTTPClientConfig  # noqa: E402
 from app.schemas.monitoring import (  # noqa: E402
     ChangeType,
     DiscoveryFilter,
-    DiscoveryType,
     DiscoveredDocument,
     DocumentVersion,
     MonitoringHealth,
     MonitoringRun,
     MonitoringStatus,
     RegulatorySource,
-    RunMonitorRequest,
-    RunMonitorResponse,
-    SchedulerStatus,
     SourceConfig,
 )
 from app.services.monitoring import (  # noqa: E402
@@ -40,7 +34,6 @@ from app.services.monitoring import (  # noqa: E402
     InMemoryMonitoringStore,
     IRDAISourceAdapter,
     MoFSourceAdapter,
-    MonitoringHealthChecker,
     MonitoringRepository,
     MonitoringScheduler,
     MonitoringService,
@@ -49,7 +42,6 @@ from app.services.monitoring import (  # noqa: E402
     SEBISourceAdapter,
     SourceAdapter,
     SourceRegistry,
-    build_default_monitoring_service,
 )
 from app.services.observability import reset_monitoring_metrics  # noqa: E402
 

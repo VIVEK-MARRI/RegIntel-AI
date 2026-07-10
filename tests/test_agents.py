@@ -22,15 +22,11 @@ from app.schemas.agents import (
     TaskStatus,
 )
 from app.services.agents import (
-    AgentDiscoveryService,
     AgentExecutionEngine,
     AgentFrameworkService,
     AgentMetadataStore,
-    AgentRegistry,
     BaseAgent,
     CapabilityAgent,
-    CapabilityRegistry,
-    CoordinatorAgent,
     EchoAgent,
     ResultAggregator,
     TaskDistributor,

@@ -17,18 +17,12 @@ Coverage
 from __future__ import annotations
 
 import asyncio
-import time
-from typing import Any, Dict, List
 
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from app.api.dependencies import (
-    get_attribution_service,
-    get_citation_service,
-    get_confidence_service,
-    get_hallucination_guard_service,
     get_response_orchestrator,
     reset_attribution_service,
     reset_confidence_service,
@@ -37,12 +31,10 @@ from app.api.dependencies import (
 )
 from app.api.v1.orchestrator import router as orchestrator_router
 from app.schemas.answer_generation import (
-    AnswerSection,
     RetrievedChunk,
 )
 from app.schemas.orchestrator import (
     FinalAnswerResponse,
-    OrchestratorMetadata,
     OrchestratorRequest,
     PipelineStatus,
     PipelineStep,
@@ -53,20 +45,14 @@ from app.services.orchestrator import (
     AnswerGenerationStep,
     AnswerPipeline,
     AttributionStep,
-    CitationStep,
     ConfidenceStep,
     HallucinationStep,
     PipelineCoordinator,
     ResponseBuilder,
-    ResponseOrchestrator,
     build_default_orchestrator,
 )
 from app.services.answer_generation import AnswerGeneratorService
 from app.services.answer_generation.providers import MockLLMProvider
-from app.services.citation import CitationService
-from app.services.confidence import ConfidenceService
-from app.services.hallucination import HallucinationGuardService
-from app.services.attribution import SourceAttributionService
 
 
 # ─── Fixtures ───────────────────────────────────────────────────────────────

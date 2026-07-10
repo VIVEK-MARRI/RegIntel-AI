@@ -19,4 +19,4 @@ ignore = ["E711", "E712"]
 "**/__init__.py" = ["F401"]
 # Test suite carries accepted unused-import / redefinition debt (tracked as
 # P2 lint debt); these are non-blocking for production correctness.
-"tests/**" = ["F401", "F841", "F811"]
+"tests/**" = ["F841", "F811"]

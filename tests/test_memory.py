@@ -28,11 +28,9 @@ from app.api.v1.memory import router as memory_router
 from app.schemas.conversation import Message, Role
 from app.schemas.memory import (
     CreateMemoryRequest,
-    MemoryContext,
     MemoryEntry,
     MemoryQuery,
     MemoryScope,
-    MemorySearchResult,
     MemoryType,
 )
 from app.services.memory import (
@@ -40,7 +38,6 @@ from app.services.memory import (
     MemoryManager,
     MemoryRepository,
     MemoryService,
-    MemoryStore,
     build_default_memory_service,
 )
 

@@ -23,7 +23,6 @@ from app.services.governance import (
     GovernanceEngine,
     GovernanceService,
     InMemoryGovernanceStore,
-    build_default_governance_service,
 )
 
 
@@ -322,7 +321,7 @@ class TestGovernanceEngine:
         assert r.required_actions.count(PolicyAction.REQUIRE_APPROVAL) == 1
 
     def test_highest_severity(self, engine: GovernanceEngine) -> None:
-        from app.schemas.governance import GovernancePolicy, PolicyCheckResult
+        from app.schemas.governance import PolicyCheckResult
 
         r = PolicyCheckResult()
         assert r.highest_severity == PolicySeverity.INFO

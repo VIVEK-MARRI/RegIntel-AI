@@ -1,8 +1,6 @@
 import pytest
 import os
-import uuid
 import pickle
-from sqlalchemy import select
 from app.models.document import Document, SourceEnum, StatusEnum
 from app.models.chunk import DocumentChunk
 from app.models.bm25 import BM25IndexMetadata
@@ -238,7 +236,6 @@ def test_index_manager_path_is_internal_only():
 def test_bm25_service_path_is_internal_only():
     """Verify BM25RetrieverService storage_dir is derived from settings, never user input (B301)."""
     from app.core.config import settings
-    from app.services.bm25.service import BM25RetrieverService
 
     assert settings.STORAGE_ROOT == "storage"
     expected_storage_dir = f"{settings.STORAGE_ROOT}/bm25"

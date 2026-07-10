@@ -14,17 +14,15 @@ Run with: python -m pytest tests/benchmark_bm25_engine.py -v -s
 from __future__ import annotations
 
 import random
-import string
 import statistics
 import time
-from typing import List, Dict, Tuple
+from typing import List
 
 import pytest
 
 from app.services.bm25.retriever import (
     BM25Document,
     BM25SearchRequest,
-    InMemoryBM25Retriever,
     BM25Tokenizer,
 )
 from app.services.bm25.index_manager import BM25IndexManager, IndexManagerConfig

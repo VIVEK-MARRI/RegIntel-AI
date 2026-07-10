@@ -1,7 +1,7 @@
 """Test fixtures for analytics platform tests."""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import AsyncGenerator
 
 import pytest_asyncio
@@ -10,13 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.pool import StaticPool
 
 from app.models.document import Base
-from app.models.analytics import (
-    RetrievalMetricsRecord,
-    AggregatedMetricsSnapshot,
-    QueryDistributionRecord,
-    RerankerGainRecord,
-    SystemHealthSnapshot,
-)
 
 # Use SQLite in-memory for tests.
 # StaticPool ensures all sessions share the same underlying connection

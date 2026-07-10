@@ -14,21 +14,13 @@ Tests cover:
 from __future__ import annotations
 
 import os
-import shutil
-import time
 from typing import List
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from app.services.bm25.retriever import (
     BM25Document,
     BM25SearchRequest,
-    BM25SearchResponse,
-    BM25SearchResult,
-    BM25IndexStats,
-    BM25IndexError,
-    BM25SearchError,
     BM25Tokenizer,
     IndexStatus,
     InMemoryBM25Retriever,

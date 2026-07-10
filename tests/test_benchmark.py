@@ -14,9 +14,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import sys
 import tempfile
-from typing import Any, AsyncIterator, Dict, List, Mapping
+from typing import Any, Dict, List
 
 import pytest
 
@@ -25,9 +24,7 @@ from app.benchmark import (
     BenchmarkResponse,
     BenchmarkService,
     BenchmarkSuite,
-    LatencyMetric,
     LoadTestConfig,
-    LoadTestResult,
     LoadTester,
     MemoryMetric,
     MetricsCollector,
@@ -40,13 +37,11 @@ from app.benchmark import (
     get_benchmark_service,
     reset_benchmark_service,
 )
-from app.benchmark.benchmark_service import _classify_target
 from app.benchmark.cli import main as cli_main
 from app.benchmark.metrics_collector import (
     compute_cost_summary,
     compute_latency_stats,
 )
-from app.benchmark.reporter import Reporter as _Reporter
 
 
 # ─── Fixtures ──────────────────────────────────────────────────────

@@ -14,7 +14,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from app.api.dependencies import get_feedback_service, reset_feedback_service  # noqa: E402
+from app.api.dependencies import get_feedback_service  # noqa: E402
 from app.api.v1.feedback import router as feedback_router  # noqa: E402
 from app.schemas.feedback import (  # noqa: E402
     FeedbackCategory,
@@ -31,7 +31,6 @@ from app.services.feedback import (  # noqa: E402
     FeedbackManager,
     FeedbackRepository,
     FeedbackService,
-    FeedbackStore,
     InMemoryFeedbackStore,
     build_default_feedback_service,
 )

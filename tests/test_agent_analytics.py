@@ -13,8 +13,6 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.schemas.agent_analytics import (
-    AgentAnalyticsOverview,
-    AgentPerformance,
     HealthLevel,
 )
 from app.schemas.agents import AgentMetadata

@@ -1,14 +1,13 @@
 """Tests for the Retrieval Evaluator."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from app.evaluation.evaluator import RetrievalEvaluator
 from app.evaluation.schemas import (
     EvaluationConfig,
     GoldenDataset,
     QueryRelevance,
     RetrievalStrategy,
-    StrategyEvaluationResult,
 )
 
 
@@ -163,7 +162,7 @@ class TestRetrievalEvaluator:
 
     def test_aggregate_query_results(self):
         """Test aggregating query results."""
-        from app.evaluation.schemas import QueryEvaluationResult, RetrievalResult
+        from app.evaluation.schemas import QueryEvaluationResult
 
         query_results = [
             QueryEvaluationResult(

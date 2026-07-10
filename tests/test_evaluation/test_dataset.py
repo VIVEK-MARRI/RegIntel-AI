@@ -1,7 +1,5 @@
 """Tests for the Golden Dataset management."""
 
-import json
-import pytest
 from pathlib import Path
 from app.evaluation.dataset import DatasetManager, create_sample_dataset_with_ids
 from app.evaluation.schemas import GoldenDataset, QueryRelevance

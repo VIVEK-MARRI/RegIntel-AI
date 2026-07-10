@@ -1,13 +1,10 @@
 import pytest
-import os
-import uuid
-import pickle
 from httpx import AsyncClient
 
 from app.main import app
 from app.api.dependencies import get_embedding_provider
 from app.models.document import Document, SourceEnum, StatusEnum
-from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum
+from app.models.chunk import DocumentChunk, ChunkEmbedding
 from app.repositories.embedding import ChunkEmbeddingRepository
 from app.services.bm25.service import BM25IndexManager, BM25RetrieverService
 from app.services.embedding.retrieval import RetrievalService

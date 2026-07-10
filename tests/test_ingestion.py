@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime, timezone
 
 import pytest
 from fastapi import FastAPI
@@ -17,8 +16,6 @@ if ROOT not in sys.path:
 from app.api.dependencies import (  # noqa: E402
     get_ingestion_service,
     get_monitoring_service,
-    reset_ingestion_service,
-    reset_monitoring_service,
 )
 from app.api.v1.ingestion import router as ingestion_router  # noqa: E402
 from app.schemas.ingestion import (  # noqa: E402
@@ -26,15 +23,12 @@ from app.schemas.ingestion import (  # noqa: E402
     IngestionFilter,
     IngestionRun,
     IngestionRunResponse,
-    IngestionSchedulerStatus,
     IngestionStats,
     IngestionStatus,
     IngestionStep,
     IngestionStepName,
     IngestionStepStatus,
     IngestionTriggerRequest,
-    PaginatedIngestionRuns,
-    RegistrySyncResult,
 )
 from app.schemas.monitoring import DiscoveredDocument, RegulatorySource  # noqa: E402
 from app.services.ingestion import (  # noqa: E402
@@ -54,10 +48,6 @@ from app.services.ingestion import (  # noqa: E402
     _NoOpParser,
     _NoOpRegistry,
     build_default_auto_ingestion_service,
-)
-from app.services.monitoring import (  # noqa: E402
-    InMemoryMonitoringStore,
-    MonitoringService,
 )
 from app.services.observability import (  # noqa: E402
     reset_ingestion_metrics,

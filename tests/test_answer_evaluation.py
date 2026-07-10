@@ -23,7 +23,6 @@ from app.schemas.attribution import (
 from app.schemas.citation import (
     AnnotatedAnswer,
     AnnotatedText,
-    EvidenceChunk,
     ReferenceEntry,
 )
 from app.schemas.confidence import ConfidenceLevel
@@ -43,7 +42,6 @@ from app.schemas.orchestrator import (
 )
 from app.services.evaluation import (
     AnswerBenchmarkRunner,
-    AnswerEvaluationService,
     AnswerEvaluator,
     MetricsEngine,
     build_default_evaluation_service,

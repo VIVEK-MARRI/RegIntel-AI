@@ -7,10 +7,8 @@ Uses the StandaloneEvaluator which requires no database connection.
 import json
 import pytest
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
 
 from app.evaluation.dataset import DatasetManager, create_sample_dataset_with_ids
-from app.evaluation.evaluator import RetrievalEvaluator
 from app.evaluation.metrics import MetricsEngine
 from app.evaluation.reporting import ReportGenerator, Leaderboard
 from app.evaluation.runner import (
@@ -20,7 +18,6 @@ from app.evaluation.runner import (
 )
 from app.evaluation.schemas import (
     EvaluationConfig,
-    EvaluationReport,
     GoldenDataset,
     QueryRelevance,
     RetrievalResult,

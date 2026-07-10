@@ -13,8 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-import uuid
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -29,10 +28,9 @@ from app.services.query_analysis.service import (
     RuleBasedQueryClassifier,
     RuleBasedStrategyRecommender,
     SemanticQuestionRule,
-    AnalyticsManager,
     MLQueryClassifier,
 )
-from app.services.fusion.engine import FusionEngine, RRFStrategy, WeightedSumStrategy
+from app.services.fusion.engine import FusionEngine, RRFStrategy
 from app.services.fusion.ranking import (
     build_provenance,
     compute_multi_source_overlap,
@@ -42,7 +40,6 @@ from app.services.fusion.ranking import (
     sort_candidates,
     source_attribution_summary,
     break_ties,
-    resolve_rank_conflicts,
 )
 from app.services.hybrid.service import HybridRetriever, RetrievalTelemetry
 from app.services.hybrid.strategy import RetrievalStrategyManager, min_max_normalize

@@ -12,24 +12,17 @@ from __future__ import annotations
 
 import asyncio
 import time
-import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from app.evaluation.metrics import MetricsEngine
-from app.evaluation.schemas import (
-    EvaluationConfig,
-    GoldenDataset,
-    QueryRelevance,
-    RetrievalStrategy,
-)
 from app.schemas.fusion import FusionConfig, FusionMethod
 from app.schemas.hybrid import RetrievalStrategy as HybridRetrievalStrategy
 from app.services.fusion.engine import FusionEngine, RRFStrategy
 from app.services.fusion.ranking import compute_overlap
 from app.services.hybrid.analytics_tracker import RetrievalAnalyticsTracker
-from app.services.hybrid.pipeline import HybridRerankPipeline, HybridRerankTelemetry
+from app.services.hybrid.pipeline import HybridRerankPipeline
 from app.services.hybrid.service import HybridRetriever, RetrievalTelemetry
 from app.services.query_analysis.base import (
     QueryType,

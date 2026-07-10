@@ -4,19 +4,12 @@ import pytest
 import fitz
 import uuid
 import io
-import tempfile
-from pathlib import Path
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.document import Document, StatusEnum
-from app.models.page import DocumentPage
-from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum
-from app.services.document import DocumentService
-from app.services.page import PageService
+from app.models.chunk import EmbeddingStatusEnum
 from app.services.embedding.pipeline import EmbeddingPipeline
 from app.services.embedding.index_manager import VectorIndexManager
-from app.services.chunk_registry import ChunkRegistryService
-from app.services.ingestion import build_default_auto_ingestion_service
 
 
 def create_test_pdf_bytes(
@@ -36,7 +29,6 @@ def create_test_pdf_bytes(
 @pytest.mark.asyncio
 async def test_phase1_upload_validation(client: AsyncClient, db_session: AsyncSession):
     """Phase 1: Upload Pipeline Validation"""
-    from app.repositories.document import DocumentRepository
 
     pdf_bytes = create_test_pdf_bytes(["Page 1 content for RBI circular."])
     file_bytes = io.BytesIO(pdf_bytes)

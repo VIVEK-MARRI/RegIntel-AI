@@ -14,7 +14,6 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 from app.schemas.agents import (
     AgentMetadata,
-    AgentRegistrationRequest,
     AgentCapability,
     CapabilityKind,
     AgentResult,
@@ -28,13 +27,11 @@ from app.schemas.orchestration import (
     ExecutionMode,
     MessageKind,
     OrchestrationRequest,
-    OrchestrationResult,
     SharedExecutionContext,
     SharedEvidenceItem,
     WorkflowDefinition,
     WorkflowStatus,
 )
-from app.services.agents import AgentMetadataStore, AgentFrameworkService, AgentRegistry
 from app.services.orchestration import (
     AgentMessageBus,
     AgentOrchestrator,
@@ -46,7 +43,6 @@ from app.services.orchestration import (
     EvidenceAggregator,
     ExecutionContextManager,
     OrchestrationEngine,
-    OrchestrationService,
     ResultSynthesizer,
     SharedEvidenceStore,
     TaskCoordinator,

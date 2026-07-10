@@ -37,7 +37,6 @@ from app.schemas.answer_generation import (
 from app.schemas.hallucination import (
     ClaimVerdict,
     FaithfulnessMetadata,
-    FaithfulnessReport,
     FaithfulnessRequest,
     FaithfulnessResponse,
     HallucinationRiskLevel,

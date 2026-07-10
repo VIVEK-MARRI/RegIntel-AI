@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Any, Dict
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -16,7 +14,6 @@ from app.api.dependencies import (
 from app.main import app
 from app.schemas.change import (
     ChangeCategory,
-    ChangeDetectionRequest,
     ChangeSeverity,
     ChangeType,
     ClauseChange,
@@ -26,23 +23,17 @@ from app.schemas.change import (
 from app.schemas.impact import (
     ActionPriority,
     AffectedEntity,
-    BusinessImpact,
-    ComplianceImpact,
-    ExecutiveSummary,
     ImpactAnalysisRequest,
     ImpactAnalysisResult,
-    ImpactAnalysisStats,
     ImpactDimension,
     ImpactFilter,
     ImpactLevel,
     ImpactReport,
-    RequiredAction,
 )
 from app.services.impact_analysis import (
     AffectedEntityAnalyzer,
     ImpactAnalysisService,
     ImpactAnalysisRepository,
-    ImpactReportStore,
     ImpactScorer,
     InMemoryImpactStore,
     RegulatorySummaryGenerator,

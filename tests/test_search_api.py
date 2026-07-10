@@ -1,11 +1,10 @@
 import pytest
-import uuid
 from httpx import AsyncClient
 from app.main import app
 from app.api.dependencies import get_embedding_provider
 from app.core.config import settings
 from app.models.document import Document, SourceEnum, StatusEnum
-from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum
+from app.models.chunk import DocumentChunk, ChunkEmbedding
 from app.repositories.embedding import ChunkEmbeddingRepository
 
 

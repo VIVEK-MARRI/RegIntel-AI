@@ -94,7 +94,6 @@ def test_copilot_e2e_with_real_embeddings():
     """
     import os
     import pathlib
-    import shutil
     import time
 
     # ── SQLite test database (isolated) ──────────────────────────────────

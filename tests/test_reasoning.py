@@ -30,20 +30,14 @@ from app.api.dependencies import (
 )
 from app.api.v1.reasoning import router as reasoning_router
 from app.schemas.reasoning import (
-    ChangeReport,
     ChangeType,
     Contradiction,
-    ContradictionReport,
     ContradictionSeverity,
-    CrossDocumentSummary,
     DiffItem,
     DiffType,
-    DocumentDiff,
     ReasoningMode,
     ReasoningRequest,
-    ReasoningResponse,
     RegulatoryChange,
-    Timeline,
     TimelineEvent,
 )
 from app.services.reasoning import (

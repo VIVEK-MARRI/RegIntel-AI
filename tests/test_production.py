@@ -17,7 +17,6 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from app.api.v1.health import (  # noqa: E402
-    get_health_checker,
     router as health_router,
     set_health_checker,
 )

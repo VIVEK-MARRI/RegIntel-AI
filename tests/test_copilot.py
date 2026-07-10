@@ -37,14 +37,13 @@ from app.api.v1.copilot import (
     reset_copilot_service,
     router as copilot_router,
 )
-from app.schemas.answer_generation import AnswerSection, RetrievedChunk
+from app.schemas.answer_generation import AnswerSection
 from app.schemas.citation import AnnotatedAnswer, AnnotatedText
 from app.schemas.confidence import ConfidenceLevel
 from app.schemas.copilot import (
     CopilotMessage,
     CopilotMode,
     CopilotRequest,
-    CopilotResponse,
 )
 from app.schemas.hallucination import HallucinationRiskLevel
 from app.schemas.orchestrator import (
@@ -95,7 +94,6 @@ class _FakeOrchestrator:
         self.calls: List[OrchestratorRequest] = []  # type: ignore[name-defined]
 
     async def answer(self, request):  # type: ignore[no-untyped-def]
-        from app.schemas.orchestrator import OrchestratorRequest
 
         self.calls.append(request)
         return FinalAnswerResponse(

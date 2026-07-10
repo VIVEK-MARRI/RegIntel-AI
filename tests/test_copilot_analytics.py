@@ -15,17 +15,11 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from app.api.dependencies import (  # noqa: E402
-    get_copilot_analytics_service,
     reset_copilot_analytics_service,
 )
 from app.api.v1.copilot_analytics import router as analytics_api_router  # noqa: E402
 from app.schemas.copilot_analytics import (  # noqa: E402
     AnalyticsWindow,
-    AnswerQualityMetrics,
-    ConversationMetrics,
-    CostMetrics,
-    LatencyMetrics,
-    MemoryUsageMetrics,
     QueryCategory,
     QueryCategoryMetrics,
     UsageStats,

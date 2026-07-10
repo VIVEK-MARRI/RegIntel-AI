@@ -17,13 +17,7 @@ from app.schemas.analytics_v2 import (
     AnalyticsWindow,
     AnswerAnalyticsEvent,
     AnswerAnalyticsSnapshot,
-    AnswerHealthReport,
-    ConfidenceDistribution,
-    FaithfulnessDistribution,
-    HallucinationBuckets,
     HealthStatus,
-    LatencyStats,
-    TokenUsageStats,
 )
 from app.schemas.attribution import AttributionSection
 from app.schemas.citation import (
@@ -38,7 +32,6 @@ from app.schemas.orchestrator import (
     OrchestratorMetadata,
 )
 from app.services.answer_analytics import (
-    AnswerAnalyticsService,
     AnswerHealthMonitor,
     AnswerMetricsRepository,
     build_default_answer_analytics_service,

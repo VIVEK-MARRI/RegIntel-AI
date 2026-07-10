@@ -1,6 +1,5 @@
 import pytest
 import threading
-import time
 from unittest.mock import patch, MagicMock
 import numpy as np
 from app.services.embedding.bge import BGEEmbeddingProvider

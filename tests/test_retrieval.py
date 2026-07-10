@@ -1,11 +1,9 @@
 import pytest
 import uuid
 from app.models.document import Document, SourceEnum, StatusEnum
-from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum
 from app.services.document import DocumentService
 from app.services.chunk_registry import ChunkRegistryService
 from app.services.embedding.retrieval import RetrievalService
-from test_embedding_pipeline import MockEmbeddingProvider
 
 
 @pytest.mark.asyncio

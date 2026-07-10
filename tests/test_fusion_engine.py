@@ -14,7 +14,7 @@ Covers:
 """
 
 import pytest
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from app.schemas.fusion import FusedCandidate, FusionConfig, FusionMethod, FusionReport
 from app.services.fusion.engine import (
@@ -22,8 +22,6 @@ from app.services.fusion.engine import (
     FusionEngine,
     LearningToRankStrategy,
     RRFStrategy,
-    ScoreFusionStrategy,
-    WeightedSumStrategy,
 )
 from app.services.fusion.ranking import (
     break_ties,

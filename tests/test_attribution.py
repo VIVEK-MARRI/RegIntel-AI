@@ -28,20 +28,15 @@ from app.schemas.answer_generation import (
 )
 from app.schemas.attribution import (
     AttributionConfidence,
-    AttributionCoverage,
-    AttributionMetadata,
     AttributionRequest,
     AttributionResponse,
     AttributionSection,
-    AttributionValidation,
     SourceAttribution,
     bucket_confidence,
     build_excerpt,
 )
 from app.services.attribution import (
     AttributionMapper,
-    AttributionValidator,
-    SourceAttributionService,
     build_default_attribution_service,
 )
 

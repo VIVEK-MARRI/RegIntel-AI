@@ -24,7 +24,6 @@ from app.services.knowledge_graph import (
     EntityExtractor,
     GraphBuilder,
     GraphRepository,
-    GraphStore,
     InMemoryGraphStore,
     KnowledgeGraphService,
     RelationshipMapper,

@@ -5,7 +5,6 @@ from app.core.token_utils import SimpleTokenizer
 from app.services.structure.chunker import HierarchicalChunker
 from app.services.structure.benchmark_chunker import run_chunker_benchmark
 from app.models.document import Document, SourceEnum, StatusEnum
-from app.models.page import DocumentPage
 
 
 def test_simple_tokenizer():

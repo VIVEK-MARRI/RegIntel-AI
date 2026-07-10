@@ -10,7 +10,6 @@ from httpx import ASGITransport, AsyncClient
 from app.api.dependencies import get_research_service, reset_research_service
 from app.main import app
 from app.schemas.research import (
-    ResearchContext,
     ResearchFilter,
     ResearchKind,
     ResearchRequest,

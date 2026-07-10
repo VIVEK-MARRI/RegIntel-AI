@@ -1,6 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
-from sqlalchemy import text
+from unittest.mock import patch
 from app.core.config import settings
 from app.services.embedding.index_manager import VectorIndexManager
 

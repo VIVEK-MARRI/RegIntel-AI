@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import os
 import time
 
@@ -12,21 +11,17 @@ import pytest
 os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "100000")
 
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import app
 from app.schemas.agents import (
     AgentContext,
-    AgentResult,
     AgentTask,
     CapabilityKind,
-    CoordinatorRequest,
     TaskStatus,
 )
 from app.schemas.intelligence_agents import (
     AgentCollaboration,
     ComplianceAgentRequest,
-    IntelligenceAgentMetrics,
     ResearchAgentRequest,
     ResearchFinding,
     ResearchMode,
@@ -36,7 +31,6 @@ from app.schemas.intelligence_agents import (
     RiskScenarioKind,
 )
 from app.schemas.recommendations import (
-    ActionStatus,
     Recommendation,
     RecommendationRequest,
     RecommendationType,
@@ -44,7 +38,6 @@ from app.schemas.recommendations import (
 from app.schemas.research import (
     CitationSource,
     ResearchCitation,
-    ResearchKind,
     ResearchReport,
     ResearchRequest,
     ResearchStep,
@@ -55,10 +48,7 @@ from app.schemas.risk import (
     AffectedArea,
     AffectedAreaRecord,
     ComplianceGap,
-    RecommendedAction,
-    RecommendedActionType,
     RiskAssessment,
-    RiskAssessmentRequest,
     RiskCategory,
     RiskLevel,
 )
@@ -71,9 +61,6 @@ from app.services.intelligence_agents import (
     AgentCollaborationBroker,
     ComplianceAgent,
     ComplianceAnalyzer,
-    ComplianceReasoner,
-    ComplianceRecommendationGenerator,
-    ComplianceReportBuilder,
     CoordinatorDriver,
     IntelligenceAgentFactory,
     IntelligenceAgentService,

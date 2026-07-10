@@ -30,7 +30,6 @@ from app.schemas.reranker import (
     PrecisionMetrics,
     RerankReport,
     RerankResponse,
-    RerankResult,
     ScoreDistribution,
 )
 from app.services.reranker.model import BGERerankerProvider, ScoringResult

@@ -6,7 +6,6 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.api.dependencies import (
-    get_executive_dashboard_service,
     reset_executive_dashboard_service,
 )
 from app.main import app
@@ -15,15 +14,12 @@ from app.schemas.dashboard import (
     ComplianceMetrics,
     DashboardSnapshot,
     ImpactDistribution,
-    InsightSeverity,
     MonitoringHealthView,
-    RiskInsight,
     RiskInsightsResponse,
     RiskLevel,
     SystemHealthView,
     TrendDirection,
     TrendPoint,
-    TrendSeries,
 )
 from app.services.dashboard import (
     ComplianceMetricsAggregator,

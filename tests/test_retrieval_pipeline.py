@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Dict, List, Optional
-from unittest.mock import patch
+from typing import Any, Dict, List
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
@@ -26,22 +24,18 @@ from app.api.dependencies import (
     reset_knowledge_graph_service,
 )
 from app.main import app
-from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum
+from app.models.chunk import DocumentChunk
 from app.models.document import Document, SourceEnum, StatusEnum
 from app.schemas.knowledge_graph import (
     NodeCreateRequest,
     NodeFilter,
     EntityType,
-    NodeSource,
     RelationshipCreateRequest,
     RelationshipType,
 )
-from app.schemas.reranker import RerankResponse, RerankResult, RerankReport
 from app.services.bm25.bm25_service import BM25Service
 from app.services.bm25.retriever import BM25Document
-from app.services.embedding.retrieval import RetrievalService
 from app.services.fusion.engine import FusionEngine
-from app.services.hybrid.service import HybridRetriever
 from app.services.knowledge_graph import KnowledgeGraphService
 from app.schemas.fusion import FusionMethod
 
@@ -727,7 +721,6 @@ class TestKGExpansion:
 
     async def test_kg_entities_extracted_from_query(self, client, seeded_corpus):
         """KG entities provide additional context for query terms."""
-        from app.services.knowledge_graph import InMemoryGraphStore
 
         svc, reg, circ, topic = await self.setup_kg()
         app.dependency_overrides[get_knowledge_graph_service] = lambda: svc

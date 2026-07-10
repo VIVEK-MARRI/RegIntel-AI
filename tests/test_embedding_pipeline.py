@@ -1,5 +1,4 @@
 import pytest
-import uuid
 from sqlalchemy import select
 from app.models.document import Document, SourceEnum, StatusEnum
 from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum

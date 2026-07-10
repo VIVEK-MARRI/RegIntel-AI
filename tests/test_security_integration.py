@@ -10,8 +10,6 @@ Tests that run the full app (all middleware active) and verify:
 
 from __future__ import annotations
 
-import os
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -33,8 +31,7 @@ class TestAPIKeyEnforcement:
     """API key middleware rejects unauthenticated requests."""
 
     def test_missing_api_key_returns_401(self):
-        from app.main import app
-        from app.middleware import APIKey, APIKeyMiddleware, APIKeyStore
+        from app.middleware import APIKeyMiddleware, APIKeyStore
 
         store = APIKeyStore()  # empty — no keys registered
         # Add middleware directly to a test client wrapping a minimal route.

@@ -23,7 +23,6 @@ from app.schemas.workflow import (
 from app.services.workflow import (
     AutomationService,
     InMemoryWorkflowStore,
-    TaskManager,
     WorkflowEngine,
     WorkflowOrchestrator,
 )

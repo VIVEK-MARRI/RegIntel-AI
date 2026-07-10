@@ -16,14 +16,11 @@ are made.
 
 from __future__ import annotations
 
-import asyncio
 import json
-import uuid
-from typing import Any, AsyncIterator, Dict, List
+from typing import Any, Dict, List
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
 from app.api.dependencies import (
@@ -37,7 +34,6 @@ from app.schemas.answer_generation import (
     AnswerGenerationResponse,
     AnswerStreamChunk,
     AnswerTone,
-    EvidenceChunk,
     LLMProviderName,
     RetrievedChunk,
 )

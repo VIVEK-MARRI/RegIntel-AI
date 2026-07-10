@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import shutil
-import tempfile
-from typing import List
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -21,14 +17,12 @@ from app.schemas.change import (
     ChangeFilter,
     ChangeSeverity,
     ChangeType,
-    ClauseChange,
     DocumentDiff,
     SectionRef,
 )
 from app.services.change_detection import (
     ChangeClassifier,
     ChangeDetectionService,
-    ChangeRepository,
     ChangeStore,
     ClauseComparator,
     DocumentDiffEngine,

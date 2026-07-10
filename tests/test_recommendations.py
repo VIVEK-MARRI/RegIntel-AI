@@ -17,7 +17,6 @@ from app.services.recommendations import (
     ActionPlanner,
     InMemoryRecommendationStore,
     RecommendationGenerator,
-    RecommendationRepository,
     RecommendationService,
 )
 

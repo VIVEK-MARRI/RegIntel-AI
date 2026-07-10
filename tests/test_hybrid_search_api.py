@@ -19,12 +19,10 @@ from __future__ import annotations
 
 import uuid
 from typing import List
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
-from sqlalchemy import text
 
 from app.api.dependencies import (
     get_bm25_service,
@@ -33,7 +31,6 @@ from app.api.dependencies import (
 )
 from app.main import app
 from app.api.dependencies import get_embedding_provider
-from app.models.analytics import RetrievalMetricsRecord
 from app.models.chunk import DocumentChunk
 from app.models.document import Document, SourceEnum, StatusEnum
 from app.repositories.embedding import ChunkEmbeddingRepository

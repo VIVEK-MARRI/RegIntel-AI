@@ -1,9 +1,8 @@
 import pytest
 import time
-import uuid
 import numpy as np
 from app.models.document import Document, SourceEnum, StatusEnum
-from app.models.chunk import DocumentChunk, ChunkEmbedding, EmbeddingStatusEnum
+from app.models.chunk import EmbeddingStatusEnum
 from app.services.document import DocumentService
 from app.services.chunk_registry import ChunkRegistryService
 from app.services.embedding.retrieval import RetrievalService

@@ -7,7 +7,6 @@ integration, data integrity audit, and performance validation.
 
 from __future__ import annotations
 
-import os
 import time
 from pathlib import Path
 
@@ -29,7 +28,6 @@ from app.schemas.knowledge_graph import (
 )
 from app.services.knowledge_graph import (
     EntityExtractor,
-    GraphBuilder,
     GraphRepository,
     InMemoryGraphStore,
     KnowledgeGraphService,

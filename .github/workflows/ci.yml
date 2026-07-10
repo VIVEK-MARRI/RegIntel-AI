@@ -278,6 +278,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpq-dev
 
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/hub
+          key: ${{ runner.os }}-hf-models-${{ hashFiles('requirements-ml.txt') }}
+
       - name: Install Python deps (base + ML stack from requirements-ml.txt)
         run: |
           python -m pip install --upgrade pip
@@ -382,7 +388,7 @@ jobs:
             done
           curl -fsS http://127.0.0.1:8000/health/live | tee /tmp/live.json
           curl -fsS http://127.0.0.1:8000/health/ready | tee /tmp/ready.json
-          test "$(jq -r .status /tmp/live.json)" = "healthy"
+          test "$(jq -r .status /tmp/live.json)" = "alive"
           test "$(jq -r .status /tmp/ready.json)" = "ready" || test "$(jq -r .status /tmp/ready.json)" = "degraded"
 
       - name: Run benchmark smoke

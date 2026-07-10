@@ -8,7 +8,6 @@ schemas, and performance trace patterns.
 
 from __future__ import annotations
 
-import pytest
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -138,7 +137,7 @@ class TestHealthCheckSchemas:
         assert d["latency_ms"] >= 0
 
     def test_health_report_aggregation(self):
-        from app.core.health import HealthReport, ComponentHealth, HealthStatus
+        from app.core.health import HealthReport, HealthStatus
 
         r = HealthReport(status=HealthStatus.HEALTHY)
         assert r.is_healthy is True

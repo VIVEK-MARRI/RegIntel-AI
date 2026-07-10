@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -10,9 +9,7 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 from app.schemas.forecasting import (
     ForecastRequest,
-    ForecastScenario,
     HistoryPoint,
-    RiskForecast,
     ScenarioRequest,
     ScenarioType,
 )

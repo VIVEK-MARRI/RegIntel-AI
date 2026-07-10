@@ -16,11 +16,10 @@ test suite runs offline without any LLM or retrieval backend.
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import List
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
 from app.api.dependencies import get_citation_service
@@ -43,7 +42,6 @@ from app.services.citation import (
     CitationMapper,
     CitationService,
     ClaimExtractor,
-    TokenOverlapScorer,
     build_default_citation_service,
     split_into_sentences,
 )

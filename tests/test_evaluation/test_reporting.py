@@ -1,15 +1,11 @@
 """Tests for the Reporting System."""
 
 import json
-import pytest
 from pathlib import Path
-from datetime import datetime
 from app.evaluation.reporting import ReportGenerator, Leaderboard
 from app.evaluation.schemas import (
     EvaluationReport,
     EvaluationConfig,
-    GoldenDataset,
-    QueryRelevance,
     QueryEvaluationResult,
     RetrievalResult,
     RetrievalStrategy,
