@@ -262,6 +262,8 @@ class RetrievalMetricsRepository:
 
         dialect_name = self.db.bind.dialect.name if self.db.bind is not None else ""
         # Use text() for the dynamic column reference (metric) while keeping other params bound.
+        # B608 rationale: metric validated against ALLOWED_METRICS at lines 243-261, proof test
+        # test_get_trend_analysis_invalid_metric_rejected confirms rejection before this point
         if dialect_name == "postgresql":
             query = text(f"""
                 SELECT
@@ -275,7 +277,7 @@ class RetrievalMetricsRepository:
                   AND {metric} IS NOT NULL
                 GROUP BY window_time
                 ORDER BY window_time ASC
-            """)
+            """)  # nosec B608
         else:
             # SQLite-compatible bucketing (sufficient for tests)
             # daily -> YYYY-MM-DD
@@ -301,7 +303,7 @@ class RetrievalMetricsRepository:
                   AND {metric} IS NOT NULL
                 GROUP BY window_time
                 ORDER BY window_time ASC
-            """)
+            """)  # nosec B608
 
         result = await self.db.execute(
             query,

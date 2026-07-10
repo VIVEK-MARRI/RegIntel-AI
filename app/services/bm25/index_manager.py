@@ -246,7 +246,8 @@ class BM25IndexManager:
 
         try:
             with open(index_path, "rb") as f:
-                state = pickle.load(f)
+                # Path is hardcoded storage/bm25/bm25_index.pkl from IndexManagerConfig defaults (lines 37-38); never user-influenced
+                state = pickle.load(f)  # nosec B301
 
             self._retriever._documents = state["documents"]
             self._retriever._corpus_tokens = state["corpus_tokens"]

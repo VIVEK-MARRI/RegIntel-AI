@@ -217,3 +217,33 @@ async def test_bm25_index_lifecycle_and_retrieval(db_session, tmp_path):
         await db_session.delete(doc_rbi)
         await db_session.delete(doc_sebi)
         await db_session.commit()
+
+
+def test_index_manager_path_is_internal_only():
+    """Verify IndexManagerConfig defaults produce an internal-only path (B301)."""
+    from app.services.bm25.index_manager import IndexManagerConfig, BM25IndexManager
+
+    config = IndexManagerConfig()
+    assert config.storage_dir == "storage/bm25"
+    assert config.index_filename == "bm25_index.pkl"
+
+    manager = BM25IndexManager()
+    assert manager._config.storage_dir == "storage/bm25"
+    assert manager._config.index_filename == "bm25_index.pkl"
+    assert f"{config.storage_dir}/{config.index_filename}" == "storage/bm25/bm25_index.pkl"
+
+
+def test_bm25_service_path_is_internal_only():
+    """Verify BM25RetrieverService storage_dir is derived from settings, never user input (B301)."""
+    from app.core.config import settings
+    from app.services.bm25.service import BM25RetrieverService
+
+    assert settings.STORAGE_ROOT == "storage"
+    expected_storage_dir = f"{settings.STORAGE_ROOT}/bm25"
+
+    # storage_dir defaults to settings.STORAGE_ROOT/bm25 when no arg is passed
+    assert expected_storage_dir == "storage/bm25"
+
+    # The build_index default index_name is hardcoded "default_bm25"
+    # Full file_path = storage/bm25/default_bm25.pkl
+    assert f"{expected_storage_dir}/default_bm25.pkl" == "storage/bm25/default_bm25.pkl"

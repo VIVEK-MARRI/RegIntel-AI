@@ -193,6 +193,21 @@ class TestTrendAnalysisAPI:
         assert data["metric_name"] == "dense_recall_at_5"
         assert "series" in data
 
+    async def test_get_trend_analysis_invalid_metric_rejected(self, client):
+        """Invalid metric name returns empty series — allow-list blocks injection (B608)."""
+        response = await client.get(
+            "/api/v1/analytics/trends/DROP_TABLE_users",
+            params={
+                "strategies": ["dense"],
+                "window_type": "daily",
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["metric_name"] == "DROP_TABLE_users"
+        for series in data["series"]:
+            assert len(series["data_points"]) == 0
+
 
 @pytest.mark.asyncio
 class TestPerformanceSummaryAPI:

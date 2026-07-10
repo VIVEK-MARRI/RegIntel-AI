@@ -328,7 +328,8 @@ class BM25RetrieverService(BM25Retriever):
 
         try:
             with open(filepath, "rb") as f:
-                payload = pickle.load(f)
+                # file_path comes from DB record written by build_index() (line 219); path computed from settings.STORAGE_ROOT/server defaults only, never user-controlled
+                payload = pickle.load(f)  # nosec B301
 
             self._cached_bm25 = payload["bm25"]
             self._cached_chunk_ids = payload["chunk_ids"]
