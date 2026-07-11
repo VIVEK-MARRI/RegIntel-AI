@@ -263,10 +263,12 @@ storage/**/*.txt
 coverage-backend.*
 junit-backend.*
 frontend/junit.xml
-landing/index.html
 
 # Third-party tool artifacts
 .kilo/
 
 # User upload directory at root
 USER_UPLOAD/
+
+# Postgres Data
+pgdata/

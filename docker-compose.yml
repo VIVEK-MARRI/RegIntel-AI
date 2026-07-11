@@ -1,10 +1,32 @@
 name: regintel-dev
 
 services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: regintel-db
+    environment:
+      POSTGRES_USER: regintel
+      POSTGRES_PASSWORD: CHANGE_ME
+      POSTGRES_DB: regintel
+    ports:
+      - "5432:5432"
+    networks:
+      - regintel_net
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U regintel -d regintel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: .
     image: regintel/backend:dev
     container_name: regintel-backend
+    depends_on:
+      db:
+        condition: service_healthy
     env_file:
       - .env
     environment:

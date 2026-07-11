@@ -1,0 +1,3335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RegIntel-AI — Every answer cites the passage it came from</title>
+    <meta name="description"
+        content="Regulatory intelligence for RBI and SEBI compliance. Citation-grounded answers, a regulatory knowledge graph, and governance built for audit.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ============ TOKENS ============ */
+        :root {
+            --ink: #11141B;
+            --ink-soft: #1A1F26;
+            --ink-veil: #232932;
+            --ink-veil-2: #2C333D;
+            --paper: #F1ECE0;
+            --paper-warm: #EAE3D0;
+            --paper-shade: #DDD5BE;
+            --paper-deep: #CFC6AB;
+            --slate: #4A5360;
+            --slate-soft: #6B7480;
+            --slate-faint: #9098A4;
+            --paper-text-veil: #C9C2AE;
+            --paper-text-faint: #8E8773;
+            --brass: #B88840;
+            --brass-deep: #8C6526;
+            --brass-light: #D4B377;
+            --brass-veil: #3A2E1A;
+            --verify: #2F6B4F;
+            --verify-soft: #D8E5DD;
+            --verify-dark: #5FA886;
+            --redline: #9B3221;
+            --redline-soft: #E8D6D2;
+            --redline-dark: #C4584A;
+            --rule: #D9D2BF;
+            --rule-soft: #E5DFCC;
+            --rule-dark: #2F3640;
+            --rule-dark-soft: #3A4250;
+            --maxw: 1240px;
+            --read: 62ch;
+        }
+
+        /* ============ BASE ============ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 17px;
+            line-height: 1.6;
+            color: var(--ink);
+            background: var(--paper);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            overflow-x: hidden;
+        }
+
+        img,
+        svg {
+            display: block;
+            max-width: 100%
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none
+        }
+
+        button {
+            font: inherit;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: inherit
+        }
+
+        ::selection {
+            background: var(--brass);
+            color: var(--paper)
+        }
+
+        /* ============ TYPE UTILITIES ============ */
+        .display {
+            font-family: 'Spectral', Georgia, serif;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            line-height: 1.08
+        }
+
+        .mono {
+            font-family: 'IBM Plex Mono', ui-monospace, monospace;
+            font-feature-settings: "zero" 1
+        }
+
+        .eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--brass-deep);
+        }
+
+        .eyebrow.on-dark {
+            color: var(--brass-light)
+        }
+
+        /* ============ LAYOUT ============ */
+        .wrap {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 0 32px
+        }
+
+        .section {
+            padding: 120px 0;
+            position: relative
+        }
+
+        .section.on-paper {
+            background: var(--paper);
+            color: var(--ink)
+        }
+
+        .section.on-ink {
+            background: var(--ink);
+            color: var(--paper)
+        }
+
+        .section.on-warm {
+            background: var(--paper-warm);
+            color: var(--ink)
+        }
+
+        /* ============ SECTION HEADER (stamp + number + title) ============ */
+        .shead {
+            margin-bottom: 64px;
+            max-width: 880px
+        }
+
+        .shead-row {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 28px
+        }
+
+        .section-stamp {
+            color: var(--brass-deep)
+        }
+
+        .on-ink .section-stamp {
+            color: var(--brass-light)
+        }
+
+        .section-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            letter-spacing: 0.16em;
+            color: var(--slate);
+            font-weight: 500;
+        }
+
+        .on-ink .section-num {
+            color: var(--paper-text-veil)
+        }
+
+        .section-topic {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--slate-soft);
+            padding-left: 18px;
+            border-left: 1px solid var(--rule);
+        }
+
+        .on-ink .section-topic {
+            color: var(--paper-text-faint);
+            border-left-color: var(--rule-dark-soft)
+        }
+
+        .shead-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: clamp(30px, 4vw, 48px);
+            line-height: 1.1;
+            letter-spacing: -0.018em;
+            color: var(--ink);
+            max-width: 22ch;
+        }
+
+        .on-ink .shead-title {
+            color: var(--paper)
+        }
+
+        .shead-title em {
+            font-style: italic;
+            color: var(--brass-deep);
+            font-weight: 500
+        }
+
+        .on-ink .shead-title em {
+            color: var(--brass-light)
+        }
+
+        .shead-lede {
+            margin-top: 24px;
+            font-size: 19px;
+            line-height: 1.55;
+            color: var(--slate);
+            max-width: 62ch;
+        }
+
+        .on-ink .shead-lede {
+            color: var(--paper-text-veil)
+        }
+
+        /* ============ NAV ============ */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(17, 20, 27, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(184, 136, 64, 0.18);
+            transition: background 0.3s ease;
+        }
+
+        .nav-inner {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 32px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--paper)
+        }
+
+        .brand-mark {
+            width: 22px;
+            height: 22px;
+            color: var(--brass-light)
+        }
+
+        .brand-name {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: 18px;
+            letter-spacing: -0.01em;
+            color: var(--paper);
+        }
+
+        .brand-ai {
+            color: var(--brass-light);
+            font-weight: 500
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            align-items: center
+        }
+
+        .nav-links a {
+            font-size: 13.5px;
+            color: var(--paper-text-veil);
+            font-weight: 400;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--paper)
+        }
+
+        .nav-links a:focus-visible {
+            outline: 1px solid var(--brass-light);
+            outline-offset: 4px;
+            border-radius: 2px
+        }
+
+        .nav-cta {
+            font-family: 'Inter', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 9px 18px;
+            border: 1px solid var(--brass);
+            color: var(--brass-light);
+            border-radius: 2px;
+            transition: background 0.2s ease, color 0.2s ease;
+            letter-spacing: 0.01em;
+        }
+
+        .nav-cta:hover {
+            background: var(--brass);
+            color: var(--ink)
+        }
+
+        .nav-cta:focus-visible {
+            outline: 2px solid var(--brass-light);
+            outline-offset: 3px
+        }
+
+        .nav-burger {
+            display: none
+        }
+
+        /* ============ HERO ============ */
+        .hero {
+            background: var(--ink);
+            color: var(--paper);
+            padding: 160px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            /* subtle paper-grain texture via SVG noise */
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.72 0 0 0 0 0.53 0 0 0 0 0.25 0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+            opacity: 0.5;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        .hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 0 32px
+        }
+
+        .hero-tag {
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            color: var(--brass-light);
+            margin-bottom: 32px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hero-tag::before {
+            content: "";
+            width: 24px;
+            height: 1px;
+            background: var(--brass);
+        }
+
+        .hero-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: clamp(36px, 5.6vw, 68px);
+            line-height: 1.05;
+            letter-spacing: -0.022em;
+            color: var(--paper);
+            max-width: 18ch;
+            margin-bottom: 32px;
+        }
+
+        .hero-title em {
+            font-style: italic;
+            color: var(--brass-light);
+            font-weight: 500
+        }
+
+        .hero-sub {
+            font-size: 19px;
+            line-height: 1.55;
+            color: var(--paper-text-veil);
+            max-width: 58ch;
+            margin-bottom: 44px;
+        }
+
+        .hero-cta-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 14px 24px;
+            background: var(--brass);
+            color: var(--ink);
+            border-radius: 2px;
+            transition: background 0.2s ease, transform 0.15s ease;
+            letter-spacing: 0.005em;
+        }
+
+        .cta-primary:hover {
+            background: var(--brass-light)
+        }
+
+        .cta-primary:focus-visible {
+            outline: 2px solid var(--brass-light);
+            outline-offset: 3px
+        }
+
+        .cta-primary svg {
+            width: 14px;
+            height: 14px
+        }
+
+        .cta-secondary {
+            font-size: 15px;
+            color: var(--paper-text-veil);
+            border-bottom: 1px solid var(--rule-dark-soft);
+            padding-bottom: 4px;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .cta-secondary:hover {
+            color: var(--brass-light);
+            border-color: var(--brass)
+        }
+
+        .cta-secondary:focus-visible {
+            outline: 1px solid var(--brass-light);
+            outline-offset: 4px;
+            border-radius: 2px
+        }
+
+        /* hero citation trace glimpse */
+        .hero-trace {
+            margin-top: 88px;
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 0;
+            align-items: stretch;
+            position: relative;
+            padding: 28px 0;
+            border-top: 1px solid var(--rule-dark-soft);
+            border-bottom: 1px solid var(--rule-dark-soft);
+        }
+
+        .hero-trace-source,
+        .hero-trace-answer {
+            padding: 8px 0;
+        }
+
+        .hero-trace-source {
+            padding-right: 24px
+        }
+
+        .hero-trace-answer {
+            padding-left: 24px
+        }
+
+        .hero-trace-meta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            color: var(--paper-text-faint);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .hero-trace-source .hero-trace-meta::before {
+            content: "§ ";
+            color: var(--brass-light)
+        }
+
+        .hero-trace-text {
+            font-family: 'Spectral', serif;
+            font-size: 15.5px;
+            line-height: 1.55;
+            color: var(--paper);
+            font-weight: 400;
+        }
+
+        .hero-trace-source mark {
+            background: transparent;
+            color: var(--brass-light);
+            border-bottom: 1px solid var(--brass);
+            padding-bottom: 1px;
+        }
+
+        .hero-trace-answer .cite-marker {
+            color: var(--brass-light);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            vertical-align: super;
+            margin-left: 2px;
+            border: 1px solid var(--brass);
+            padding: 0 4px;
+            border-radius: 2px;
+            background: var(--brass-veil);
+        }
+
+        .hero-trace-line-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-trace-line-wrap svg {
+            width: 100%;
+            height: 60px;
+            overflow: visible
+        }
+
+        .hero-trace-line {
+            fill: none;
+            stroke: var(--brass);
+            stroke-width: 1.2;
+            stroke-dasharray: 300;
+            stroke-dashoffset: 300;
+        }
+
+        .hero-trace-end {
+            fill: var(--brass);
+            opacity: 0;
+        }
+
+        .hero-trace-foot {
+            grid-column: 1/-1;
+            margin-top: 18px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--paper-text-faint);
+            letter-spacing: 0.08em;
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .hero-trace-foot .conf {
+            color: var(--verify-dark)
+        }
+
+        /* hero entrance orchestration */
+        .hero-entrance>* {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.7s ease, transform 0.7s ease
+        }
+
+        .hero.is-loaded .hero-entrance>* {
+            opacity: 1;
+            transform: none
+        }
+
+        .hero.is-loaded .hero-entrance>*:nth-child(1) {
+            transition-delay: 0.05s
+        }
+
+        .hero.is-loaded .hero-entrance>*:nth-child(2) {
+            transition-delay: 0.15s
+        }
+
+        .hero.is-loaded .hero-entrance>*:nth-child(3) {
+            transition-delay: 0.25s
+        }
+
+        .hero.is-loaded .hero-entrance>*:nth-child(4) {
+            transition-delay: 0.35s
+        }
+
+        .hero.is-loaded .hero-trace {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease 0.55s, transform 0.8s ease 0.55s
+        }
+
+        .hero.is-loaded .hero-trace {
+            opacity: 1;
+            transform: none
+        }
+
+        .hero-trace {
+            opacity: 0
+        }
+
+        /* ============ PROBLEM SECTION ============ */
+        .pain-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--rule);
+            border: 1px solid var(--rule);
+        }
+
+        .pain {
+            background: var(--paper);
+            padding: 40px 36px 44px;
+            position: relative;
+            transition: background 0.25s ease;
+        }
+
+        .pain:hover {
+            background: var(--paper-warm)
+        }
+
+        .pain-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--brass-deep);
+            letter-spacing: 0.12em;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pain-num::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--rule)
+        }
+
+        .pain-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: 22px;
+            line-height: 1.25;
+            color: var(--ink);
+            margin-bottom: 16px;
+            letter-spacing: -0.01em;
+        }
+
+        .pain-body {
+            font-size: 15.5px;
+            line-height: 1.6;
+            color: var(--slate);
+        }
+
+        .pain-body strong {
+            color: var(--ink);
+            font-weight: 500
+        }
+
+        /* ============ RETRIEVAL SECTION ============ */
+        .retrieval {
+            position: relative
+        }
+
+        .retrieval-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 80px;
+            align-items: start;
+        }
+
+        .retrieval-diagram-col {
+            position: sticky;
+            top: 100px;
+            background: var(--paper-warm);
+            border: 1px solid var(--rule);
+            padding: 32px;
+            border-radius: 2px;
+            min-height: 520px;
+        }
+
+        .retrieval-diagram-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .retrieval-diagram-head .lbl {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--slate-soft);
+        }
+
+        .retrieval-diagram-head .stage {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--brass-deep);
+            font-weight: 500;
+        }
+
+        .retrieval-diagram-svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .retrieval-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 24px
+        }
+
+        .rstep {
+            padding: 32px 0;
+            border-bottom: 1px solid var(--rule);
+            opacity: 0.45;
+            transition: opacity 0.4s ease;
+            position: relative;
+        }
+
+        .rstep:last-child {
+            border-bottom: none
+        }
+
+        .rstep.is-active {
+            opacity: 1
+        }
+
+        .rstep-head {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .rstep-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--brass-deep);
+            font-weight: 500;
+            letter-spacing: 0.08em;
+        }
+
+        .rstep-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: 21px;
+            color: var(--ink);
+            letter-spacing: -0.012em;
+            line-height: 1.25;
+        }
+
+        .rstep-body {
+            font-size: 15.5px;
+            line-height: 1.6;
+            color: var(--slate);
+            max-width: 52ch;
+        }
+
+        .rstep-body code {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            background: var(--paper-shade);
+            padding: 1px 6px;
+            border-radius: 2px;
+            color: var(--ink);
+        }
+
+        .rstep.is-active .rstep-num {
+            color: var(--brass)
+        }
+
+        /* retrieval svg styles */
+        .rdiag-node {
+            transition: opacity 0.4s ease
+        }
+
+        .rdiag-node.dim {
+            opacity: 0.25
+        }
+
+        .rdiag-node.active .rdiag-node-fill {
+            fill: var(--brass)
+        }
+
+        .rdiag-node.active .rdiag-node-stroke {
+            stroke: var(--brass)
+        }
+
+        .rdiag-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            fill: var(--slate);
+            transition: fill 0.4s ease
+        }
+
+        .rdiag-label.active {
+            fill: var(--ink)
+        }
+
+        .rdiag-edge {
+            stroke: var(--rule);
+            stroke-width: 1;
+            fill: none;
+            transition: stroke 0.4s ease
+        }
+
+        .rdiag-edge.active {
+            stroke: var(--brass)
+        }
+
+        .rdiag-chunk {
+            fill: var(--paper);
+            stroke: var(--rule);
+            stroke-width: 1;
+            transition: fill 0.4s ease, stroke 0.4s ease
+        }
+
+        .rdiag-chunk.active {
+            fill: var(--brass-soft, var(--paper-shade));
+            stroke: var(--brass)
+        }
+
+        .rdiag-chunk-text {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            fill: var(--slate-soft)
+        }
+
+        /* ============ CITATION TRACE SECTION ============ */
+        .citation {
+            background: var(--ink);
+            color: var(--paper);
+            position: relative;
+            overflow: hidden
+        }
+
+        .citation::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.72 0 0 0 0 0.53 0 0 0 0 0.25 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+            opacity: 0.4;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        .citation .wrap {
+            position: relative;
+            z-index: 2
+        }
+
+        .trace-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            margin-top: 48px;
+            position: relative;
+            padding: 48px 0;
+        }
+
+        .trace-source,
+        .trace-answer {
+            padding: 32px;
+            background: var(--ink-soft);
+            border: 1px solid var(--rule-dark-soft);
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .trace-source {
+            position: relative
+        }
+
+        .trace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--rule-dark-soft);
+        }
+
+        .trace-header .ref {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--brass-light);
+            letter-spacing: 0.08em;
+        }
+
+        .trace-header .type {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--paper-text-faint);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border: 1px solid var(--rule-dark-soft);
+            border-radius: 2px;
+        }
+
+        .trace-doc {
+            font-family: 'Spectral', serif;
+            font-size: 14.5px;
+            line-height: 1.7;
+            color: var(--paper-text-veil);
+        }
+
+        .trace-doc .clause-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--paper-text-faint);
+            margin-right: 8px;
+        }
+
+        .trace-doc p {
+            margin-bottom: 12px
+        }
+
+        .trace-doc p:last-child {
+            margin-bottom: 0
+        }
+
+        .cite-target {
+            background: rgba(184, 136, 64, 0.12);
+            color: var(--paper);
+            padding: 1px 4px;
+            border-radius: 1px;
+            border-bottom: 1px solid var(--brass);
+            transition: background 0.4s ease;
+        }
+
+        .cite-target.lit {
+            background: rgba(184, 136, 64, 0.28)
+        }
+
+        .trace-answer .trace-doc {
+            color: var(--paper)
+        }
+
+        .ans-conf {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--rule-dark-soft);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--paper-text-faint);
+            letter-spacing: 0.08em;
+        }
+
+        .ans-conf .conf-val {
+            color: var(--verify-dark);
+            font-weight: 500
+        }
+
+        .ans-conf .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--verify-dark)
+        }
+
+        .cite-origin {
+            background: rgba(95, 168, 134, 0.12);
+            color: var(--paper);
+            padding: 1px 4px;
+            border-bottom: 1px solid var(--verify-dark);
+            transition: background 0.4s ease;
+        }
+
+        .cite-origin.lit {
+            background: rgba(95, 168, 134, 0.28)
+        }
+
+        .cite-marker {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--brass-light);
+            vertical-align: super;
+            margin-left: 2px;
+            padding: 1px 5px;
+            border: 1px solid var(--brass);
+            border-radius: 2px;
+            background: var(--brass-veil);
+        }
+
+        .trace-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .trace-path {
+            fill: none;
+            stroke: var(--brass);
+            stroke-width: 1.2;
+            stroke-dasharray: 6 4;
+        }
+
+        .trace-dot {
+            fill: var(--brass)
+        }
+
+        /* hallucination flag sub-block */
+        .hallucination {
+            margin-top: 64px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            padding: 40px;
+            background: var(--ink-soft);
+            border: 1px solid var(--rule-dark-soft);
+            border-left: 3px solid var(--redline);
+            border-radius: 2px;
+        }
+
+        .hallucination-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--redline-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hallucination-label::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: var(--redline);
+            border-radius: 50%;
+        }
+
+        .hallucination-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: 22px;
+            line-height: 1.3;
+            color: var(--paper);
+            margin-bottom: 16px;
+            letter-spacing: -0.012em;
+        }
+
+        .hallucination-body {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--paper-text-veil);
+        }
+
+        .hallucination-body strong {
+            color: var(--paper);
+            font-weight: 500
+        }
+
+        .hallucination-claim {
+            font-family: 'Spectral', serif;
+            font-size: 15px;
+            color: var(--paper-text-veil);
+            line-height: 1.65;
+            font-style: italic;
+        }
+
+        .hallucination-claim .flagged {
+            color: var(--redline-dark);
+            text-decoration: line-through;
+            text-decoration-color: var(--redline);
+            text-decoration-thickness: 1px;
+        }
+
+        .hallucination-flag {
+            margin-top: 14px;
+            padding: 10px 14px;
+            background: rgba(155, 50, 33, 0.14);
+            border: 1px solid var(--redline);
+            border-radius: 2px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            color: var(--redline-dark);
+            letter-spacing: 0.04em;
+        }
+
+        /* ============ KNOWLEDGE GRAPH SECTION ============ */
+        .graph {
+            background: var(--paper-warm)
+        }
+
+        .graph-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 64px;
+            align-items: center;
+        }
+
+        .graph-svg-wrap {
+            background: var(--paper);
+            border: 1px solid var(--rule);
+            padding: 24px;
+            border-radius: 2px;
+            position: relative;
+            aspect-ratio: 5/4;
+        }
+
+        .graph-svg {
+            width: 100%;
+            height: 100%;
+            display: block
+        }
+
+        .gnode-circle {
+            fill: var(--paper);
+            stroke: var(--ink);
+            stroke-width: 1.2;
+            opacity: 0;
+            transform-origin: center;
+            transform-box: fill-box;
+            transition: opacity 0.5s ease, transform 0.5s ease, fill 0.3s ease;
+        }
+
+        .gnode-circle.amend {
+            fill: var(--brass);
+            stroke: var(--brass-deep)
+        }
+
+        .gnode-circle.master {
+            fill: var(--ink);
+            stroke: var(--ink)
+        }
+
+        .gnode-circle.superseded {
+            fill: var(--paper-shade);
+            stroke: var(--slate-soft);
+            stroke-dasharray: 3 3
+        }
+
+        .gnode-circle.entity {
+            fill: var(--paper-warm);
+            stroke: var(--slate)
+        }
+
+        .gnode-circle.topic {
+            fill: var(--verify-soft);
+            stroke: var(--verify)
+        }
+
+        .gnode-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            fill: var(--ink);
+            opacity: 0;
+            transition: opacity 0.5s ease 0.2s;
+        }
+
+        .gnode-label.sub {
+            font-size: 9px;
+            fill: var(--slate)
+        }
+
+        .gnode-title {
+            font-family: 'Spectral', serif;
+            font-size: 11px;
+            font-weight: 600;
+            fill: var(--ink);
+            opacity: 0;
+            transition: opacity 0.5s ease 0.3s;
+        }
+
+        .gedge {
+            stroke: var(--slate-soft);
+            stroke-width: 1;
+            fill: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .gedge.amends {
+            stroke: var(--brass);
+            stroke-dasharray: none
+        }
+
+        .gedge.supersedes {
+            stroke: var(--redline);
+            stroke-dasharray: 4 3
+        }
+
+        .gedge.applies {
+            stroke: var(--verify);
+            stroke-dasharray: none
+        }
+
+        .gedge.governs {
+            stroke: var(--slate);
+            stroke-dasharray: 2 2
+        }
+
+        .gedge-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            fill: var(--slate);
+            opacity: 0;
+            transition: opacity 0.4s ease 0.3s;
+        }
+
+        .gedge-label.amends {
+            fill: var(--brass-deep)
+        }
+
+        .gedge-label.supersedes {
+            fill: var(--redline)
+        }
+
+        .gedge-label.applies {
+            fill: var(--verify)
+        }
+
+        .graph.is-in .gnode-circle {
+            opacity: 1;
+            transform: scale(1)
+        }
+
+        .graph.is-in .gnode-label,
+        .graph.is-in .gnode-title {
+            opacity: 1
+        }
+
+        .graph.is-in .gedge {
+            opacity: 1
+        }
+
+        .graph.is-in .gedge-label {
+            opacity: 1
+        }
+
+        .graph-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 24px
+        }
+
+        .legend-item {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .legend-item:last-child {
+            border-bottom: none
+        }
+
+        .legend-mark {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1.5px solid var(--ink);
+            margin-top: 2px;
+        }
+
+        .legend-mark.amend {
+            background: var(--brass);
+            border-color: var(--brass-deep)
+        }
+
+        .legend-mark.master {
+            background: var(--ink)
+        }
+
+        .legend-mark.superseded {
+            background: var(--paper-shade);
+            border-color: var(--slate-soft);
+            border-style: dashed
+        }
+
+        .legend-mark.entity {
+            background: var(--paper-warm);
+            border-color: var(--slate)
+        }
+
+        .legend-text {
+            flex: 1
+        }
+
+        .legend-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--ink);
+            margin-bottom: 4px;
+        }
+
+        .legend-desc {
+            font-size: 13.5px;
+            color: var(--slate);
+            line-height: 1.5;
+        }
+
+        /* ============ GOVERNANCE SECTION ============ */
+        .gov {
+            background: var(--ink);
+            color: var(--paper)
+        }
+
+        .gov-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--rule-dark);
+            border: 1px solid var(--rule-dark);
+        }
+
+        .gov-card {
+            background: var(--ink-soft);
+            padding: 36px 32px 40px;
+        }
+
+        .gov-card-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--brass-light);
+            letter-spacing: 0.14em;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gov-card-num::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--rule-dark-soft)
+        }
+
+        .gov-card-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: 21px;
+            line-height: 1.25;
+            color: var(--paper);
+            margin-bottom: 16px;
+            letter-spacing: -0.012em;
+        }
+
+        .gov-card-body {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--paper-text-veil);
+            margin-bottom: 20px;
+        }
+
+        .gov-card-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .gov-card-list li {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--paper-text-faint);
+            letter-spacing: 0.02em;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .gov-card-list li::before {
+            content: "—";
+            position: absolute;
+            left: 0;
+            color: var(--brass);
+        }
+
+        .audit-strip {
+            margin-top: 48px;
+            padding: 32px;
+            background: var(--ink-soft);
+            border: 1px solid var(--rule-dark-soft);
+            border-radius: 2px;
+        }
+
+        .audit-strip-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--rule-dark-soft);
+        }
+
+        .audit-strip-head .lbl {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--paper-text-faint);
+        }
+
+        .audit-strip-head .ts {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--brass-light);
+        }
+
+        .audit-log {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            line-height: 1.9;
+            color: var(--paper-text-veil);
+        }
+
+        .audit-log .row {
+            display: grid;
+            grid-template-columns: 120px 100px 1fr 80px;
+            gap: 16px
+        }
+
+        .audit-log .ts {
+            color: var(--paper-text-faint)
+        }
+
+        .audit-log .user {
+            color: var(--brass-light)
+        }
+
+        .audit-log .action {
+            color: var(--paper)
+        }
+
+        .audit-log .policy {
+            color: var(--verify-dark)
+        }
+
+        /* ============ PRODUCT GLIMPSE ============ */
+        .product {
+            background: var(--paper)
+        }
+
+        .mockup {
+            margin-top: 48px;
+            background: var(--ink-soft);
+            border: 1px solid var(--rule-dark);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px -30px rgba(17, 20, 27, 0.25);
+        }
+
+        .mockup-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 18px;
+            background: var(--ink);
+            border-bottom: 1px solid var(--rule-dark-soft);
+        }
+
+        .mockup-bar .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--rule-dark-soft)
+        }
+
+        .mockup-bar .url {
+            flex: 1;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--paper-text-faint);
+            text-align: center;
+            letter-spacing: 0.04em;
+        }
+
+        .mockup-body {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            min-height: 520px;
+        }
+
+        .mockup-main {
+            padding: 32px;
+            border-right: 1px solid var(--rule-dark-soft);
+        }
+
+        .mockup-qbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: var(--ink);
+            border: 1px solid var(--rule-dark-soft);
+            border-radius: 2px;
+            margin-bottom: 28px;
+        }
+
+        .mockup-qbar .prompt {
+            color: var(--brass-light);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px
+        }
+
+        .mockup-qbar .q {
+            flex: 1;
+            color: var(--paper);
+            font-family: 'Spectral', serif;
+            font-size: 15.5px;
+            line-height: 1.4
+        }
+
+        .mockup-section-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--paper-text-faint);
+            margin-bottom: 14px;
+        }
+
+        .mockup-answer {
+            font-family: 'Spectral', serif;
+            font-size: 16px;
+            line-height: 1.7;
+            color: var(--paper);
+            margin-bottom: 32px;
+        }
+
+        .mockup-answer .cite-marker {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--brass-light);
+            vertical-align: super;
+            margin: 0 1px;
+            padding: 1px 5px;
+            border: 1px solid var(--brass);
+            border-radius: 2px;
+            background: var(--brass-veil);
+        }
+
+        .mockup-meta {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            padding: 16px 0;
+            border-top: 1px solid var(--rule-dark-soft);
+            border-bottom: 1px solid var(--rule-dark-soft);
+            margin-bottom: 24px;
+        }
+
+        .mockup-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px
+        }
+
+        .mockup-meta-item .k {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--paper-text-faint);
+        }
+
+        .mockup-meta-item .v {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            color: var(--paper);
+        }
+
+        .mockup-meta-item .v.ok {
+            color: var(--verify-dark)
+        }
+
+        .mockup-sources {
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .mockup-source {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: var(--ink);
+            border: 1px solid var(--rule-dark-soft);
+            border-radius: 2px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            color: var(--paper-text-veil);
+        }
+
+        .mockup-source .ref {
+            color: var(--brass-light)
+        }
+
+        .mockup-source .ttl {
+            color: var(--paper);
+            flex: 1
+        }
+
+        .mockup-source .pct {
+            color: var(--verify-dark)
+        }
+
+        .mockup-side {
+            padding: 32px 24px;
+            background: var(--ink);
+        }
+
+        .mockup-side-section {
+            margin-bottom: 32px
+        }
+
+        .mockup-side-section:last-child {
+            margin-bottom: 0
+        }
+
+        .mockup-side-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--paper-text-faint);
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--rule-dark-soft);
+        }
+
+        .mockup-rel {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--paper-text-veil);
+            border-bottom: 1px solid var(--rule-dark-soft);
+        }
+
+        .mockup-rel:last-child {
+            border-bottom: none
+        }
+
+        .mockup-rel .arrow {
+            color: var(--brass-light)
+        }
+
+        .mockup-rel .rel-type {
+            color: var(--brass-light);
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-left: auto
+        }
+
+        .mockup-rel.supersede .rel-type {
+            color: var(--redline-dark)
+        }
+
+        /* ============ CLOSING CTA ============ */
+        .closing {
+            background: var(--ink);
+            color: var(--paper);
+            padding: 140px 0 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .closing::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.72 0 0 0 0 0.53 0 0 0 0 0.25 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+            opacity: 0.4;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        .closing .wrap {
+            position: relative;
+            z-index: 2
+        }
+
+        .closing-inner {
+            max-width: 780px
+        }
+
+        .closing-eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            color: var(--brass-light);
+            margin-bottom: 28px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .closing-eyebrow::before {
+            content: "";
+            width: 24px;
+            height: 1px;
+            background: var(--brass)
+        }
+
+        .closing-title {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: clamp(34px, 5vw, 56px);
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+            color: var(--paper);
+            margin-bottom: 28px;
+            max-width: 20ch;
+        }
+
+        .closing-title em {
+            font-style: italic;
+            color: var(--brass-light);
+            font-weight: 500
+        }
+
+        .closing-body {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--paper-text-veil);
+            margin-bottom: 48px;
+            max-width: 58ch;
+        }
+
+        .closing-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .closing-form .full {
+            grid-column: 1/-1
+        }
+
+        .closing-form label {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--paper-text-faint);
+            margin-bottom: 8px;
+        }
+
+        .closing-form input,
+        .closing-form select,
+        .closing-form textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--rule-dark-soft);
+            padding: 10px 0;
+            color: var(--paper);
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            transition: border-color 0.2s ease;
+        }
+
+        .closing-form input:focus,
+        .closing-form select:focus,
+        .closing-form textarea:focus {
+            outline: none;
+            border-bottom-color: var(--brass);
+        }
+
+        .closing-form input::placeholder,
+        .closing-form textarea::placeholder {
+            color: var(--paper-text-faint)
+        }
+
+        .closing-form select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23B88840' fill='none' stroke-width='1.5'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 4px center;
+            padding-right: 24px
+        }
+
+        .closing-form select option {
+            background: var(--ink);
+            color: var(--paper)
+        }
+
+        .closing-form textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Inter', sans-serif
+        }
+
+        .closing-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 28px;
+            background: var(--brass);
+            color: var(--ink);
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 2px;
+            transition: background 0.2s ease;
+            letter-spacing: 0.005em;
+        }
+
+        .closing-submit:hover {
+            background: var(--brass-light)
+        }
+
+        .closing-submit:focus-visible {
+            outline: 2px solid var(--brass-light);
+            outline-offset: 3px
+        }
+
+        .closing-submit svg {
+            width: 14px;
+            height: 14px
+        }
+
+        .closing-note {
+            margin-top: 24px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            color: var(--paper-text-faint);
+            letter-spacing: 0.02em;
+            line-height: 1.6;
+            max-width: 58ch;
+        }
+
+        .closing-success {
+            display: none;
+            padding: 24px;
+            background: var(--ink-soft);
+            border: 1px solid var(--brass);
+            border-radius: 2px;
+            margin-bottom: 24px;
+        }
+
+        .closing-success.is-shown {
+            display: block
+        }
+
+        .closing-success .lbl {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            color: var(--brass-light);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .closing-success .msg {
+            font-family: 'Spectral', serif;
+            font-size: 16px;
+            color: var(--paper);
+            line-height: 1.5
+        }
+
+        /* ============ FOOTER ============ */
+        .footer {
+            background: var(--ink-soft);
+            color: var(--paper-text-veil);
+            padding: 60px 0 40px;
+            border-top: 1px solid var(--rule-dark-soft);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+
+        .footer-brand .brand {
+            margin-bottom: 16px
+        }
+
+        .footer-brand p {
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: var(--paper-text-faint);
+            max-width: 38ch;
+        }
+
+        .footer-col h4 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--brass-light);
+            margin-bottom: 18px;
+            font-weight: 500;
+        }
+
+        .footer-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .footer-col a {
+            font-size: 13.5px;
+            color: var(--paper-text-veil);
+            transition: color 0.2s ease;
+        }
+
+        .footer-col a:hover {
+            color: var(--brass-light)
+        }
+
+        .footer-col a:focus-visible {
+            outline: 1px solid var(--brass-light);
+            outline-offset: 3px;
+            border-radius: 1px
+        }
+
+        .footer-disclaimer {
+            padding-top: 32px;
+            border-top: 1px solid var(--rule-dark-soft);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--paper-text-faint);
+            letter-spacing: 0.02em;
+            line-height: 1.7;
+            max-width: 80ch;
+        }
+
+        .footer-bottom {
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--paper-text-faint);
+            letter-spacing: 0.04em;
+        }
+
+        /* ============ SCROLL REVEAL ============ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.7s ease, transform 0.7s ease
+        }
+
+        .reveal.is-in {
+            opacity: 1;
+            transform: none
+        }
+
+        .reveal-d1 {
+            transition-delay: 0.08s
+        }
+
+        .reveal-d2 {
+            transition-delay: 0.16s
+        }
+
+        .reveal-d3 {
+            transition-delay: 0.24s
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width:1024px) {
+            .nav-links {
+                display: none
+            }
+
+            .retrieval-grid {
+                grid-template-columns: 1fr;
+                gap: 48px
+            }
+
+            .retrieval-diagram-col {
+                position: static;
+                min-height: auto
+            }
+
+            .trace-container {
+                grid-template-columns: 1fr;
+                gap: 32px
+            }
+
+            .trace-svg {
+                display: none
+            }
+
+            .hallucination {
+                grid-template-columns: 1fr;
+                gap: 32px
+            }
+
+            .graph-layout {
+                grid-template-columns: 1fr;
+                gap: 48px
+            }
+
+            .mockup-body {
+                grid-template-columns: 1fr
+            }
+
+            .mockup-side {
+                border-top: 1px solid var(--rule-dark-soft)
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 32px
+            }
+        }
+
+        @media (max-width:768px) {
+            .wrap {
+                padding: 0 24px
+            }
+
+            .section {
+                padding: 80px 0
+            }
+
+            .nav-inner {
+                padding: 14px 24px
+            }
+
+            .hero {
+                padding: 130px 0 60px
+            }
+
+            .hero-trace {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                padding: 24px 0
+            }
+
+            .hero-trace-source,
+            .hero-trace-answer {
+                padding: 0
+            }
+
+            .hero-trace-line-wrap {
+                display: none
+            }
+
+            .pain-grid {
+                grid-template-columns: 1fr
+            }
+
+            .gov-grid {
+                grid-template-columns: 1fr
+            }
+
+            .closing-form {
+                grid-template-columns: 1fr
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 32px
+            }
+
+            .shead {
+                margin-bottom: 48px
+            }
+
+            .audit-log .row {
+                grid-template-columns: 1fr;
+                gap: 4px
+            }
+
+            .audit-log .row>* {
+                color: var(--paper-text-veil) !important
+            }
+
+            .mockup-main {
+                padding: 24px 20px
+            }
+
+            .mockup-side {
+                padding: 24px 20px
+            }
+
+            .nav-burger {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                padding: 8px;
+                background: transparent;
+                border: none
+            }
+
+            .nav-burger span {
+                width: 18px;
+                height: 1.5px;
+                background: var(--paper);
+                display: block
+            }
+        }
+
+        /* ============ REDUCED MOTION ============ */
+        @media (prefers-reduced-motion:reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+                scroll-behavior: auto !important;
+            }
+
+            .reveal {
+                opacity: 1;
+                transform: none
+            }
+
+            .hero-entrance>* {
+                opacity: 1;
+                transform: none
+            }
+
+            .hero-trace {
+                opacity: 1
+            }
+
+            .hero-trace-line {
+                stroke-dashoffset: 0
+            }
+
+            .hero-trace-end {
+                opacity: 1
+            }
+
+            .trace-path {
+                stroke-dasharray: none
+            }
+
+            .gnode-circle,
+            .gnode-label,
+            .gnode-title,
+            .gedge,
+            .gedge-label {
+                opacity: 1
+            }
+
+            .gnode-circle {
+                transform: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ============ NAV ============ -->
+    <header class="nav" role="banner">
+        <div class="nav-inner">
+            <a href="#top" class="brand" aria-label="RegIntel-AI home">
+                <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="5" cy="19" r="2.2" fill="currentColor" />
+                    <circle cx="19" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M 5.5 17.5 Q 11 14 18.5 6.5" fill="none" stroke="currentColor" stroke-width="1"
+                        stroke-dasharray="2 2.5" />
+                </svg>
+                <span class="brand-name">RegIntel<span class="brand-ai">-AI</span></span>
+            </a>
+            <nav class="nav-links" aria-label="Section navigation">
+                <a href="#problem">Problem</a>
+                <a href="#retrieval">Retrieval</a>
+                <a href="#citations">Citations</a>
+                <a href="#graph">Knowledge graph</a>
+                <a href="#governance">Governance</a>
+            </nav>
+            <a href="/app/login" class="nav-cta">Open Dashboard</a>
+        </div>
+    </header>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="top">
+        <div class="hero-inner">
+            <div class="hero-entrance">
+                <div class="hero-tag mono">REGULATORY INTELLIGENCE · RBI / SEBI</div>
+                <h1 class="hero-title">Every answer cites the passage it came from. <em>If it can't, it tells you.</em>
+                </h1>
+                <p class="hero-sub">RegIntel-AI reads RBI and SEBI circulars, master directions, and amendments the way
+                    your audit function expects — with sources traceable to the page and section, and a guard against
+                    claims the underlying text doesn't support.</p>
+                <div class="hero-cta-row">
+                    <a href="/app/login" class="cta-primary">
+                        Open Dashboard
+                        <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                            <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="square" />
+                        </svg>
+                    </a>
+                    <a href="#retrieval" class="cta-secondary">See how retrieval works</a>
+                </div>
+            </div>
+
+            <!-- hero citation trace glimpse -->
+            <div class="hero-trace" aria-hidden="true">
+                <div class="hero-trace-source">
+                    <div class="hero-trace-meta">Ref: RBI/2024-XX/012 · §4.2(b)</div>
+                    <p class="hero-trace-text">Every NBFC shall maintain a minimum capital adequacy ratio of
+                        <mark>fifteen per cent of its risk-weighted assets</mark>, computed in the manner specified in
+                        Schedule I.</p>
+                </div>
+                <div class="hero-trace-line-wrap">
+                    <svg viewBox="0 0 80 60" preserveAspectRatio="none" aria-hidden="true">
+                        <path class="hero-trace-line" d="M 2 30 Q 40 8 78 30" />
+                        <circle class="hero-trace-end" cx="2" cy="30" r="2.5" />
+                        <circle class="hero-trace-end" cx="78" cy="30" r="2.5" />
+                    </svg>
+                </div>
+                <div class="hero-trace-answer">
+                    <div class="hero-trace-meta">Generated answer</div>
+                    <p class="hero-trace-text">Deposit-taking NBFCs must maintain a minimum CAR of 15% of risk-weighted
+                        assets<span class="cite-marker">1</span>.</p>
+                </div>
+                <div class="hero-trace-foot">
+                    <span>SOURCE → ANSWER · TRACE COMPLETE</span>
+                    <span class="conf">CONFIDENCE 0.94 · CITED</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ PROBLEM ============ -->
+    <section class="section on-paper" id="problem">
+        <div class="wrap">
+            <div class="shead reveal">
+                <div class="shead-row">
+                    <svg class="section-stamp" width="44" height="14" viewBox="0 0 44 14" aria-hidden="true">
+                        <line x1="0" y1="7" x2="8" y2="7" stroke="currentColor" stroke-width="1" />
+                        <circle cx="22" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" />
+                        <text x="22" y="10" text-anchor="middle" font-family="IBM Plex Mono" font-size="7"
+                            fill="currentColor">01</text>
+                        <line x1="36" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1" />
+                    </svg>
+                    <span class="section-num">§ 01</span>
+                    <span class="section-topic">The problem, stated precisely</span>
+                </div>
+                <h2 class="shead-title">Compliance teams don't drown in information. They drown in
+                    <em>cross-references.</em></h2>
+                <p class="shead-lede">A new circular amends a master direction that superseded an earlier notification.
+                    The answer you give the business team depends on which clause is currently in force — and finding
+                    out means reading six documents end-to-end. Again.</p>
+            </div>
+
+            <div class="pain-grid reveal reveal-d1">
+                <div class="pain">
+                    <div class="pain-num">PAIN · 01</div>
+                    <h3 class="pain-title">Supersession chains you trace by hand.</h3>
+                    <p class="pain-body">A 2024 circular amends a 2021 master direction that itself superseded a 2018
+                        notification. <strong>The clause you need might live in any of the three</strong> — and you only
+                        find out which by reading each in full and checking the footnotes. There is no index. There is
+                        no map.</p>
+                </div>
+                <div class="pain">
+                    <div class="pain-num">PAIN · 02</div>
+                    <h3 class="pain-title">Verification that means re-reading the source.</h3>
+                    <p class="pain-body">Before a generated answer goes into an audit response, a board note, or a
+                        regulator-facing filing, <strong>someone has to confirm it actually says what the system claims
+                            it says</strong>. That's the whole job, done manually, on every answer, every time. The cost
+                        isn't the lookup — it's the doubt.</p>
+                </div>
+                <div class="pain">
+                    <div class="pain-num">PAIN · 03</div>
+                    <h3 class="pain-title">No map of what affects what.</h3>
+                    <p class="pain-body">A change to one master direction ripples through every circular that referenced
+                        it, every notification it amended, every institution it governs. <strong>Without a knowledge
+                            graph, you find out about the ripple when something breaks</strong> — usually during an
+                        inspection.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ RETRIEVAL ============ -->
+    <section class="section on-paper retrieval" id="retrieval" style="background:var(--paper)">
+        <div class="wrap">
+            <div class="shead reveal">
+                <div class="shead-row">
+                    <svg class="section-stamp" width="44" height="14" viewBox="0 0 44 14" aria-hidden="true">
+                        <line x1="0" y1="7" x2="8" y2="7" stroke="currentColor" stroke-width="1" />
+                        <circle cx="22" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" />
+                        <text x="22" y="10" text-anchor="middle" font-family="IBM Plex Mono" font-size="7"
+                            fill="currentColor">02</text>
+                        <line x1="36" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1" />
+                    </svg>
+                    <span class="section-num">§ 02</span>
+                    <span class="section-topic">How retrieval actually works</span>
+                </div>
+                <h2 class="shead-title">Two kinds of search, fused, then <em>re-read for precision.</em></h2>
+                <p class="shead-lede">A compliance question isn't a keyword query. It's a question about meaning,
+                    section numbers, defined terms, and the exact way a clause is worded. RegIntel-AI runs both
+                    retrieval paths in parallel, fuses them, and then a cross-encoder reads the top candidates against
+                    the question itself.</p>
+            </div>
+
+            <div class="retrieval-grid reveal reveal-d1">
+                <!-- diagram (sticky) -->
+                <div class="retrieval-diagram-col">
+                    <div class="retrieval-diagram-head">
+                        <span class="lbl">Retrieval pipeline</span>
+                        <span class="stage" id="rdiag-stage">Stage 01 / 06</span>
+                    </div>
+                    <svg class="retrieval-diagram-svg" viewBox="0 0 460 540" aria-hidden="true">
+                        <!-- query node -->
+                        <g class="rdiag-node" id="n-query">
+                            <rect class="rdiag-node-fill" x="170" y="20" width="120" height="40" rx="2"
+                                fill="var(--ink)" stroke="var(--ink)" />
+                            <text x="230" y="44" text-anchor="middle" font-family="IBM Plex Mono" font-size="11"
+                                fill="var(--paper)">QUERY</text>
+                        </g>
+
+                        <!-- dense path label -->
+                        <text x="90" y="100" class="rdiag-label" id="lbl-dense" text-anchor="middle">DENSE · BGE</text>
+                        <text x="370" y="100" class="rdiag-label" id="lbl-bm25" text-anchor="middle">BM25 ·
+                            KEYWORD</text>
+
+                        <!-- dense path chunks -->
+                        <g class="rdiag-node" id="n-dense">
+                            <rect class="rdiag-chunk" x="20" y="120" width="140" height="34" rx="2" />
+                            <text x="90" y="141" text-anchor="middle" class="rdiag-chunk-text">chunk · semantic
+                                match</text>
+                            <rect class="rdiag-chunk" x="20" y="162" width="140" height="34" rx="2" />
+                            <text x="90" y="183" text-anchor="middle" class="rdiag-chunk-text">chunk · semantic
+                                match</text>
+                            <rect class="rdiag-chunk" x="20" y="204" width="140" height="34" rx="2" />
+                            <text x="90" y="225" text-anchor="middle" class="rdiag-chunk-text">chunk · semantic
+                                match</text>
+                        </g>
+
+                        <!-- bm25 path chunks -->
+                        <g class="rdiag-node" id="n-bm25">
+                            <rect class="rdiag-chunk" x="300" y="120" width="140" height="34" rx="2" />
+                            <text x="370" y="141" text-anchor="middle" class="rdiag-chunk-text">chunk · term
+                                match</text>
+                            <rect class="rdiag-chunk" x="300" y="162" width="140" height="34" rx="2" />
+                            <text x="370" y="183" text-anchor="middle" class="rdiag-chunk-text">chunk · term
+                                match</text>
+                            <rect class="rdiag-chunk" x="300" y="204" width="140" height="34" rx="2" />
+                            <text x="370" y="225" text-anchor="middle" class="rdiag-chunk-text">chunk · term
+                                match</text>
+                        </g>
+
+                        <!-- edges from query to paths -->
+                        <path class="rdiag-edge" id="e-qd" d="M 200 60 Q 130 80 90 120" />
+                        <path class="rdiag-edge" id="e-qb" d="M 260 60 Q 330 80 370 120" />
+
+                        <!-- fusion node -->
+                        <text x="230" y="270" class="rdiag-label" text-anchor="middle" id="lbl-fusion">RECIPROCAL RANK
+                            FUSION</text>
+                        <g class="rdiag-node" id="n-fusion">
+                            <rect class="rdiag-node-fill" x="150" y="280" width="160" height="38" rx="2"
+                                fill="var(--paper-shade)" stroke="var(--ink)" />
+                            <text x="230" y="304" text-anchor="middle" font-family="IBM Plex Mono" font-size="10"
+                                fill="var(--ink)">FUSED RANKING · top-N</text>
+                        </g>
+                        <path class="rdiag-edge" id="e-df" d="M 90 238 Q 90 260 170 280" />
+                        <path class="rdiag-edge" id="e-bf" d="M 370 238 Q 370 260 290 280" />
+
+                        <!-- cross-encoder -->
+                        <text x="230" y="354" class="rdiag-label" text-anchor="middle" id="lbl-xenc">CROSS-ENCODER ·
+                            RE-RANK</text>
+                        <g class="rdiag-node" id="n-xenc">
+                            <rect class="rdiag-node-fill" x="150" y="364" width="160" height="38" rx="2"
+                                fill="var(--paper-shade)" stroke="var(--ink)" />
+                            <text x="230" y="388" text-anchor="middle" font-family="IBM Plex Mono" font-size="10"
+                                fill="var(--ink)">query × passage · pairwise</text>
+                        </g>
+                        <path class="rdiag-edge" id="e-fx" d="M 230 318 L 230 364" />
+
+                        <!-- final cited result -->
+                        <g class="rdiag-node" id="n-result">
+                            <rect class="rdiag-node-fill" x="130" y="450" width="200" height="50" rx="2"
+                                fill="var(--brass)" stroke="var(--brass-deep)" />
+                            <text x="230" y="473" text-anchor="middle" font-family="IBM Plex Mono" font-size="11"
+                                fill="var(--ink)">CITED RESULT</text>
+                            <text x="230" y="488" text-anchor="middle" font-family="IBM Plex Mono" font-size="9"
+                                fill="var(--ink)">source · page · section</text>
+                        </g>
+                        <path class="rdiag-edge" id="e-xr" d="M 230 402 L 230 450" />
+                    </svg>
+                </div>
+
+                <!-- steps -->
+                <div class="retrieval-steps">
+                    <div class="rstep is-active" data-step="1">
+                        <div class="rstep-head">
+                            <span class="rstep-num">01</span>
+                            <h3 class="rstep-title">The query, as asked.</h3>
+                        </div>
+                        <p class="rstep-body">A compliance officer types:
+                            <code>"What is the current minimum CAR for deposit-taking NBFCs?"</code> No special syntax,
+                            no boolean operators, no field tags. The question is encoded and routed to two retrieval
+                            paths in parallel.</p>
+                    </div>
+                    <div class="rstep" data-step="2">
+                        <div class="rstep-head">
+                            <span class="rstep-num">02</span>
+                            <h3 class="rstep-title">Dense semantic retrieval (BGE embeddings).</h3>
+                        </div>
+                        <p class="rstep-body">The system matches the question against every passage by meaning. "Capital
+                            adequacy ratio" matches "CAR." "Minimum regulatory capital" matches "fifteen per cent of
+                            risk-weighted assets." This catches paraphrase — the way two clauses say the same thing in
+                            different words.</p>
+                    </div>
+                    <div class="rstep" data-step="3">
+                        <div class="rstep-head">
+                            <span class="rstep-num">03</span>
+                            <h3 class="rstep-title">BM25 keyword retrieval, in parallel.</h3>
+                        </div>
+                        <p class="rstep-body">A keyword pass catches exact terms — section numbers like
+                            <code>4.2(b)</code>, defined terms like "deposit-taking NBFC," circular IDs like
+                            <code>RBI/2024-XX/012</code> — that semantic search can smooth over. Some questions hinge on
+                            a specific number. BM25 doesn't miss those.</p>
+                    </div>
+                    <div class="rstep" data-step="4">
+                        <div class="rstep-head">
+                            <span class="rstep-num">04</span>
+                            <h3 class="rstep-title">Reciprocal Rank Fusion.</h3>
+                        </div>
+                        <p class="rstep-body">The two ranked lists are merged. A passage that ranks high in
+                            <em>both</em> moves to the top. A passage that ranks high in only one is weighted
+                            accordingly. This isn't a vote — it's a weighted combination that respects how strongly each
+                            retriever committed to its ranking.</p>
+                    </div>
+                    <div class="rstep" data-step="5">
+                        <div class="rstep-head">
+                            <span class="rstep-num">05</span>
+                            <h3 class="rstep-title">Cross-encoder re-ranking.</h3>
+                        </div>
+                        <p class="rstep-body">The top candidates are read pairwise against the question — not by
+                            similarity, but by a model trained to ask: <em>does this passage actually answer this
+                                question?</em> The cross-encoder is slower than retrieval, so it only runs on the
+                            shortlist. What it produces is a re-ranked list where position reflects actual
+                            answerability, not just topical overlap.</p>
+                    </div>
+                    <div class="rstep" data-step="6">
+                        <div class="rstep-head">
+                            <span class="rstep-num">06</span>
+                            <h3 class="rstep-title">Cited result, with source attached.</h3>
+                        </div>
+                        <p class="rstep-body">What reaches the generation step is the passage that survived every stage
+                            — with its document, page, section, and exact text attached. The answer is then generated
+                            against this passage, not against the model's parametric memory. If the passage doesn't
+                            support a claim, the guard withholds it.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ CITATION & HALLUCINATION GUARD ============ -->
+    <section class="section on-ink citation" id="citations">
+        <div class="wrap">
+            <div class="shead reveal">
+                <div class="shead-row">
+                    <svg class="section-stamp" width="44" height="14" viewBox="0 0 44 14" aria-hidden="true">
+                        <line x1="0" y1="7" x2="8" y2="7" stroke="currentColor" stroke-width="1" />
+                        <circle cx="22" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" />
+                        <text x="22" y="10" text-anchor="middle" font-family="IBM Plex Mono" font-size="7"
+                            fill="currentColor">03</text>
+                        <line x1="36" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1" />
+                    </svg>
+                    <span class="section-num">§ 03</span>
+                    <span class="section-topic">Citation &amp; hallucination guarding</span>
+                </div>
+                <h2 class="shead-title">If the text doesn't say it, <em>the system doesn't say it.</em></h2>
+                <p class="shead-lede">Every generated sentence is checked against the passages it claims to cite. If a
+                    claim cannot be traced to specific text in a retrieved source, it is withheld — not softened, not
+                    hedged, not paraphrased into something defensible. Withheld.</p>
+            </div>
+
+            <!-- The signature citation trace -->
+            <div class="trace-container reveal reveal-d1" id="trace-container">
+                <div class="trace-source">
+                    <div class="trace-header">
+                        <span class="ref">RBI/2024-XX/012</span>
+                        <span class="type">Circular</span>
+                    </div>
+                    <div class="trace-doc">
+                        <p><span class="clause-num">4.</span>Capital Adequacy Requirements</p>
+                        <p><span class="clause-num">4.1</span>Every Non-Banking Financial Company shall maintain a
+                            minimum capital ratio as specified herein.</p>
+                        <p><span class="clause-num">4.2(b)</span>Every NBFC shall maintain a minimum capital adequacy
+                            ratio of <span class="cite-target" id="cite-target-1">fifteen per cent of its risk-weighted
+                                assets</span>, computed in the manner specified in Schedule I.</p>
+                        <p><span class="clause-num">4.3</span>The ratio shall be computed on a consolidated basis where
+                            applicable.</p>
+                    </div>
+                </div>
+
+                <div class="trace-answer">
+                    <div class="trace-header">
+                        <span class="ref">Generated answer</span>
+                        <span class="type">Cited</span>
+                    </div>
+                    <div class="trace-doc">
+                        <p>For deposit-taking NBFCs, the minimum capital adequacy ratio is <span class="cite-origin"
+                                id="cite-origin-1">fifteen per cent of risk-weighted assets</span><span
+                                class="cite-marker">1</span>, computed in the manner specified in Schedule I of the
+                            circular.</p>
+                        <p>The ratio is to be computed on a consolidated basis where applicable<span
+                                class="cite-marker">2</span>.</p>
+                    </div>
+                    <div class="ans-conf">
+                        <span class="dot"></span>
+                        <span>CONFIDENCE</span>
+                        <span class="conf-val">0.94</span>
+                        <span>·</span>
+                        <span>2 SOURCES CITED</span>
+                        <span>·</span>
+                        <span>NO CLAIMS WITHHELD</span>
+                    </div>
+                </div>
+
+                <svg class="trace-svg" id="trace-svg" aria-hidden="true">
+                    <path class="trace-path" id="trace-path" d="" />
+                    <circle class="trace-dot" id="trace-dot-a" cx="0" cy="0" r="3" />
+                    <circle class="trace-dot" id="trace-dot-b" cx="0" cy="0" r="3" />
+                </svg>
+            </div>
+
+            <!-- hallucination guard example -->
+            <div class="hallucination reveal reveal-d2">
+                <div>
+                    <div class="hallucination-label">Hallucination guard · active</div>
+                    <h3 class="hallucination-title">What happens when a claim can't be verified.</h3>
+                    <p class="hallucination-body">A user asks whether NBFCs may issue commercial paper without limit.
+                        The retrieved passages don't address issuance limits. The generation step proposes a sentence.
+                        The citation verifier checks it against the sources. <strong>The sentence is not
+                            supported.</strong> It is withheld, and the answer says so.</p>
+                </div>
+                <div>
+                    <div class="hallucination-label">Proposed claim · withheld</div>
+                    <p class="hallucination-claim">"NBFCs may issue commercial paper <span class="flagged">without
+                            limit</span>, subject to their board-approved policy."</p>
+                    <div class="hallucination-flag">⚠ NOT SUPPORTED BY RETRIEVED SOURCES · CLAIM WITHHELD · 0 CITATIONS
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ KNOWLEDGE GRAPH ============ -->
+    <section class="section on-warm graph" id="graph">
+        <div class="wrap">
+            <div class="shead reveal">
+                <div class="shead-row">
+                    <svg class="section-stamp" width="44" height="14" viewBox="0 0 44 14" aria-hidden="true">
+                        <line x1="0" y1="7" x2="8" y2="7" stroke="currentColor" stroke-width="1" />
+                        <circle cx="22" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" />
+                        <text x="22" y="10" text-anchor="middle" font-family="IBM Plex Mono" font-size="7"
+                            fill="currentColor">04</text>
+                        <line x1="36" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1" />
+                    </svg>
+                    <span class="section-num">§ 04</span>
+                    <span class="section-topic">Regulatory knowledge graph</span>
+                </div>
+                <h2 class="shead-title">A new circular doesn't <em>arrive alone.</em></h2>
+                <p class="shead-lede">Every circular, master direction, and amendment is mapped to the entities it
+                    touches: the institutions it governs, the documents it amends or supersedes, the topics it
+                    addresses. When a new circular lands, RegIntel-AI knows what it changes — before you ask.</p>
+            </div>
+
+            <div class="graph-layout reveal reveal-d1">
+                <div class="graph-svg-wrap">
+                    <svg class="graph-svg" viewBox="0 0 600 480" aria-hidden="true">
+                        <!-- edges (drawn first so nodes overlap them) -->
+                        <!-- amend: Circular 2024 -> Master Direction 2018 -->
+                        <path class="gedge amends" d="M 470 110 Q 360 160 250 230" />
+                        <text class="gedge-label amends" x="370" y="155" text-anchor="middle">amends</text>
+
+                        <!-- supersedes: Circular 2024 -> Circular 2022 -->
+                        <path class="gedge supersedes" d="M 470 130 Q 470 280 470 380" />
+                        <text class="gedge-label supersedes" x="500" y="260" text-anchor="start">supersedes</text>
+
+                        <!-- applies to: Master Direction -> NBFCs -->
+                        <path class="gedge applies" d="M 220 250 Q 160 290 130 360" />
+                        <text class="gedge-label applies" x="135" y="305" text-anchor="end">applies to</text>
+
+                        <!-- governs: Master Direction -> Topic -->
+                        <path class="gedge governs" d="M 220 230 Q 160 180 130 110" />
+                        <text class="gedge-label governs" x="135" y="175" text-anchor="end">governs</text>
+
+                        <!-- NODES -->
+                        <!-- Master Direction (center-left) -->
+                        <g>
+                            <circle class="gnode-circle master" cx="240" cy="240" r="42" />
+                            <text class="gnode-title" x="240" y="237" text-anchor="middle">MD/NBFC/</text>
+                            <text class="gnode-title" x="240" y="252" text-anchor="middle">2018/04</text>
+                            <text class="gnode-label sub" x="240" y="305" text-anchor="middle">Master Direction</text>
+                        </g>
+
+                        <!-- Circular 2024 (top-right, amends) -->
+                        <g>
+                            <circle class="gnode-circle amend" cx="470" cy="100" r="36" />
+                            <text class="gnode-title" x="470" y="98" text-anchor="middle">RBI/</text>
+                            <text class="gnode-title" x="470" y="112" text-anchor="middle">2024-XX/012</text>
+                            <text class="gnode-label sub" x="470" y="155" text-anchor="middle">Circular · 2024</text>
+                        </g>
+
+                        <!-- Circular 2022 (bottom-right, superseded) -->
+                        <g>
+                            <circle class="gnode-circle superseded" cx="470" cy="400" r="36" />
+                            <text class="gnode-title" x="470" y="398" text-anchor="middle">RBI/</text>
+                            <text class="gnode-title" x="470" y="412" text-anchor="middle">2022-XX/008</text>
+                            <text class="gnode-label sub" x="470" y="455" text-anchor="middle">Superseded</text>
+                        </g>
+
+                        <!-- NBFCs (bottom-left, entity) -->
+                        <g>
+                            <circle class="gnode-circle entity" cx="100" cy="380" r="34" />
+                            <text class="gnode-title" x="100" y="378" text-anchor="middle">NBFCs</text>
+                            <text class="gnode-title" x="100" y="392" text-anchor="middle"
+                                style="font-size:9px">(Deposit-Taking)</text>
+                            <text class="gnode-label sub" x="100" y="432" text-anchor="middle">Institution</text>
+                        </g>
+
+                        <!-- Topic (top-left) -->
+                        <g>
+                            <circle class="gnode-circle topic" cx="100" cy="100" r="34" />
+                            <text class="gnode-title" x="100" y="98" text-anchor="middle">Asset</text>
+                            <text class="gnode-title" x="100" y="112" text-anchor="middle">Classification</text>
+                            <text class="gnode-label sub" x="100" y="152" text-anchor="middle">Topic</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-mark amend"></div>
+                        <div class="legend-text">
+                            <div class="legend-title">Amends</div>
+                            <div class="legend-desc">A new circular modifies clauses in an existing master direction.
+                                The relationship is directional and dated.</div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-mark superseded"></div>
+                        <div class="legend-text">
+                            <div class="legend-title">Supersedes</div>
+                            <div class="legend-desc">A new circular replaces an earlier one in full or in part. The
+                                earlier document remains in the graph, marked as superseded.</div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-mark master"></div>
+                        <div class="legend-text">
+                            <div class="legend-title">Applies to</div>
+                            <div class="legend-desc">A direction or circular governs a specific class of institution —
+                                deposit-taking NBFCs, insurers, banks, fintechs.</div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-mark entity"></div>
+                        <div class="legend-text">
+                            <div class="legend-title">Governs</div>
+                            <div class="legend-desc">A document addresses a regulatory topic — asset classification,
+                                capital adequacy, KYC, reporting.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ GOVERNANCE ============ -->
+    <section class="section on-ink gov" id="governance">
+        <div class="wrap">
+            <div class="shead reveal">
+                <div class="shead-row">
+                    <svg class="section-stamp" width="44" height="14" viewBox="0 0 44 14" aria-hidden="true">
+                        <line x1="0" y1="7" x2="8" y2="7" stroke="currentColor" stroke-width="1" />
+                        <circle cx="22" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" />
+                        <text x="22" y="10" text-anchor="middle" font-family="IBM Plex Mono" font-size="7"
+                            fill="currentColor">05</text>
+                        <line x1="36" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1" />
+                    </svg>
+                    <span class="section-num">§ 05</span>
+                    <span class="section-topic">Governance, access &amp; audit</span>
+                </div>
+                <h2 class="shead-title">Built to satisfy your risk function, <em>not bypass it.</em></h2>
+                <p class="shead-lede">Every query, retrieved source, generated answer, and policy decision is logged.
+                    Roles determine who can ask, who can see what, and who can change the rules. Nothing happens on the
+                    system that your audit team cannot reconstruct after the fact.</p>
+            </div>
+
+            <div class="gov-grid reveal reveal-d1">
+                <div class="gov-card">
+                    <div class="gov-card-num">01 / ACCESS</div>
+                    <h3 class="gov-card-title">Role-based access, scoped to your org chart.</h3>
+                    <p class="gov-card-body">Compliance officers, risk teams, legal, and engineering each see what their
+                        role permits. Document-level sensitivity is respected — a query that touches a restricted
+                        circular is gated accordingly.</p>
+                    <ul class="gov-card-list">
+                        <li>SSO / SAML integration</li>
+                        <li>Document-level permissions</li>
+                        <li>Role-scoped answer visibility</li>
+                        <li>Quorum rules for policy edits</li>
+                    </ul>
+                </div>
+                <div class="gov-card">
+                    <div class="gov-card-num">02 / AUDIT</div>
+                    <h3 class="gov-card-title">A complete trail, exportable on demand.</h3>
+                    <p class="gov-card-body">Every query, every retrieved source, every generated answer, every policy
+                        decision — logged with user, timestamp, and the exact version of the regulatory corpus in force
+                        at that moment. Built for inspection-ready export.</p>
+                    <ul class="gov-card-list">
+                        <li>Immutable query log</li>
+                        <li>Source-version pinning</li>
+                        <li>CSV / JSON export</li>
+                        <li>Retention configurable per role</li>
+                    </ul>
+                </div>
+                <div class="gov-card">
+                    <div class="gov-card-num">03 / POLICY</div>
+                    <h3 class="gov-card-title">Data-sensitivity checks, before the answer returns.</h3>
+                    <p class="gov-card-body"
+                        style="font-size:15px;line-height:1.6;color:var(--paper-text-veil);margin-bottom:20px;">Policy
+                        rules run against every answer before it reaches the user. A query that would surface a
+                        restricted clause is blocked or masked according to rules your risk team writes — not defaults
+                        we shipped with.</p>
+                    <ul class="gov-card-list">
+                        <li>Custom policy DSL</li>
+                        <li>Pre-answer sensitivity scan</li>
+                        <li>Block / mask / log actions</li>
+                        <li>Policy change audit trail</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- audit trail mock strip -->
+            <div class="audit-strip reveal reveal-d2">
+                <div class="audit-strip-head">
+                    <span class="lbl">Audit trail · sample rows</span>
+                    <span class="ts">Corpus version: rbi-sebi/2024-11-08T09:14Z</span>
+                </div>
+                <div class="audit-log">
+                    <div class="row"><span class="ts">2024-11-12 14:32:08</span><span
+                            class="user">a.mehta@bank</span><span class="action">QUERY · "minimum CAR for deposit-taking
+                            NBFCs"</span><span class="policy">PASS</span></div>
+                    <div class="row"><span class="ts">2024-11-12 14:32:09</span><span
+                            class="user">a.mehta@bank</span><span class="action">RETRIEVED · 4 sources · cross-encoder
+                            top-1: RBI/2024-XX/012 §4.2(b)</span><span class="policy">PASS</span></div>
+                    <div class="row"><span class="ts">2024-11-12 14:32:11</span><span
+                            class="user">a.mehta@bank</span><span class="action">ANSWER · 2 citations · 0 claims
+                            withheld · conf 0.94</span><span class="policy">PASS</span></div>
+                    <div class="row"><span class="ts">2024-11-12 14:35:42</span><span
+                            class="user">r.nair@bank</span><span class="action">QUERY · "commercial paper issuance
+                            limits NBFCs"</span><span class="policy">PASS</span></div>
+                    <div class="row"><span class="ts">2024-11-12 14:35:43</span><span
+                            class="user">r.nair@bank</span><span class="action">ANSWER · 0 citations · 1 claim withheld
+                            · guard fired</span><span class="policy">FLAG</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ PRODUCT GLIMPSE ============ -->
+    <section class="section on-paper product" id="product">
+        <div class="wrap">
+            <div class="shead reveal">
+                <div class="shead-row">
+                    <svg class="section-stamp" width="44" height="14" viewBox="0 0 44 14" aria-hidden="true">
+                        <line x1="0" y1="7" x2="8" y2="7" stroke="currentColor" stroke-width="1" />
+                        <circle cx="22" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" />
+                        <text x="22" y="10" text-anchor="middle" font-family="IBM Plex Mono" font-size="7"
+                            fill="currentColor">06</text>
+                        <line x1="36" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1" />
+                    </svg>
+                    <span class="section-num">§ 06</span>
+                    <span class="section-topic">What it feels like to use</span>
+                </div>
+                <h2 class="shead-title">A question, an answer, and the <em>sources behind it</em> — in one view.</h2>
+                <p class="shead-lede">No separate "sources" tab to click through. The answer, its citations, the related
+                    documents in the knowledge graph, and the confidence score sit on one screen — so a compliance
+                    officer can verify a claim without leaving the page.</p>
+            </div>
+
+            <div class="mockup reveal reveal-d1">
+                <div class="mockup-bar">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    <span class="url">regintel-ai.internal · session #4129 · a.mehta@bank</span>
+                </div>
+                <div class="mockup-body">
+                    <div class="mockup-main">
+                        <div class="mockup-qbar">
+                            <span class="prompt">&gt;</span>
+                            <span class="q">What is the current minimum CAR for deposit-taking NBFCs, and which circular
+                                specifies it?</span>
+                        </div>
+
+                        <div class="mockup-section-label">Answer · cited</div>
+                        <p class="mockup-answer">For deposit-taking NBFCs, the minimum capital adequacy ratio is
+                            <strong>fifteen per cent of risk-weighted assets</strong><span class="cite-marker">1</span>,
+                            computed in the manner specified in Schedule I of the circular. The ratio is to be computed
+                            on a consolidated basis where applicable<span class="cite-marker">2</span>.</p>
+
+                        <div class="mockup-meta">
+                            <div class="mockup-meta-item">
+                                <span class="k">Confidence</span>
+                                <span class="v ok">0.94</span>
+                            </div>
+                            <div class="mockup-meta-item">
+                                <span class="k">Sources cited</span>
+                                <span class="v">2</span>
+                            </div>
+                            <div class="mockup-meta-item">
+                                <span class="k">Claims withheld</span>
+                                <span class="v ok">0</span>
+                            </div>
+                            <div class="mockup-meta-item">
+                                <span class="k">Pipeline</span>
+                                <span class="v">dense+bm25 · fusion · x-enc</span>
+                            </div>
+                            <div class="mockup-meta-item">
+                                <span class="k">Corpus version</span>
+                                <span class="v">rbi-sebi/2024-11-08</span>
+                            </div>
+                        </div>
+
+                        <div class="mockup-section-label">Sources · retrieved &amp; cited</div>
+                        <div class="mockup-sources">
+                            <div class="mockup-source">
+                                <span class="ref">[1]</span>
+                                <span class="ttl">RBI/2024-XX/012 · §4.2(b) · p.7</span>
+                                <span class="pct">0.97</span>
+                            </div>
+                            <div class="mockup-source">
+                                <span class="ref">[2]</span>
+                                <span class="ttl">RBI/2024-XX/012 · §4.3 · p.7</span>
+                                <span class="pct">0.91</span>
+                            </div>
+                            <div class="mockup-source" style="opacity:0.6">
+                                <span class="ref">[3]</span>
+                                <span class="ttl">MD/NBFC/2018/04 · §12 · p.18</span>
+                                <span class="pct">0.62</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mockup-side">
+                        <div class="mockup-side-section">
+                            <div class="mockup-side-title">Related · knowledge graph</div>
+                            <div class="mockup-rel">
+                                <span>RBI/2024-XX/012</span>
+                                <span class="arrow">→</span>
+                                <span>amends</span>
+                                <span class="rel-type">amends</span>
+                            </div>
+                            <div class="mockup-rel">
+                                <span>MD/NBFC/2018/04</span>
+                                <span class="arrow">→</span>
+                                <span>NBFCs</span>
+                                <span class="rel-type">applies to</span>
+                            </div>
+                            <div class="mockup-rel supersede">
+                                <span>RBI/2024-XX/012</span>
+                                <span class="arrow">→</span>
+                                <span>RBI/2022-XX/008</span>
+                                <span class="rel-type">supersedes</span>
+                            </div>
+                            <div class="mockup-rel">
+                                <span>MD/NBFC/2018/04</span>
+                                <span class="arrow">→</span>
+                                <span>Asset Classification</span>
+                                <span class="rel-type">governs</span>
+                            </div>
+                        </div>
+
+                        <div class="mockup-side-section">
+                            <div class="mockup-side-title">Policy check · pre-answer</div>
+                            <div class="mockup-rel" style="border-bottom:none">
+                                <span style="color:var(--verify-dark)">✓</span>
+                                <span>sensitivity scan · pass</span>
+                            </div>
+                            <div class="mockup-rel" style="border-bottom:none">
+                                <span style="color:var(--verify-dark)">✓</span>
+                                <span>role scope · a.mehta · compliance</span>
+                            </div>
+                            <div class="mockup-rel" style="border-bottom:none">
+                                <span style="color:var(--verify-dark)">✓</span>
+                                <span>corpus version · pinned</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ CLOSING CTA ============ -->
+    <section class="section on-ink closing" id="contact">
+        <div class="wrap">
+            <div class="closing-inner">
+                <div class="closing-eyebrow mono">REQUEST A BRIEFING</div>
+                <h2 class="closing-title">See it against <em>your own documents</em> and your own open questions.</h2>
+                <p class="closing-body">No demo environment. No canned questions. Bring three to five regulations or
+                    circulars your team works with regularly — we'll run a real session on those, with your people in
+                    the room, and you can watch the citation trace, the hallucination guard, and the audit log do what
+                    they actually do.</p>
+
+                <div class="closing-success" id="closing-success">
+                    <div class="lbl">REQUEST RECEIVED</div>
+                    <div class="msg">Thank you. We'll respond within one business day to schedule the briefing.
+                        Meanwhile, gather three to five regulations or circulars you'd like us to run the session
+                        against.</div>
+                </div>
+
+                <form class="closing-form" id="briefing-form" novalidate>
+                    <div>
+                        <label for="f-name">Name</label>
+                        <input id="f-name" name="name" type="text" required placeholder="Compliance lead">
+                    </div>
+                    <div>
+                        <label for="f-inst">Institution</label>
+                        <input id="f-inst" name="institution" type="text" required
+                            placeholder="Bank / NBFC / Insurer / Fintech">
+                    </div>
+                    <div class="full">
+                        <label for="f-email">Work email</label>
+                        <input id="f-email" name="email" type="email" required placeholder="name@institution.in">
+                    </div>
+                    <div class="full">
+                        <label for="f-type">Institution type</label>
+                        <select id="f-type" name="type">
+                            <option>Bank</option>
+                            <option>NBFC</option>
+                            <option>Insurer</option>
+                            <option>Fintech / PPI / Payment Aggregator</option>
+                            <option>Other regulated entity</option>
+                        </select>
+                    </div>
+                    <div class="full">
+                        <label for="f-msg">What are you trying to verify or trace right now? (optional)</label>
+                        <textarea id="f-msg" name="message"
+                            placeholder="e.g. We need to confirm the current CAR framework for deposit-taking NBFCs ahead of an internal audit."></textarea>
+                    </div>
+                </form>
+                <button class="closing-submit" id="briefing-submit" type="button">
+                    Request a briefing
+                    <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" />
+                    </svg>
+                </button>
+                <p class="closing-note">We respond within one business day. Briefings are typically 45–60 minutes,
+                    conducted with two of our regulatory engineers. No decks — a live session on your documents.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+        <div class="wrap">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#top" class="brand">
+                        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="5" cy="19" r="2.2" fill="currentColor" />
+                            <circle cx="19" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M 5.5 17.5 Q 11 14 18.5 6.5" fill="none" stroke="currentColor" stroke-width="1"
+                                stroke-dasharray="2 2.5" />
+                        </svg>
+                        <span class="brand-name">RegIntel<span class="brand-ai">-AI</span></span>
+                    </a>
+                    <p>Regulatory intelligence for RBI and SEBI compliance. Citation-grounded answers, a regulatory
+                        knowledge graph, and governance built for audit.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Platform</h4>
+                    <ul>
+                        <li><a href="#retrieval">Retrieval</a></li>
+                        <li><a href="#citations">Citations &amp; guard</a></li>
+                        <li><a href="#graph">Knowledge graph</a></li>
+                        <li><a href="#governance">Governance &amp; audit</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Audience</h4>
+                    <ul>
+                        <li><a href="#problem">Compliance teams</a></li>
+                        <li><a href="#governance">Risk &amp; legal</a></li>
+                        <li><a href="#contact">Procurement &amp; engineering</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><a href="#contact">Request a briefing</a></li>
+                        <li><a href="mailto:briefings@regintel-ai.in">briefings@regintel-ai.in</a></li>
+                    </ul>
+                </div>
+            </div>
+            <p class="footer-disclaimer">RegIntel-AI is an independent regulatory intelligence platform. It is not
+                affiliated with, endorsed by, or representative of the Reserve Bank of India, the Securities and
+                Exchange Board of India, or any government body. All regulatory references on this page are synthetic
+                and illustrative; no verbatim text from any RBI or SEBI circular, master direction, or notification is
+                reproduced. All circular numbers, clause text, and document references shown are fictional and used for
+                demonstration only.</p>
+            <div class="footer-bottom">
+                <span>© RegIntel-AI · 2024</span>
+                <span>BUILT FOR AUDIT · NOT FOR HYPE</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            'use strict';
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            /* ---------- Hero entrance ---------- */
+            function initHero() {
+                const hero = document.querySelector('.hero');
+                if (!hero) return;
+                requestAnimationFrame(() => {
+                    hero.classList.add('is-loaded');
+                    // animate the hero trace line
+                    if (prefersReducedMotion) return;
+                    const line = hero.querySelector('.hero-trace-line');
+                    const ends = hero.querySelectorAll('.hero-trace-end');
+                    if (!line) return;
+                    const len = line.getTotalLength();
+                    line.style.strokeDasharray = len;
+                    line.style.strokeDashoffset = len;
+                    setTimeout(() => {
+                        line.style.transition = 'stroke-dashoffset 1.4s ease-out';
+                        line.style.strokeDashoffset = '0';
+                        ends.forEach(e => { e.style.transition = 'opacity 0.4s ease 1.2s'; e.style.opacity = '1'; });
+                    }, 900);
+                });
+            }
+
+            /* ---------- Scroll reveal ---------- */
+            function initReveal() {
+                const els = document.querySelectorAll('.reveal');
+                if (prefersReducedMotion) {
+                    els.forEach(e => e.classList.add('is-in'));
+                    return;
+                }
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach(en => {
+                        if (en.isIntersecting) {
+                            en.target.classList.add('is-in');
+                            io.unobserve(en.target);
+                        }
+                    });
+                }, { rootMargin: '-10% 0px -10% 0px', threshold: 0.05 });
+                els.forEach(e => io.observe(e));
+            }
+
+            /* ---------- Retrieval step-through ---------- */
+            function initRetrievalSteps() {
+                const section = document.querySelector('.retrieval');
+                if (!section) return;
+                const steps = section.querySelectorAll('.rstep');
+                const stageLabel = document.getElementById('rdiag-stage');
+
+                // diagram node groups per step
+                const stepNodes = {
+                    '1': ['n-query'],
+                    '2': ['n-query', 'n-dense', 'e-qd'],
+                    '3': ['n-query', 'n-bm25', 'e-qb'],
+                    '4': ['n-fusion', 'e-df', 'e-bf', 'lbl-dense', 'lbl-bm25', 'lbl-fusion'],
+                    '5': ['n-xenc', 'e-fx', 'lbl-xenc'],
+                    '6': ['n-result', 'e-xr']
+                };
+
+                function setActive(stepNum) {
+                    steps.forEach(s => {
+                        s.classList.toggle('is-active', s.dataset.step === stepNum);
+                    });
+                    if (stageLabel) stageLabel.textContent = 'Stage 0' + stepNum + ' / 06';
+
+                    // light up diagram nodes for this step (cumulative)
+                    const allIds = ['n-query', 'n-dense', 'n-bm25', 'n-fusion', 'n-xenc', 'n-result', 'e-qd', 'e-qb', 'e-df', 'e-bf', 'e-fx', 'e-xr', 'lbl-dense', 'lbl-bm25', 'lbl-fusion', 'lbl-xenc'];
+                    const activeForStep = new Set();
+                    // accumulate from step 1 through current
+                    for (let i = 1; i <= parseInt(stepNum, 10); i++) {
+                        (stepNodes[String(i)] || []).forEach(id => activeForStep.add(id));
+                    }
+                    allIds.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        const isActive = activeForStep.has(id);
+                        if (el.classList.contains('rdiag-node')) {
+                            el.classList.toggle('active', isActive);
+                            el.classList.toggle('dim', !isActive);
+                        } else if (el.classList.contains('rdiag-edge')) {
+                            el.classList.toggle('active', isActive);
+                        } else if (el.classList.contains('rdiag-label')) {
+                            el.classList.toggle('active', isActive);
+                        }
+                    });
+                }
+
+                if (prefersReducedMotion) {
+                    setActive('6');
+                    return;
+                }
+
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach(en => {
+                        if (en.isIntersecting) {
+                            setActive(en.target.dataset.step);
+                        }
+                    });
+                }, { rootMargin: '-40% 0px -40% 0px', threshold: 0 });
+                steps.forEach(s => io.observe(s));
+            }
+
+            /* ---------- Citation trace drawing ---------- */
+            function initCitationTrace() {
+                const container = document.getElementById('trace-container');
+                if (!container) return;
+                const path = document.getElementById('trace-path');
+                const dotA = document.getElementById('trace-dot-a');
+                const dotB = document.getElementById('trace-dot-b');
+                const svg = document.getElementById('trace-svg');
+                const target = document.getElementById('cite-target-1');
+                const origin = document.getElementById('cite-origin-1');
+
+                function positionAndDraw() {
+                    if (!target || !origin || !container) return;
+                    const cRect = container.getBoundingClientRect();
+                    const tRect = target.getBoundingClientRect();
+                    const oRect = origin.getBoundingClientRect();
+
+                    // set svg viewBox to container size in px
+                    svg.setAttribute('viewBox', `0 0 ${cRect.width} ${cRect.height}`);
+                    svg.setAttribute('width', cRect.width);
+                    svg.setAttribute('height', cRect.height);
+
+                    // source point: right edge of target text, vertical center
+                    const x1 = tRect.right - cRect.left;
+                    const y1 = tRect.top + tRect.height / 2 - cRect.top;
+                    // destination point: left edge of origin text, vertical center
+                    const x2 = oRect.left - cRect.left;
+                    const y2 = oRect.top + oRect.height / 2 - cRect.top;
+
+                    // control points for a smooth curve
+                    const dx = x2 - x1;
+                    const midX = x1 + dx * 0.5;
+                    const cp1x = x1 + dx * 0.3;
+                    const cp1y = y1;
+                    const cp2x = x2 - dx * 0.3;
+                    const cp2y = y2;
+                    const d = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+                    path.setAttribute('d', d);
+
+                    dotA.setAttribute('cx', x1);
+                    dotA.setAttribute('cy', y1);
+                    dotB.setAttribute('cx', x2);
+                    dotB.setAttribute('cy', y2);
+
+                    if (prefersReducedMotion) {
+                        path.style.strokeDasharray = 'none';
+                        path.style.strokeDashoffset = '0';
+                        dotA.style.opacity = 1;
+                        dotB.style.opacity = 1;
+                        target.classList.add('lit');
+                        origin.classList.add('lit');
+                        return;
+                    }
+
+                    const len = path.getTotalLength();
+                    path.style.strokeDasharray = len;
+                    path.style.strokeDashoffset = len;
+                    path.style.transition = 'none';
+                    // force reflow
+                    void path.getBoundingClientRect();
+                    path.style.transition = 'stroke-dashoffset 1.6s ease-out';
+                    path.style.strokeDashoffset = '0';
+
+                    dotA.style.opacity = '0';
+                    dotB.style.opacity = '0';
+                    dotA.style.transition = 'opacity 0.3s ease';
+                    dotB.style.transition = 'opacity 0.3s ease 1.3s';
+                    dotA.style.opacity = '1';
+                    dotB.style.opacity = '1';
+
+                    // light up the source and answer highlights
+                    setTimeout(() => { target.classList.add('lit'); }, 200);
+                    setTimeout(() => { origin.classList.add('lit'); }, 1300);
+                }
+
+                let triggered = false;
+                function maybeTrigger() {
+                    if (triggered) return;
+                    const rect = container.getBoundingClientRect();
+                    if (rect.top < window.innerHeight * 0.7 && rect.bottom > 0) {
+                        triggered = true;
+                        positionAndDraw();
+                    }
+                }
+
+                if (prefersReducedMotion) {
+                    positionAndDraw();
+                    return;
+                }
+
+                window.addEventListener('scroll', maybeTrigger, { passive: true });
+                window.addEventListener('resize', () => {
+                    triggered = false;
+                    positionAndDraw();
+                    triggered = true;
+                });
+                maybeTrigger();
+            }
+
+            /* ---------- Knowledge graph reveal ---------- */
+            function initGraph() {
+                const graph = document.querySelector('.graph');
+                if (!graph) return;
+                if (prefersReducedMotion) {
+                    graph.classList.add('is-in');
+                    return;
+                }
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach(en => {
+                        if (en.isIntersecting) {
+                            en.target.classList.add('is-in');
+                            io.unobserve(en.target);
+                        }
+                    });
+                }, { rootMargin: '-15% 0px -15% 0px', threshold: 0.1 });
+                io.observe(graph);
+            }
+
+            /* ---------- Briefing form ---------- */
+            function initForm() {
+                const form = document.getElementById('briefing-form');
+                const submit = document.getElementById('briefing-submit');
+                const success = document.getElementById('closing-success');
+                if (!form || !submit) return;
+                submit.addEventListener('click', () => {
+                    // minimal validation
+                    const name = form.querySelector('#f-name');
+                    const inst = form.querySelector('#f-inst');
+                    const email = form.querySelector('#f-email');
+                    let valid = true;
+                    [name, inst, email].forEach(f => {
+                        if (!f.value.trim()) {
+                            f.style.borderBottomColor = 'var(--redline)';
+                            valid = false;
+                        } else {
+                            f.style.borderBottomColor = '';
+                        }
+                    });
+                    if (email && email.value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value)) {
+                        email.style.borderBottomColor = 'var(--redline)';
+                        valid = false;
+                    }
+                    if (!valid) return;
+                    if (success) success.classList.add('is-shown');
+                    form.style.display = 'none';
+                    submit.style.display = 'none';
+                });
+            }
+
+            /* ---------- Smooth scroll for in-page anchors (with nav offset) ---------- */
+            function initAnchors() {
+                document.querySelectorAll('a[href^="#"]').forEach(a => {
+                    a.addEventListener('click', (e) => {
+                        const id = a.getAttribute('href');
+                        if (id.length < 2) return;
+                        const target = document.querySelector(id);
+                        if (!target) return;
+                        e.preventDefault();
+                        const offset = 70;
+                        const top = target.getBoundingClientRect().top + window.scrollY - offset;
+                        window.scrollTo({ top, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+                    });
+                });
+            }
+
+            /* ---------- Init all ---------- */
+            document.addEventListener('DOMContentLoaded', () => {
+                initHero();
+                initReveal();
+                initRetrievalSteps();
+                initCitationTrace();
+                initGraph();
+                initForm();
+                initAnchors();
+            });
+        })();
+    </script>
+
+</body>
+
+</html>

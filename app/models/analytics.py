@@ -305,7 +305,7 @@ class RerankerGainRecord(Base):
     improvement_rate: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
-        help_text="Fraction of queries where reranker improved results",
+        comment="Fraction of queries where reranker improved results",
     )
 
     # Metadata

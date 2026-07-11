@@ -32,6 +32,7 @@ ReactDOM.createRoot(rootEl).render(
         <ToastProvider>
           <HealthProvider>
             <BrowserRouter
+              basename="/app"
               future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
             >
               <AuthProvider>
