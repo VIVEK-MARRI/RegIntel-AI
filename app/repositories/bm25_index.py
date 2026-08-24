@@ -29,14 +29,14 @@ class BM25IndexRepository(BaseRepository[BM25IndexMetadata]):
     """
 
     def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, BM25IndexMetadata)
+        super().__init__(BM25IndexMetadata, session)
 
     async def get_active_index(self) -> Optional[BM25IndexMetadata]:
         """Get the currently active BM25 index metadata."""
         stmt = select(BM25IndexMetadata).where(
             BM25IndexMetadata.is_active == True  # noqa: E712
         )
-        result = await self._session.execute(stmt)
+        result = await self.db_session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def get_by_name(self, index_name: str) -> Optional[BM25IndexMetadata]:
@@ -44,7 +44,7 @@ class BM25IndexRepository(BaseRepository[BM25IndexMetadata]):
         stmt = select(BM25IndexMetadata).where(
             BM25IndexMetadata.index_name == index_name
         )
-        result = await self._session.execute(stmt)
+        result = await self.db_session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def deactivate_all(self) -> None:
@@ -52,11 +52,11 @@ class BM25IndexRepository(BaseRepository[BM25IndexMetadata]):
         stmt = select(BM25IndexMetadata).where(
             BM25IndexMetadata.is_active == True  # noqa: E712
         )
-        result = await self._session.execute(stmt)
+        result = await self.db_session.execute(stmt)
         active_indices = result.scalars().all()
         for idx in active_indices:
             idx.is_active = False
-        await self._session.flush()
+        await self.db_session.flush()
         logger.info("Deactivated %d BM25 indices", len(active_indices))
 
     async def create_index_record(
@@ -81,9 +81,9 @@ class BM25IndexRepository(BaseRepository[BM25IndexMetadata]):
             file_path=file_path,
             is_active=True,
         )
-        self._session.add(record)
-        await self._session.flush()
-        await self._session.refresh(record)
+        self.db_session.add(record)
+        await self.db_session.flush()
+        await self.db_session.refresh(record)
         logger.info(
             "Created BM25 index record: %s (corpus=%d, avg_len=%.1f, vocab=%d)",
             index_name,

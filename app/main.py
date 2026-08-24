@@ -29,6 +29,7 @@ from app.api.v1.knowledge_graph import router as knowledge_graph_router
 from app.api.v1.memory import router as memory_router
 from app.api.v1.monitoring import router as monitoring_router
 from app.api.v1.orchestrator import router as orchestrator_router
+from app.api.v1.intelligence import intelligence_router  # Module 10 — canonical pipeline
 from app.api.v1.planning import router as planning_router
 from app.api.v1.reasoning import router as reasoning_router
 from app.api.v1.research import router as research_router
@@ -78,6 +79,13 @@ async def lifespan(app: FastAPI):
         bind_cross_module_services()
     except Exception:  # pragma: no cover - non-fatal
         pass
+
+    # Warm up the BM25 index on startup
+    try:
+        from app.core.startup import warmup_bm25_index
+        await warmup_bm25_index()
+    except Exception as exc:
+        logger.warning("Failed to warm up BM25 index during startup: %s", exc)
 
     yield  # application is running
 
@@ -133,6 +141,13 @@ app.include_router(hallucination_router, prefix="/api/v1", tags=["hallucination"
 app.include_router(attribution_router, prefix="/api/v1", tags=["attribution"])
 
 app.include_router(orchestrator_router, prefix="/api/v1", tags=["orchestrator"])
+
+# Module 10 — Canonical Intelligence Pipeline (end-to-end query endpoint)
+app.include_router(
+    intelligence_router,
+    prefix="/api/v1/intelligence",
+    tags=["intelligence"],
+)
 
 app.include_router(evaluation_router, prefix="/api/v1", tags=["evaluation"])
 

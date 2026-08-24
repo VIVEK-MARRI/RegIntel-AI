@@ -139,25 +139,15 @@ def register_default_health_checks(
 
         def _db_check() -> ComponentHealth:
             try:
-                import anyio
-
-                async def _probe() -> bool:
-                    try:
-                        from sqlalchemy.ext.asyncio import create_async_engine
-
-                        engine = create_async_engine(
-                            settings.DATABASE_URL, pool_size=1, max_overflow=0
-                        )
-                        async with engine.connect() as conn:
-                            await conn.execute(
-                                __import__("sqlalchemy").text("SELECT 1")
-                            )
-                        await engine.dispose()
-                        return True
-                    except Exception:
-                        return False
-
-                ok = anyio.run(_probe)
+                import sqlalchemy
+                
+                engine = sqlalchemy.create_engine(
+                    settings.DATABASE_URL_SYNC, pool_size=1, max_overflow=0
+                )
+                with engine.connect() as conn:
+                    conn.execute(sqlalchemy.text("SELECT 1"))
+                engine.dispose()
+                ok = True
                 if ok:
                     return ComponentHealth(
                         name="database",
@@ -320,6 +310,21 @@ def on_shutdown(app=None) -> None:  # type: ignore[no-untyped-def]
     )
 
 
+async def warmup_bm25_index() -> None:
+    """Warm up/rebuild/update the BM25 index on startup."""
+    from app.core.database import async_session_factory
+    from app.services.bm25.service import BM25IndexManager
+
+    logger.info("Warming up BM25 index...")
+    async with async_session_factory() as session:
+        try:
+            manager = BM25IndexManager(session)
+            updated = await manager.update_index()
+            logger.info("BM25 index warmup completed. Updated: %s", updated)
+        except Exception as exc:
+            logger.exception("Failed to warm up BM25 index on startup: %s", exc)
+
+
 __all__ = [
     "EnvironmentValidationError",
     "StartupReport",
@@ -328,4 +333,5 @@ __all__ = [
     "register_default_health_checks",
     "validate_environment",
     "validate_storage_root",
+    "warmup_bm25_index",
 ]

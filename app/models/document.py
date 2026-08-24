@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime, timezone
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING
-from sqlalchemy import String, Date, Integer, DateTime
+from sqlalchemy import String, Date, Integer, DateTime, Boolean, ForeignKey
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -65,6 +65,13 @@ class Document(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
+    )
+    
+    # Versioning & Supersession
+    version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_superseded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    superseded_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships

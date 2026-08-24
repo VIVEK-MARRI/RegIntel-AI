@@ -44,7 +44,7 @@ def set_health_checker(checker: HealthChecker) -> None:
     summary="Simple liveness check",
     response_class=JSONResponse,
 )
-async def health() -> Dict[str, Any]:
+def health() -> Dict[str, Any]:
     return {"status": "ok"}
 
 
@@ -53,7 +53,7 @@ async def health() -> Dict[str, Any]:
     summary="Liveness probe (Kubernetes style)",
     response_class=JSONResponse,
 )
-async def liveness() -> JSONResponse:
+def liveness() -> JSONResponse:
     """Always 200 — signals the process is running."""
     return JSONResponse({"status": "alive"})
 
@@ -64,7 +64,7 @@ async def liveness() -> JSONResponse:
     response_class=JSONResponse,
     responses={503: {"description": "Service not ready"}},
 )
-async def readiness() -> JSONResponse:
+def readiness() -> JSONResponse:
     """Returns 200 only if all critical components are healthy."""
     checker = get_health_checker()
     # Critical = liveness + registered "critical" components.
@@ -96,7 +96,7 @@ async def readiness() -> JSONResponse:
     response_class=JSONResponse,
     responses={503: {"description": "Service unhealthy"}},
 )
-async def deep() -> JSONResponse:
+def deep() -> JSONResponse:
     checker = get_health_checker()
     report = checker.run()
     if report.status == HealthStatus.UNHEALTHY:

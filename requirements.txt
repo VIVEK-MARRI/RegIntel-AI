@@ -46,4 +46,4 @@ threadpoolctl==3.6.0
 networkx==3.6.1
 rank-bm25==0.2.2
 regex==2026.5.9
-
+google-genai==0.3.0

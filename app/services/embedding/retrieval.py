@@ -50,6 +50,7 @@ class RetrievalService:
         distance_metric: str = "cosine",
         source: Optional[SourceEnum] = None,
         document_id: Optional[uuid.UUID] = None,
+        active_only: bool = True,
     ) -> Dict[str, Any]:
         """Performs semantic search over chunk embeddings and returns top-K results with traces."""
         start_time = time.perf_counter()
@@ -96,6 +97,8 @@ class RetrievalService:
                 )
             )
 
+            if active_only:
+                stmt = stmt.where(Document.is_superseded == False)
             if source:
                 stmt = stmt.where(Document.source == source)
             if document_id:
@@ -183,6 +186,8 @@ class RetrievalService:
                 )
             )
 
+            if active_only:
+                subq_stmt = subq_stmt.where(Document.is_superseded == False)
             if source:
                 subq_stmt = subq_stmt.where(Document.source == source)
             if document_id:

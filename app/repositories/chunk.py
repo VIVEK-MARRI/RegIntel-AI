@@ -27,7 +27,8 @@ class ChunkRepository(BaseRepository[DocumentChunk]):
 
     async def get_all(self) -> Sequence[DocumentChunk]:
         """Fetch all DocumentChunk entries."""
-        query = select(self.model)
+        from sqlalchemy.orm import joinedload
+        query = select(self.model).options(joinedload(self.model.document))
         result = await self.db_session.execute(query)
         return result.scalars().all()
 

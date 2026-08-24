@@ -15,6 +15,7 @@ class BM25Retriever(ABC):
         score_threshold: float = 0.0,
         source: Optional[SourceEnum] = None,
         document_id: Optional[uuid.UUID] = None,
+        active_only: bool = True,
     ) -> List[Dict[str, Any]]:
         """Retrieves top-K chunks matching query via BM25 keyword scoring.
 

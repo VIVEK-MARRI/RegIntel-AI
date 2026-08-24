@@ -120,6 +120,7 @@ class HybridRerankPipeline:
         source: Optional[SourceEnum] = None,
         document_id: Optional[uuid.UUID] = None,
         use_query_analysis: bool = True,
+        active_only: bool = True,
     ) -> "HybridRerankResponse":
         """Execute the full hybrid retrieval + reranking pipeline.
 
@@ -139,6 +140,7 @@ class HybridRerankPipeline:
             source: Optional source filter (RBI/SEBI).
             document_id: Optional document filter.
             use_query_analysis: Whether to use QueryAnalyzer for strategy selection.
+            active_only: Whether to retrieve only active (non-superseded) documents.
 
         Returns:
             HybridRerankResponse with reranked results and full telemetry.
@@ -162,6 +164,7 @@ class HybridRerankPipeline:
             source=source,
             document_id=document_id,
             use_query_analysis=use_query_analysis,
+            active_only=active_only,
         )
 
         # Extract telemetry from hybrid response metrics

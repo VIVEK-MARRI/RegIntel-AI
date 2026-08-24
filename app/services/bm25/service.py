@@ -354,6 +354,7 @@ class BM25RetrieverService(BM25Retriever):
         score_threshold: float = 0.0,
         source: Optional[SourceEnum] = None,
         document_id: Optional[uuid.UUID] = None,
+        active_only: bool = True,
     ) -> List[Dict[str, Any]]:
         """Scores documents matching query and filters candidates by metadata constraints and score threshold."""
         start_time = time.perf_counter()
@@ -373,10 +374,12 @@ class BM25RetrieverService(BM25Retriever):
         )
 
         # Apply filters in database query
-        if source or document_id:
+        if active_only or source or document_id:
             candidate_stmt = candidate_stmt.join(
                 Document, Document.id == DocumentChunk.document_id
             )
+            if active_only:
+                candidate_stmt = candidate_stmt.where(Document.is_superseded == False)
             if source:
                 candidate_stmt = candidate_stmt.where(Document.source == source)
             if document_id:

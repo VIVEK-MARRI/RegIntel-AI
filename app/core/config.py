@@ -115,6 +115,32 @@ class Settings(BaseSettings):
         description="If true, the streaming endpoint is available",
     )
 
+    # ─── Module 10 — Canonical Intelligence Pipeline ──────────────────────────
+    INTELLIGENCE_TOP_K: int = Field(
+        default=5,
+        ge=1,
+        le=50,
+        description="Default number of chunks to retrieve for the canonical intelligence endpoint",
+    )
+    CONFIDENCE_THRESHOLD_HIGH: float = Field(
+        default=0.75,
+        ge=0.0,
+        le=1.0,
+        description="Confidence at or above this value → answer returned directly without governance review",
+    )
+    CONFIDENCE_THRESHOLD_LOW: float = Field(
+        default=0.45,
+        ge=0.0,
+        le=1.0,
+        description="Confidence below this value → governance review task created (requires_review=True)",
+    )
+    ABSTENTION_THRESHOLD: float = Field(
+        default=0.25,
+        ge=0.0,
+        le=1.0,
+        description="Confidence below this value AND no evidence → system abstains (abstained=True)",
+    )
+
     # ─── Module 6.8 — Production Readiness ────────────────────────────────
     RATE_LIMIT_ENABLED: bool = Field(
         default=True,

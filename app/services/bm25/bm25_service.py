@@ -217,24 +217,25 @@ class BM25Service:
         """
         documents: List[BM25Document] = []
         for chunk in chunks:
-            # Extract hierarchy information from the chunk
-            section_title = ""
-            subsection_title = ""
             document_title = ""
             source = ""
             document_id = ""
 
-            # Navigate the chunk hierarchy
+            # document should be eagerly loaded
             if hasattr(chunk, "document") and chunk.document:
                 document_title = getattr(chunk.document, "title", "") or ""
                 source = getattr(chunk.document, "source", "") or ""
                 document_id = str(getattr(chunk.document, "id", ""))
+            else:
+                document_id = str(getattr(chunk, "document_id", ""))
 
-            if hasattr(chunk, "section") and chunk.section:
-                section_title = getattr(chunk.section, "title", "") or ""
-                if hasattr(chunk.section, "parent") and chunk.section.parent:
-                    subsection_title = section_title
-                    section_title = getattr(chunk.section.parent, "title", "") or ""
+            # section and subsection are strings on DocumentChunk
+            section_title = getattr(chunk, "section", "")
+            if not isinstance(section_title, str):
+                section_title = ""
+            subsection_title = getattr(chunk, "subsection", "")
+            if not isinstance(subsection_title, str):
+                subsection_title = ""
 
             doc = BM25Document(
                 chunk_id=str(getattr(chunk, "id", "")),

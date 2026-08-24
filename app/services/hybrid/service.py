@@ -118,6 +118,7 @@ class HybridRetriever:
         top_k: int = 5,
         source: Optional[SourceEnum] = None,
         document_id: Optional[uuid.UUID] = None,
+        active_only: bool = True,
     ) -> List[Dict[str, Any]]:
         """Wraps semantic retrieval service."""
         dense_response = await self.retrieval_service.retrieve(
@@ -125,6 +126,7 @@ class HybridRetriever:
             top_k=top_k,
             source=source,
             document_id=document_id,
+            active_only=active_only,
         )
         return dense_response.get("results", [])
 
@@ -134,6 +136,7 @@ class HybridRetriever:
         top_k: int = 5,
         source: Optional[SourceEnum] = None,
         document_id: Optional[uuid.UUID] = None,
+        active_only: bool = True,
     ) -> List[Dict[str, Any]]:
         """Wraps BM25 keyword search."""
         return await self.bm25_retriever.retrieve(
@@ -141,6 +144,7 @@ class HybridRetriever:
             top_k=top_k,
             source=source,
             document_id=document_id,
+            active_only=active_only,
         )
 
     async def retrieve_hybrid(
@@ -157,6 +161,7 @@ class HybridRetriever:
         source: Optional[SourceEnum] = None,
         document_id: Optional[uuid.UUID] = None,
         use_query_analysis: bool = True,
+        active_only: bool = True,
     ) -> HybridSearchResponse:
         """Coordinates and fuses dense and keyword search queries.
 
@@ -222,10 +227,10 @@ class HybridRetriever:
 
         if strategy in (RetrievalStrategy.DENSE, RetrievalStrategy.HYBRID):
             dense_idx = len(coros)
-            coros.append(self.retrieve_dense(query, dense_top_k, source, document_id))
+            coros.append(self.retrieve_dense(query, dense_top_k, source, document_id, active_only))
         if strategy in (RetrievalStrategy.KEYWORD, RetrievalStrategy.HYBRID):
             bm25_idx = len(coros)
-            coros.append(self.retrieve_bm25(query, bm25_top_k, source, document_id))
+            coros.append(self.retrieve_bm25(query, bm25_top_k, source, document_id, active_only))
 
         if len(coros) > 1:
             # Run dense and BM25 concurrently

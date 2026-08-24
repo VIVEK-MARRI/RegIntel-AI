@@ -22,6 +22,12 @@ logger = logging.getLogger(__name__)
 
 def _build_provider() -> tuple[EmbeddingProvider, str]:
     """Return ``(provider, backend_name)`` using the best available backend."""
+    import os
+    if os.environ.get("FORCE_TFIDF_FALLBACK", "false").lower() == "true":
+        from app.services.embedding.tfidf import TFIDFEmbeddingProvider
+        provider = TFIDFEmbeddingProvider()
+        return provider, "tfidf_fallback"
+
     try:
         import sentence_transformers  # noqa: F401 — presence check only
         from app.services.embedding.bge import BGEEmbeddingProvider
