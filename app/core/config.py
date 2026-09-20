@@ -39,6 +39,10 @@ def _normalise_postgres_url(url: str, driver: str) -> str:
 
 _SSL_TRUE = {"require", "required", "true", "1", "yes", "verify-ca", "verify-full"}
 
+# Query params libpq understands but asyncpg.connect() rejects outright
+# (TypeError). Neon appends channel_binding=require to its URLs by default.
+_ASYNC_UNSAFE_PARAMS = {"channel_binding"}
+
 
 def _extract_ssl(url: str, *, strip: bool) -> tuple[str, bool]:
     """Detect an SSL requirement in a DB URL's query string.
@@ -59,7 +63,12 @@ def _extract_ssl(url: str, *, strip: bool) -> tuple[str, bool]:
     ssl_required = False
     for key, value in params:
         low_key, low_val = key.lower(), value.lower()
-        if low_key == "sslmode" and low_val in _SSL_TRUE:
+        if low_key in _ASYNC_UNSAFE_PARAMS:
+            # Never forwarded to asyncpg (hard TypeError); libpq honours it,
+            # so the sync URL keeps it.
+            if not strip:
+                kept.append((key, value))
+        elif low_key == "sslmode" and low_val in _SSL_TRUE:
             ssl_required = True
             if not strip:
                 kept.append((key, value))
