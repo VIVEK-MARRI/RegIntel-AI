@@ -29,6 +29,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Local dev keeps the full ML stack (BGE embeddings). Small hosts
+      # (e.g. Render free tier) build the same Dockerfile WITHOUT this arg
+      # and get the slim TF-IDF fallback image instead.
+      args:
+        INSTALL_ML_STACK: "1"
     image: regintel/backend:dev
     container_name: regintel-backend
     depends_on:

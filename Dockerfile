@@ -1,7 +1,11 @@
-# NOTE: this image is for LOCAL development (docker compose up) only.
-# Do NOT deploy it to Render hosting: it bundles the full torch/CUDA ML
-# stack (~GBs) and will OOM on Render's 512 MB free tier. For Render, use
-# New → Blueprint on this repo (render.yaml) — native runtime, no torch.
+# RegIntel AI backend image (dev + small-hosting friendly).
+#
+# The heavy torch/transformers ML stack is OPT-IN via build arg:
+#   docker build --build-arg INSTALL_ML_STACK=1 .
+# The default (0) installs only the core + LLM SDKs and uses the built-in
+# TF-IDF embedding fallback — the image stays small enough for 512 MB hosts
+# (e.g. Render free tier). docker-compose.yml passes INSTALL_ML_STACK=1 so
+# local development keeps full BGE embeddings.
 FROM python:3.11-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -22,9 +26,13 @@ WORKDIR /app
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt requirements-ml.txt ./
+COPY requirements.txt requirements-ml.txt requirements-llm.txt ./
+ARG INSTALL_ML_STACK=0
 RUN pip install --upgrade pip wheel \
-    && pip install -r requirements.txt -r requirements-ml.txt
+    && pip install -r requirements.txt -r requirements-llm.txt \
+    && if [ "$INSTALL_ML_STACK" = "1" ]; then \
+           pip install -r requirements-ml.txt; \
+       fi
 
 FROM python:3.11-slim AS runtime
 

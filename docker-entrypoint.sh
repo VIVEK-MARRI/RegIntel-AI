@@ -72,9 +72,10 @@ alembic upgrade head
 echo "[entrypoint] Migrations complete."
 
 # ── Start the application server ─────────────────────────────────────────────
+# Workers default to 1: safe on 512 MB hosts; raise WORKERS for bigger boxes.
 echo "[entrypoint] Starting uvicorn..."
 exec uvicorn app.main:app \
     --host 0.0.0.0 \
     --port "${PORT:-8000}" \
-    --workers "${WORKERS:-2}" \
+    --workers "${WORKERS:-1}" \
     --log-level "${LOG_LEVEL:-info}"
