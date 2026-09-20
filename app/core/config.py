@@ -107,14 +107,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _derive_sync_url(self) -> Self:
-        # Render-style deploys often export only DATABASE_URL. Derive the
-        # sync URL for Alembic when it wasn't explicitly configured.
+        # Many deploys export only DATABASE_URL (or leave the sync var
+        # empty). Derive the sync URL for Alembic whenever it is missing,
+        # empty, or still the local-dev default.
         default_sync = "postgresql+psycopg2://postgres:admin@localhost:5432/regintel_db"
         async_default = "postgresql+asyncpg://postgres:admin@localhost:5432/regintel_db"
-        if (
+        sync_missing = (not (self.DATABASE_URL_SYNC or "").strip()) or (
             self.DATABASE_URL_SYNC == default_sync
-            and self.DATABASE_URL != async_default
-        ):
+        )
+        if sync_missing and self.DATABASE_URL != async_default:
             object.__setattr__(
                 self,
                 "DATABASE_URL_SYNC",

@@ -2,6 +2,9 @@
 # Multi-stage build, slim runtime, non-root user, healthcheck.
 # Builds to ~700 MB on python:3.11-slim without ML deps, or ~3 GB with the
 # full ML stack uncommented.
+#
+# NOTE: for Render HOSTING use New → Blueprint (render.yaml), not this file —
+# a Docker deploy needs a paid plan for the RAM this image wants.
 
 # ─── Stage 1: builder ────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder

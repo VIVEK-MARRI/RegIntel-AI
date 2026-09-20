@@ -7,8 +7,8 @@
 #   regintel-backend ──TLS──▶ free external Postgres (Neon / Supabase — YOU supply the URL)
 #
 # Cost: $0 — no Render Postgres (paid), no disk, no paid plan needed.
-# The only prompts at deploy time are secrets/URLs you paste in:
-# LLM_API_KEY, ADMIN_SEED_PASSWORD, DATABASE_URL (+SYNC).
+# The only prompts at deploy time are 3 values you paste in:
+# DATABASE_URL, LLM_API_KEY, ADMIN_SEED_PASSWORD.
 #
 # IMPORTANT Render constraints baked into this file:
 # 1. Static sites NEVER proxy traffic — the browser calls the backend's PUBLIC
@@ -30,8 +30,8 @@
 #   2. Create a FREE Postgres: Neon (neon.tech) or Supabase (supabase.com) —
 #      copy its DIRECT connection string (not the pooled one).
 #   3. Render Dashboard → New → Blueprint → select your repo → Deploy.
-#   4. When prompted, fill DATABASE_URL (+SYNC), LLM_API_KEY,
-#      ADMIN_SEED_PASSWORD. Everything else is wired.
+#   4. When prompted, fill DATABASE_URL, LLM_API_KEY, ADMIN_SEED_PASSWORD.
+#      Everything else is wired.
 #   5. First deploy: backend builds (~3-5 min, pip install), runs migrations via
 #      preDeployCommand, then frontend builds with the backend's public URL.
 #      If the frontend's first build runs before the backend URL exists, hit
@@ -72,14 +72,13 @@ services:
       #      on port 6543 — pooled mode breaks asyncpg prepared statements).
       #      It looks like:
       #        postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
-      #   3. Paste it at the Blueprint prompts for BOTH vars below (or set
-      #      DATABASE_URL only — the app derives the sync URL itself).
+      #   3. Paste it at the Blueprint prompt for DATABASE_URL below.
+      #      (No second URL needed — the app derives the sync URL for
+      #      migrations from it automatically.)
       # The app auto-converts postgres:// schemes and enables TLS from
       # ?sslmode=require, so paste the provider URL verbatim.
       - key: DATABASE_URL
         sync: false # <-- prompted in the Dashboard; nothing secret is committed
-      - key: DATABASE_URL_SYNC
-        sync: false # <-- same URL pasted again (or leave empty to auto-derive)
       # ── Ephemeral disk: free services have NO persistent disk ──
       # Uploads / sqlite-style local state vanish on redeploy. Paid plans:
       # add a disk and set STORAGE_ROOT to its mount path.

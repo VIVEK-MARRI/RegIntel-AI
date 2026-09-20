@@ -1,3 +1,7 @@
+# NOTE: this image is for LOCAL development (docker compose up) only.
+# Do NOT deploy it to Render hosting: it bundles the full torch/CUDA ML
+# stack (~GBs) and will OOM on Render's 512 MB free tier. For Render, use
+# New → Blueprint on this repo (render.yaml) — native runtime, no torch.
 FROM python:3.11-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
