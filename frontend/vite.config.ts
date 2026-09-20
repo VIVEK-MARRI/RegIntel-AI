@@ -3,6 +3,10 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 
 export default defineConfig({
+  // Sub-path serving: the SPA lives under /app (FastAPI-embedded and
+  // nginx both serve it there). Override with SPA_BASE=/ for root
+  // serving (e.g. Render static site via render.yaml).
+  base: process.env.SPA_BASE ?? "/app/",
   plugins: [react()],
   resolve: {
     alias: {

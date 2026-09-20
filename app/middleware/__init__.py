@@ -386,6 +386,7 @@ class ProductionAuthMiddleware(BaseHTTPMiddleware):
         self.exempt_exact = {"/", "/health", "/health/live", "/docs", "/redoc"}
         self.exempt_prefixes = (
             "/openapi.json",
+            "/app",  # embedded SPA (static UI served by the backend itself)
             "/api/v1/security/auth/login",
             "/api/v1/security/auth/signup",
             "/api/v1/security/auth/refresh",

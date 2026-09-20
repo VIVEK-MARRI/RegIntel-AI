@@ -146,7 +146,7 @@ services:
   - type: web
     name: regintel-frontend
     runtime: static
-    buildCommand: "cd frontend && npm ci --no-audit --no-fund && npm run build"
+    buildCommand: "cd frontend && npm ci --no-audit --no-fund && SPA_BASE=/ npm run build"
     staticPublishPath: frontend/dist
     routes:
       # SPA fallback: serve index.html for client-side routes. The /app/*

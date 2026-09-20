@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import unquote
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 
 import logging
 
@@ -431,3 +433,51 @@ async def root():
 # NOTE: GET /health is served by the health router ({"status": "ok"}).
 # The deprecated alias below was removed — it was shadowed by the router
 # and never executed, while creating a duplicate OpenAPI operation.
+
+
+# ─── Embedded SPA (single-service deploy) ─────────────────────────────
+# When the image bundles frontend/dist as ./static (see Dockerfile), the
+# backend serves the COMPLETE UI itself at /app — same origin as the API,
+# so the SPA's relative /api calls need no CORS config and no env vars.
+# Absent locally (no ./static dir), these routes 404 and change nothing.
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+
+def _spa_file(relative: str):
+    """Resolve a bundled asset inside STATIC_DIR, blocking traversal."""
+    target = (STATIC_DIR / unquote(relative)).resolve()
+    try:
+        target.relative_to(STATIC_DIR.resolve())
+    except ValueError:
+        return None
+    return target if target.is_file() else None
+
+
+def _spa_index():
+    index = _spa_file("index.html")
+    if index is None:
+        raise HTTPException(
+            status_code=404, detail="UI not bundled in this image"
+        )
+    return FileResponse(index, media_type="text/html")
+
+
+@app.get("/app", include_in_schema=False)
+async def spa_root():
+    return _spa_index()
+
+
+@app.get("/app/{full_path:path}", include_in_schema=False)
+async def spa_files(full_path: str):
+    if not full_path.strip("/"):
+        return _spa_index()
+    target = _spa_file(full_path)
+    if target is None:
+        # Client-side route (/app/dashboard, …) → SPA entrypoint.
+        return _spa_index()
+    response = FileResponse(target)
+    if full_path.startswith("assets/"):
+        response.headers["Cache-Control"] = (
+            "public, max-age=31536000, immutable"
+        )
+    return response

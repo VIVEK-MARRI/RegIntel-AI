@@ -6,6 +6,23 @@
 # TF-IDF embedding fallback — the image stays small enough for 512 MB hosts
 # (e.g. Render free tier). docker-compose.yml passes INSTALL_ML_STACK=1 so
 # local development keeps full BGE embeddings.
+# ─── Stage 0: frontend builder (Node → static SPA) ────────────────────────
+# Builds the React SPA so this single image serves the COMPLETE application
+# (API + UI on one origin: no CORS, no extra service). The SPA is built with
+# default env (relative /api calls, basename /app), which is exactly what
+# same-origin serving needs — no build args required.
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /build
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci --no-audit --no-fund --prefer-offline
+COPY frontend/tsconfig.json frontend/tsconfig.node.json frontend/vite.config.ts frontend/tailwind.config.ts frontend/postcss.config.js frontend/index.html ./
+COPY frontend/src ./src
+COPY frontend/public ./public
+ENV NODE_ENV=production
+RUN npm run build
+
+# ─── Stage 1: python builder ─────────────────────────────────────────────
 FROM python:3.11-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -61,6 +78,9 @@ COPY alembic ./alembic
 COPY alembic.ini ./
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
+
+# Built SPA (served by FastAPI itself at /app — see STATIC_DIR in app/main.py).
+COPY --from=frontend-builder /build/dist ./static
 
 EXPOSE 8000
 
