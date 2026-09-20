@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.schemas.forecasting import (
     ForecastRequest,
+    ForecastScenario,
     ForecastStats,
     RiskForecast,
     ScenarioRequest,
@@ -57,6 +58,23 @@ async def trend(
         "predicted_score": round(score, 4),
         "direction": direction,
     }
+
+
+# RESTful collection used by the web dashboard. Runs the deterministic
+# what-if simulation against the latest forecast score (or the 0.5
+# baseline when no forecast exists yet) and returns the computed
+# best_case / baseline / worst_case projections.
+@router.get("/scenarios", response_model=List[ForecastScenario])
+async def list_scenarios(
+    svc: ForecastingService = _service_dep(),
+) -> List[ForecastScenario]:
+    items = svc.list_all()
+    baseline = (
+        max(items, key=lambda f: f.generated_at).predicted_risk_score
+        if items
+        else 0.5
+    )
+    return svc.scenario_simulation(ScenarioRequest(baseline_score=baseline))
 
 
 @router.get("/stats", response_model=ForecastStats)

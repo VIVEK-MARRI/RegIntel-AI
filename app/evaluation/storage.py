@@ -17,6 +17,16 @@ from app.evaluation.schemas import (
 
 logger = logging.getLogger(__name__)
 
+
+def _default_storage_dir() -> Path:
+    # Honor STORAGE_ROOT (e.g. /tmp/... on Render) instead of a hardcoded
+    # relative "storage/" dir. Imported lazily-tolerant: settings has no
+    # app imports, so this cannot create a cycle.
+    from app.core.config import settings
+
+    return Path(settings.STORAGE_ROOT) / "evaluation" / "metrics"
+
+
 # Default storage path for historical metrics
 DEFAULT_STORAGE_DIR = Path("storage/evaluation/metrics")
 
@@ -28,9 +38,10 @@ class MetricsStorage:
         """Initialize metrics storage.
 
         Args:
-            storage_dir: Directory to store metrics. Defaults to storage/evaluation/metrics.
+            storage_dir: Directory to store metrics. Defaults to
+                <STORAGE_ROOT>/evaluation/metrics.
         """
-        self.storage_dir = storage_dir or DEFAULT_STORAGE_DIR
+        self.storage_dir = storage_dir or _default_storage_dir()
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self._cache: List[HistoricalMetrics] = []
 

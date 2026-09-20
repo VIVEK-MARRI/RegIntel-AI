@@ -19,7 +19,11 @@ export function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/security/auth/signup", {
+      const backendBase = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
+        /\/$/,
+        ""
+      );
+      const res = await fetch(`${backendBase}/api/v1/security/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, full_name: fullName }),

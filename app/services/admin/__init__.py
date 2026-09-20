@@ -1101,10 +1101,23 @@ def build_default_admin_service() -> AdminService:
 
 
 def _ensure_default_users(svc: AdminService) -> None:
-    """Seed default users if none exist yet."""
+    """Seed default users if none exist yet.
+
+    Production is fail-closed: nothing is seeded unless the operator
+    explicitly bootstraps ONE admin via ``ADMIN_SEED_EMAIL`` /
+    ``ADMIN_SEED_PASSWORD`` (min 12 chars, supplied through env or a secret
+    manager — never committed to git). The weak dev passwords below are only
+    ever used outside production, and each one can be overridden via
+    ``DEV_SEED_PASSWORD_<USERNAME>``.
+    """
     existing = svc.list_users(UserFilter())
     if existing.items:
         return
+
+    if settings.ENV == "production" and not settings.SEED_DEFAULT_USERS:
+        _bootstrap_production_admin(svc)
+        return
+
     admin_role = svc.get_role_by_name("admin")
     analyst_role = svc.get_role_by_name("analyst")
     auditor_role = svc.get_role_by_name("auditor")
@@ -1114,32 +1127,44 @@ def _ensure_default_users(svc: AdminService) -> None:
     auditor_rid = auditor_role.role_id if auditor_role else ""
     viewer_rid = viewer_role.role_id if viewer_role else ""
 
+    if settings.ENV == "production":
+        logger.warning(
+            "SEED_DEFAULT_USERS is enabled in production — default accounts "
+            "use weak passwords. Disable it and bootstrap via "
+            "ADMIN_SEED_EMAIL/ADMIN_SEED_PASSWORD instead."
+        )
+
+    def _dev_password(username: str, fallback: str) -> str:
+        return os.environ.get(f"DEV_SEED_PASSWORD_{username.upper()}", fallback)
+
+    # DEV-ONLY defaults (local development / tests). Never used in
+    # production unless SEED_DEFAULT_USERS is explicitly enabled (see above).
     defaults = [
         UserCreateRequest(
             username="admin",
             email="admin@regintel.ai",
-            password="Admin@123",
+            password=_dev_password("admin", "Admin@123"),
             full_name="System Administrator",
             role_ids=[admin_rid],
         ),
         UserCreateRequest(
             username="analyst",
             email="analyst@regintel.ai",
-            password="Analyst@123",
+            password=_dev_password("analyst", "Analyst@123"),
             full_name="Compliance Analyst",
             role_ids=[analyst_rid],
         ),
         UserCreateRequest(
             username="auditor",
             email="auditor@regintel.ai",
-            password="Auditor@123",
+            password=_dev_password("auditor", "Auditor@123"),
             full_name="Internal Auditor",
             role_ids=[auditor_rid],
         ),
         UserCreateRequest(
             username="viewer",
             email="viewer@regintel.ai",
-            password="Viewer@123",
+            password=_dev_password("viewer", "Viewer@123"),
             full_name="Read-Only Viewer",
             role_ids=[viewer_rid],
         ),
@@ -1149,6 +1174,41 @@ def _ensure_default_users(svc: AdminService) -> None:
             svc.create_user(req)
         except Exception:
             logger.exception("Failed to seed user %s", req.username)
+
+
+def _bootstrap_production_admin(svc: AdminService) -> None:
+    """Create exactly one admin from env-supplied credentials, or nothing."""
+    email = (settings.ADMIN_SEED_EMAIL or "").strip()
+    password = settings.ADMIN_SEED_PASSWORD or ""
+    if not email or not password:
+        logger.warning(
+            "Production storage has no users and ADMIN_SEED_EMAIL/PASSWORD "
+            "are not set — no accounts created. Set both to bootstrap the "
+            "first admin (min 12-char password)."
+        )
+        return
+    if len(password) < 12:
+        logger.error(
+            "Refusing to bootstrap production admin: ADMIN_SEED_PASSWORD "
+            "must be at least 12 characters."
+        )
+        return
+    admin_role = svc.get_role_by_name("admin")
+    try:
+        svc.create_user(
+            UserCreateRequest(
+                username=email.split("@")[0],
+                email=email,
+                password=password,
+                full_name="System Administrator",
+                role_ids=[admin_role.role_id] if admin_role else [],
+            )
+        )
+    except Exception:
+        logger.exception("Failed to bootstrap production admin %s", email)
+        return
+    # Never log the password — only the fact that bootstrapping happened.
+    logger.warning("Bootstrapped initial production admin account for %s.", email)
 
 
 __all__ = [

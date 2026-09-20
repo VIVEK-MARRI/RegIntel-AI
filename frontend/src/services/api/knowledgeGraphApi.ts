@@ -10,9 +10,19 @@ export async function getGraphNodes(): Promise<GraphNode[]> {
 }
 
 export async function getGraphRelationships(): Promise<GraphRelationship[]> {
-  return api.get<GraphRelationship[]>("/knowledge-graph/relationships");
+  return api
+    .get<{ items: GraphRelationship[] }>("/knowledge-graph/relationships")
+    .then((r) => r.items ?? []);
 }
 
-export async function getGraphImpact(nodeId: string): Promise<{ affected: GraphNode[]; total: number }> {
-  return api.post<{ affected: GraphNode[]; total: number }>(`/knowledge-graph/impact-traversal/${nodeId}`);
+export interface GraphImpact {
+  start_node_id: string;
+  affected_node_ids: string[];
+  total_paths: number;
+  max_depth_reached: number;
+  steps: unknown[];
+}
+
+export async function getGraphImpact(nodeId: string): Promise<GraphImpact> {
+  return api.post<GraphImpact>(`/knowledge-graph/impact-traversal/${nodeId}`);
 }

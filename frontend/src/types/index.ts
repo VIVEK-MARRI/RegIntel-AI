@@ -365,12 +365,10 @@ export interface ComplianceAssessment {
 }
 
 export interface RiskScenario {
-  scenario_id: string;
   name: string;
-  description: string;
-  probability: number;
-  impact: "low" | "medium" | "high" | "critical";
-  drivers: string[];
+  adjustments: Record<string, number>;
+  predicted_score: number;
+  predicted_level: "low" | "medium" | "high" | "critical";
 }
 
 export interface RiskProjection {

@@ -11,7 +11,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.dependencies import get_db_session
+from app.api.dependencies import (
+    get_bm25_service,
+    get_db_session,
+    reset_bm25_service,
+)
 from app.schemas.bm25 import (
     BM25SearchRequestSchema,
     BM25SearchResponseSchema,
@@ -25,22 +29,22 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Singleton BM25 service instance
-_bm25_service: Optional[BM25Service] = None
-
-
-def get_bm25_service() -> BM25Service:
-    """Get or create the singleton BM25 service."""
-    global _bm25_service
-    if _bm25_service is None:
-        _bm25_service = BM25Service()
-    return _bm25_service
-
 
 def set_bm25_service(service: BM25Service) -> None:
-    """Set the BM25 service instance (for testing/dependency injection)."""
-    global _bm25_service
-    _bm25_service = service
+    """Set the BM25 service instance (for testing/dependency injection).
+
+    Delegates to the shared singleton in ``app.api.dependencies`` so the
+    /bm25/* endpoints, the retrieval endpoints and the warmup path all
+    observe the SAME in-memory index. Previously this module held its own
+    private singleton, so building the index via POST /bm25/index/build
+    left every other reader reporting "index not ready".
+    """
+    import app.api.dependencies as _deps
+
+    _deps._bm25_service = service
+
+
+__all__ = ["router", "get_bm25_service", "set_bm25_service", "reset_bm25_service"]
 
 
 # ----- Search Endpoints -----

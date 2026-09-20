@@ -1,0 +1,182 @@
+# RegIntel AI — Render Blueprint (Infrastructure as Code)
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Topology (hybrid pattern — Render's recommended shape for SPA + API):
+#   browser ──GET / (HTML/JS)──▶ regintel-frontend (static site, global CDN)
+#   browser ──fetch {backend}/api/*──▶ regintel-backend (FastAPI web service, public URL)
+#   regintel-backend ──private──▶ regintel-db (managed Postgres)
+#
+# IMPORTANT Render constraints baked into this file:
+# 1. Static sites NEVER proxy traffic — the browser calls the backend's PUBLIC
+#    url directly. That's why the frontend bakes VITE_API_BASE_URL in at build
+#    time (Vite inlines VITE_* vars into the bundle; there is no runtime env).
+# 2. Free web services sleep on idle (≈50s cold start on first hit) and have
+#    512 MB RAM — so the backend skips the torch/transformers ML stack and
+#    uses the built-in TF-IDF embedding fallback. No code change needed:
+#    app/services/embedding auto-falls-back when sentence_transformers is absent.
+# 3. Render Postgres gives you a `postgres://...` URL. app/core/config.py
+#    normalises it to SQLAlchemy's `postgresql+asyncpg://...` automatically.
+# 4. app/core/startup.py REFUSES to boot with ENV=production + LLM_PROVIDER=mock
+#    (it would serve fake answers). You MUST set a real LLM_API_KEY below.
+#    Gemini has a free tier — https://aistudio.google.com/apikey
+#
+# Deploy:
+#   1. Push this file at repo root to GitHub/GitLab/Bitbucket.
+#   2. Render Dashboard → New → Blueprint → select your repo → Deploy.
+#   3. When prompted, fill LLM_API_KEY (sync:false vars). Everything else is wired.
+#   4. First deploy: backend builds (~3-5 min, pip install), runs migrations via
+#      preDeployCommand, then frontend builds with the backend's public URL.
+#      If the frontend's first build runs before the backend URL exists, hit
+#      "Manual Deploy → Deploy latest commit" on regintel-frontend once.
+
+services:
+  # ─── Backend API (FastAPI) ──────────────────────────────────────────
+  - type: web
+    name: regintel-backend
+    runtime: python
+    plan: free # bump to 1c-2g (starter) for production traffic / no sleeping
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt -r requirements-llm.txt"
+    # NOTE: requirements-ml.txt (torch ~2.5 GB) is intentionally skipped.
+    # The embedding service falls back to TF-IDF automatically.
+    # For full BGE embeddings on a paid plan, change buildCommand to:
+    #   pip install --upgrade pip && pip install -r requirements.txt -r requirements-llm.txt -r requirements-ml.txt
+    preDeployCommand: "alembic upgrade head"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --timeout-keep-alive 5 --log-level info"
+    # 1 worker on free (512 MB). Raise WORKERS env to 2+ on paid plans.
+    healthCheckPath: /health/live
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENV
+        value: production
+      - key: PROJECT_NAME
+        value: RegIntel AI
+      - key: LOG_LEVEL
+        value: INFO
+      - key: WORKERS
+        value: 1
+      # ── Database (wired to the managed Postgres below) ──
+      # Render supplies postgres://... ; the app normalises to asyncpg/psycopg2.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: regintel-db
+          property: connectionString
+      - key: DATABASE_URL_SYNC
+        fromDatabase:
+          name: regintel-db
+          property: connectionString
+      # ── Ephemeral disk: free services have NO persistent disk ──
+      # Uploads / sqlite-style local state vanish on redeploy. Paid plans:
+      # add a disk and set STORAGE_ROOT to its mount path.
+      - key: STORAGE_ROOT
+        value: /tmp/regintel-storage
+      - key: AUDIT_LOG_ENABLED
+        value: true
+      - key: AUDIT_LOG_PERSIST
+        value: false
+      - key: REQUEST_TRACING_ENABLED
+        value: true
+      - key: SECURITY_HEADERS_ENABLED
+        value: true
+      - key: RATE_LIMIT_ENABLED
+        value: true
+      - key: RATE_LIMIT_PER_MINUTE
+        value: 300
+      - key: API_KEY_AUTH_ENABLED
+        value: false
+      - key: STARTUP_REQUIRED_ENV
+        value: DATABASE_URL,STORAGE_ROOT
+      - key: STARTUP_RAISE_ON_ERROR
+        value: false
+      # ── Embeddings run on CPU (no GPU on Render free/starter) ──
+      - key: EMBEDDING_DEVICE
+        value: cpu
+      - key: RERANKER_DEVICE
+        value: cpu
+      - key: USE_PGVECTOR_FALLBACK
+        value: true
+      # ── LLM (REQUIRED — production refuses to boot on "mock") ──
+      - key: LLM_PROVIDER
+        value: gemini # openai | gemini | litellm (gemini has a free tier)
+      - key: LLM_MODEL
+        value: gemini-2.0-flash
+      - key: LLM_API_KEY
+        sync: false # <-- you fill this in the Dashboard prompt
+      - key: SECURITY_DEV_TOKEN_ENDPOINT
+        value: false
+      - key: AUTH_ENABLED
+        value: true
+      # ── First admin account (no default passwords exist in production) ──
+      # The backend creates NO users on its own. Set these at deploy time to
+      # bootstrap exactly one admin on empty storage (min 12-char password).
+      # Applies only when no users exist yet — changing the value later does
+      # NOT reset the password. If left empty, sign-ups still work but every
+      # new account gets the viewer role only.
+      - key: ADMIN_SEED_EMAIL
+        value: admin@regintel.ai
+      - key: ADMIN_SEED_PASSWORD
+        sync: false # <-- prompted in the Dashboard; nothing secret is committed
+      # ── API docs stay OFF in production unless you opt in ──
+      - key: ENABLE_API_DOCS
+        value: false
+      # CORS must allow the frontend origin (different onrender.com subdomain).
+      # Wired automatically once both services exist; on the very first deploy
+      # you may need to set this manually to https://<frontend>.onrender.com
+      # in the Dashboard and redeploy the backend.
+      # NOTE: Settings reads the UNPREFIXED name (pydantic-settings maps the
+      # CORS_ORIGINS field to env CORS_ORIGINS; REGINTEL_CORS_ORIGINS is ignored
+      # by Settings and only visible to the secrets manager).
+      - key: CORS_ORIGINS
+        fromService:
+          name: regintel-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: REGINTEL_JWT_SECRET
+        generateValue: true
+
+  # ─── Frontend SPA (Vite + React, global CDN) ────────────────────────
+  - type: web
+    name: regintel-frontend
+    runtime: static
+    buildCommand: "cd frontend && npm ci --no-audit --no-fund && npm run build"
+    staticPublishPath: frontend/dist
+    routes:
+      # SPA fallback: serve index.html for client-side routes. The /app/*
+      # rule is kept so old /app/... bookmarks still resolve to the bundle.
+      - type: rewrite
+        source: /app/*
+        destination: /index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      # Baked into the JS bundle at build time. Auto-resolves to the backend's
+      # public URL (e.g. https://regintel-backend.onrender.com).
+      - key: VITE_API_BASE_URL
+        fromService:
+          name: regintel-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_AUTH_ENABLED
+        value: true
+      # Serve the SPA at the domain root on Render (docker/nginx keeps /app).
+      - key: VITE_BASENAME
+        value: /
+      # Display-only flags shown on the Settings page (must match backend).
+      - key: VITE_LLM_PROVIDER
+        value: gemini
+      - key: VITE_RERANKER_ENABLED
+        value: true
+
+databases:
+  - name: regintel-db
+    plan: free # 1 GB disk, 90-day expiry on free — use 0.5c-1g+ for production
+    postgresMajorVersion: "16"
+    databaseName: regintel

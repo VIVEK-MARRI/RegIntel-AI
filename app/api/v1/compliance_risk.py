@@ -129,6 +129,26 @@ async def list_assessments_plural(
 # ─── Dynamic last ─────────────────────────────────────────────────────
 
 
+# RESTful alias used by the web dashboard: GET /compliance-risk/assessments/{id}.
+# Mirrors ``GET /compliance-risk/{assessment_id}`` ( see get_assessment below).
+@router.get(
+    "/assessments/{assessment_id}",
+    summary="Fetch a single risk assessment (alias)",
+    include_in_schema=False,
+)
+async def get_assessment_plural(
+    assessment_id: str,
+    service: ComplianceRiskService = Depends(get_compliance_risk_service),
+) -> Dict[str, Any]:
+    a = service.get(assessment_id)
+    if a is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"assessment {assessment_id!r} not found",
+        )
+    return a.model_dump(mode="json")
+
+
 @router.get(
     "/{assessment_id}",
     summary="Fetch a single risk assessment",

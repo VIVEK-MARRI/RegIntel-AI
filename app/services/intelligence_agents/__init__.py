@@ -22,6 +22,7 @@ Public surface
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import re
 import threading
@@ -202,7 +203,7 @@ class ResearchAgentExecutor:
         self.research_service = research_service
         self.knowledge_graph_service = knowledge_graph_service
 
-    def execute(
+    async def execute(
         self,
         request: ResearchAgentRequest,
         steps: List[ResearchPlanStep],
@@ -231,6 +232,10 @@ class ResearchAgentExecutor:
                 )
                 start = _now()
                 report = self.research_service.run(rr, top_k=request.top_k)
+                # The real ResearchService.run is async while test doubles
+                # are sync — await only when awaitable.
+                if inspect.isawaitable(report):
+                    report = await report
                 duration = (_now() - start) * 1000.0
             except Exception as exc:  # pragma: no cover
                 logger.warning("Research service failed: %s", exc)
@@ -502,7 +507,7 @@ class ResearchAgent(BaseAgent):
                 strategy="research_agent",
             ):
                 plan = self._planner.plan(request)
-                plan, findings, citations, timeline = self._executor.execute(
+                plan, findings, citations, timeline = await self._executor.execute(
                     request, plan
                 )
                 summary, confidence = self._reasoner.reason(

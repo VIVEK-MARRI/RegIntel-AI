@@ -24,6 +24,9 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
+    // Sourcemaps ship original TS sources to every browser — useful for
+    // local debugging, an info leak in a public bundle. Enabled for dev
+    // builds, disabled for production.
+    sourcemap: process.env.NODE_ENV !== "production",
   },
 });

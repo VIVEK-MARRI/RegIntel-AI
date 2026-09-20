@@ -2,10 +2,19 @@ import type { ApiError } from "@/types";
 import { getAccessToken } from "@/lib/auth-token";
 
 /**
- * Resolve the backend base URL. In dev, the Vite proxy forwards /api to
- * the FastAPI server so we always use a relative base.
+ * Resolve the backend base URL.
+ *
+ * - Local dev: the Vite proxy forwards /api to FastAPI, so a relative base
+ *   works and no env var is needed.
+ * - Render (static CDN frontend + public API web service): the browser must
+ *   call the backend's public URL directly, baked in at build time via
+ *   VITE_API_BASE_URL (see render.yaml). Same-origin stays relative.
  */
-export const API_BASE = "/api/v1";
+export const BACKEND_BASE = (
+  import.meta.env.VITE_API_BASE_URL ?? ""
+).replace(/\/$/, "");
+
+export const API_BASE = `${BACKEND_BASE}/api/v1`;
 
 export class ApiClientError extends Error implements ApiError {
   status: number;
@@ -33,17 +42,19 @@ function buildUrl(
   path: string,
   query?: RequestOptions["query"]
 ): string {
-  const url = new URL(
-    `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`,
-    window.location.origin
-  );
+  const full = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+  const url = BACKEND_BASE
+    ? new URL(full)
+    : new URL(full, window.location.origin);
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v === undefined || v === null) continue;
       url.searchParams.set(k, String(v));
     }
   }
-  return url.pathname + url.search;
+  // Same-origin: keep relative (works behind Vite proxy / any reverse proxy).
+  // Cross-origin (Render): return the absolute URL.
+  return BACKEND_BASE ? url.toString() : url.pathname + url.search;
 }
 
 export async function request<T = unknown>(

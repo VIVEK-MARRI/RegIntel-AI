@@ -51,6 +51,16 @@ class ChunkNotFoundError(DocumentRegistryError):
 def register_exception_handlers(app: FastAPI) -> None:
     """Registers exception handlers for custom domain exceptions."""
 
+    @app.exception_handler(ValueError)
+    async def value_error_handler(request: Request, exc: ValueError):
+        # Enum coercions (AuditAction(...), UserStatus(...), ...) and other
+        # bad-input ValueErrors surface as 400 instead of unhandled 500s.
+        logger.warning(f"ValueError: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(exc) or "Invalid request", "error_code": "BAD_REQUEST"},
+        )
+
     @app.exception_handler(DocumentNotFoundError)
     async def document_not_found_handler(request: Request, exc: DocumentNotFoundError):
         logger.warning(f"DocumentNotFoundError: {exc.message}")

@@ -357,6 +357,78 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# ─── Production auth guard ─────────────────────────────────────────────
+
+
+class ProductionAuthMiddleware(BaseHTTPMiddleware):
+    """Require a valid Bearer JWT for API traffic in production.
+
+    Single-point enforcement so that no data router can be reached
+    anonymously once deployed. Active only when constructed with
+    ``enabled=True`` (wired in ``app.main`` for
+    ``ENV=production`` + ``AUTH_ENABLED`` only, so local dev and tests are
+    unaffected).
+
+    Exempt (public by design): liveness, docs/schema, and the login /
+    signup / refresh flows that issue tokens. Everything else — including
+    ``/health/ready`` and ``/health/deep``, whose diagnostic messages can
+    echo backend exception text — requires a verifiable JWT.
+    """
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        enabled: bool = True,
+    ) -> None:
+        super().__init__(app)
+        self.enabled = enabled
+        self.exempt_exact = {"/", "/health", "/health/live", "/docs", "/redoc"}
+        self.exempt_prefixes = (
+            "/openapi.json",
+            "/api/v1/security/auth/login",
+            "/api/v1/security/auth/signup",
+            "/api/v1/security/auth/refresh",
+        )
+
+    def _is_exempt(self, path: str) -> bool:
+        if path in self.exempt_exact:
+            return True
+        return any(
+            path == prefix or path.startswith(prefix + "/")
+            for prefix in self.exempt_prefixes
+        )
+
+    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
+        if not self.enabled or request.method == "OPTIONS":
+            return await call_next(request)
+        if self._is_exempt(request.url.path):
+            return await call_next(request)
+        from starlette.responses import JSONResponse
+
+        auth = request.headers.get("authorization", "")
+        if not auth.lower().startswith("bearer "):
+            return JSONResponse(
+                {"detail": "missing or invalid bearer token"},
+                status_code=401,
+            )
+        token = auth.split(" ", 1)[1].strip()
+        try:
+            from app.main import _security_jwt_issuer  # type: ignore[attr-defined]
+
+            principal = _security_jwt_issuer.verify(token)
+            # Refresh tokens must never double as API credentials: they live
+            # longer (7 days) and are stored in localStorage.
+            if principal.raw_claims.get("token_use", "access") != "access":
+                raise ValueError("not an access token")
+        except Exception:
+            return JSONResponse(
+                {"detail": "missing or invalid bearer token"},
+                status_code=401,
+            )
+        return await call_next(request)
+
+
 # ─── Audit log middleware ────────────────────────────────────────────────
 
 
@@ -417,6 +489,7 @@ __all__ = [
     "AuditLogEntry",
     "AuditLogMiddleware",
     "DEFAULT_SECURITY_HEADERS",
+    "ProductionAuthMiddleware",
     "RateLimitMiddleware",
     "RequestTracingMiddleware",
     "SecurityHeadersMiddleware",

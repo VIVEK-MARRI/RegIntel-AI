@@ -746,10 +746,15 @@ def _ingestion_service_singleton() -> "AutoIngestionService":
     return _ingestion_service
 
 
-async def get_ingestion_service(
-    db_session: AsyncSession = Depends(get_db_session),
-) -> AutoIngestionService:
-    """Dependency injection provider for AutoIngestionService (singleton)."""
+async def get_ingestion_service() -> AutoIngestionService:
+    """Dependency injection provider for AutoIngestionService (singleton).
+
+    NOTE: no per-request ``db_session`` is taken here on purpose. The
+    singleton owns its long-lived session (built once inside
+    ``build_default_auto_ingestion_service``); injecting a request-scoped
+    session and discarding it only opened/committed/closed a throwaway
+    session on every call for zero benefit.
+    """
     return _ingestion_service_singleton()
 
 

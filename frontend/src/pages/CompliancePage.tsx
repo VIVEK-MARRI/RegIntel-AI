@@ -250,13 +250,15 @@ function RiskTab() {
           : !scenarios?.length ? <EmptyState title="No scenarios defined" />
           : <ul className="space-y-2">
               {scenarios.map((s) => (
-                <li key={s.scenario_id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <li key={s.name} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{s.name}</span>
-                    <Badge tone={s.impact === "critical" ? "danger" : s.impact === "high" ? "warning" : "info"} size="sm">{s.impact}</Badge>
-                    <span className="ml-auto text-[10px] text-slate-500">{Math.round(s.probability * 100)}% probability</span>
+                    <span className="text-sm font-semibold capitalize text-slate-900 dark:text-slate-100">{s.name.replace(/_/g, " ")}</span>
+                    <Badge tone={s.predicted_level === "critical" ? "danger" : s.predicted_level === "high" ? "warning" : "info"} size="sm">{s.predicted_level}</Badge>
+                    <span className="ml-auto text-[10px] text-slate-500">{Math.round(s.predicted_score * 100)}% risk score</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">{s.description}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {Object.entries(s.adjustments ?? {}).map(([k, v]) => `${k}: ${v > 0 ? "+" : ""}${v}`).join(" · ") || "Baseline projection"}
+                  </p>
                 </li>
               ))}
             </ul>

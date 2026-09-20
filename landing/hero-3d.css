@@ -1,0 +1,219 @@
+/* ============ HERO 3D — Evidence Intelligence Core ============
+   Extends the existing RegIntel editorial system (ink / paper /
+   brass tokens defined inline in index.html). This file only ADDS
+   layout for the right-side visual; it never restyles existing
+   hero content, nav, or CTAs.
+   Palette (mirrors index.html tokens):
+   --ink #11141B · --paper #F1ECE0 · --brass #B88840 ·
+   --brass-light #D4B377 · --verify-dark #5FA886
+   Type: Spectral (display) · Inter (body) · IBM Plex Mono (micro-labels)
+   ============================================================ */
+
+/* ---- two-column hero: existing content left, 3D visual right ---- */
+.hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+    gap: 56px;
+    align-items: center;
+}
+
+/* ---- the 3D stage (right ~46%) ---- */
+.hero-visual {
+    position: relative;
+    min-height: 600px;
+    height: clamp(480px, 44vw, 640px);
+    /* never touch viewport edges: inset frame inside the column */
+    margin: 8px 0 8px 8px;
+    border: 1px solid rgba(212, 179, 119, 0.14);
+    border-radius: 3px;
+    background:
+        radial-gradient(120% 90% at 62% 42%, rgba(58, 46, 26, 0.28) 0%, rgba(17, 20, 27, 0) 55%),
+        linear-gradient(180deg, rgba(26, 31, 38, 0.35) 0%, rgba(17, 20, 27, 0) 100%);
+    overflow: hidden;
+}
+
+/* hairline corner ticks — ledger-plate framing, not decoration */
+.hero-visual::before,
+.hero-visual::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    z-index: 3;
+    pointer-events: none;
+}
+.hero-visual::before {
+    top: 10px;
+    left: 10px;
+    border-top: 1px solid rgba(212, 179, 119, 0.55);
+    border-left: 1px solid rgba(212, 179, 119, 0.55);
+}
+.hero-visual::after {
+    bottom: 10px;
+    right: 10px;
+    border-bottom: 1px solid rgba(212, 179, 119, 0.55);
+    border-right: 1px solid rgba(212, 179, 119, 0.55);
+}
+
+.hero-visual canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* soft vignette so the stage melts into the hero ink */
+.hero-visual-vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: radial-gradient(115% 100% at 50% 45%, rgba(17, 20, 27, 0) 58%, rgba(17, 20, 27, 0.55) 100%);
+}
+
+/* entrance: fade with the existing hero-entrance rhythm */
+.hero-visual {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.9s ease 0.45s, transform 0.9s ease 0.45s;
+}
+.hero.is-loaded .hero-visual {
+    opacity: 1;
+    transform: none;
+}
+
+/* ---- phase micro-labels (DOM chips, IBM Plex Mono) ---- */
+.hero-chip {
+    position: absolute;
+    z-index: 4;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #D4B377;
+    background: rgba(17, 20, 27, 0.72);
+    border: 1px solid rgba(184, 136, 64, 0.45);
+    border-radius: 2px;
+    padding: 4px 8px 3px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+.hero-chip.is-dim {
+    color: #9098A4;
+    border-color: rgba(144, 152, 164, 0.35);
+}
+.hero-chip.is-verify {
+    color: #5FA886;
+    border-color: rgba(95, 168, 134, 0.5);
+}
+
+/* doc hover tooltip — follows cursor, shows the source section */
+.hero-doc-tip {
+    position: absolute;
+    z-index: 5;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: #F1ECE0;
+    background: rgba(17, 20, 27, 0.85);
+    border: 1px solid rgba(184, 136, 64, 0.5);
+    border-radius: 2px;
+    padding: 5px 9px 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    transform: translate(14px, 18px);
+}
+.hero-doc-tip.is-shown {
+    opacity: 1;
+}
+
+/* ---- static fallback (no WebGL / CDN blocked) ---- */
+.hero-visual-fallback {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+}
+.hero-visual.is-fallback .hero-visual-fallback {
+    display: flex;
+}
+.hero-visual.is-fallback canvas {
+    display: none;
+}
+.fallback-doc {
+    position: absolute;
+    border: 1px solid rgba(212, 179, 119, 0.3);
+    background: linear-gradient(160deg, rgba(44, 51, 61, 0.9), rgba(26, 31, 38, 0.9));
+    border-radius: 2px;
+}
+.fallback-doc.f1 { width: 150px; height: 205px; left: 12%; top: 20%; transform: rotate(-7deg); }
+.fallback-doc.f2 { width: 170px; height: 230px; right: 14%; top: 14%; transform: rotate(5deg); }
+.fallback-doc.f3 {
+    width: 190px; height: 255px; left: 32%; top: 30%;
+    border-color: rgba(212, 179, 119, 0.65);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.fallback-line {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 76%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #B88840 30%, #B88840 70%, transparent);
+}
+.fallback-note {
+    position: absolute;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: rgba(212, 179, 119, 0.7);
+}
+
+/* ============ RESPONSIVE (mirrors page breakpoints) ============ */
+@media (max-width: 1024px) {
+    .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    .hero-visual {
+        min-height: 0;
+        height: 440px;
+        margin: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-visual {
+        height: 360px;
+    }
+    .hero-chip {
+        font-size: 9px;
+        padding: 3px 7px 2px;
+    }
+}
+
+/* ============ REDUCED MOTION ============ */
+@media (prefers-reduced-motion: reduce) {
+    .hero-visual {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+    .hero-chip,
+    .hero-doc-tip {
+        transition: none;
+    }
+}

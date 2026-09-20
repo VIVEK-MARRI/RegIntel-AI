@@ -3,6 +3,10 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from app.api.v1.alerts import router as alerts_router
 from app.api.v1.answer_analytics import router as answer_analytics_router
 from app.api.v1.answer_generation import router as answer_generation_router
@@ -38,12 +42,17 @@ from app.api.v1.search import search_router, embeddings_router, index_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
-from app.core.startup import on_shutdown, on_startup
+from app.core.startup import (
+    EnvironmentValidationError,
+    on_shutdown,
+    on_startup,
+)
 from app.middleware import (
     APIKeyMiddleware,
     APIKeyStore,
     AuditLog,
     AuditLogMiddleware,
+    ProductionAuthMiddleware,
     RateLimitMiddleware,
     RequestTracingMiddleware,
     SecurityHeadersMiddleware,
@@ -98,12 +107,19 @@ async def lifespan(app: FastAPI):
 # the FastAPI instance (which would create a circular import).
 APP_VERSION: str = "1.0.0"
 
+# Interactive API docs are always available outside production. In production
+# they stay OFF unless the operator opts in with ENABLE_API_DOCS=true.
+_docs_enabled = settings.ENV != "production" or settings.ENABLE_API_DOCS
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=APP_VERSION,
     description="Central document registry for RBI and SEBI documents in RegIntel AI pipeline.",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    # Interactive docs + schema are a recon gift to attackers: on outside
+    # production, and in production only when explicitly enabled.
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
     lifespan=lifespan,
 )
 
@@ -311,6 +327,39 @@ if settings.API_KEY_AUTH_ENABLED:
     # Tests construct their own stores and override middleware as needed.
     app.add_middleware(APIKeyMiddleware, store=_api_key_store, enabled=True)
 
+# Global auth enforcement for deployed environments: every /api/* and health
+# diagnostic requires a valid Bearer JWT. Only active in production with auth
+# on — local dev and the test suite are unaffected. Public by design: "/",
+# /health, /health/live, docs/schema, and the login/signup/refresh flows.
+app.add_middleware(
+    ProductionAuthMiddleware,
+    enabled=bool(settings.AUTH_ENABLED and settings.ENV == "production"),
+)
+
+# CORS must be applied as real middleware (Starlette handles preflights).
+# The APIGateway object below is config/summary only — it never touches
+# traffic. Only exact origins from CORS_ORIGINS are allowed; a wildcard is
+# refused (never combine "*" with credentials).
+# Added last so it runs OUTERMOST (preflights short-circuit before rate
+# limiting / audit logging).
+_exact_cors_origins = (
+    [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+    if settings.CORS_ORIGINS
+    else []
+)
+if _exact_cors_origins and "*" not in _exact_cors_origins:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_exact_cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Api-Key", "X-Request-ID"],
+        expose_headers=["X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
+        max_age=600,
+    )
+
 
 # ─── Module 10.6 — Security Platform wiring ──────────────────────────
 # JWT issuer + API gateway. The JWT secret is sourced from the secrets
@@ -332,6 +381,15 @@ def _build_security_jwt_issuer() -> JWTIssuer:
     except Exception:
         result = None
     if result is None:
+        if settings.ENV == "production":
+            msg = (
+                "Refusing to start: REGINTEL_JWT_SECRET is not set in a "
+                "production environment. Provide a secret (>= 32 chars) via "
+                "env or secret manager — otherwise every restart would "
+                "invalidate all issued tokens."
+            )
+            logger.error(msg)
+            raise EnvironmentValidationError(msg)
         # Dev fallback: a strong random secret. NEVER used in production.
         from app.security.jwt_auth import generate_development_secret
 
@@ -370,7 +428,6 @@ async def root():
     return {"status": "ok", "project": settings.PROJECT_NAME, "docs": "/docs"}
 
 
-@app.get("/health", tags=["health"], include_in_schema=False)
-async def health_check():
-    """Simple service health check endpoint (deprecated: use /health/live)."""
-    return {"status": "healthy", "project": settings.PROJECT_NAME}
+# NOTE: GET /health is served by the health router ({"status": "ok"}).
+# The deprecated alias below was removed — it was shadowed by the router
+# and never executed, while creating a duplicate OpenAPI operation.

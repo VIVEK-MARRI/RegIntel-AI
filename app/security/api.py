@@ -46,11 +46,23 @@ def _check_lockout(identity: str) -> None:
 
 
 def _record_failure(identity: str) -> None:
+    # Honor the Settings values (configurable via .env / environment);
+    # os.environ lookup retained as a fallback for test harnesses that
+    # inject plain env vars without touching Settings.
     import os
 
-    max_attempts = int(os.environ.get("AUTH_MAX_FAILED_ATTEMPTS", str(_LOCKOUT_MAX)))
+    max_attempts = int(
+        os.environ.get(
+            "AUTH_MAX_FAILED_ATTEMPTS", str(settings.AUTH_MAX_FAILED_ATTEMPTS)
+        )
+    )
     duration = int(
-        float(os.environ.get("AUTH_LOCKOUT_DURATION_SECONDS", str(_LOCKOUT_DURATION)))
+        float(
+            os.environ.get(
+                "AUTH_LOCKOUT_DURATION_SECONDS",
+                str(settings.AUTH_LOCKOUT_DURATION_SECONDS),
+            )
+        )
     )
     if max_attempts <= 0:
         return
@@ -172,6 +184,36 @@ def _principal_from_request(request: Request) -> Optional[Principal]:
     except Exception:
         return None
     return Principal.from_jwt(jwt_principal)
+
+
+def require_principal(request: Request) -> Principal:
+    """Dependency that rejects unauthenticated callers (401).
+
+    Sensitive endpoints (secret diagnostics, audit records, threat intel,
+    gateway config, selftest) must use this — they previously answered
+    anonymously, leaking secret previews, client IPs and request paths.
+    In demo mode (AUTH_ENABLED=False) the demo principal passes through.
+    """
+    principal = _principal_from_request(request)
+    if principal is None:
+        raise HTTPException(
+            status_code=401, detail="missing or invalid bearer token"
+        )
+    return principal
+
+
+def require_access_principal(request: Request) -> Principal:
+    """Like :func:`require_principal` but rejects refresh tokens.
+
+    Use for sensitive endpoints: refresh tokens are long-lived and stored in
+    localStorage, so they must never authorize data access on their own.
+    """
+    principal = require_principal(request)
+    if principal.extra_claims.get("token_use", "access") != "access":
+        raise HTTPException(
+            status_code=401, detail="missing or invalid bearer token"
+        )
+    return principal
 
 
 # ─── Health ────────────────────────────────────────────────────────
@@ -361,12 +403,12 @@ async def issue_token(request: TokenRequest) -> TokenResponse:
     """Issue a JWT pair for the given subject.
 
     In production this endpoint MUST be disabled or replaced with a
-    proper identity provider integration. The default configuration
-    requires ``SECURITY_DEV_TOKEN_ENDPOINT=true`` to be active.
+    proper identity provider integration. It is disabled unless
+    ``SECURITY_DEV_TOKEN_ENDPOINT=true`` is set explicitly (fail-closed).
     """
     import os
 
-    if os.environ.get("SECURITY_DEV_TOKEN_ENDPOINT", "true").lower() not in (
+    if os.environ.get("SECURITY_DEV_TOKEN_ENDPOINT", "false").lower() not in (
         "1",
         "true",
         "yes",
@@ -460,6 +502,7 @@ async def list_roles() -> Dict[str, Any]:
 @router.get(
     "/api-gateway/summary",
     summary="Describe the active API gateway configuration",
+    dependencies=[Depends(require_access_principal)],
 )
 async def api_gateway_summary() -> Dict[str, Any]:
     from app.main import _api_gateway  # type: ignore[attr-defined]
@@ -473,6 +516,7 @@ async def api_gateway_summary() -> Dict[str, Any]:
 @router.get(
     "/secrets",
     summary="Diagnostics for the secrets manager (never returns values)",
+    dependencies=[Depends(require_access_principal)],
 )
 async def secrets_diag() -> Dict[str, Any]:
     return get_secrets_manager().diagnostics()
@@ -481,6 +525,7 @@ async def secrets_diag() -> Dict[str, Any]:
 @router.get(
     "/secrets/list",
     summary="List known secret names (never values)",
+    dependencies=[Depends(require_access_principal)],
 )
 async def secrets_list() -> Dict[str, Any]:
     manager = get_secrets_manager()
@@ -496,6 +541,7 @@ async def secrets_list() -> Dict[str, Any]:
 @router.get(
     "/audit/records",
     summary="List audit records (filterable, paginated)",
+    dependencies=[Depends(require_access_principal)],
 )
 async def audit_records(
     method: Optional[str] = None,
@@ -535,6 +581,7 @@ async def audit_records(
 @router.post(
     "/audit/review",
     summary="Mark an audit record as pending/approved/rejected",
+    dependencies=[Depends(require_access_principal)],
 )
 async def audit_review(
     body: AuditReviewRequest,
@@ -560,6 +607,7 @@ async def audit_review(
 @router.get(
     "/audit/export",
     summary="Export audit records (jsonl or csv)",
+    dependencies=[Depends(require_access_principal)],
 )
 async def audit_export(
     format: str = Query(default="jsonl", pattern="^(jsonl|csv)$"),
@@ -585,6 +633,7 @@ async def audit_export(
 @router.get(
     "/threats/recent",
     summary="List recent threat events",
+    dependencies=[Depends(require_access_principal)],
 )
 async def threats_recent(
     limit: int = Query(default=50, ge=1, le=500),
@@ -599,6 +648,7 @@ async def threats_recent(
 @router.post(
     "/threats/inspect",
     summary="Run threat detection against a synthetic request",
+    dependencies=[Depends(require_access_principal)],
 )
 async def threats_inspect(body: Dict[str, Any]) -> Dict[str, Any]:
     detector = get_threat_detector()
@@ -618,6 +668,7 @@ async def threats_inspect(body: Dict[str, Any]) -> Dict[str, Any]:
 @router.get(
     "/monitoring/dashboard",
     summary="Aggregate security dashboard",
+    dependencies=[Depends(require_access_principal)],
 )
 async def monitoring_dashboard() -> Dict[str, Any]:
     return get_security_monitor().dashboard()
@@ -629,6 +680,8 @@ async def monitoring_dashboard() -> Dict[str, Any]:
 @router.get(
     "/selftest",
     summary="Run a smoke test of the security primitives",
+    dependencies=[Depends(require_access_principal)],
+    include_in_schema=False,
 )
 async def selftest() -> Dict[str, Any]:
     """Returns a small report of the in-process primitives — used by CI."""

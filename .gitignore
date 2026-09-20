@@ -151,6 +151,10 @@ activemq-data/
 
 # Environments
 .env
+.env.production
+.env.*.local
+.env.local
+*.env.bak
 .envrc
 .venv
 env/

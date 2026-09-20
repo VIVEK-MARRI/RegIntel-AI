@@ -120,14 +120,17 @@ export function KnowledgeGraphPage() {
             {!selectedNode ? <p className="text-xs text-slate-500">Select any entity to see downstream dependencies and affected nodes.</p>
             : iLoading ? <Skeleton lines={4} />
             : iError ? <ErrorState onRetry={iRefetch} />
-            : !impact || !impact.affected?.length ? <EmptyState title="No impact detected" />
+            : !impact || !impact.affected_node_ids?.length ? <EmptyState title="No impact detected" />
             : <ul className="space-y-1.5">
-                {impact.affected.slice(0, 15).map((n, idx) => (
-                  <li key={n.node_id ?? idx} className="rounded-md border border-slate-200 px-2 py-1.5 text-xs dark:border-slate-800">
-                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{n.label}</p>
-                    <p className="truncate text-[10px] text-slate-500">{n.type}</p>
-                  </li>
-                ))}
+                {impact.affected_node_ids.slice(0, 15).map((id, idx) => {
+                  const n = nodeById.get(id);
+                  return (
+                    <li key={id ?? idx} className="rounded-md border border-slate-200 px-2 py-1.5 text-xs dark:border-slate-800">
+                      <p className="truncate font-medium text-slate-900 dark:text-slate-100">{n?.label ?? id}</p>
+                      <p className="truncate text-[10px] text-slate-500">{n?.type ?? "entity"}</p>
+                    </li>
+                  );
+                })}
               </ul>
             }
           </div>

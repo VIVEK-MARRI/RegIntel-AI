@@ -63,6 +63,7 @@ class PipelineContext:
     requires_review: bool = False
     governance_task_id: Optional[str] = None
     audit_record_id: Optional[str] = None
+    workflow_output: Optional[Dict[str, Any]] = None
     errors: List[str] = field(default_factory=list)
     stage_latencies: Dict[str, float] = field(default_factory=dict)
 
@@ -167,6 +168,10 @@ class IntelligencePipeline:
                 # Stage 6: Confidence routing
                 self._stage_route(ctx)
 
+                # Stage 6b: Optional agent workflow enrichment
+                # ('research' | 'compliance' | 'risk')
+                await self._stage_workflow(ctx, request)
+
             # Stage 7: Audit trail (always runs)
             self._stage_audit(ctx)
 
@@ -221,11 +226,28 @@ class IntelligencePipeline:
         t0 = time.perf_counter()
         try:
             top_k = request.top_k or settings.INTELLIGENCE_TOP_K
+            # Coerce the user-supplied source filter to SourceEnum
+            # (case-insensitive). A raw string would silently miss the
+            # enum comparison downstream — fail soft to "all sources"
+            # instead of returning empty evidence.
+            source = None
+            if request.source_filter and len(request.source_filter) == 1:
+                from app.models.document import SourceEnum
+
+                raw = str(request.source_filter[0]).strip()
+                try:
+                    source = SourceEnum(raw.upper())
+                except ValueError:
+                    ctx.errors.append(
+                        f"source_filter: unknown source {raw!r}; searched all sources"
+                    )
+                    source = None
             if self._hybrid_retriever is not None:
                 search_resp = await self._hybrid_retriever.search(
                     query=request.query,
                     top_k=top_k,
-                    source=request.source_filter[0] if request.source_filter and len(request.source_filter) == 1 else None,
+                    rerank_score_threshold=request.score_threshold,
+                    source=source,
                     active_only=request.active_only,
                 )
                 results = search_resp.results if hasattr(search_resp, "results") else []
@@ -358,14 +380,59 @@ class IntelligencePipeline:
         finally:
             ctx.stage_latencies["generate"] = (time.perf_counter() - t0) * 1000.0
 
+    @staticmethod
+    def _build_gen_answer(answer: Dict[str, Any], retrieved_chunks: list):
+        """Build a citation/hallucination-compatible AnswerSection.
+
+        supporting_evidence must be EvidenceChunk OBJECTS (chunk_id /
+        document_id / excerpt), never bare chunk-id strings — and this
+        schema only accepts its 4 canonical fields (extra="forbid").
+        """
+        from app.schemas.answer_generation import (
+            AnswerSection as GenAnswerSection,
+            EvidenceChunk as GenEvidenceChunk,
+        )
+
+        by_id = {rc.chunk_id: rc for rc in retrieved_chunks}
+        evidence_objs = []
+        for item in answer.get("supporting_evidence", []) or []:
+            cid = (
+                item.get("chunk_id")
+                if isinstance(item, dict)
+                else getattr(item, "chunk_id", None)
+            ) or str(item)
+            rc = by_id.get(str(cid))
+            if rc is None:
+                continue
+            evidence_objs.append(
+                GenEvidenceChunk(
+                    chunk_id=rc.chunk_id,
+                    document_id=rc.document_id,
+                    source=(
+                        rc.source.value
+                        if hasattr(rc.source, "value")
+                        else rc.source
+                    ),
+                    page_number=rc.page_number,
+                    section=rc.section,
+                    excerpt=rc.content[:500],
+                )
+            )
+        return GenAnswerSection(
+            executive_summary=answer.get("executive_summary", ""),
+            detailed_explanation=answer.get("detailed_explanation", ""),
+            supporting_evidence=evidence_objs,
+            key_regulatory_references=answer.get("key_regulatory_references", []),
+        )
+
     def _stage_cite(self, ctx: PipelineContext) -> None:
         """Stage 3: Citation extraction."""
         t0 = time.perf_counter()
         try:
             if self._citation_service is not None and ctx.answer and ctx.evidence:
                 from app.schemas.citation import CitationRequest
-                from app.schemas.answer_generation import AnswerSection as GenAnswerSection, RetrievedChunk
-                
+                from app.schemas.answer_generation import RetrievedChunk
+
                 retrieved_chunks = []
                 for idx, e in enumerate(ctx.evidence):
                     retrieved_chunks.append(RetrievedChunk(
@@ -379,24 +446,56 @@ class IntelligencePipeline:
                         subsection=e.get("subsection"),
                         rank=idx + 1,
                     ))
-                
-                gen_answer = GenAnswerSection(
-                    executive_summary=ctx.answer.get("executive_summary", ""),
-                    detailed_explanation=ctx.answer.get("detailed_explanation", ""),
-                    supporting_evidence=ctx.answer.get("supporting_evidence", []),
-                    key_regulatory_references=ctx.answer.get("key_regulatory_references", []),
-                    compliance_implications=ctx.answer.get("compliance_implications", ""),
-                    recommended_actions=ctx.answer.get("recommended_actions", ""),
-                    caveats=ctx.answer.get("caveats", ""),
-                )
-                
+
+                gen_answer = self._build_gen_answer(ctx.answer, retrieved_chunks)
+
                 cite_req = CitationRequest(
                     query=ctx.query,
                     answer=gen_answer,
                     chunks=retrieved_chunks,
                 )
                 cite_resp = self._citation_service.cite(cite_req)
-                if hasattr(cite_resp, "citations"):
+                # cite() returns CitationResponse(query, annotated_answer,
+                # coverage, metadata) — the inline citations live inside
+                # annotated_answer.{executive_summary,detailed_explanation}.
+                # (Legacy branches kept for backwards compatibility.)
+                inline = []
+                annotated = getattr(cite_resp, "annotated_answer", None)
+                if annotated is not None:
+                    for section in (
+                        getattr(annotated, "executive_summary", None),
+                        getattr(annotated, "detailed_explanation", None),
+                    ):
+                        inline.extend(getattr(section, "citations", None) or [])
+                if inline:
+                    by_chunk = {
+                        str(e.get("chunk_id", "")): e for e in ctx.evidence
+                    }
+                    ctx.citations = []
+                    for c in inline:
+                        d = (
+                            c.model_dump()
+                            if hasattr(c, "model_dump")
+                            else dict(c)
+                        )
+                        ev = by_chunk.get(str(d.get("chunk_id", ""))) or {}
+                        ctx.citations.append(
+                            {
+                                "citation_id": d.get("citation_id"),
+                                "chunk_id": d.get("chunk_id"),
+                                "claim_id": d.get("claim_id"),
+                                "excerpt": d.get("marker"),
+                                "relevance_score": d.get("similarity"),
+                                "document_id": ev.get("document_id"),
+                                "document_title": (
+                                    ev.get("metadata", {}) or {}
+                                ).get("document_title"),
+                                "source": ev.get("source"),
+                                "section": ev.get("section"),
+                                "page_number": ev.get("page_number"),
+                            }
+                        )
+                elif hasattr(cite_resp, "citations"):
                     ctx.citations = [
                         c.model_dump() if hasattr(c, "model_dump") else dict(c)
                         for c in cite_resp.citations
@@ -436,9 +535,30 @@ class IntelligencePipeline:
                 ]
                 if hasattr(conf_resp, "breakdown") and conf_resp.breakdown:
                     bd = conf_resp.breakdown
-                    ctx.confidence_breakdown = (
+                    raw = (
                         bd.model_dump() if hasattr(bd, "model_dump") else dict(bd)
                     )
+                    # The confidence service reports {factors: [{name, score,
+                    # ...}], weights, total_weight}; the intelligence response
+                    # needs the flat per-factor fields. Translate by factor
+                    # name so explainability actually reaches the client.
+                    translated = {}
+                    for f in raw.get("factors", []) or []:
+                        name = (
+                            f.get("name").value
+                            if hasattr(f.get("name"), "value")
+                            else str(f.get("name", ""))
+                        )
+                        try:
+                            translated[name] = float(f.get("score", 0.0))
+                        except (TypeError, ValueError):
+                            continue
+                    if translated:
+                        ctx.confidence_breakdown = translated
+                    else:
+                        # Already in flat form (or unknown shape) — pass through
+                        # and let _build_response validate.
+                        ctx.confidence_breakdown = raw
         except Exception as exc:
             logger.warning("intelligence.confidence failed: %s", exc)
             ctx.errors.append(f"confidence: {exc}")
@@ -451,8 +571,8 @@ class IntelligencePipeline:
         try:
             if self._hallucination_guard is not None and ctx.answer and ctx.evidence:
                 from app.schemas.hallucination import FaithfulnessRequest, VerificationMethod
-                from app.schemas.answer_generation import AnswerSection as GenAnswerSection, RetrievedChunk
-                
+                from app.schemas.answer_generation import RetrievedChunk
+
                 retrieved_chunks = []
                 for idx, e in enumerate(ctx.evidence):
                     retrieved_chunks.append(RetrievedChunk(
@@ -466,17 +586,9 @@ class IntelligencePipeline:
                         subsection=e.get("subsection"),
                         rank=idx + 1,
                     ))
-                
-                gen_answer = GenAnswerSection(
-                    executive_summary=ctx.answer.get("executive_summary", ""),
-                    detailed_explanation=ctx.answer.get("detailed_explanation", ""),
-                    supporting_evidence=ctx.answer.get("supporting_evidence", []),
-                    key_regulatory_references=ctx.answer.get("key_regulatory_references", []),
-                    compliance_implications=ctx.answer.get("compliance_implications", ""),
-                    recommended_actions=ctx.answer.get("recommended_actions", ""),
-                    caveats=ctx.answer.get("caveats", ""),
-                )
-                
+
+                gen_answer = self._build_gen_answer(ctx.answer, retrieved_chunks)
+
                 method = VerificationMethod.MOCK if settings.LLM_PROVIDER == "mock" else VerificationMethod.LLM
                 
                 hall_req = FaithfulnessRequest(
@@ -567,11 +679,73 @@ class IntelligencePipeline:
                     "reason": "confidence_below_low_threshold",
                 },
             )
-            decision = self._governance_service.registry.create(decision_req)
+            decision = self._governance_service.register_decision(decision_req)
             return str(decision.decision_id) if decision else None
         except Exception as exc:
             logger.warning("intelligence.governance_task failed: %s", exc)
             return None
+
+    async def _stage_workflow(
+        self,
+        ctx: PipelineContext,
+        request: IntelligenceQueryRequest,
+    ) -> None:
+        """Stage 6b: run the requested agent workflow (research|compliance|risk).
+
+        Best-effort enrichment: the agent result is attached to
+        ``ctx.workflow_output`` (surfaced in response metadata). Failures are
+        captured in ``ctx.errors`` and never fail the query itself.
+        """
+        t0 = time.perf_counter()
+        try:
+            name = (request.workflow or "").strip().lower()
+            if not name:
+                return
+            if name not in ("research", "compliance", "risk"):
+                ctx.errors.append(
+                    f"workflow: unknown workflow {request.workflow!r} "
+                    "(expected 'research', 'compliance' or 'risk')"
+                )
+                return
+            from app.services.intelligence_agents import (
+                build_default_intelligence_agent_service,
+            )
+
+            svc = build_default_intelligence_agent_service()
+            doc_ids = sorted(
+                {e.get("document_id") for e in ctx.evidence if e.get("document_id")}
+            )
+            top_k = request.top_k or settings.INTELLIGENCE_TOP_K
+            if name == "research":
+                from app.schemas.intelligence_agents import ResearchAgentRequest
+
+                result = await svc.run_research(
+                    ResearchAgentRequest(
+                        query=ctx.query, top_k=top_k, document_ids=doc_ids
+                    )
+                )
+            elif name == "compliance":
+                from app.schemas.intelligence_agents import ComplianceAgentRequest
+
+                result = await svc.run_compliance(
+                    ComplianceAgentRequest(
+                        query=ctx.query,
+                        document_id=doc_ids[0] if len(doc_ids) == 1 else None,
+                    )
+                )
+            else:
+                from app.schemas.intelligence_agents import RiskAgentRequest
+
+                result = await svc.run_risk(RiskAgentRequest(query=ctx.query))
+            ctx.workflow_output = {
+                "workflow": name,
+                "result": result.model_dump(mode="json"),
+            }
+        except Exception as exc:
+            logger.warning("intelligence.workflow failed: %s", exc)
+            ctx.errors.append(f"workflow: {exc}")
+        finally:
+            ctx.stage_latencies["workflow"] = (time.perf_counter() - t0) * 1000.0
 
     def _stage_abstain(self, ctx: PipelineContext, reason: str = "insufficient_evidence") -> None:
         """Mark the pipeline as abstained and produce a structured abstention answer."""
@@ -636,7 +810,7 @@ class IntelligencePipeline:
                 },
                 source_module="intelligence.pipeline",
             )
-            record = self._audit_service.engine.append(req)
+            record = self._audit_service.create_record(req)
             ctx.audit_record_id = str(record.audit_id) if record else None
         except Exception as exc:
             logger.warning("intelligence.audit failed: %s", exc)
@@ -748,6 +922,7 @@ class IntelligencePipeline:
             metadata={
                 "stage_latencies": ctx.stage_latencies,
                 "evidence_count": len(ctx.evidence),
+                "workflow": ctx.workflow_output,
                 "errors": ctx.errors,
             },
         )

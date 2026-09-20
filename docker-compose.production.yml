@@ -40,7 +40,10 @@ services:
       - regintel_storage:/var/lib/regintel/storage
       - regintel_logs:/var/log/regintel
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health/ready"]
+      # /health/live is the public liveness probe. /health/ready requires a
+      # Bearer token in production, so it must NOT be used for anonymous
+      # container healthchecks (it would 401 forever and block dependents).
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health/live"]
       interval: 30s
       timeout: 5s
       retries: 5

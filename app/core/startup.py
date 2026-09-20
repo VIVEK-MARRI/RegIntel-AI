@@ -138,15 +138,15 @@ def register_default_health_checks(
     if settings.DATABASE_URL and not settings.DATABASE_URL.startswith("sqlite"):
 
         def _db_check() -> ComponentHealth:
+            engine = None
             try:
                 import sqlalchemy
-                
+
                 engine = sqlalchemy.create_engine(
                     settings.DATABASE_URL_SYNC, pool_size=1, max_overflow=0
                 )
                 with engine.connect() as conn:
                     conn.execute(sqlalchemy.text("SELECT 1"))
-                engine.dispose()
                 ok = True
                 if ok:
                     return ComponentHealth(
@@ -163,6 +163,12 @@ def register_default_health_checks(
                 return ComponentHealth(
                     name="database", status=HealthStatus.UNHEALTHY, message=str(exc)
                 )
+            finally:
+                if engine is not None:
+                    try:
+                        engine.dispose()
+                    except Exception:  # pragma: no cover - best effort cleanup
+                        pass
 
         health_checker.register("database", _db_check)
         registered.append("database")
@@ -272,7 +278,11 @@ def on_startup(
     if settings.ENV == "development" and settings.DATABASE_URL.startswith("sqlite"):
         try:
             from sqlalchemy import create_engine
-            from app.models.document import Base
+
+            # Import the models package (not just document.Base) so EVERY
+            # table — pages, chunks, embeddings, bm25, analytics — is created.
+            import app.models.bm25  # noqa: F401 - register BM25 tables
+            from app.models import Base
 
             sync_url = settings.DATABASE_URL.replace("+aiosqlite", "+pysqlite")
             sync_engine = create_engine(sync_url)

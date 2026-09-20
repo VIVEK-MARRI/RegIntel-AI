@@ -317,7 +317,7 @@ class TestResearchAgentPlanner:
 
 
 class TestResearchAgentExecutor:
-    def test_run_with_fake_research(self):
+    async def test_run_with_fake_research(self):
         ex = ResearchAgentExecutor(
             research_service=FakeResearchService(),
             knowledge_graph_service=FakeKGService(),
@@ -327,16 +327,16 @@ class TestResearchAgentExecutor:
             mode=ResearchMode.GENERAL,
         )
         plan = ResearchAgentPlanner().plan(req)
-        executed, findings, citations, timeline = ex.execute(req, plan)
+        executed, findings, citations, timeline = await ex.execute(req, plan)
         assert citations
         assert findings
         assert any(s.action == "kg_explore" for s in executed)
 
-    def test_run_without_services(self):
+    async def test_run_without_services(self):
         ex = ResearchAgentExecutor()
         req = ResearchAgentRequest(query="hello world query here")
         plan = ResearchAgentPlanner().plan(req)
-        executed, findings, citations, timeline = ex.execute(req, plan)
+        executed, findings, citations, timeline = await ex.execute(req, plan)
         # Without KG service, no KG insights but plan still completes
         assert all(
             s.finished_at > 0

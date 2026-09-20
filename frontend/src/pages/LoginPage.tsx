@@ -47,17 +47,22 @@ export function LoginPage() {
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Sign in to continue
           </p>
-          <details className="mt-2 text-left text-[10px] text-slate-400 dark:text-slate-500">
-            <summary className="cursor-pointer hover:text-slate-600 dark:hover:text-slate-300">
-              Demo credentials
-            </summary>
-            <div className="mt-1 space-y-0.5">
-              <div>admin@regintel.ai / Admin@123</div>
-              <div>analyst@regintel.ai / Analyst@123</div>
-              <div>auditor@regintel.ai / Auditor@123</div>
-              <div>viewer@regintel.ai / Viewer@123</div>
-            </div>
-          </details>
+          {/* Dev-only hint: import.meta.env.DEV is true only under `vite dev`,
+              never in production builds. Production logins must use real
+              accounts — no credentials are shipped in the bundle. */}
+          {import.meta.env.DEV ? (
+            <details className="mt-2 text-left text-[10px] text-slate-400 dark:text-slate-500">
+              <summary className="cursor-pointer hover:text-slate-600 dark:hover:text-slate-300">
+                Demo credentials
+              </summary>
+              <div className="mt-1 space-y-0.5">
+                <div>admin@regintel.ai / Admin@123</div>
+                <div>analyst@regintel.ai / Analyst@123</div>
+                <div>auditor@regintel.ai / Auditor@123</div>
+                <div>viewer@regintel.ai / Viewer@123</div>
+              </div>
+            </details>
+          ) : null}
         </div>
 
         {error ? (

@@ -4,12 +4,16 @@ import json
 import glob
 import time
 
-API_URL = "http://localhost:8000/api/v1"
+API_URL = os.environ.get("REGINTEL_API_URL", "http://localhost:8000/api/v1")
 
 def login():
+    # Local-dev seeding script. Credentials come from env so no password
+    # lives in git; the defaults only work against a local dev backend.
+    email = os.environ.get("REGINTEL_SEED_EMAIL", "admin@regintel.ai")
+    password = os.environ.get("REGINTEL_SEED_PASSWORD", "Admin@123")
     res = requests.post(
         f"{API_URL}/security/auth/login",
-        json={"email": "admin@regintel.ai", "password": "Admin@123"}
+        json={"email": email, "password": password}
     )
     if res.status_code == 200:
         return res.json()["access_token"]

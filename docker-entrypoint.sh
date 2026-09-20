@@ -15,7 +15,18 @@ DB_RETRIES=30
 DB_WAIT=1
 
 echo "[entrypoint] Waiting for database..."
-until python -c "import os, sqlalchemy; sqlalchemy.create_engine(os.environ['DATABASE_URL_SYNC']).connect().close()" > /dev/null 2>&1; do
+until python -c "
+import os
+url = os.environ.get('DATABASE_URL_SYNC') or os.environ['DATABASE_URL']
+# Normalise managed-provider schemes (postgres://, postgresql://) to the
+# sync psycopg2 driver URL, mirroring app/core/config.py.
+for prefix in ('postgres://', 'postgresql://'):
+    if url.startswith(prefix):
+        url = 'postgresql+psycopg2://' + url[len(prefix):]
+        break
+import sqlalchemy
+sqlalchemy.create_engine(url).connect().close()
+" > /dev/null 2>&1; do
     DB_RETRIES=$((DB_RETRIES - 1))
     if [ $DB_RETRIES -le 0 ]; then
         echo "[entrypoint] ERROR: Could not reach the database after retrying. Exiting."

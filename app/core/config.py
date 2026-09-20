@@ -1,5 +1,22 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, field_validator, model_validator
+from typing import Self
+
+
+def _normalise_postgres_url(url: str, driver: str) -> str:
+    """Normalise a Postgres URL to a SQLAlchemy URL with the given driver.
+
+    Managed providers (Render, Heroku, Supabase, …) hand out bare
+    ``postgres://`` / ``postgresql://`` URLs. Our async engine needs
+    ``postgresql+asyncpg://`` and Alembic needs ``postgresql+psycopg2://``,
+    so rewrite the scheme while preserving everything else.
+    """
+    if not url:
+        return url
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return f"postgresql+{driver}://" + url[len(prefix):]
+    return url
 
 
 class Settings(BaseSettings):
@@ -16,6 +33,37 @@ class Settings(BaseSettings):
         default="postgresql+psycopg2://postgres:admin@localhost:5432/regintel_db",
         description="Sync PostgreSQL Database URL for migrations",
     )
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _coerce_async_url(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _normalise_postgres_url(v, "asyncpg")
+        return v
+
+    @field_validator("DATABASE_URL_SYNC", mode="before")
+    @classmethod
+    def _coerce_sync_url(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _normalise_postgres_url(v, "psycopg2")
+        return v
+
+    @model_validator(mode="after")
+    def _derive_sync_url(self) -> Self:
+        # Render-style deploys often export only DATABASE_URL. Derive the
+        # sync URL for Alembic when it wasn't explicitly configured.
+        default_sync = "postgresql+psycopg2://postgres:admin@localhost:5432/regintel_db"
+        async_default = "postgresql+asyncpg://postgres:admin@localhost:5432/regintel_db"
+        if (
+            self.DATABASE_URL_SYNC == default_sync
+            and self.DATABASE_URL != async_default
+        ):
+            object.__setattr__(
+                self,
+                "DATABASE_URL_SYNC",
+                _normalise_postgres_url(self.DATABASE_URL, "psycopg2"),
+            )
+        return self
 
     # Storage
     STORAGE_ROOT: str = Field(
@@ -202,6 +250,29 @@ class Settings(BaseSettings):
         default=300,
         ge=1,
         description="Lockout duration in seconds after max failed attempts",
+    )
+
+    # ─── Bootstrapping & docs visibility ────────────────────────
+    SEED_DEFAULT_USERS: bool = Field(
+        default=False,
+        description="If true, seed the dev-only default users even in production. "
+        "Keep FALSE in production: the weak dev passwords must never exist there. "
+        "Bootstrap the first admin via ADMIN_SEED_EMAIL/PASSWORD instead.",
+    )
+    ADMIN_SEED_EMAIL: str = Field(
+        default="",
+        description="Email of the initial admin to create on empty storage "
+        "in production. Empty = seed nothing.",
+    )
+    ADMIN_SEED_PASSWORD: str = Field(
+        default="",
+        description="Password for the initial production admin (min 12 chars). "
+        "Provide via env/secret manager only — never commit it.",
+    )
+    ENABLE_API_DOCS: bool = Field(
+        default=False,
+        description="Expose /docs, /redoc and /openapi.json in production. "
+        "Docs are always on outside production.",
     )
 
     model_config = SettingsConfigDict(

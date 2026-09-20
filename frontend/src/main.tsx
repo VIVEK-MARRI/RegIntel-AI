@@ -31,10 +31,14 @@ ReactDOM.createRoot(rootEl).render(
       <ThemeProvider>
         <ToastProvider>
           <HealthProvider>
-            <BrowserRouter
-              basename="/app"
-              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-            >
+              <BrowserRouter
+                // Docker/nginx serves the SPA under /app; Render serves it
+                // at the domain root. Override with VITE_BASENAME=/app for
+                // docker-style deployments (default is already /app to
+                // preserve current behaviour — set "/" for root serving).
+                basename={import.meta.env.VITE_BASENAME ?? "/app"}
+                future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+              >
               <AuthProvider>
                 <App />
               </AuthProvider>

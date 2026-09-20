@@ -22,6 +22,7 @@ from app.api.dependencies import (
     get_chunk_registry_service,
     get_ingestion_service,
 )
+from app.models.chunk import EmbeddingStatusEnum
 from app.models.document import SourceEnum, StatusEnum
 from app.schemas.document import (
     DocumentCreate,
@@ -50,13 +51,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Allowed file types for user upload
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".html", ".htm"}
+# Allowed file types for user upload. Restricted to formats the parser
+# (PyMuPDF) can actually open — .docx/.html previously passed validation
+# and then failed parsing, leaving documents stuck in FAILED state.
+ALLOWED_EXTENSIONS = {".pdf", ".txt"}
 ALLOWED_MIME_TYPES = {
     "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/plain",
-    "text/html",
 }
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
 
@@ -77,7 +78,7 @@ def _validate_upload_file(file: UploadFile) -> None:
     if mime_type and mime_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported MIME type '{mime_type}'. Allowed: PDF, DOCX, TXT, HTML",
+            detail=f"Unsupported MIME type '{mime_type}'. Allowed: PDF, TXT",
         )
 
     file.file.seek(0, 2)
@@ -130,7 +131,9 @@ async def get_document(
     embedding_count = 0
     for c in chunks:
         emb = await chunk_service.get_chunk_embeddings(c.id)
-        embedding_count += len([e for e in (emb or []) if e.status == "completed"])
+        embedding_count += len(
+            [e for e in (emb or []) if e.status == EmbeddingStatusEnum.COMPLETED]
+        )
 
     run = ingestion_service.repository.latest_run_for_document(str(document_id))
     processing_status = "pending"

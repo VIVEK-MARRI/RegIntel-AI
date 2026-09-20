@@ -6,11 +6,7 @@ export async function getRiskForecasts(): Promise<RiskForecast[]> {
 }
 
 export async function getRiskScenarios(): Promise<RiskScenario[]> {
-  try {
-    return await api.get<RiskScenario[]>("/forecasting/scenarios");
-  } catch {
-    return [];
-  }
+  return api.get<RiskScenario[]>("/forecasting/scenarios");
 }
 
 export async function getRiskTrend(documentId: string): Promise<RiskProjection[]> {

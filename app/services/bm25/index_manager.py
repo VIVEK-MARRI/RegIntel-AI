@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import pickle
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Sequence
 
@@ -34,13 +34,23 @@ logger = logging.getLogger(__name__)
 class IndexManagerConfig:
     """Configuration for the BM25 Index Manager."""
 
-    storage_dir: str = "storage/bm25"
+    storage_dir: str = field(
+        default_factory=lambda: _default_bm25_storage_dir()
+    )
     index_filename: str = "bm25_index.pkl"
     metadata_filename: str = "bm25_metadata.json"
     k1: float = 1.5
     b: float = 0.75
     auto_persist: bool = True
     auto_load: bool = True
+
+
+def _default_bm25_storage_dir() -> str:
+    # Honor STORAGE_ROOT (e.g. /tmp/... on Render) instead of a hardcoded
+    # relative "storage/bm25" that would diverge from the rest of the app.
+    from app.core.config import settings
+
+    return str(Path(settings.STORAGE_ROOT) / "bm25")
 
 
 # ---------------------------------------------------------------------------
