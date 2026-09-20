@@ -4,7 +4,11 @@
 # Topology (hybrid pattern — Render's recommended shape for SPA + API):
 #   browser ──GET / (HTML/JS)──▶ regintel-frontend (static site, global CDN)
 #   browser ──fetch {backend}/api/*──▶ regintel-backend (FastAPI web service, public URL)
-#   regintel-backend ──private──▶ regintel-db (managed Postgres)
+#   regintel-backend ──TLS──▶ free external Postgres (Neon / Supabase — YOU supply the URL)
+#
+# Cost: $0 — no Render Postgres (paid), no disk, no paid plan needed.
+# The only prompts at deploy time are secrets/URLs you paste in:
+# LLM_API_KEY, ADMIN_SEED_PASSWORD, DATABASE_URL (+SYNC).
 #
 # IMPORTANT Render constraints baked into this file:
 # 1. Static sites NEVER proxy traffic — the browser calls the backend's PUBLIC
@@ -14,17 +18,21 @@
 #    512 MB RAM — so the backend skips the torch/transformers ML stack and
 #    uses the built-in TF-IDF embedding fallback. No code change needed:
 #    app/services/embedding auto-falls-back when sentence_transformers is absent.
-# 3. Render Postgres gives you a `postgres://...` URL. app/core/config.py
-#    normalises it to SQLAlchemy's `postgresql+asyncpg://...` automatically.
+# 3. Provider URLs come in postgres://... form, often with ?sslmode=require.
+#    app/core/config.py normalises them to SQLAlchemy's postgresql+asyncpg://
+#    automatically AND enables TLS from the sslmode flag — paste verbatim.
 # 4. app/core/startup.py REFUSES to boot with ENV=production + LLM_PROVIDER=mock
 #    (it would serve fake answers). You MUST set a real LLM_API_KEY below.
 #    Gemini has a free tier — https://aistudio.google.com/apikey
 #
 # Deploy:
 #   1. Push this file at repo root to GitHub/GitLab/Bitbucket.
-#   2. Render Dashboard → New → Blueprint → select your repo → Deploy.
-#   3. When prompted, fill LLM_API_KEY (sync:false vars). Everything else is wired.
-#   4. First deploy: backend builds (~3-5 min, pip install), runs migrations via
+#   2. Create a FREE Postgres: Neon (neon.tech) or Supabase (supabase.com) —
+#      copy its DIRECT connection string (not the pooled one).
+#   3. Render Dashboard → New → Blueprint → select your repo → Deploy.
+#   4. When prompted, fill DATABASE_URL (+SYNC), LLM_API_KEY,
+#      ADMIN_SEED_PASSWORD. Everything else is wired.
+#   5. First deploy: backend builds (~3-5 min, pip install), runs migrations via
 #      preDeployCommand, then frontend builds with the backend's public URL.
 #      If the frontend's first build runs before the backend URL exists, hit
 #      "Manual Deploy → Deploy latest commit" on regintel-frontend once.
@@ -55,16 +63,23 @@ services:
         value: INFO
       - key: WORKERS
         value: 1
-      # ── Database (wired to the managed Postgres below) ──
-      # Render supplies postgres://... ; the app normalises to asyncpg/psycopg2.
+      # ── Database: FREE external Postgres (no Render Postgres needed) ──
+      # Render Postgres is paid, so this Blueprint uses none. Bring your own:
+      #   1. Create a free database at Neon (neon.tech, 3 GB, no pausing) or
+      #      Supabase (supabase.com, 500 MB). Both support the pgvector
+      #      extension this app can use.
+      #   2. Copy its DIRECT connection string (NOT the pooled/Supavisor one
+      #      on port 6543 — pooled mode breaks asyncpg prepared statements).
+      #      It looks like:
+      #        postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
+      #   3. Paste it at the Blueprint prompts for BOTH vars below (or set
+      #      DATABASE_URL only — the app derives the sync URL itself).
+      # The app auto-converts postgres:// schemes and enables TLS from
+      # ?sslmode=require, so paste the provider URL verbatim.
       - key: DATABASE_URL
-        fromDatabase:
-          name: regintel-db
-          property: connectionString
+        sync: false # <-- prompted in the Dashboard; nothing secret is committed
       - key: DATABASE_URL_SYNC
-        fromDatabase:
-          name: regintel-db
-          property: connectionString
+        sync: false # <-- same URL pasted again (or leave empty to auto-derive)
       # ── Ephemeral disk: free services have NO persistent disk ──
       # Uploads / sqlite-style local state vanish on redeploy. Paid plans:
       # add a disk and set STORAGE_ROOT to its mount path.
@@ -175,8 +190,6 @@ services:
       - key: VITE_RERANKER_ENABLED
         value: true
 
-databases:
-  - name: regintel-db
-    plan: free # 1 GB disk, 90-day expiry on free — use 0.5c-1g+ for production
-    postgresMajorVersion: "16"
-    databaseName: regintel
+# NOTE: no `databases:` section on purpose — Render Postgres is paid.
+# The backend above takes a free external Postgres URL (Neon / Supabase)
+# via the DATABASE_URL prompts. Nothing to provision here.

@@ -2,12 +2,18 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from app.core.config import settings
 
-# Create async engine
+# Create async engine.
+# Free hosted Postgres (Neon, Supabase, …) mandates TLS. asyncpg does not
+# understand ?sslmode=… URL params, so config strips them and exposes
+# DATABASE_SSL — TLS is passed via connect_args instead (default SSL
+# context trusts their public CA certificates).
+connect_args = {"ssl": True} if settings.DATABASE_SSL else {}
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=True if settings.ENV == "development" else False,
     future=True,
     pool_pre_ping=True,
+    connect_args=connect_args,
 )
 
 # Async session factory

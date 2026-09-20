@@ -1,22 +1,73 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, field_validator, model_validator
 from typing import Self
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+
+import re
+
+_SCHEME_RE = re.compile(r"^postgres(?:ql)?(?:\+[^:/?#]+)?://", re.IGNORECASE)
 
 
 def _normalise_postgres_url(url: str, driver: str) -> str:
     """Normalise a Postgres URL to a SQLAlchemy URL with the given driver.
 
-    Managed providers (Render, Heroku, Supabase, …) hand out bare
+    Managed providers (Render, Heroku, Supabase, Neon, …) hand out bare
     ``postgres://`` / ``postgresql://`` URLs. Our async engine needs
     ``postgresql+asyncpg://`` and Alembic needs ``postgresql+psycopg2://``,
-    so rewrite the scheme while preserving everything else.
+    so rewrite the scheme while preserving everything else. Already-dialected
+    URLs (``…+asyncpg://``, ``…+psycopg2://``) are re-targeted too — this is
+    what makes the DATABASE_URL_SYNC auto-derivation work.
     """
     if not url:
         return url
-    for prefix in ("postgres://", "postgresql://"):
-        if url.startswith(prefix):
-            return f"postgresql+{driver}://" + url[len(prefix):]
+    m = _SCHEME_RE.match(url)
+    if m:
+        return f"postgresql+{driver}://" + url[m.end():]
     return url
+
+
+_SSL_TRUE = {"require", "required", "true", "1", "yes", "verify-ca", "verify-full"}
+
+
+def _extract_ssl(url: str, *, strip: bool) -> tuple[str, bool]:
+    """Detect an SSL requirement in a DB URL's query string.
+
+    Returns ``(url, ssl_required)``. When ``strip`` is true the SSL params
+    are removed from the URL (asyncpg rejects unknown connect kwargs, so
+    the async URL goes through ``connect_args`` instead). The sync URL
+    keeps ``sslmode=require`` because libpq honours it natively.
+    """
+    if not url or "?" not in url:
+        return url, False
+    try:
+        parts = urlsplit(url)
+    except Exception:
+        return url, False
+    params = parse_qsl(parts.query, keep_blank_values=True)
+    kept = []
+    ssl_required = False
+    for key, value in params:
+        low_key, low_val = key.lower(), value.lower()
+        if low_key == "sslmode" and low_val in _SSL_TRUE:
+            ssl_required = True
+            if not strip:
+                kept.append((key, value))
+        elif low_key == "ssl" and low_val in _SSL_TRUE:
+            # asyncpg-style flag: honour it, but only libpq understands
+            # sslmode, so rewrite it for the sync URL.
+            ssl_required = True
+            if not strip:
+                kept.append(("sslmode", "require"))
+        else:
+            kept.append((key, value))
+    clean = urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment)
+    )
+    # Drop a dangling "?" when nothing remains.
+    if clean.endswith("?"):
+        clean = clean[:-1]
+    return clean, ssl_required
 
 
 class Settings(BaseSettings):
@@ -32,6 +83,12 @@ class Settings(BaseSettings):
     DATABASE_URL_SYNC: str = Field(
         default="postgresql+psycopg2://postgres:admin@localhost:5432/regintel_db",
         description="Sync PostgreSQL Database URL for migrations",
+    )
+
+    DATABASE_SSL: bool = Field(
+        default=False,
+        description="Force TLS for database connections. Auto-enabled when "
+        "either DATABASE_URL carries ?sslmode=require (Neon, Supabase, …).",
     )
 
     @field_validator("DATABASE_URL", mode="before")
@@ -63,6 +120,16 @@ class Settings(BaseSettings):
                 "DATABASE_URL_SYNC",
                 _normalise_postgres_url(self.DATABASE_URL, "psycopg2"),
             )
+        # TLS: strip SSL params from the async URL (asyncpg rejects unknown
+        # connect kwargs — TLS goes through connect_args instead) while the
+        # sync URL keeps ?sslmode=require for libpq. Auto-enable unless the
+        # operator explicitly set DATABASE_SSL.
+        clean_async, async_ssl = _extract_ssl(self.DATABASE_URL, strip=True)
+        clean_sync, sync_ssl = _extract_ssl(self.DATABASE_URL_SYNC, strip=False)
+        object.__setattr__(self, "DATABASE_URL", clean_async)
+        object.__setattr__(self, "DATABASE_URL_SYNC", clean_sync)
+        if not self.DATABASE_SSL and (async_ssl or sync_ssl):
+            object.__setattr__(self, "DATABASE_SSL", True)
         return self
 
     # Storage
