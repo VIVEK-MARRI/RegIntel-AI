@@ -1,4 +1,5 @@
-# RegIntel AI backend image (dev + small-hosting friendly).
+# RegIntel AI backend image — PRIMARY production image (Render Blueprint
+# builds this via render.yaml: single service serving landing + SPA + API).
 #
 # The heavy torch/transformers ML stack is OPT-IN via build arg:
 #   docker build --build-arg INSTALL_ML_STACK=1 .
@@ -81,6 +82,9 @@ RUN chmod +x ./docker-entrypoint.sh
 
 # Built SPA (served by FastAPI itself at /app — see STATIC_DIR in app/main.py).
 COPY --from=frontend-builder /build/dist ./static
+
+# Copy the static landing page (served at / by FastAPI — see LANDING_DIR).
+COPY landing/ ./landing
 
 EXPOSE 8000
 

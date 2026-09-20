@@ -51,6 +51,7 @@ class HybridRerankTelemetry:
     rerank_candidates: int = 0
     rerank_results: int = 0
     rerank_model: str = ""
+    rerank_degraded: bool = False
 
     # Overall
     total_latency_ms: float = 0.0
@@ -73,10 +74,13 @@ class HybridRerankTelemetry:
             "fused_count": self.fused_count,
             "overlap_count": self.overlap_count,
             "overlap_pct": self.overlap_pct,
-            "rerank_latency_ms": self.rerank_latency_ms,
-            "rerank_candidates": self.rerank_candidates,
-            "rerank_results": self.rerank_results,
-            "rerank_model": self.rerank_model,
+        "rerank_latency_ms": self.rerank_latency_ms,
+        "rerank_candidates": self.rerank_candidates,
+        "rerank_results": self.rerank_results,
+        "rerank_model": self.rerank_model,
+        # True when the cross-encoder was unavailable and fusion order was
+        # used instead. Surfaced explicitly — never a silent downgrade.
+        "rerank_degraded": self.rerank_degraded,
             "total_latency_ms": self.total_latency_ms,
             "results_returned": self.results_returned,
         }
@@ -199,17 +203,34 @@ class HybridRerankPipeline:
 
         effective_top_k = rerank_top_k if rerank_top_k is not None else top_k
 
-        rerank_response = self.reranker.rerank(
-            query=query,
-            candidates=candidates,
-            top_k=effective_top_k,
-            score_threshold=rerank_score_threshold,
-        )
+        rerank_degraded = False
+        try:
+            rerank_response = self.reranker.rerank(
+                query=query,
+                candidates=candidates,
+                top_k=effective_top_k,
+                score_threshold=rerank_score_threshold,
+            )
+        except Exception as exc:
+            # Cross-encoder unavailable (e.g. torch not installed on a
+            # lightweight runtime). Fall back to RRF fusion order rather
+            # than failing retrieval — flagged explicitly below.
+            logger.warning(
+                "Cross-encoder rerank failed (%s); using fusion order",
+                exc,
+            )
+            rerank_response = self._fusion_order_fallback(
+                candidates,
+                top_k=effective_top_k,
+                score_threshold=rerank_score_threshold,
+            )
+            rerank_degraded = True
 
         telemetry.rerank_latency_ms = rerank_response.report.latency_ms
         telemetry.rerank_candidates = len(candidates)
         telemetry.rerank_results = len(rerank_response.results)
         telemetry.rerank_model = rerank_response.report.model_name
+        telemetry.rerank_degraded = rerank_degraded
 
         # ------------------------------------------------------------------
         # Build final response
@@ -244,6 +265,56 @@ class HybridRerankPipeline:
             rerank_report=rerank_report_dict,
             telemetry=telemetry.to_dict(),
             hybrid_metrics=metrics,
+            rerank_degraded=rerank_degraded,
+        )
+
+    @staticmethod
+    def _fusion_order_fallback(
+        candidates: List[Dict[str, Any]],
+        *,
+        top_k: Optional[int],
+        score_threshold: float,
+    ):
+        """Rank by RRF fusion score when the cross-encoder can't load.
+
+        Returned in the same RerankResponse shape so every downstream
+        consumer (intelligence pipeline, diagnostics) works unchanged.
+        """
+        from app.schemas.reranker import RerankReport, RerankResponse, RerankResult
+
+        ordered = sorted(
+            candidates,
+            key=lambda c: (
+                -float(c.get("score", 0.0) or 0.0),
+                str(c.get("chunk_id", "")),
+            ),
+        )
+        threshold = float(score_threshold or 0.0)
+        kept = [c for c in ordered if float(c.get("score", 0.0) or 0.0) >= threshold]
+        kept = kept[: max(1, int(top_k or 5))]
+        results = [
+            RerankResult(
+                chunk_id=str(c.get("chunk_id", "")),
+                rerank_score=float(c.get("score", 0.0) or 0.0),
+                original_score=float(c.get("score", 0.0) or 0.0),
+                original_rank=idx + 1,
+                new_rank=idx + 1,
+                content=c.get("content", "") or "",
+                metadata=c.get("metadata", {}) or {},
+            )
+            for idx, c in enumerate(kept)
+        ]
+        return RerankResponse(
+            query="",
+            results=results,
+            report=RerankReport(
+                model_name="fusion-order-fallback",
+                candidates_received=len(candidates),
+                candidates_returned=len(results),
+                candidates_filtered=len(ordered) - len(kept),
+                score_threshold_applied=threshold,
+                top_k_applied=int(top_k or 5),
+            ),
         )
 
 
@@ -262,3 +333,5 @@ class HybridRerankResponse(PydanticBaseModel):
     rerank_report: Optional[Dict[str, Any]] = None
     telemetry: Dict[str, Any] = {}
     hybrid_metrics: Dict[str, Any] = {}
+    # True when the cross-encoder was unavailable and fusion order was used.
+    rerank_degraded: bool = False

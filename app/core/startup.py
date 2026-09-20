@@ -201,6 +201,37 @@ def register_default_health_checks(
     health_checker.register("embedding_backend", _embedding_check)
     registered.append("embedding_backend")
 
+    # Reranker — presence check only (never triggers a model download).
+    # On lightweight runtimes without torch the hybrid pipeline falls back
+    # to RRF fusion order; that degradation is reported here, not hidden.
+    def _reranker_check() -> ComponentHealth:
+        try:
+            import importlib.util
+
+            if importlib.util.find_spec("sentence_transformers") is None:
+                return ComponentHealth(
+                    name="reranker",
+                    status=HealthStatus.DEGRADED,
+                    message="cross-encoder unavailable (torch not installed); "
+                    "fusion-order fallback active",
+                    details={"backend": "fusion-order-fallback"},
+                )
+            return ComponentHealth(
+                name="reranker",
+                status=HealthStatus.HEALTHY,
+                message="cross-encoder package available",
+                details={"backend": "cross-encoder"},
+            )
+        except Exception as exc:
+            return ComponentHealth(
+                name="reranker",
+                status=HealthStatus.DEGRADED,
+                message=str(exc),
+            )
+
+    health_checker.register("reranker", _reranker_check)
+    registered.append("reranker")
+
     # LLM provider — simple reachability check (mock provider always healthy).
     def _llm_check() -> ComponentHealth:
         try:

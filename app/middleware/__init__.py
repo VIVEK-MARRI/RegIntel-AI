@@ -383,7 +383,17 @@ class ProductionAuthMiddleware(BaseHTTPMiddleware):
     ) -> None:
         super().__init__(app)
         self.enabled = enabled
-        self.exempt_exact = {"/", "/health", "/health/live", "/docs", "/redoc"}
+        self.exempt_exact = {
+            "/",
+            "/health",
+            "/health/live",
+            "/docs",
+            "/redoc",
+            # public landing assets (single-service deploy)
+            "/hero-3d.css",
+            "/hero-3d.js",
+            "/style.css",
+        }
         self.exempt_prefixes = (
             "/openapi.json",
             "/app",  # embedded SPA (static UI served by the backend itself)

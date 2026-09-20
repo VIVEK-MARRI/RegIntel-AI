@@ -64,6 +64,7 @@ class PipelineContext:
     governance_task_id: Optional[str] = None
     audit_record_id: Optional[str] = None
     workflow_output: Optional[Dict[str, Any]] = None
+    rerank_degraded: bool = False
     errors: List[str] = field(default_factory=list)
     stage_latencies: Dict[str, float] = field(default_factory=dict)
 
@@ -251,6 +252,9 @@ class IntelligencePipeline:
                     active_only=request.active_only,
                 )
                 results = search_resp.results if hasattr(search_resp, "results") else []
+                ctx.rerank_degraded = bool(
+                    getattr(search_resp, "rerank_degraded", False)
+                )
                 ctx.evidence = []
                 ctx.retrieval_scores = []
                 ctx.reranker_scores = []
@@ -922,6 +926,7 @@ class IntelligencePipeline:
             metadata={
                 "stage_latencies": ctx.stage_latencies,
                 "evidence_count": len(ctx.evidence),
+                "rerank_degraded": ctx.rerank_degraded,
                 "workflow": ctx.workflow_output,
                 "errors": ctx.errors,
             },

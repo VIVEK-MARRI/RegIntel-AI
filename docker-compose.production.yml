@@ -1,4 +1,8 @@
 # RegIntel AI — Production docker-compose (M10.3)
+# ALTERNATIVE path: self-hosted VPS with persistent volumes.
+# The PRIMARY hosted path is Render Blueprint (render.yaml): a single Docker
+# service serving landing + SPA + API from one origin. Use THIS file only
+# when you run your own server with docker + a local Postgres.
 # Two services: backend (FastAPI) and frontend (Nginx SPA).
 # Use: `docker compose -f docker-compose.production.yml up -d`
 #

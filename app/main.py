@@ -427,12 +427,44 @@ _api_gateway = APIGateway(
 
 @app.get("/", tags=["health"], include_in_schema=False)
 async def root():
+    # Single-origin product: / serves the public landing page when bundled
+    # (Docker image copies landing/). Local dev without ./landing keeps the
+    # JSON stub so health probes and scripts keep working.
+    index = LANDING_DIR / "index.html"
+    if index.is_file():
+        return FileResponse(index, media_type="text/html")
     return {"status": "ok", "project": settings.PROJECT_NAME, "docs": "/docs"}
 
 
 # NOTE: GET /health is served by the health router ({"status": "ok"}).
 # The deprecated alias below was removed — it was shadowed by the router
 # and never executed, while creating a duplicate OpenAPI operation.
+
+
+# ─── Public landing assets (single-service deploy) ────────────────────
+# Only files landing/index.html actually references. Anything else 404s.
+# Registered LAST so /health, /docs, /app/* and /api/* always win.
+LANDING_DIR = Path(__file__).resolve().parent.parent / "landing"
+_LANDING_FILES = {
+    "hero-3d.css": "text/css",
+    "hero-3d.js": "text/javascript",
+    "style.css": "text/css",
+}
+
+
+@app.get("/{asset}", include_in_schema=False)
+async def landing_asset(asset: str):
+    media_type = _LANDING_FILES.get(asset)
+    if media_type is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    target = (LANDING_DIR / asset).resolve()
+    try:
+        target.relative_to(LANDING_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(target, media_type=media_type)
 
 
 # ─── Embedded SPA (single-service deploy) ─────────────────────────────

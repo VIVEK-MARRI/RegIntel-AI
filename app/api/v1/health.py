@@ -79,6 +79,7 @@ def readiness() -> JSONResponse:
             "environment",
             "database",
             "embedding_backend",
+            "reranker",
             "llm_provider",
         }
     ]
