@@ -274,8 +274,11 @@ def on_startup(
         )
         logger.error(msg)
         raise EnvironmentValidationError(msg)
-    # Development convenience: create all tables if using SQLite
-    if settings.ENV == "development" and settings.DATABASE_URL.startswith("sqlite"):
+    # SQLite mode (zero-database deploys): create all tables directly.
+    # Alembic migrations are PostgreSQL-only, so SQLite schemas are managed
+    # here instead — in EVERY environment, since Render-style deploys boot
+    # with ENV=production and no Postgres at all.
+    if settings.DATABASE_URL.startswith("sqlite"):
         try:
             from sqlalchemy import create_engine
 
@@ -285,10 +288,14 @@ def on_startup(
             from app.models import Base
 
             sync_url = settings.DATABASE_URL.replace("+aiosqlite", "+pysqlite")
+            # Ensure the parent directory exists (e.g. /tmp on Render).
+            db_path = sync_url.split(":///", 1)[-1].split("?", 1)[0]
+            if db_path and db_path != ":memory:":
+                Path(db_path).parent.mkdir(parents=True, exist_ok=True)
             sync_engine = create_engine(sync_url)
             Base.metadata.create_all(sync_engine)
             sync_engine.dispose()
-            logger.info("Development mode: ensured all database tables exist")
+            logger.info("SQLite mode: ensured all database tables exist")
         except Exception as exc:
             logger.warning("Could not auto-create tables: %s", exc)
 

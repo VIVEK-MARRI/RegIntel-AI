@@ -17,8 +17,8 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    Uuid,
 )
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.document import Base
@@ -57,7 +57,7 @@ class RetrievalMetricsRecord(Base):
     __tablename__ = "retrieval_metrics_records"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid,
         primary_key=True,
         default=uuid.uuid4,
     )
@@ -125,7 +125,7 @@ class AggregatedMetricsSnapshot(Base):
     __tablename__ = "aggregated_metrics_snapshots"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid,
         primary_key=True,
         default=uuid.uuid4,
     )
@@ -206,7 +206,7 @@ class QueryDistributionRecord(Base):
     __tablename__ = "query_distribution_records"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid,
         primary_key=True,
         default=uuid.uuid4,
     )
@@ -269,7 +269,7 @@ class RerankerGainRecord(Base):
     __tablename__ = "reranker_gain_records"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid,
         primary_key=True,
         default=uuid.uuid4,
     )
@@ -333,7 +333,7 @@ class SystemHealthSnapshot(Base):
     __tablename__ = "system_health_snapshots"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid,
         primary_key=True,
         default=uuid.uuid4,
     )

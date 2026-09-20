@@ -7,6 +7,10 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import re
 
 _SCHEME_RE = re.compile(r"^postgres(?:ql)?(?:\+[^:/?#]+)?://", re.IGNORECASE)
+_SQLITE_RE = re.compile(r"^sqlite(?:\+[^:/?#]+)?://", re.IGNORECASE)
+# Maps the abstract driver names used by _normalise_postgres_url to the
+# concrete SQLite DBAPI drivers (async ↔ sync).
+_SQLITE_DRIVERS = {"asyncpg": "aiosqlite", "psycopg2": "pysqlite"}
 
 
 def _normalise_postgres_url(url: str, driver: str) -> str:
@@ -24,6 +28,12 @@ def _normalise_postgres_url(url: str, driver: str) -> str:
     m = _SCHEME_RE.match(url)
     if m:
         return f"postgresql+{driver}://" + url[m.end():]
+    # SQLite: translate between the async (aiosqlite) and sync (pysqlite)
+    # drivers so DATABASE_URL_SYNC auto-derivation yields a sync URL that
+    # Alembic and sync engines can actually open.
+    sm = _SQLITE_RE.match(url)
+    if sm and driver in _SQLITE_DRIVERS:
+        return f"sqlite+{_SQLITE_DRIVERS[driver]}://" + url[sm.end():]
     return url
 
 

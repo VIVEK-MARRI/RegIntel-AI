@@ -8,6 +8,20 @@ set -e
 
 echo "[entrypoint] Starting RegIntel AI backend..."
 
+# ── SQLite mode: no database server, no migrations ──────────────────────────
+# When DATABASE_URL points at SQLite (zero-database deploys), there is
+# nothing to wait for and Alembic must NOT run (migrations are
+# PostgreSQL-only DDL). The app creates all tables itself at startup.
+if [ "${DATABASE_URL:-}" != "${DATABASE_URL##sqlite*}" ]; then
+    echo "[entrypoint] SQLite mode detected ($DATABASE_URL) — skipping database wait and migrations."
+    echo "[entrypoint] Starting uvicorn..."
+    exec uvicorn app.main:app \
+        --host 0.0.0.0 \
+        --port "${PORT:-8000}" \
+        --workers "${WORKERS:-2}" \
+        --log-level "${LOG_LEVEL:-info}"
+fi
+
 # ── Fail fast when no database is configured at all ─────────────────────────
 # Without this, a missing DATABASE_URL burns 30s printing a misleading
 # "Database not ready" loop (the classic Render Docker-deploy failure).

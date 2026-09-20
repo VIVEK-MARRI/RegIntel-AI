@@ -61,7 +61,10 @@ class ChunkEmbedding(Base):
         ForeignKey("document_chunks.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
-    if settings.USE_PGVECTOR_FALLBACK:
+    # pgvector's Vector type only compiles on PostgreSQL. SQLite (used for
+    # zero-database deploys) always takes the portable JSON-array branch,
+    # regardless of the fallback flag.
+    if settings.USE_PGVECTOR_FALLBACK or settings.DATABASE_URL.startswith("sqlite"):
         embedding: Mapped[list[float] | None] = mapped_column(
             PortableFloatArray(), nullable=True
         )
