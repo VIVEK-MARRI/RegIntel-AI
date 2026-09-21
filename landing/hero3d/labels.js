@@ -1,7 +1,9 @@
-/* hero3d/labels.js — HTML overlay micro-labels. All type lives in the DOM
-   (page font stack, WCAG-AA ivory), positioned by Vector3.project().
-   Updates run only while a label is visible; transforms via translate3d. */
+/* hero3d/labels.js (v3) — HTML overlay micro-labels. Type lives in the DOM
+   (page font stack); positioned by Vector3.project(). Transforms only. */
+import * as THREE from "three";
 import { CONFIG } from "./config.js";
+
+const _v = new THREE.Vector3();
 
 export function buildLabels(layer) {
     const els = {};
@@ -10,7 +12,7 @@ export function buildLabels(layer) {
         el.className = "hero-label" + (cls ? " " + cls : "");
         el.innerHTML = html;
         layer.appendChild(el);
-        els[id] = { el, anchor: null, dx: 0, dy: 0, on: false };
+        els[id] = { el, anchor: null, dx: 0, dy: 0, on: false, hover: false };
         return els[id];
     }
 
@@ -23,12 +25,11 @@ export function buildLabels(layer) {
     make("rank3", "3");
     make("chip", "§ 38 · ¶ 2", "is-gold");
     make("verified", "✓ SOURCE VERIFIED", "is-verify");
-    // confidence row: label + bar + pct (static 94% state indicator)
     const conf = document.createElement("span");
     conf.className = "hero-label is-verify hero-conf";
     conf.innerHTML = `CONFIDENCE<span class="bar"><i></i></span><span class="pct">${CONFIG.verify.confidencePct}%</span>`;
     layer.appendChild(conf);
-    els.confidence = { el: conf, anchor: null, dx: 0, dy: 0, on: false };
+    els.confidence = { el: conf, anchor: null, dx: 0, dy: 0, on: false, hover: false };
     ["evidence", "source", "verified", "confidence"].forEach((k) => {
         make("core_" + k, k.toUpperCase());
     });
@@ -69,17 +70,17 @@ export function buildLabels(layer) {
                 if (bar) bar.style.width = "0";
             }
         },
+        hideAll() {
+            Object.keys(els).forEach((id) => this.hide(id));
+        },
         setText(id, text) {
             const L = els[id];
             if (L) L.el.textContent = text;
         },
-        hideAll() {
-            Object.keys(els).forEach((id) => this.hide(id));
-        },
         update(camera, rect) {
             for (const id in els) {
                 const L = els[id];
-                if (!L.on || !L.anchor) continue;
+                if ((!L.on && !L.hover) || !L.anchor) continue;
                 _v.copy(L.anchor).project(camera);
                 const x = (_v.x * 0.5 + 0.5) * rect.width + L.dx;
                 const y = (-_v.y * 0.5 + 0.5) * rect.height + L.dy;
@@ -96,7 +97,3 @@ export function buildLabels(layer) {
         },
     };
 }
-
-// module-scope temp (zero per-frame allocation)
-import * as THREE from "three";
-const _v = new THREE.Vector3();

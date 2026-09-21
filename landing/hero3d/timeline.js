@@ -1,32 +1,32 @@
-/* hero3d/timeline.js — the 18s (12s mobile) story loop, built twice so the
-   two sequences alternate cleanly without GSAP repeat caching of
-   function-based values. Beats: idle → query → retrieve → fuse → select →
-   trace → verify → hold → reset. */
+/* hero3d/timeline.js (v3) — 18s (12s mobile) story. The citation trace
+   travels INTO the Evidence Core; verification is a tiny state pulse, never
+   a panel. Built twice so the two source sequences alternate cleanly. */
 import { gsap } from "gsap";
 import { CONFIG } from "./config.js";
 
 const D = CONFIG.loopSeconds;
 
 export function createStory(ctx) {
-    const dur = ctx.duration; // 18 or 12
-    const f = dur / D;       // beat scale
+    const dur = ctx.duration;
+    const f = dur / D;
     const at = (s) => s * f;
 
     function build(seq) {
         const tl = gsap.timeline({ paused: true });
         const src = ctx.docs.docs[seq === 0 ? 0 : 1];
         const passage = ctx.docs.passages[seq === 0 ? 0 : 1];
+        const sel = src.def.sel;
 
         tl.call(() => ctx.setSequence(seq), null, 0);
         tl.call(() => ctx.resetPose(), null, 0);
 
-        // --- query (2.0 → 3.5); the tag is brief, then fades ---
+        // --- query (2.0 → 3.5); brief tag ---
         tl.call(() => ctx.labels.show("query"), null, at(2.0));
         tl.to(ctx.streams.query.proxy, { o: 0.85, duration: 0.4 * f, ease: "power1.out" }, at(2.0));
         tl.to(ctx.streams.query.proxy, { p: 1, duration: 1.5 * f, ease: "power1.inOut" }, at(2.0));
         tl.call(() => ctx.labels.hide("query"), null, at(3.8));
 
-        // --- retrieval (3.5 → 5.1); exact-match ticks fire here, then fade ---
+        // --- retrieval (3.5 → 5.1); exact ticks fire mid-beat ---
         tl.call(() => { ctx.labels.show("bm25"); ctx.labels.show("dense"); }, null, at(3.5));
         ["bm25", "dense"].forEach((k) => {
             tl.to(ctx.streams[k].proxy, { o: 0.9, duration: 0.4 * f, ease: "power1.out" }, at(3.5));
@@ -38,47 +38,44 @@ export function createStory(ctx) {
         });
         tl.call(() => { ctx.labels.hide("bm25"); ctx.labels.hide("dense"); }, null, at(5.6));
 
-        // --- fusion (5.1); RRF is a passing micro-label, not the hero ---
+        // --- fusion (5.1); convergence is the visual, RRF just passes through ---
         tl.call(() => {
             ctx.labels.show("rrf");
             ctx.labels.show("rank1"); ctx.labels.show("rank2"); ctx.labels.show("rank3");
         }, null, at(5.1));
         tl.call(() => ctx.labels.hide("rrf"), null, at(6.6));
 
-        // --- selection (6.0 → 7.2) ---
-        const sel = CONFIG.selection;
+        // --- selection (6.0 → 7.2): the source isolates itself ---
         tl.to(src.outer.position, { x: sel.pos[0], y: sel.pos[1], z: sel.pos[2], duration: 1.2 * f, ease: "power2.inOut" }, at(6.0));
         tl.to(src.outer.rotation, { y: sel.rotYDeg * (Math.PI / 180), duration: 1.2 * f, ease: "power2.inOut" }, at(6.0));
-        tl.to(src.outer.scale, { x: 1.06, y: 1.06, z: 1.06, duration: 1.2 * f, ease: "power2.inOut" }, at(6.0));
+        tl.to(src.outer.scale, { x: CONFIG.selection.scale, y: CONFIG.selection.scale, z: CONFIG.selection.scale, duration: 1.2 * f, ease: "power2.inOut" }, at(6.0));
         ctx.docs.docs.forEach((d) => {
             if (d === src) return;
             tl.to([d.sheetMat, d.faceMat], { opacity: CONFIG.selection.dimOthers, duration: 1.2 * f }, at(6.0));
             tl.to(d.edge.material, { opacity: 0.05, duration: 1.2 * f }, at(6.0));
         });
-        // losing ranks step back once the winner isolates; rank1 stays
         tl.call(() => { ctx.labels.hide("rank2"); ctx.labels.hide("rank3"); }, null, at(7.0));
 
-        // --- evidence trace (7.4 → 8.7) ---
+        // --- passage (7.4): one narrow line, nothing else lights up ---
         tl.call(() => {
             ctx.labels.show("core_evidence");
             ctx.labels.show("core_source");
             ctx.labels.show("chip");
         }, null, at(7.4));
         tl.to([passage.strip.material, passage.tick.material], { opacity: 0.9, duration: 0.5 * f, ease: "power1.out" }, at(7.4));
+
+        // --- citation trace (7.9 → 9.2): passage → INTO the core ---
         tl.call(() => ctx.drawTrace(), null, at(7.9));
         tl.to(ctx.trace.mat.uniforms.uHead, { value: 1, duration: 1.3 * f, ease: "power1.inOut" }, at(7.9));
 
-        // --- verification (9.0 → 9.8) ---
+        // --- verification (9.2): a tiny state pulse in the core ---
         tl.call(() => {
             ctx.labels.show("verified");
             ctx.labels.show("core_verified");
             ctx.labels.show("confidence");
+            ctx.pulseCore();
         }, null, at(9.2));
-        tl.to(ctx.accent, { intensity: 2.2, duration: 0.6 * f, ease: "power2.out" }, at(9.2));
-        tl.to(ctx.core.answer.marker.material, { opacity: 1, duration: 0.4 * f }, at(9.2));
-        ctx.core.answer.bars.forEach((b, i) => {
-            tl.to(b.material, { opacity: 0.5, duration: 0.4 * f }, at((9.3 + i * 0.18) * f));
-        });
+        tl.to(ctx.accent, { intensity: 1.6, duration: 0.6 * f, ease: "power2.out" }, at(9.2));
 
         // --- hold (9.8 → 13.5) ---
         tl.to({}, { duration: 3.7 * f }, at(9.8));
@@ -86,7 +83,7 @@ export function createStory(ctx) {
         // --- reset (13.5 → 16.5) ---
         tl.to(ctx.trace.mat.uniforms.uTail, { value: 1, duration: 0.9 * f, ease: "power1.in" }, at(13.5));
         tl.call(() => ctx.hideTrace(), null, at(14.5));
-        tl.call(() => ctx.labels.hideAll(), null, at(14.5));
+        tl.call(() => { ctx.labels.hideAll(); ctx.calmCore(); }, null, at(14.5));
         tl.to(src.outer.position, { x: src.base.x, y: src.base.y, z: src.base.z, duration: 1.2 * f, ease: "power2.inOut" }, at(14.5));
         tl.to(src.outer.rotation, { y: src.base.ry, duration: 1.2 * f, ease: "power2.inOut" }, at(14.5));
         tl.to(src.outer.scale, { x: 1, y: 1, z: 1, duration: 1.2 * f, ease: "power2.inOut" }, at(14.5));
@@ -96,9 +93,7 @@ export function createStory(ctx) {
         });
         tl.to([passage.strip.material, passage.tick.material], { opacity: 0, duration: 0.6 * f }, at(14.5));
         tl.to(ctx.accent, { intensity: 0, duration: 0.8 * f }, at(14.5));
-        tl.to(ctx.core.answer.marker.material, { opacity: 0, duration: 0.6 * f }, at(14.5));
-        ctx.core.answer.bars.forEach((b) => tl.to(b.material, { opacity: 0.08, duration: 0.6 * f }, at(14.5)));
-        tl.to({}, { duration: 1.5 * f }, at(16.5)); // pad to duration
+        tl.to({}, { duration: 1.5 * f }, at(16.5));
 
         return tl;
     }
@@ -121,8 +116,6 @@ export function createStory(ctx) {
             timelines.forEach((tl, k) => { if (k !== i) tl.pause(0); });
             seq = i;
             timelines[i].play(0);
-            // suppressEvents=false so scrubbing replays the beat callbacks
-            // (label show/hide, drawTrace) up to the requested time.
             timelines[i].seek(local, false);
         },
         pause() { timelines[seq].pause(); },

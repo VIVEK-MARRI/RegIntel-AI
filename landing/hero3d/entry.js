@@ -1,12 +1,11 @@
-/* hero3d/entry.js — orchestrator. Boots the scene, wires the story loop,
-   drives the per-frame ambient motion, exposes the debug hooks
-   (window.__hero3d = { seek, ready }), and owns graceful degradation.
-   This is the only module bundled as the page entry. */
+/* hero3d/entry.js (v3) — orchestrator. Boots the scene, wires the story,
+   drives ambient motion, exposes debug hooks, owns graceful degradation. */
 import * as THREE from "three";
 import { CONFIG, readTokens } from "./config.js";
 import { createScene } from "./scene.js";
 import { buildCore } from "./core.js";
 import { buildDocs } from "./docs.js";
+import { buildOrbitals, driftOrbitals } from "./orbitals.js";
 import { buildBackground, buildTraceHead, layStream, makeStream, driftBackground } from "./particles.js";
 import { buildTrace } from "./trace.js";
 import { buildLabels } from "./labels.js";
@@ -66,40 +65,41 @@ function boot() {
     const { renderer, scene, camera, look, accent, resize } = createScene(canvas, container, tokens, tier);
     if (!renderer.getContext()) { failStatic("no-webgl"); return; }
 
-    const corePos = CONFIG.core.pos;
+    const corePos = new THREE.Vector3(...CONFIG.core.pos);
     const core = buildCore(tokens);
     scene.add(core.group);
-    const docs = buildDocs(tokens, scene, corePos, docIdx.length);
+    const docs = buildDocs(tokens, scene, CONFIG.core.pos, docIdx.length);
+    const orbitals = buildOrbitals(tokens, scene);
     const bg = buildBackground(tokens, scene, tier.bgParticles);
     const trace = buildTrace(tokens, scene);
     const labels = buildLabels(document.getElementById("heroLabels"));
 
-    // --- streams: query → core, then core → docs (BM25 stepped, DENSE smooth)
+    // --- streams: query → core mouth, then core → docs (BM25 stepped, DENSE smooth)
     const dotTex = makeDotTexture("rgba(212,179,119,1)", "rgba(212,179,119,0.3)");
-    const coreEdge = new THREE.Vector3(corePos[0] - 1.05, corePos[1], corePos[2] + 0.35);
+    const coreMouth = corePos.clone().add(new THREE.Vector3(-1.25, 0.1, 0.35));
     const queryFrom = new THREE.Vector3(...CONFIG.streams.queryFrom);
     const queryCurve = new THREE.QuadraticBezierCurve3(
-        queryFrom, new THREE.Vector3(-1.8, 0.35, 0.95), coreEdge.clone()
+        queryFrom, new THREE.Vector3(-1.9, 0.35, 0.95), coreMouth.clone()
     );
     const tmp = new THREE.Vector3();
 
     function branchCurve(target) {
-        const mid = coreEdge.clone().lerp(target, 0.5);
+        const mid = coreMouth.clone().lerp(target, 0.5);
         mid.z += 0.6; mid.y += 0.2;
-        return new THREE.QuadraticBezierCurve3(coreEdge.clone(), mid, target.clone());
+        return new THREE.QuadraticBezierCurve3(coreMouth.clone(), mid, target.clone());
     }
     const streams = {
-        query: { proxy: { p: 0, o: 0 }, parts: [{ s: makeStream(30, 0.06, new THREE.Color(tokens.brassLight), dotTex, 0), curve: queryCurve, stepped: false, spread: 0.05, phase: 0 }] },
+        query: { proxy: { p: 0, o: 0 }, parts: [{ s: makeStream(CONFIG.streams.queryN, 0.06, new THREE.Color(tokens.brassLight), dotTex), curve: queryCurve, stepped: false, spread: 0.05, phase: 0 }] },
         bm25: { proxy: { p: 0, o: 0 }, parts: [] },
         dense: { proxy: { p: 0, o: 0 }, parts: [] },
     };
     [0, 3].forEach((di, i) => {
         const d = docs.docs[di];
-        if (d) streams.bm25.parts.push({ s: makeStream(14, 0.05, new THREE.Color(tokens.brassLight), null, 0), curve: branchCurve(d.outer.position), stepped: true, spread: 0, phase: i * 0.18 });
+        if (d) streams.bm25.parts.push({ s: makeStream(CONFIG.streams.branchN, 0.05, new THREE.Color(tokens.brassLight), null), curve: branchCurve(d.outer.position), stepped: true, spread: 0, phase: i * 0.18 });
     });
     [1, 4].forEach((di, i) => {
         const d = docs.docs[di];
-        if (d) streams.dense.parts.push({ s: makeStream(14, 0.07, new THREE.Color(tokens.ivory), dotTex, 0), curve: branchCurve(d.outer.position), stepped: false, spread: 0.04, phase: i * 0.22 });
+        if (d) streams.dense.parts.push({ s: makeStream(CONFIG.streams.branchN, 0.07, new THREE.Color(tokens.ivory), dotTex), curve: branchCurve(d.outer.position), stepped: false, spread: 0.04, phase: i * 0.22 });
     });
     Object.values(streams).forEach((st) => st.parts.forEach((p) => scene.add(p.s.pts)));
     const traceHead = buildTraceHead(tokens, scene, dotTex);
@@ -110,28 +110,25 @@ function boot() {
     if (!tier.hover) interaction.setEnabled(false);
     const quality = createQualityMonitor();
 
-    // --- per-doc anchors (persistent; mutated each frame, zero alloc)
     const anchors = {
         query: queryFrom.clone(),
-        bm25: streams.bm25.parts[0] ? streams.bm25.parts[0].curve.getPoint(0.5, new THREE.Vector3()) : coreEdge.clone(),
-        dense: streams.dense.parts[0] ? streams.dense.parts[0].curve.getPoint(0.5, new THREE.Vector3()) : coreEdge.clone(),
-        rrf: coreEdge.clone().add(new THREE.Vector3(0.1, -0.55, 0.2)),
+        bm25: streams.bm25.parts[0] ? streams.bm25.parts[0].curve.getPoint(0.5, new THREE.Vector3()) : coreMouth.clone(),
+        dense: streams.dense.parts[0] ? streams.dense.parts[0].curve.getPoint(0.5, new THREE.Vector3()) : coreMouth.clone(),
+        rrf: coreMouth.clone().add(new THREE.Vector3(0.15, -0.6, 0.2)),
         rank1: new THREE.Vector3(), rank2: new THREE.Vector3(), rank3: new THREE.Vector3(),
         chip: new THREE.Vector3(),
-        verified: new THREE.Vector3(),
-        confidence: new THREE.Vector3(),
-        core_evidence: coreEdge.clone().add(new THREE.Vector3(0.4, 0.9, 0)),
-        core_source: coreEdge.clone().add(new THREE.Vector3(0.4, -1.0, 0)),
-        core_verified: coreEdge.clone().add(new THREE.Vector3(0.6, 0.2, 0.3)),
-        core_confidence: new THREE.Vector3(corePos[0] + 0.55, corePos[1] - 1.55, corePos[2] + 0.3),
+        verified: corePos.clone().add(new THREE.Vector3(0.85, -1.35, 0.4)),
+        confidence: corePos.clone().add(new THREE.Vector3(0.85, -1.7, 0.4)),
+        core_evidence: corePos.clone().add(new THREE.Vector3(-0.5, 1.35, 0)),
+        core_source: corePos.clone().add(new THREE.Vector3(-0.65, -1.3, 0)),
+        core_verified: corePos.clone().add(new THREE.Vector3(1.15, 0.35, 0.2)),
+        core_confidence: corePos.clone().add(new THREE.Vector3(1.0, -0.9, 0.2)),
     };
     Object.keys(anchors).forEach((k) => labels.set(k, anchors[k]));
 
     const hoverTargets = docs.docs.map(() => ({ x: 0, y: 0, z: 0, r: 0 }));
     const hitMeshes = [...docs.docs.map((d) => d.hit), core.coreHit];
 
-    // core microlabels (§11): hover clarifies them without touching the
-    // timeline's show/hide ownership (L.on always wins).
     const CORE_MICRO = ["core_evidence", "core_source", "core_verified", "core_confidence"];
     let coreMicroHover = false;
     let coreHoverOn = false;
@@ -150,7 +147,7 @@ function boot() {
     }
     let connTarget = 0.06;
 
-    // --- story context handed to the timeline
+    // --- story context
     let activeSeq = 0;
     const ctx = {
         duration, tokens, scene, camera, core, docs, labels, trace, accent,
@@ -158,8 +155,6 @@ function boot() {
         setSequence(i) {
             activeSeq = i;
             labels.setText("chip", CONFIG.sequences[i].chip);
-            // hero doc mirrors the sequence source
-            docs.hero = docs.docs[i] || docs.docs[0];
         },
         resetPose() {
             docs.docs.forEach((d) => {
@@ -180,30 +175,38 @@ function boot() {
             trace.mat.uniforms.uTail.value = 0;
             trace.hide();
             accent.intensity = 0;
-            core.answer.marker.material.opacity = 0;
-            core.answer.bars.forEach((b) => { b.material.opacity = 0.08; });
+            this.calmCore();
         },
         drawTrace() {
             const src = docs.passages[activeSeq];
             if (!src) return;
             const from = new THREE.Vector3();
             src.strip.getWorldPosition(from);
-            const to = new THREE.Vector3();
-            core.answer.marker.getWorldPosition(to);
+            // into the core: stop at the facet facing the source
+            const dir = corePos.clone().sub(from).normalize();
+            const to = corePos.clone().addScaledVector(dir, CONFIG.core.outerR * 0.92);
             const mid = from.clone().lerp(to, 0.5);
-            mid.z += 1.1; mid.y += 0.35;
+            mid.z += 0.9; mid.y += 0.3;
             trace.setPath(from, mid, to);
         },
         hideTrace() { trace.hide(); },
+        pulseCore() {
+            core.edgeMat.opacity = 0.95;
+            core.heartMat.emissiveIntensity = 0.55;
+        },
+        calmCore() {
+            core.edgeMat.opacity = 0.32;
+            core.heartMat.emissiveIntensity = 0;
+        },
     };
     ctx.resetPose();
 
     const story = createStory(ctx);
 
-    // --- debug hooks
     const debug = {
         seek(t) { debugTime = t; story.seek(t); renderFrame(t); },
         ready: false,
+        destroy,
         stats() {
             const info = renderer.info;
             const visLabels = Array.from(document.querySelectorAll(".hero-label"))
@@ -220,12 +223,10 @@ function boot() {
     };
     window.__hero3d = debug;
 
-    // --- resize
     function onResize() { resize(); }
     window.addEventListener("resize", onResize);
     resize();
 
-    // --- visibility / intersection gating
     let visible = true;
     const io = new IntersectionObserver((es) => {
         visible = es[0].isIntersecting;
@@ -237,7 +238,6 @@ function boot() {
     }
     document.addEventListener("visibilitychange", onVis);
 
-    // lost context: park on the verified poster instead of a dead canvas (§14)
     canvas.addEventListener("webglcontextlost", (e) => {
         e.preventDefault();
         try { story.pause(); } catch (err) { /* already torn down */ }
@@ -251,8 +251,8 @@ function boot() {
     const clock = new THREE.Clock();
     let firstFrame = true;
     let hoverIndex = -1;
+    let raf = 0;
 
-    // debug HUD
     let hud = null;
     if (FLAG_DEBUG) {
         hud = document.createElement("div");
@@ -261,8 +261,7 @@ function boot() {
     }
 
     function applyStreams() {
-        const pairs = [["query", streams.query], ["bm25", streams.bm25], ["dense", streams.dense]];
-        pairs.forEach(([, st]) => {
+        [["query", streams.query], ["bm25", streams.bm25], ["dense", streams.dense]].forEach(([, st]) => {
             st.parts.forEach((part) => {
                 part.s.head = st.proxy.p + part.phase;
                 layStream(part.s, part.curve, part.spread, part.stepped, tmp);
@@ -272,7 +271,6 @@ function boot() {
     }
 
     function updateAnchors() {
-        const v = new THREE.Vector3();
         const setDoc = (key, di, dy) => {
             const d = docs.docs[di];
             if (!d) { labels.hide(key); return; }
@@ -284,23 +282,18 @@ function boot() {
         setDoc("rank3", 1, docs.docs[1] ? docs.docs[1].def.h / 2 + 0.18 : 0);
         const ps = docs.passages[activeSeq];
         if (ps) { ps.strip.getWorldPosition(anchors.chip); anchors.chip.x -= 0.55; }
-        core.answer.marker.getWorldPosition(anchors.verified);
-        core.answer.group.getWorldPosition(v);
-        anchors.confidence.copy(v); anchors.confidence.y -= core.answer.group.children[0].geometry.parameters.height / 2 + 0.25;
     }
 
     function updateHover(now) {
         const hit = interaction.pick(hitMeshes, now);
         const idx = hit && !hit.object.userData.coreHit ? hit.object.userData.docIndex : -1;
-        const coreHit = !!hit && !!hit.object.userData.coreHit;
-        if (idx !== hoverIndex) {
-            hoverIndex = idx;
-        }
+        const coreHitNow = !!hit && !!hit.object.userData.coreHit;
+        if (idx !== hoverIndex) hoverIndex = idx;
         hoverTargets.forEach((h, i) => {
             const on = i === idx;
             h.x = on ? 0.12 : 0;
             h.y = on ? 0.08 : 0;
-            h.z = on ? 0.28 : 0; // slightly forward, toward the camera
+            h.z = on ? 0.28 : 0;
             h.r = on ? 0.05 : 0;
         });
         if (idx >= 0 && tier.hover) {
@@ -310,10 +303,8 @@ function boot() {
         } else if (idx < 0) {
             labels.tip(null);
         }
-        // hovering any doc brightens the shared evidence paths (§11)
         connTarget = (idx >= 0 && tier.hover) ? 0.15 : 0.06;
-        // hovering the core expands it and clarifies its microlabels (§11)
-        coreHoverOn = coreHit && tier.hover;
+        coreHoverOn = coreHitNow && tier.hover;
         setCoreMicro(coreHoverOn);
     }
 
@@ -322,20 +313,20 @@ function boot() {
         const now = performance.now();
 
         interaction.update();
-
-        // ambient: background drift
         driftBackground(bg, t);
+        driftOrbitals(orbitals, t);
 
-        // core: slow yaw + bob + internal points
-        core.platesGroup.rotation.y = Math.sin((t * 2 * Math.PI) / CONFIG.core.yawPeriod) * (CONFIG.core.yawAmpDeg * Math.PI) / 180;
-        core.group.position.y = corePos[1] + Math.sin(t * 0.7) * 0.05;
-        const ppos = core.innerPts.geometry.attributes.position;
-        core.pSeed.forEach((s, i) => {
-            ppos.setXYZ(i, s.x + Math.sin(t * s.sp + s.ph) * 0.08, s.y + Math.cos(t * s.sp * 0.8 + s.ph) * 0.1, s.z + Math.sin(t * s.sp * 1.2 + s.ph) * 0.06);
-        });
-        ppos.needsUpdate = true;
+        // core: very slow counter-rotating facets + gentle bob
+        const cp = CONFIG.core;
+        core.outer.rotation.y = (t * 2 * Math.PI) / cp.outerPeriod;
+        core.edges.rotation.y = core.outer.rotation.y;
+        core.mid.rotation.y = (t * 2 * Math.PI) / cp.midPeriod;
+        core.midEdges.rotation.y = core.mid.rotation.y;
+        core.heart.rotation.y = (t * 2 * Math.PI) / cp.innerPeriod;
+        core.group.position.y = CONFIG.core.pos[1] + Math.sin(t * 0.7) * 0.04;
+        const cs = coreHoverOn ? 1.03 : 1;
+        core.group.scale.setScalar(core.group.scale.x + (cs - core.group.scale.x) * 0.08);
 
-        // docs: additive float + idle yaw on inner; hover offset; timeline owns outer
         docs.docs.forEach((d, i) => {
             const h = hoverTargets[i];
             const fy = Math.cos((t * 2 * Math.PI) / d.floatDur + d.floatPhase) * d.floatAmp;
@@ -345,22 +336,8 @@ function boot() {
             d.inner.rotation.y += (h.r - d.inner.rotation.y) * 0.08;
         });
 
-        // core hover: ~1.03 scale, plates spread +8% (timeline never touches these)
-        const cs = coreHoverOn ? 1.03 : 1;
-        core.group.scale.setScalar(core.group.scale.x + (cs - core.group.scale.x) * 0.08);
-        core.plates.forEach((pg) => {
-            const tz = pg.userData.baseZ * (coreHoverOn ? 1.08 : 1);
-            pg.position.z += (tz - pg.position.z) * 0.08;
-        });
-        // shared connector paths breathe with doc hover
-        if (docs.conn) {
-            const cm = docs.conn.material;
-            cm.opacity += (connTarget - cm.opacity) * 0.1;
-        }
-
         applyStreams();
 
-        // trace head marker rides the drawing edge
         if (trace.mesh.visible && trace.curve) {
             const head = trace.mat.uniforms.uHead.value;
             const tail = trace.mat.uniforms.uTail.value;
@@ -369,6 +346,11 @@ function boot() {
             traceHead.material.opacity = (head > 0.01 && tail < 0.99) ? 0.9 : 0;
         } else {
             traceHead.material.opacity = 0;
+        }
+
+        if (docs.conn) {
+            const cm = docs.conn.material;
+            cm.opacity += (connTarget - cm.opacity) * 0.1;
         }
 
         updateAnchors();
@@ -389,7 +371,6 @@ function boot() {
             hud.textContent = `fps ${(1 / Math.max(dt, 0.0001)).toFixed(0)} · calls ${renderer.info.render.calls} · tris ${renderer.info.render.triangles} · ${tierName}`;
         }
 
-        // adaptive quality: step down once, never up
         const step = quality.push(dt * 1000);
         if (step) {
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1));
@@ -430,9 +411,7 @@ function boot() {
         container.classList.remove("is-live");
         window.__hero3d = null;
     }
-    debug.destroy = destroy;
 
-    let raf = 0;
     story.start();
     if (debugTime != null) { story.seek(debugTime); renderFrame(debugTime); }
     loop();

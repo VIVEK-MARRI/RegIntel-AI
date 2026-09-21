@@ -1,6 +1,5 @@
-/* hero3d/docs.js — six regulatory sheets + dashed core connectors.
-   Hover offsets live on an inner additive group so hover and the timeline
-   (which drives the outer selection group) never fight. */
+/* hero3d/docs.js (v3) — floating regulatory source artifacts at real depths.
+   Hover offsets live on an inner additive group; the timeline owns outer. */
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { CONFIG } from "./config.js";
@@ -16,7 +15,6 @@ export function buildDocs(tokens, scene, corePos, count) {
     const nodeGeos = [];
 
     defs.forEach((def, idx) => {
-        // outer = selection/choreography transform; inner = hover offset
         const outer = new THREE.Group();
         outer.position.set(...def.pos);
         outer.rotation.set(0, def.rotY * D2R, (def.rotZ || 0) * D2R);
@@ -43,8 +41,7 @@ export function buildDocs(tokens, scene, corePos, count) {
         );
         inner.add(edge);
 
-        // exact-match [ ] brackets (BM25 ticks), hidden until flashed.
-        // All four corner arms share one geometry -> one draw call.
+        // exact-match [ ] ticks, one draw, hidden until flashed
         const bMat = new THREE.LineBasicMaterial({ color: new THREE.Color(tokens.brassLight), transparent: true, opacity: 0 });
         const bw = 0.16, bh = 0.12, bx = -0.3, by = 0.3;
         const bPos = [];
@@ -70,33 +67,28 @@ export function buildDocs(tokens, scene, corePos, count) {
         hit.userData.docIndex = docs.length;
         inner.add(hit);
 
-        // dashed connector to the core edge + node dots at both ends.
-        // Segments and nodes are merged across all docs (2 draw calls total).
+        // faint link toward the core (merged across docs: 2 draws total)
         const from = new THREE.Vector3(...def.pos);
         const dir = new THREE.Vector3(...corePos).sub(from);
-        const to = from.clone().addScaledVector(dir, 0.82);
+        const to = from.clone().addScaledVector(dir, 0.78);
         connPositions.push(from.x, from.y, from.z, to.x, to.y, to.z);
         [from, to].forEach((p) => {
             const g = new THREE.SphereGeometry(0.022, 8, 8);
             g.translate(p.x, p.y, p.z);
             nodeGeos.push(g);
         });
-        const conn = null;
 
         scene.add(outer);
         docs.push({
-            def, outer, inner, face, edge, brackets, bMat, hit, conn,
+            def, outer, inner, face, edge, brackets, bMat, hit,
             sheetMat: sheet.material, faceMat: face.material,
             base: { x: def.pos[0], y: def.pos[1], z: def.pos[2], ry: def.rotY * D2R, rz: (def.rotZ || 0) * D2R },
             floatPhase: idx * 1.37, floatAmp: 0.05 + (idx % 3) * 0.012,
             floatDur: 5 + (idx % 4),
-            hero: def.role === "selected", selected: false,
         });
     });
 
-    // passage strip + left tick (one narrow line each). Built for the two
-    // sequence sources (docs A and B); only the active one is shown.
-    const hero = docs[0];
+    // passage strips: one narrow line each, built for the two sequence sources
     function addPassage(doc, y) {
         const strip = new THREE.Mesh(
             new THREE.PlaneGeometry(1.0, 0.075),
@@ -107,22 +99,13 @@ export function buildDocs(tokens, scene, corePos, count) {
         );
         strip.position.set(-0.1, y, 0.032);
         doc.inner.add(strip);
-        const tick = new THREE.Mesh(
-            new THREE.PlaneGeometry(0.03, 0.15),
-            strip.material.clone()
-        );
+        const tick = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.15), strip.material.clone());
         tick.position.set(-0.66, y, 0.032);
         doc.inner.add(tick);
         return { strip, tick };
     }
-    const passages = [
-        addPassage(docs[0], 0.42),
-        docs[1] ? addPassage(docs[1], 0.3) : null,
-    ];
-    const passage = passages[0].strip;
-    const tick = passages[0].tick;
+    const passages = [addPassage(docs[0], 0.42), docs[1] ? addPassage(docs[1], 0.3) : null];
 
-    // merged connectors: one dashed LineSegments + one node mesh
     const connGeo = new THREE.BufferGeometry();
     connGeo.setAttribute("position", new THREE.Float32BufferAttribute(connPositions, 3));
     const conn = new THREE.LineSegments(connGeo, new THREE.LineDashedMaterial({
@@ -132,13 +115,12 @@ export function buildDocs(tokens, scene, corePos, count) {
     conn.computeLineDistances();
     scene.add(conn);
     if (nodeGeos.length) {
-        const nodes = new THREE.Mesh(mergeGeometries(nodeGeos), new THREE.MeshBasicMaterial({
+        scene.add(new THREE.Mesh(mergeGeometries(nodeGeos), new THREE.MeshBasicMaterial({
             color: new THREE.Color(tokens.brassLight), transparent: true, opacity: 0.35,
-        }));
-        scene.add(nodes);
+        })));
     }
 
-    // fake contact shadow behind the hero doc only
+    // fake contact shadow behind the first doc only
     const shC = document.createElement("canvas");
     shC.width = 64; shC.height = 64;
     const sg = shC.getContext("2d");
@@ -147,13 +129,12 @@ export function buildDocs(tokens, scene, corePos, count) {
     grad.addColorStop(1, "rgba(0,0,0,0)");
     sg.fillStyle = grad;
     sg.fillRect(0, 0, 64, 64);
-    const shTex = new THREE.CanvasTexture(shC);
     const shadow = new THREE.Mesh(
         new THREE.PlaneGeometry(2.4, 1.4),
-        new THREE.MeshBasicMaterial({ map: shTex, transparent: true, opacity: 0.55, depthWrite: false })
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shC), transparent: true, opacity: 0.55, depthWrite: false })
     );
-    shadow.position.set(hero.base.x, hero.base.y - 1.5, hero.base.z - 0.8);
+    shadow.position.set(docs[0].base.x, docs[0].base.y - 1.5, docs[0].base.z - 0.8);
     scene.add(shadow);
 
-    return { docs, hero, passages, passage, tick, dotTex, shadow, conn };
+    return { docs, passages, dotTex, shadow, conn };
 }

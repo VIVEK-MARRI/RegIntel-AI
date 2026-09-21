@@ -1,15 +1,19 @@
-/* hero3d/particles.js — background dust + query/retrieval streams.
+/* hero3d/particles.js (v3) — background dust + query/retrieval streams.
    BM25 reads exact/gridded (square points, quantized steps); DENSE reads
-   continuous (soft round points, smooth arcs). Three Points draws total. */
+   continuous (soft round points, smooth arcs). */
 import * as THREE from "three";
-import { CONFIG } from "./config.js";
 import { makeDotTexture } from "./textures.js";
+
+function seeded(start) {
+    let a = start;
+    return () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
+}
 
 export function buildBackground(tokens, scene, count) {
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(count * 3);
     const seed = [];
-    const rnd = (() => { let a = 7; return () => { a = (a * 16807) % 2147483647; return a / 2147483647; }; })();
+    const rnd = seeded(7);
     for (let i = 0; i < count; i++) {
         const x = -4.5 + rnd() * 9.5, y = -3.4 + rnd() * 6.8, z = -7 + rnd() * 3;
         pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
@@ -38,7 +42,7 @@ export function driftBackground(bg, t) {
     pos.needsUpdate = true;
 }
 
-export function makeStream(n, size, color, map, opacity) {
+export function makeStream(n, size, color, map) {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
     const pts = new THREE.Points(geo, new THREE.PointsMaterial({
@@ -46,10 +50,9 @@ export function makeStream(n, size, color, map, opacity) {
         depthWrite: false, blending: THREE.AdditiveBlending,
     }));
     pts.frustumCulled = false;
-    return { pts, n, head: 0, opacity };
+    return { pts, n, head: 0 };
 }
 
-// Lay points along a curve; stepped=true quantizes (BM25 exactness).
 export function layStream(s, curve, spread, stepped, tmp) {
     const pos = s.pts.geometry.attributes.position;
     for (let i = 0; i < s.n; i++) {

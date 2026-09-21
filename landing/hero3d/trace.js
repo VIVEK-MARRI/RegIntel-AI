@@ -1,5 +1,5 @@
-/* hero3d/trace.js — the citation ribbon: a fine camera-facing path from the
-   source passage to the [1] marker. uHead draws it on, uTail erases it from
+/* hero3d/trace.js (v3) — the citation ribbon: a fine path from the source
+   passage INTO the Evidence Core. uHead draws it on, uTail erases it from
    the tail forward. Single mesh, zero per-frame allocation. */
 import * as THREE from "three";
 import { CONFIG } from "./config.js";
@@ -18,7 +18,6 @@ uniform float uOpacity;
 varying vec2 vUv;
 void main() {
     float x = vUv.x;
-    // soft ends so the ribbon never hard-clips
     float headFade = smoothstep(uHead, uHead - 0.06, x);
     float tailFade = smoothstep(uTail, uTail + 0.06, x);
     float a = uOpacity * headFade * (1.0 - tailFade);
@@ -32,7 +31,7 @@ export function buildTrace(tokens, scene) {
             uColor: { value: new THREE.Color(tokens.brassLight) },
             uHead: { value: 0 },
             uTail: { value: 0 },
-            uOpacity: { value: 0.9 },
+            uOpacity: { value: CONFIG.trace.holdOpacity },
         },
         vertexShader: traceVert,
         fragmentShader: traceFrag,
@@ -40,7 +39,6 @@ export function buildTrace(tokens, scene) {
         depthWrite: false,
         side: THREE.DoubleSide,
     });
-    // TubeGeometry UV.x runs along the path length — perfect for progress.
     const mesh = new THREE.Mesh(new THREE.BufferGeometry(), mat);
     mesh.frustumCulled = false;
     mesh.visible = false;

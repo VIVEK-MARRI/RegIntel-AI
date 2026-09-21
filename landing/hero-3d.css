@@ -176,32 +176,6 @@
 }
 
 /* phase chips + doc tooltip (kept from v1, retokened) */
-.hero-chip {
-    position: absolute;
-    z-index: 4;
-    font-family: var(--h3d-mono);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--h3d-brass-light);
-    background: rgba(17, 20, 27, 0.72);
-    border: 1px solid rgba(184, 136, 64, 0.45);
-    border-radius: 2px;
-    padding: 4px 8px 3px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-}
-.hero-chip.is-dim {
-    color: var(--h3d-faint);
-    border-color: rgba(144, 152, 164, 0.35);
-}
-.hero-chip.is-verify {
-    color: var(--h3d-verify);
-    border-color: rgba(95, 168, 134, 0.5);
-}
 .hero-doc-tip {
     position: absolute;
     z-index: 5;
@@ -291,7 +265,6 @@
     .hero-visual {
         height: 320px;
     }
-    .hero-chip,
     .hero-label {
         font-size: 9px;
     }
@@ -307,7 +280,6 @@
     .hero-visual canvas {
         transition: none;
     }
-    .hero-chip,
     .hero-doc-tip {
         transition: none;
     }

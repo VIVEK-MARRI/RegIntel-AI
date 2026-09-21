@@ -111,7 +111,32 @@ still pending human review:
 6. Headline-safe (left 12% dim): mask kept; scene pushed right (`core.pos.x`,
    selection pose +x). *(final pixels: see screenshots).*
 
-## 5. Real-GPU verification checklist (for a real machine)
+## 5. V3 rebuild — "Regulatory Evidence Network" (from scratch)
+
+The v2 plate-stack + answer-plane composition was removed completely
+(`landing/hero3d/*`, bundle, posters deleted; orphaned `.hero-chip` CSS
+removed; single `#hero3d` canvas confirmed). Rebuilt from zero:
+
+- **Core**: faceted icosahedron shell (detail 1, translucent flat-shaded) +
+  thin brass `EdgesGeometry` outlines + nested counter-rotating mid shell +
+  solid brass octahedron heart with verify-only emissive lift. Periods
+  48s / −36s / 24s. Elegant still, no sphere/reactor/wireframe-logo read.
+- **No answer plane, no resolving bars, no `[1]` marker panel.** The
+  citation ribbon travels from the source passage INTO the core facet;
+  verification is a core edge-pulse + tiny `✓ SOURCE VERIFIED` /
+  `CONFIDENCE 94%` micro-labels only.
+- **Orbitals** (`hero3d/orbitals.js`, new): two faint tilted rings (90s /
+  −120s drift) + 3 merged node dots. Barely-visible by design.
+- Fresh numbers: **38 draw calls** (was 56), 2,176 tris, 9 textures, 12–13
+  programs, gzip **162.9 KB**. Posters recaptured (idle 21.8 KB, verified
+  30.3 KB). Label arc 0→3→4→4→7→0 across the 18s loop.
+- Gates re-run on the fresh build: `verify-hero.mjs` 40/40 PASS, hover probe
+  (core microlabels / doc tooltip / destroy) PASS with zero pageerrors,
+  FastAPI serve check PASS (strict `script-src 'self'` CSP intact).
+- Left column / nav / CTAs untouched; same container IDs, tokens, watchdog,
+  tiers, `?t/?static/?tier/?debug` hooks, `destroy()`, context-loss poster.
+
+## 6. Real-GPU verification checklist (for a real machine)
 
 - [ ] Open landing in Chrome, DevTools Performance, 4× CPU throttle: assert
       steady 60fps while the story loops (SwiftShader numbers don't count).

@@ -1,7 +1,6 @@
-/* hero3d/interaction.js — damped pointer parallax (true camera orbit, so
-   real depth produces differential parallax) + throttled hover picking.
-   Hover offsets use each doc's inner additive group; the timeline owns the
-   outer group, so the two never fight. */
+/* hero3d/interaction.js (v3) — damped pointer parallax (true camera orbit)
+   + persistent throttled hover picking. Hover offsets use each doc's inner
+   additive group; the timeline owns outer, so the two never fight. */
 import * as THREE from "three";
 import { CONFIG } from "./config.js";
 
@@ -25,9 +24,8 @@ export function createInteraction(container, heroSection, camera, basePos, lookA
         if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
         const nx = ((e.clientX - r.left) / r.width - 0.5) * 2;
         const ny = ((e.clientY - r.top) / r.height - 0.5) * 2;
-        // ±3.5° yaw / ±2° pitch at ~11 units distance
-        state.tx = nx * Math.tan(3.5 * D2R) * basePos.z * state.strength;
-        state.ty = -ny * Math.tan(2.0 * D2R) * basePos.z * state.strength;
+        state.tx = nx * Math.tan(CONFIG.parallax.yawDeg * D2R) * basePos.z * state.strength;
+        state.ty = -ny * Math.tan(CONFIG.parallax.pitchDeg * D2R) * basePos.z * state.strength;
         state.pointer.set(nx, -ny);
         state.pointerPx = { x: e.clientX - r.left, y: e.clientY - r.top };
         state.pointerDirty = true;
@@ -40,7 +38,6 @@ export function createInteraction(container, heroSection, camera, basePos, lookA
     heroSection.addEventListener("mousemove", onMove);
     heroSection.addEventListener("mouseleave", onLeave);
 
-    // touch: tap holds the hover state for 2s
     let tapTimer = 0;
     function onTouch(e) {
         const t = e.touches[0];
@@ -60,10 +57,8 @@ export function createInteraction(container, heroSection, camera, basePos, lookA
     }
     container.addEventListener("touchstart", onTouch, { passive: true });
 
-    const tmpTargets = [];
     return {
         state,
-        // damped camera orbit; call every frame
         update() {
             const k = CONFIG.parallax.smoothing;
             state.x += (state.tx - state.x) * k;
@@ -71,8 +66,7 @@ export function createInteraction(container, heroSection, camera, basePos, lookA
             camera.position.set(basePos.x + state.x, basePos.y + state.y, basePos.z);
             camera.lookAt(lookAt);
         },
-        // throttled hover pick (~30Hz); the last hit persists while the
-        // pointer is still, so hover state survives across frames.
+        // throttled (~30Hz); the last hit persists while the pointer is still
         pick(hitMeshes, nowMs) {
             if (!state.enabled) return null;
             if (!state.pointerDirty) return lastHit;
@@ -90,7 +84,6 @@ export function createInteraction(container, heroSection, camera, basePos, lookA
             heroSection.removeEventListener("mouseleave", onLeave);
             container.removeEventListener("touchstart", onTouch);
             clearTimeout(tapTimer);
-            tmpTargets.length = 0;
         },
     };
 }
