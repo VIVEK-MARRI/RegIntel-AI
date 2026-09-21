@@ -1,12 +1,15 @@
-# RegIntel AI backend image — PRIMARY production image (Render Blueprint
-# builds this via render.yaml: single service serving landing + SPA + API).
+# RegIntel AI backend image — LOCAL development and self-hosted use.
+#
+# NOT USED FOR RENDER HOSTING. The canonical Render deployment is the
+# Blueprint in render.yaml (native-Python backend + static frontend + free
+# Neon Postgres). Do NOT point a Render Web Service at this Dockerfile:
+# previous deploys that did so OOM'd on the free tier and bypassed every
+# env var render.yaml wires (JWT secret, CORS, admin seeding, demo mode).
+# Use `docker compose up` locally, where Postgres + full ML are available.
 #
 # The heavy torch/transformers ML stack is OPT-IN via build arg:
 #   docker build --build-arg INSTALL_ML_STACK=1 .
-# The default (0) installs only the core + LLM SDKs and uses the built-in
-# TF-IDF embedding fallback — the image stays small enough for 512 MB hosts
-# (e.g. Render free tier). docker-compose.yml passes INSTALL_ML_STACK=1 so
-# local development keeps full BGE embeddings.
+# (docker-compose.yml already passes it.) Default slim image uses TF-IDF.
 # ─── Stage 0: frontend builder (Node → static SPA) ────────────────────────
 # Builds the React SPA so this single image serves the COMPLETE application
 # (API + UI on one origin: no CORS, no extra service). The SPA is built with

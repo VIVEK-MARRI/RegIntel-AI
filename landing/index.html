@@ -3362,13 +3362,7 @@
          motion is unavailable, the .hero-visual frame falls back to a
          static composition and the rest of the page is unaffected. -->
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-            }
-        }
-    </script>
+    <script type="importmap" src="./importmap.json"></script>
     <script type="module" src="./hero-3d.js"></script>
     <script>
         // Fallback watchdog: if the 3D module hasn't signalled readiness

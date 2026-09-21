@@ -195,7 +195,22 @@ DEFAULT_SECURITY_HEADERS: Dict[str, str] = {
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "X-XSS-Protection": "1; mode=block",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-    "Content-Security-Policy": "default-src 'self'",
+    # Covers every external origin the product actually references
+    # (verified by grepping frontend/ + landing/ for https://):
+    # - Google Fonts (React app + landing editorial type)
+    # - jsdelivr (landing 3D hero: GSAP UMD + three.js modules; the
+    #   import map itself is same-origin at /importmap.json, so no
+    #   'unsafe-inline' is needed for scripts)
+    # - *.onrender.com (Blueprint split-origin API calls from the static
+    #   site to the backend; auth uses Bearer headers, not cookies)
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "connect-src 'self' https://*.onrender.com; "
+        "img-src 'self' data:; "
+        "script-src 'self' https://cdn.jsdelivr.net"
+    ),
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
 }
 
@@ -392,6 +407,7 @@ class ProductionAuthMiddleware(BaseHTTPMiddleware):
             # public landing assets (single-service deploy)
             "/hero-3d.css",
             "/hero-3d.js",
+            "/importmap.json",
             "/style.css",
         }
         self.exempt_prefixes = (

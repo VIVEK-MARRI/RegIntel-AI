@@ -412,6 +412,14 @@ def _build_security_jwt_issuer() -> JWTIssuer:
         )
         sm.set_override("jwt-secret", secret)
         result = sm.get("jwt-secret")
+    if settings.ENV == "production" and len(result.value or "") < 32:
+        msg = (
+            "Refusing to start: REGINTEL_JWT_SECRET is set but shorter than "
+            "32 characters in a production environment. Provide a strong "
+            "random secret (>= 32 chars) via env or secret manager."
+        )
+        logger.error(msg)
+        raise EnvironmentValidationError(msg)
     return JWTIssuer(JWTConfig(secret=result.value))
 
 
@@ -456,6 +464,7 @@ LANDING_DIR = Path(__file__).resolve().parent.parent / "landing"
 _LANDING_FILES = {
     "hero-3d.css": "text/css",
     "hero-3d.js": "text/javascript",
+    "importmap.json": "application/importmap+json",
     "style.css": "text/css",
 }
 
