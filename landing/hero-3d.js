@@ -45,19 +45,28 @@ import * as THREE from 'three';
     }
     var TIER = tier();
 
-    function failStatic() {
+    function failStatic(reason) {
         container.classList.add('is-fallback');
+        container.dataset.failReason = reason;
+        try { console.info('[hero3d] static fallback: ' + reason); } catch (e) {}
         if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
     }
 
-    if (!window.WebGLRenderingContext) { failStatic(); return; }
-    if (typeof gsap === 'undefined') { failStatic(); return; }
+    function markReady() {
+        // Cancel a premature watchdog fallback (slow CDN): a successfully
+        // booted scene always wins over the static panel.
+        container.classList.remove('is-fallback');
+        container.dataset.ready = '1';
+    }
+
+    if (!window.WebGLRenderingContext) { failStatic('no-webgl'); return; }
+    if (typeof gsap === 'undefined') { failStatic('no-gsap'); return; }
 
     /* ================= 1. RENDERER / SCENE / CAMERA ================= */
     var renderer;
     try {
         renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    } catch (e) { failStatic(); return; }
+    } catch (e) { failStatic('renderer-failed'); return; }
 
     var DPR = TIER === 'mobile' ? 1 : (TIER === 'tablet' ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2));
     renderer.setPixelRatio(DPR);
@@ -761,7 +770,7 @@ import * as THREE from 'three';
     var story = null;
     if (!reduceMotion) {
         story = masterTimeline();
-        container.dataset.ready = '1';
+        markReady();
         var last = performance.now();
         gsap.ticker.add(function () {
             var now = performance.now();
@@ -805,7 +814,7 @@ import * as THREE from 'three';
                 // No tweens, no loop, no parallax — chips stay hidden.
                 docs.forEach(function (d) { d.group.position.y = d.base.y; });
                 renderFrame(0.016);
-                container.dataset.ready = '1';
+                markReady();
                 return;
             }
         });

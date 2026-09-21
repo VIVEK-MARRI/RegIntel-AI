@@ -283,13 +283,16 @@
         })();
 
 /* Fallback watchdog: if the 3D module hasn't signalled readiness
-   within 7s (blocked CDN, no WebGL, old browser), show the static
-   fallback composition instead of an empty frame. */
-        // within 7s (blocked CDN, no WebGL, old browser), show the static
-        // fallback composition instead of an empty frame.
+   within 12s (blocked CDN, no WebGL, old browser), show the static
+   fallback composition instead of an empty frame. The module cancels
+   this via markReady() if it boots late, so slow networks recover. */
         (function () {
             setTimeout(function () {
                 var v = document.getElementById('heroVisual');
-                if (v && !v.dataset.ready) v.classList.add('is-fallback');
-            }, 7000);
+                if (v && !v.dataset.ready) {
+                    v.classList.add('is-fallback');
+                    v.dataset.failReason = 'timeout';
+                    try { console.info('[hero3d] static fallback: timeout'); } catch (e) {}
+                }
+            }, 12000);
         })();
