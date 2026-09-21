@@ -19,6 +19,7 @@ from app.models.document import Base
 from app.models.page import DocumentPage
 from app.models.chunk import DocumentChunk, ChunkEmbedding
 from app.models.bm25 import BM25IndexMetadata
+from app.models.knowledge_graph import KGNode, KGRelationship
 from app.models.analytics import (
     RetrievalMetricsRecord,
     AggregatedMetricsSnapshot,

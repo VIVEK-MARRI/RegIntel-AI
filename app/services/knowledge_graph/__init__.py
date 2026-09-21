@@ -777,6 +777,18 @@ class KnowledgeGraphService:
 
 
 def build_default_knowledge_graph_service() -> KnowledgeGraphService:
+    # Durable Postgres backing whenever a real database is configured —
+    # the graph then survives restarts/redeploys. SQLite/file deployments
+    # keep the original JSONL-backed in-memory store.
+    if not settings.DATABASE_URL.startswith("sqlite"):
+        try:
+            from app.services.knowledge_graph.pg_store import PostgresGraphStore
+
+            return KnowledgeGraphService(store=PostgresGraphStore())
+        except Exception as exc:  # pragma: no cover - fail open to JSONL
+            logger.warning(
+                "Postgres KG store unavailable (%s); using JSONL store", exc
+            )
     persist = os.path.join(settings.STORAGE_ROOT, "knowledge_graph", "graph.jsonl")
     store = InMemoryGraphStore(persist_path=persist)
     return KnowledgeGraphService(store=store)

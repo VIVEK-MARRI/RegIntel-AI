@@ -384,10 +384,34 @@ All items below are verified in [docs/reviews/02-security-review.md](docs/review
 **Known gaps (non-blocking):** no DB encryption at rest (delegate to managed PostgreSQL), vault integration is a stub, no mTLS between services.
 
 ---
-
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) and [docs/architecture/04-deployment-architecture.md](docs/architecture/04-deployment-architecture.md) for full details.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) and
+[docs/architecture/04-deployment-architecture.md](docs/architecture/04-deployment-architecture.md) for full details.
+
+### $0 portfolio deploy (Render Blueprint — the primary hosted path)
+
+`render.yaml` defines the whole thing: static frontend (landing at `/`,
+SPA at `/app/*`) + free Python backend + your free Neon Postgres.
+No paid services anywhere.
+
+1. Create a free Neon Postgres, copy its **direct** URL (port 5432).
+2. Render → New → Blueprint → this repo → fill `DATABASE_URL`,
+   `LLM_API_KEY` (optional — see demo mode), `ADMIN_SEED_PASSWORD`.
+3. Done. Migrations, demo-corpus seeding, and frontend build are automatic.
+
+Honest free-tier boundaries (also visible in `/health/ready` + response
+metadata — never silently downgraded):
+
+| Capability | Free deploy reality |
+|---|---|
+| Embeddings | TF-IDF 384-d (`tfidf_fallback`), BGE needs torch/paid RAM |
+| Reranking | OFF — RRF fusion order, flagged `rerank_degraded: true` |
+| LLM | Real provider when keyed; otherwise labelled demo mode (`DEMO_MODE=true`, responses carry `demo_mode: true`) |
+| Files/uploads | Ephemeral `/tmp` — Postgres holds all metadata durably |
+| Knowledge graph | Durable in Postgres (`kg_nodes`/`kg_relationships`) |
+| Compute | 1× 512 MB instance, sleeps on idle (~50s cold start) |
+| Demo corpus | 6 public excerpts auto-seed once, tagged `demo-corpus` |
 
 ### Required environment variables
 

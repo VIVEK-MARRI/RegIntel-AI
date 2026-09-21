@@ -361,6 +361,18 @@ class Settings(BaseSettings):
         description="Expose /docs, /redoc and /openapi.json in production. "
         "Docs are always on outside production.",
     )
+    SEED_DEMO_CORPUS: bool = Field(
+        default=False,
+        description="Ingest seed_data/*.txt demo excerpts on empty databases. "
+        "One-shot (skipped once any document exists); rows are tagged "
+        "document_type='demo-corpus'. Enable for portfolio/demo deploys.",
+    )
+    DEMO_MODE: bool = Field(
+        default=False,
+        description="Allow LLM_PROVIDER=mock in production for $0 demo "
+        "deploys. Answers are then rule-based and EVERY response carries "
+        "demo_mode=true. Never enable for real compliance work.",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

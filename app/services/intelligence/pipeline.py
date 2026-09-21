@@ -927,6 +927,9 @@ class IntelligencePipeline:
                 "stage_latencies": ctx.stage_latencies,
                 "evidence_count": len(ctx.evidence),
                 "rerank_degraded": ctx.rerank_degraded,
+                # Honest demo labelling: True whenever answers are
+                # rule-based mock output rather than LLM generation.
+                "demo_mode": settings.LLM_PROVIDER.strip().lower() == "mock",
                 "workflow": ctx.workflow_output,
                 "errors": ctx.errors,
             },

@@ -80,6 +80,9 @@ COPY alembic.ini ./
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
+# Demo corpus excerpts for SEED_DEMO_CORPUS one-shot seeding (25 KB).
+COPY seed_data ./seed_data
+
 # Built SPA (served by FastAPI itself at /app — see STATIC_DIR in app/main.py).
 COPY --from=frontend-builder /build/dist ./static
 

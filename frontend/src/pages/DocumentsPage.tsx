@@ -22,7 +22,7 @@ const STATUS_TONE: Record<string, string> = {
   FAILED: "danger",
 };
 
-const ALLOWED_TYPES = ".pdf,.docx,.txt,.html,.htm";
+const ALLOWED_TYPES = ".pdf,.txt";
 
 function statusTone(s: string) {
   return STATUS_TONE[s] ?? "neutral";
@@ -55,7 +55,7 @@ export function DocumentsPage() {
   async function handleFile(file: File) {
     const ext = "." + file.name.split(".").pop()?.toLowerCase();
     if (!ALLOWED_TYPES.includes(ext)) {
-      toast.push({ title: "Unsupported file type", description: `${ext} not allowed. Use PDF, DOCX, TXT, or HTML.`, tone: "danger" });
+      toast.push({ title: "Unsupported file type", description: `${ext} not allowed. Use PDF or TXT — the parser reads those formats.`, tone: "danger" });
       return;
     }
     setUploading(true);
@@ -65,8 +65,19 @@ export function DocumentsPage() {
       qc.invalidateQueries({ queryKey: ["documents"] });
       qc.invalidateQueries({ queryKey: ["ingestion", "jobs"] });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Upload failed";
-      toast.push({ title: "Upload failed", description: msg, tone: "danger" });
+      // 409 = checksum already in the library: say so plainly instead of a
+      // generic failure. Other statuses keep the server's detail message.
+      const status = (err as { status?: number })?.status;
+      if (status === 409) {
+        toast.push({
+          title: "Already in the library",
+          description: "This document is already in the regulatory library (same file content).",
+          tone: "info",
+        });
+      } else {
+        const msg = err instanceof Error ? err.message : "Upload failed";
+        toast.push({ title: "Upload failed", description: msg, tone: "danger" });
+      }
     } finally {
       setUploading(false);
     }

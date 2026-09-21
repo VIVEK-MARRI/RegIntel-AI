@@ -107,6 +107,24 @@ class HybridRerankPipeline:
     ):
         self.hybrid_retriever = hybrid_retriever
         self.reranker = reranker_service
+        # Detect cross-encoder availability ONCE (package presence only —
+        # never triggers a model download). When unavailable every request
+        # uses the fusion-order fallback without retrying the load or
+        # spamming the logs.
+        try:
+            import importlib.util
+
+            self._rerank_available = (
+                importlib.util.find_spec("sentence_transformers") is not None
+            )
+        except Exception:
+            self._rerank_available = False
+        if not self._rerank_available:
+            logger.warning(
+                "Cross-encoder unavailable (torch/sentence-transformers not "
+                "installed): reranking disabled, RRF fusion order will be "
+                "used and flagged as degraded."
+            )
 
     async def search(
         self,
@@ -204,27 +222,37 @@ class HybridRerankPipeline:
         effective_top_k = rerank_top_k if rerank_top_k is not None else top_k
 
         rerank_degraded = False
-        try:
-            rerank_response = self.reranker.rerank(
-                query=query,
-                candidates=candidates,
-                top_k=effective_top_k,
-                score_threshold=rerank_score_threshold,
-            )
-        except Exception as exc:
-            # Cross-encoder unavailable (e.g. torch not installed on a
-            # lightweight runtime). Fall back to RRF fusion order rather
-            # than failing retrieval — flagged explicitly below.
-            logger.warning(
-                "Cross-encoder rerank failed (%s); using fusion order",
-                exc,
-            )
+        if not self._rerank_available:
             rerank_response = self._fusion_order_fallback(
                 candidates,
                 top_k=effective_top_k,
                 score_threshold=rerank_score_threshold,
             )
             rerank_degraded = True
+        else:
+            try:
+                rerank_response = self.reranker.rerank(
+                    query=query,
+                    candidates=candidates,
+                    top_k=effective_top_k,
+                    score_threshold=rerank_score_threshold,
+                )
+            except Exception as exc:
+                # Model failed at request time ( evicted, OOM, corrupt
+                # weights): degrade once more rather than failing retrieval.
+                # From here on this instance stops retrying the load.
+                logger.warning(
+                    "Cross-encoder rerank failed (%s); falling back to "
+                    "fusion order for this and subsequent queries",
+                    exc,
+                )
+                self._rerank_available = False
+                rerank_response = self._fusion_order_fallback(
+                    candidates,
+                    top_k=effective_top_k,
+                    score_threshold=rerank_score_threshold,
+                )
+                rerank_degraded = True
 
         telemetry.rerank_latency_ms = rerank_response.report.latency_ms
         telemetry.rerank_candidates = len(candidates)

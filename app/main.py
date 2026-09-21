@@ -98,6 +98,14 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("Failed to warm up BM25 index during startup: %s", exc)
 
+    # Demo corpus: ingest seed_data excerpts on empty databases when asked.
+    # Never fails boot; guarded by row count + SEED_DEMO_CORPUS flag.
+    try:
+        from app.core.demo_seed import seed_demo_corpus
+        await seed_demo_corpus()
+    except Exception as exc:
+        logger.warning("Demo corpus seeding skipped: %s", exc)
+
     yield  # application is running
 
     # ── Shutdown ───────────────────────────────────────────────────────

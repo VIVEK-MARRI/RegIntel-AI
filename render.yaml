@@ -1,65 +1,64 @@
-# RegIntel AI — Render Blueprint (Infrastructure as Code)
+# RegIntel AI — Render Blueprint: $0 portfolio/demo deployment
 # Docs: https://render.com/docs/blueprint-spec
 #
-# PRIMARY PRODUCTION PATH: a SINGLE Docker web service serving ONE origin:
-#   https://<service>.onrender.com/          → public landing page
-#   https://<service>.onrender.com/app/      → React application (SPA)
-#   https://<service>.onrender.com/api/v1/*  → FastAPI API
-#   https://<service>.onrender.com/health/*  → health probes
-#   https://<service>.onrender.com/docs      → OpenAPI docs (enabled, see below)
+# ARCHITECTURE (single coherent product, two free services + free DB):
+#   browser ──GET / ──▶ regintel-frontend (static site, global CDN)
+#     /                  → landing page (index.html + 3D hero)
+#     /app/*             → React SPA (/app/index.html fallback)
+#   browser ──fetch https://<backend>/api/*──▶ regintel-backend (free web)
+#     FastAPI + TF-IDF/BM25 retrieval + fusion-order ranking
+#   regintel-backend ──TLS──▶ YOUR free Neon Postgres (pgvector-capable)
 #
-# The image (root Dockerfile) contains backend + built React SPA + landing
-# page. Same origin ⇒ no CORS configuration, no VITE_* wiring, no second
-# service. Alternative self-hosted layouts (nginx + compose, static CDN
-# frontend) still exist in-repo but are NOT this path.
+# COST: $0. No Render Postgres, no disk, no paid plan, no Redis, no extras.
+# Prompts at deploy: DATABASE_URL (Neon), LLM_API_KEY (optional*), ADMIN seed.
+# *Without an LLM key the backend boots in clearly-labelled demo mode.
 #
-# Cost: $0 — free web service (512 MB). No Render Postgres.
-# Database: YOUR free Neon Postgres (neon.tech, 3 GB, pgvector-capable).
-#   Paste its DIRECT connection string (port 5432, not pooled 6543) at the
-#   DATABASE_URL prompt. Migrations run automatically inside the container.
-#
-# IMPORTANT free-tier realities baked into this file:
-# 1. 512 MB RAM ⇒ the image skips torch/transformers (Dockerfile default).
-#    Embeddings use TF-IDF and reranking uses RRF fusion order. This is
-#    EXPOSED, not hidden: /health/ready reports embedding_backend +
-#    reranker status, and intelligence responses carry rerank_degraded.
-#    Full BGE quality needs a paid plan + INSTALL_ML_STACK=1 image.
-# 2. No persistent disk ⇒ uploads, SQLite-style state and JSONL stores live
-#    under /tmp and reset on redeploy. Postgres holds all metadata.
-# 3. Free services sleep on idle (≈50s cold start on first hit).
-# 4. Production refuses to boot on LLM_PROVIDER=mock — set a real key.
-#    Gemini has a free tier: https://aistudio.google.com/apikey
+# HONEST FREE-TIER BOUNDARIES (also surfaced via /health/ready + metadata):
+# 1. 512 MB RAM, 0.1 CPU, sleeps on idle (~50s cold start). No torch:
+#    embeddings = TF-IDF (384-d, model "tfidf_fallback"), reranking OFF
+#    (RRF fusion order used, flagged rerank_degraded). NOT BGE quality.
+# 2. Ephemeral filesystem: uploads + JSONL stores reset on redeploy.
+#    Postgres holds users/documents/chunks/graph/audit durably.
+# 3. Single instance: KG/BM25 state is per-process (consistent: only 1).
+# 4. Demo corpus: 6 public-domain excerpts auto-seed once (tagged demo-corpus).
 #
 # Deploy:
-#   1. Push this repo to GitHub/GitLab/Bitbucket.
-#   2. Render Dashboard → New → Blueprint → select your repo → Deploy.
-#   3. When prompted, fill DATABASE_URL, LLM_API_KEY, ADMIN_SEED_PASSWORD.
-#      Everything else is wired.
-#   4. First boot runs Alembic migrations, seeds nothing by default, and
-#      bootstraps exactly one admin IFF ADMIN_SEED_* are set (empty storage).
+#   1. Push repo to GitHub/GitLab/Bitbucket.
+#   2. Create a FREE Neon Postgres (neon.tech); copy the DIRECT URL
+#      (port 5432, NOT pooled 6543), e.g.
+#      postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
+#   3. Render Dashboard → New → Blueprint → select repo → Deploy.
+#   4. Fill DATABASE_URL (+ optional LLM_API_KEY, ADMIN_SEED_PASSWORD).
+#   5. Backend runs Alembic migrations (incl. pgvector + KG tables), seeds
+#      the demo corpus once, then frontend builds against the backend URL.
+#      If the frontend builds before the backend URL exists, manually
+#      redeploy regintel-frontend once.
 
 services:
+  # ─── Backend API (FastAPI, native Python, no torch) ────────────────
   - type: web
-    name: regintel
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    plan: free # 1 worker / 512 MB verified for the slim image; scale up for ML
+    name: regintel-backend
+    runtime: python
+    plan: free
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt -r requirements-llm.txt"
+    # No requirements-ml.txt: torch does not fit 512 MB. TF-IDF fallback
+    # is automatic (no code change needed).
+    preDeployCommand: "alembic upgrade head"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --timeout-keep-alive 5 --log-level info"
+    # 1 worker: memory-safe on free AND keeps process-local KG/BM25 coherent.
     healthCheckPath: /health/live
-    numInstances: 1 # KG/BM25 stores are process-local; do not replicate on free
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: ENV
         value: production
       - key: PROJECT_NAME
         value: RegIntel AI
       - key: LOG_LEVEL
         value: INFO
-      - key: WORKERS
-        value: 1
-      # ── Database: free Neon Postgres (you supply the URL, nothing hosted) ──
-      # DIRECT connection string, e.g.:
-      #   postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
-      # NOT the pooled port-6543 URL. TLS + scheme handling is automatic.
-      # (DATABASE_URL_SYNC auto-derives; Alembic runs in the entrypoint.)
+      # ── Database: YOUR free Neon Postgres (nothing hosted by Render) ──
+      # DIRECT URL, e.g. postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
+      # TLS + scheme handling automatic; sync URL auto-derives for Alembic.
       - key: DATABASE_URL
         sync: false # <-- prompted in the Dashboard; nothing secret is committed
       - key: STORAGE_ROOT
@@ -70,13 +69,21 @@ services:
         value: cpu
       - key: RERANKER_DEVICE
         value: cpu
-      # ── LLM (REQUIRED — production refuses to boot on "mock") ──
+      # ── Demo corpus: public excerpts, one-shot, tagged demo-corpus ──
+      - key: SEED_DEMO_CORPUS
+        value: true
+      # ── LLM: real provider when keyed, labelled demo mode when not ──
+      # No key ⇒ production refuses mock, so demo mode is explicit: set
+      # DEMO_MODE=true to allow mock answers (clearly labelled in API).
+      # With a key, set LLM_PROVIDER + LLM_API_KEY (gemini free tier works).
       - key: LLM_PROVIDER
-        value: gemini # openai | gemini | litellm (gemini has a free tier)
+        value: gemini # openai | gemini | litellm | mock (mock needs DEMO_MODE)
       - key: LLM_MODEL
         value: gemini-2.0-flash
       - key: LLM_API_KEY
-        sync: false # <-- prompted in the Dashboard
+        sync: false # <-- prompted; empty + DEMO_MODE=true ⇒ labelled demo
+      - key: DEMO_MODE
+        value: true
       # ── Auth / gateway ──
       - key: AUTH_ENABLED
         value: true
@@ -96,24 +103,67 @@ services:
         value: true
       - key: AUDIT_LOG_PERSIST
         value: false
-      # CORS_ORIGINS intentionally unset: single origin needs no CORS.
+      # CORS: exact frontend origin only (never wildcard with credentials).
+      # Auto-wired to the static site's public URL below.
+      - key: CORS_ORIGINS
+        fromService:
+          name: regintel-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: STARTUP_REQUIRED_ENV
         value: DATABASE_URL,STORAGE_ROOT
       - key: STARTUP_RAISE_ON_ERROR
         value: false
-      # ── First admin (no default passwords exist in production) ──
-      # Created only on empty storage; changing the value later does NOT
-      # reset the password. Min 12 chars. Empty = no users seeded.
+      # ── First admin (created only on empty user table) ──
       - key: ADMIN_SEED_EMAIL
         value: admin@regintel.ai
       - key: ADMIN_SEED_PASSWORD
-        sync: false # <-- prompted in the Dashboard
-      # ── API docs ON (acceptance + operability over obscurity) ──
+        sync: false # <-- prompted; min 12 chars
+      # ── API docs ON for a demo deployment (inspectable + honest) ──
       - key: ENABLE_API_DOCS
         value: true
       - key: REGINTEL_JWT_SECRET
         generateValue: true
 
-# NOTE: no `databases:` section on purpose — Render Postgres is paid.
-# The service above connects to YOUR free Neon Postgres via DATABASE_URL.
+  # ─── Frontend (landing + SPA, global CDN) ──────────────────────────
+  - type: web
+    name: regintel-frontend
+    runtime: static
+    buildCommand: "cd frontend && npm ci --no-audit --no-fund && npm run build:static"
+    staticPublishPath: frontend/dist
+    routes:
+      # SPA fallback first (more specific), landing fallback second.
+      # /api/* is never rewritten: the browser calls the backend origin.
+      - type: rewrite
+        source: /app/*
+        destination: /app/index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /app/assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      # Baked into the bundle at build time (Vite limitation): backend URL,
+      # SPA base path, auth flag, display-only provider flags.
+      - key: VITE_API_BASE_URL
+        fromService:
+          name: regintel-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_BASENAME
+        value: /app
+      - key: VITE_AUTH_ENABLED
+        value: true
+      - key: VITE_LLM_PROVIDER
+        value: gemini
+      - key: VITE_RERANKER_ENABLED
+        value: false
+
+# NOTE: no `databases:` section — Render Postgres is paid and its free tier
+# expires. The backend above connects to YOUR free Neon Postgres.
 # Nothing else to provision here.

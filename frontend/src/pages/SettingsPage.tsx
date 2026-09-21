@@ -11,6 +11,30 @@ export function SettingsPage() {
   const [apiKey, setApiKey] = useState("");
   const [density, setDensity] = useState("comfortable");
 
+  // Backend truth first (from /health/ready when signed in), build-time
+  // env only as fallback — never claim models that aren't active.
+  const components = health.status?.components ?? [];
+  const comp = (name: string) => components.find((c) => c.name === name);
+  const llmDetails = (comp("llm_provider")?.details ?? {}) as Record<string, unknown>;
+  const embDetails = (comp("embedding_backend")?.details ?? {}) as Record<string, unknown>;
+  const rerankComp = comp("reranker");
+  const llmProvider =
+    typeof llmDetails.provider === "string"
+      ? llmDetails.provider
+      : import.meta.env.VITE_LLM_PROVIDER || "mock";
+  const llmNote =
+    comp("llm_provider")?.message ??
+    "Set via LLM_PROVIDER env var (openai, gemini, litellm, mock)";
+  const embeddingBackend =
+    typeof embDetails.backend === "string" ? embDetails.backend : "unknown";
+  const embeddingNote =
+    comp("embedding_backend")?.message ??
+    "BAAI/bge-small-en-v1.5 when the ML stack is installed";
+  const rerankerState = rerankComp
+    ? `${rerankComp.status}${rerankComp.message ? ` — ${rerankComp.message}` : ""}`
+    : (import.meta.env.VITE_RERANKER_ENABLED ?? "true");
+  const rerankerNote = "BAAI/bge-reranker-base when the ML stack is installed";
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <header>
@@ -21,14 +45,14 @@ export function SettingsPage() {
       <Card padding="none">
         <CardHeader title="Provider Configuration" description="LLM and embedding provider settings" />
         <div className="card-body space-y-3">
-          <Field label="LLM Provider" id="settings-llm" hint="Set via LLM_PROVIDER env var (openai, gemini, litellm, mock)">
-            <Input id="settings-llm" value={import.meta.env.VITE_LLM_PROVIDER || "mock"} disabled />
+          <Field label="LLM Provider" id="settings-llm" hint={llmNote}>
+            <Input id="settings-llm" value={llmProvider} disabled />
           </Field>
-          <Field label="Embedding Model" id="settings-embedding" hint="BAAI/bge-small-en-v1.5 (384-dim)">
-            <Input id="settings-embedding" value="BAAI/bge-small-en-v1.5" disabled />
+          <Field label="Embedding Backend" id="settings-embedding" hint={embeddingNote}>
+            <Input id="settings-embedding" value={embeddingBackend} disabled />
           </Field>
-          <Field label="Reranker Model" id="settings-reranker" hint="BAAI/bge-reranker-base">
-            <Input id="settings-reranker" value="BAAI/bge-reranker-base" disabled />
+          <Field label="Reranker" id="settings-reranker" hint={rerankerNote}>
+            <Input id="settings-reranker" value={rerankerState} disabled />
           </Field>
           <Field label="API Base URL" id="settings-api-base" hint="Backend API endpoint">
             <Input id="settings-api-base" value={apiBase} onChange={(e) => setApiBase(e.target.value)} />

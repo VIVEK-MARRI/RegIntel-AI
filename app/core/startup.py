@@ -293,18 +293,44 @@ def on_startup(
         report.errors.extend(validate_storage_root(storage_root))
 
     # P0.2 — Hard fail in production if the resolved LLM provider is the
-    # mock. The mock provider returns templated, rule-based pseudo-answers
-    # that are indistinguishable at a glance from real generated answers;
-    # serving them in production would silently mislead users. Refuse to
-    # start instead of degrading silently.
+    # mock, UNLESS the operator explicitly opted into labelled demo mode
+    # (DEMO_MODE=true, for $0 deploys). Demo answers are rule-based and
+    # every response carries demo_mode=true — never silent.
     if settings.ENV == "production" and settings.LLM_PROVIDER.strip().lower() == "mock":
-        msg = (
-            "Refusing to start: LLM_PROVIDER is 'mock' in a production "
-            "environment. Set LLM_PROVIDER to a real provider "
-            "(openai | gemini | litellm) with a valid LLM_API_KEY."
+        if not settings.DEMO_MODE:
+            msg = (
+                "Refusing to start: LLM_PROVIDER is 'mock' in a production "
+                "environment. Set LLM_PROVIDER to a real provider "
+                "(openai | gemini | litellm) with a valid LLM_API_KEY, or "
+                "set DEMO_MODE=true to run a clearly-labelled demo."
+            )
+            logger.error(msg)
+            raise EnvironmentValidationError(msg)
+        logger.error(
+            "RUNNING IN LABELLED DEMO MODE: mock LLM answers are rule-based, "
+            "not generated. Every intelligence response carries demo_mode=true."
         )
-        logger.error(msg)
-        raise EnvironmentValidationError(msg)
+    # A real provider name with no API key would fail every request at call
+    # time. Fail fast instead — unless demo mode downgrades it explicitly.
+    if (
+        settings.ENV == "production"
+        and settings.LLM_PROVIDER.strip().lower() != "mock"
+        and not (settings.LLM_API_KEY or "").strip()
+    ):
+        if not settings.DEMO_MODE:
+            msg = (
+                f"Refusing to start: LLM_PROVIDER is "
+                f"'{settings.LLM_PROVIDER}' but LLM_API_KEY is empty. Provide "
+                "a key, switch LLM_PROVIDER to a keyed provider, or set "
+                "DEMO_MODE=true for a labelled demo."
+            )
+            logger.error(msg)
+            raise EnvironmentValidationError(msg)
+        logger.error(
+            "LLM_API_KEY is empty: downgrading '%s' to labelled mock demo mode.",
+            settings.LLM_PROVIDER,
+        )
+        settings.LLM_PROVIDER = "mock"
     # SQLite mode (zero-database deploys): create all tables directly.
     # Alembic migrations are PostgreSQL-only, so SQLite schemas are managed
     # here instead — in EVERY environment, since Render-style deploys boot
@@ -314,8 +340,9 @@ def on_startup(
             from sqlalchemy import create_engine
 
             # Import the models package (not just document.Base) so EVERY
-            # table — pages, chunks, embeddings, bm25, analytics — is created.
+            # table — pages, chunks, embeddings, bm25, analytics, KG — is created.
             import app.models.bm25  # noqa: F401 - register BM25 tables
+            import app.models.knowledge_graph  # noqa: F401 - register KG tables
             from app.models import Base
 
             sync_url = settings.DATABASE_URL.replace("+aiosqlite", "+pysqlite")
@@ -337,6 +364,25 @@ def on_startup(
         storage_root=storage_root,
     )
     report.components_registered = registered
+    # One-line retrieval profile so Render logs state the honest capability
+    # set at boot (no per-request repetition): embeddings backend, reranker
+    # availability, pgvector mode. Reranker presence is package-level only —
+    # it never triggers a model download here.
+    try:
+        import importlib.util
+
+        from app.services.embedding import EMBEDDING_BACKEND_NAME
+
+        has_xenc = importlib.util.find_spec("sentence_transformers") is not None
+        logger.info(
+            "Retrieval profile: embeddings=%s reranker=%s pgvector_fallback=%s db=%s",
+            EMBEDDING_BACKEND_NAME,
+            "cross-encoder" if has_xenc else "disabled(fusion-order fallback)",
+            settings.USE_PGVECTOR_FALLBACK,
+            "sqlite" if settings.DATABASE_URL.startswith("sqlite") else "postgres",
+        )
+    except Exception as exc:  # pragma: no cover - informational only
+        logger.warning("Could not determine retrieval profile: %s", exc)
     report.finished_at = datetime.now(timezone.utc)
     report.success = not report.errors
     if not report.success:

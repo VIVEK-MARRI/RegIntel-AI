@@ -1,18 +1,20 @@
+export interface HealthComponent {
+  name?: string;
+  status: string;
+  latency_ms?: number;
+  message?: string;
+  details?: Record<string, unknown>;
+}
+
 export interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
   version?: string;
   uptime_seconds?: number;
-  components?: Record<string, { status: string; latency_ms?: number }>;
+  // /health/ready returns components as an ARRAY; /health/live has none.
+  components?: HealthComponent[];
 }
 
 import { getAccessToken } from "@/lib/auth-token";
-
-export interface HealthStatus {
-  status: "healthy" | "degraded" | "unhealthy";
-  version?: string;
-  uptime_seconds?: number;
-  components?: Record<string, { status: string; latency_ms?: number }>;
-}
 
 /** The health endpoint lives at root level (/health/*), not under /api/v1. */
 export async function getHealth(): Promise<HealthStatus> {
