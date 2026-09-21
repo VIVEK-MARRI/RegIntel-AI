@@ -20,27 +20,30 @@ export function createStory(ctx) {
         tl.call(() => ctx.setSequence(seq), null, 0);
         tl.call(() => ctx.resetPose(), null, 0);
 
-        // --- query (2.0 → 3.5) ---
+        // --- query (2.0 → 3.5); the tag is brief, then fades ---
         tl.call(() => ctx.labels.show("query"), null, at(2.0));
         tl.to(ctx.streams.query.proxy, { o: 0.85, duration: 0.4 * f, ease: "power1.out" }, at(2.0));
         tl.to(ctx.streams.query.proxy, { p: 1, duration: 1.5 * f, ease: "power1.inOut" }, at(2.0));
+        tl.call(() => ctx.labels.hide("query"), null, at(3.8));
 
-        // --- retrieval (3.5 → 5.1) ---
+        // --- retrieval (3.5 → 5.1); exact-match ticks fire here, then fade ---
         tl.call(() => { ctx.labels.show("bm25"); ctx.labels.show("dense"); }, null, at(3.5));
         ["bm25", "dense"].forEach((k) => {
             tl.to(ctx.streams[k].proxy, { o: 0.9, duration: 0.4 * f, ease: "power1.out" }, at(3.5));
             tl.to(ctx.streams[k].proxy, { p: 1, duration: 1.6 * f, ease: "power1.inOut" }, at(3.5));
         });
+        ctx.docs.docs.forEach((d) => {
+            tl.to(d.bMat, { opacity: 0.9, duration: 0.25 * f, ease: "power2.out" }, at(4.3));
+            tl.to(d.bMat, { opacity: 0.18, duration: 0.6 * f, ease: "power1.in" }, at(4.6));
+        });
+        tl.call(() => { ctx.labels.hide("bm25"); ctx.labels.hide("dense"); }, null, at(5.6));
 
-        // --- fusion (5.1) ---
+        // --- fusion (5.1); RRF is a passing micro-label, not the hero ---
         tl.call(() => {
             ctx.labels.show("rrf");
             ctx.labels.show("rank1"); ctx.labels.show("rank2"); ctx.labels.show("rank3");
         }, null, at(5.1));
-        ctx.docs.docs.forEach((d) => {
-            tl.to(d.bMat, { opacity: 0.9, duration: 0.25 * f, ease: "power2.out" }, at(5.1));
-            tl.to(d.bMat, { opacity: 0.18, duration: 0.6 * f, ease: "power1.in" }, at(5.4));
-        });
+        tl.call(() => ctx.labels.hide("rrf"), null, at(6.6));
 
         // --- selection (6.0 → 7.2) ---
         const sel = CONFIG.selection;
@@ -52,6 +55,8 @@ export function createStory(ctx) {
             tl.to([d.sheetMat, d.faceMat], { opacity: CONFIG.selection.dimOthers, duration: 1.2 * f }, at(6.0));
             tl.to(d.edge.material, { opacity: 0.05, duration: 1.2 * f }, at(6.0));
         });
+        // losing ranks step back once the winner isolates; rank1 stays
+        tl.call(() => { ctx.labels.hide("rank2"); ctx.labels.hide("rank3"); }, null, at(7.0));
 
         // --- evidence trace (7.4 → 8.7) ---
         tl.call(() => {

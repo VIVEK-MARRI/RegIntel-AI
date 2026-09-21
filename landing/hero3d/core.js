@@ -83,6 +83,7 @@ export function buildCore(tokens) {
         const z = (i - (cfg.plates - 1) / 2) * cfg.plateGap;
         pg.position.set((rnd() - 0.5) * 0.06, 0, z);
         pg.rotation.y = i * twist;
+        pg.userData.baseZ = z;
 
         const plate = new THREE.Mesh(plateGeo, glassMat);
         plate.renderOrder = 10 + i;
@@ -136,6 +137,14 @@ export function buildCore(tokens) {
     });
     frame.add(new THREE.Mesh(mergeGeometries(frameGeos), frameMat));
     group.add(frame);
+
+    // generous invisible hit proxy so the core is hoverable (§11)
+    const coreHit = new THREE.Mesh(
+        new THREE.BoxGeometry(cfg.plateW + 0.4, cfg.plateH + 0.4, 1.8),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    coreHit.userData.coreHit = true;
+    group.add(coreHit);
 
     // ~24 internal points drifting along plate normals
     const PN = cfg.innerParticles;
@@ -196,7 +205,7 @@ export function buildCore(tokens) {
     group.add(ansGroup);
 
     return {
-        group, platesGroup, plates, frame, innerPts, pSeed,
+        group, platesGroup, plates, frame, innerPts, pSeed, coreHit,
         answer: { group: ansGroup, bars, marker },
         twist,
     };

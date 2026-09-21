@@ -155,5 +155,5 @@ export function buildDocs(tokens, scene, corePos, count) {
     shadow.position.set(hero.base.x, hero.base.y - 1.5, hero.base.z - 0.8);
     scene.add(shadow);
 
-    return { docs, hero, passages, passage, tick, dotTex, shadow };
+    return { docs, hero, passages, passage, tick, dotTex, shadow, conn };
 }

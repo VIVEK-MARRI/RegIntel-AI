@@ -67,6 +67,17 @@ hex fallbacks; JS reads them via `getComputedStyle` (no hex in JS).
   poster without 3D boot; tiers 0–3 boot (`full`/`tablet`/`mobile/mobile`);
   1280/1024/390 viewports boot; `prefers-reduced-motion` → verified poster,
   no rAF.
+- Spec-compliance pass (post-commit audit, uncommitted): four gaps closed —
+  1. micro-labels now fade per beat (QUERY→3.8, BM25/DENSE→5.6, RRF→6.6,
+     losing ranks→7.0; verify beat holds 7, reset clears all);
+  2. exact-match `[ ]` flash moved into the retrieval beat (4.3, was 5.1);
+  3. §11 core hover added (1.03 scale, +8% plate spread, EVIDENCE/VERIFIED/
+     SOURCE/CONFIDENCE clarify without stealing timeline ownership), doc
+     hover moves +z and brightens shared connectors;
+  4. hover-pick persistence fix (last hit survives still frames; previously
+     tooltips flashed one frame), plus `destroy()` and `webglcontextlost` →
+     verified-poster fallback. Re-verified: 40/40 PASS, posters + `_review`
+     recaptured.
 
 ## 3. Milestone critiques (screenshots in landing/_review/)
 

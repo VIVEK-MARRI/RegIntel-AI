@@ -123,11 +123,32 @@ function boot() {
         core_evidence: coreEdge.clone().add(new THREE.Vector3(0.4, 0.9, 0)),
         core_source: coreEdge.clone().add(new THREE.Vector3(0.4, -1.0, 0)),
         core_verified: coreEdge.clone().add(new THREE.Vector3(0.6, 0.2, 0.3)),
+        core_confidence: new THREE.Vector3(corePos[0] + 0.55, corePos[1] - 1.55, corePos[2] + 0.3),
     };
     Object.keys(anchors).forEach((k) => labels.set(k, anchors[k]));
 
-    const hoverTargets = docs.docs.map(() => ({ x: 0, y: 0, r: 0 }));
-    const hitMeshes = docs.docs.map((d) => d.hit);
+    const hoverTargets = docs.docs.map(() => ({ x: 0, y: 0, z: 0, r: 0 }));
+    const hitMeshes = [...docs.docs.map((d) => d.hit), core.coreHit];
+
+    // core microlabels (§11): hover clarifies them without touching the
+    // timeline's show/hide ownership (L.on always wins).
+    const CORE_MICRO = ["core_evidence", "core_source", "core_verified", "core_confidence"];
+    let coreMicroHover = false;
+    let coreHoverOn = false;
+    function setCoreMicro(on) {
+        if (on === coreMicroHover) return;
+        coreMicroHover = on;
+        CORE_MICRO.forEach((id) => {
+            const L = labels.els[id];
+            if (!L) return;
+            if (on) {
+                if (!L.on) { L.el.style.opacity = "0.85"; L.hover = true; }
+            } else if (L.hover && !L.on) {
+                L.el.style.opacity = "0"; L.hover = false;
+            }
+        });
+    }
+    let connTarget = 0.06;
 
     // --- story context handed to the timeline
     let activeSeq = 0;
@@ -211,8 +232,19 @@ function boot() {
         if (visible) story.resume(); else story.pause();
     }, { threshold: 0.01 });
     io.observe(container);
-    document.addEventListener("visibilitychange", () => {
+    function onVis() {
         if (document.hidden) story.pause(); else if (visible) story.resume();
+    }
+    document.addEventListener("visibilitychange", onVis);
+
+    // lost context: park on the verified poster instead of a dead canvas (§14)
+    canvas.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        try { story.pause(); } catch (err) { /* already torn down */ }
+        useVerifiedPoster();
+        container.classList.remove("is-live");
+        container.dataset.failReason = "context-lost";
+        try { console.info("[hero3d] static fallback: context-lost"); } catch (err2) { /* noop */ }
     });
 
     let debugTime = FLAG_T != null ? parseFloat(FLAG_T) : null;
@@ -259,7 +291,8 @@ function boot() {
 
     function updateHover(now) {
         const hit = interaction.pick(hitMeshes, now);
-        const idx = hit ? hit.object.userData.docIndex : -1;
+        const idx = hit && !hit.object.userData.coreHit ? hit.object.userData.docIndex : -1;
+        const coreHit = !!hit && !!hit.object.userData.coreHit;
         if (idx !== hoverIndex) {
             hoverIndex = idx;
         }
@@ -267,6 +300,7 @@ function boot() {
             const on = i === idx;
             h.x = on ? 0.12 : 0;
             h.y = on ? 0.08 : 0;
+            h.z = on ? 0.28 : 0; // slightly forward, toward the camera
             h.r = on ? 0.05 : 0;
         });
         if (idx >= 0 && tier.hover) {
@@ -276,6 +310,11 @@ function boot() {
         } else if (idx < 0) {
             labels.tip(null);
         }
+        // hovering any doc brightens the shared evidence paths (§11)
+        connTarget = (idx >= 0 && tier.hover) ? 0.15 : 0.06;
+        // hovering the core expands it and clarifies its microlabels (§11)
+        coreHoverOn = coreHit && tier.hover;
+        setCoreMicro(coreHoverOn);
     }
 
     function renderFrame(t) {
@@ -302,8 +341,22 @@ function boot() {
             const fy = Math.cos((t * 2 * Math.PI) / d.floatDur + d.floatPhase) * d.floatAmp;
             d.inner.position.x += (h.x - d.inner.position.x) * 0.08;
             d.inner.position.y += (fy - d.inner.position.y) * 0.08;
+            d.inner.position.z += (h.z - d.inner.position.z) * 0.08;
             d.inner.rotation.y += (h.r - d.inner.rotation.y) * 0.08;
         });
+
+        // core hover: ~1.03 scale, plates spread +8% (timeline never touches these)
+        const cs = coreHoverOn ? 1.03 : 1;
+        core.group.scale.setScalar(core.group.scale.x + (cs - core.group.scale.x) * 0.08);
+        core.plates.forEach((pg) => {
+            const tz = pg.userData.baseZ * (coreHoverOn ? 1.08 : 1);
+            pg.position.z += (tz - pg.position.z) * 0.08;
+        });
+        // shared connector paths breathe with doc hover
+        if (docs.conn) {
+            const cm = docs.conn.material;
+            cm.opacity += (connTarget - cm.opacity) * 0.1;
+        }
 
         applyStreams();
 
@@ -346,7 +399,7 @@ function boot() {
     }
 
     function loop() {
-        requestAnimationFrame(loop);
+        raf = requestAnimationFrame(loop);
         if (debugTime != null) {
             story.pause();
             renderFrame(debugTime);
@@ -355,6 +408,31 @@ function boot() {
         renderFrame(clock.getElapsedTime());
     }
 
+    function destroy() {
+        try { story.pause(); } catch (err) { /* noop */ }
+        cancelAnimationFrame(raf);
+        try { io.disconnect(); } catch (err) { /* noop */ }
+        window.removeEventListener("resize", onResize);
+        document.removeEventListener("visibilitychange", onVis);
+        try { interaction.destroy(); } catch (err) { /* noop */ }
+        labels.hideAll();
+        labels.tip(null);
+        scene.traverse((o) => {
+            if (o.geometry) o.geometry.dispose();
+            const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+            mats.forEach((m) => {
+                if (m.map) m.map.dispose();
+                m.dispose();
+            });
+        });
+        try { renderer.dispose(); } catch (err) { /* noop */ }
+        try { renderer.forceContextLoss(); } catch (err) { /* noop */ }
+        container.classList.remove("is-live");
+        window.__hero3d = null;
+    }
+    debug.destroy = destroy;
+
+    let raf = 0;
     story.start();
     if (debugTime != null) { story.seek(debugTime); renderFrame(debugTime); }
     loop();

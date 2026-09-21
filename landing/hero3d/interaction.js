@@ -18,6 +18,7 @@ export function createInteraction(container, heroSection, camera, basePos, lookA
     };
     const raycaster = new THREE.Raycaster();
     let lastPick = 0;
+    let lastHit = null;
 
     function onMove(e) {
         const r = container.getBoundingClientRect();
@@ -70,15 +71,18 @@ export function createInteraction(container, heroSection, camera, basePos, lookA
             camera.position.set(basePos.x + state.x, basePos.y + state.y, basePos.z);
             camera.lookAt(lookAt);
         },
-        // throttled hover pick (~30Hz); returns {docIndex} or null
+        // throttled hover pick (~30Hz); the last hit persists while the
+        // pointer is still, so hover state survives across frames.
         pick(hitMeshes, nowMs) {
-            if (!state.enabled || !state.pointerDirty) return null;
-            if (nowMs - lastPick < 33) return null;
+            if (!state.enabled) return null;
+            if (!state.pointerDirty) return lastHit;
+            if (nowMs - lastPick < 33) return lastHit;
             lastPick = nowMs;
             state.pointerDirty = false;
             raycaster.setFromCamera(state.pointer, camera);
             const hits = raycaster.intersectObjects(hitMeshes, false);
-            return hits.length ? hits[0] : null;
+            lastHit = hits.length ? hits[0] : null;
+            return lastHit;
         },
         setEnabled(on) { state.enabled = on; },
         destroy() {
