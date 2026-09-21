@@ -457,38 +457,15 @@ async def root():
 # and never executed, while creating a duplicate OpenAPI operation.
 
 
-# ─── Public landing assets (single-service deploy) ────────────────────
-# Only files landing/index.html actually references. Anything else 404s.
-# Registered LAST so /health, /docs, /app/* and /api/* always win.
-LANDING_DIR = Path(__file__).resolve().parent.parent / "landing"
-_LANDING_FILES = {
-    "hero-3d.css": "text/css",
-    "hero-3d.js": "text/javascript",
-    "importmap.json": "application/importmap+json",
-    "style.css": "text/css",
-}
-
-
-@app.get("/{asset}", include_in_schema=False)
-async def landing_asset(asset: str):
-    media_type = _LANDING_FILES.get(asset)
-    if media_type is None:
-        raise HTTPException(status_code=404, detail="Not found")
-    target = (LANDING_DIR / asset).resolve()
-    try:
-        target.relative_to(LANDING_DIR.resolve())
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Not found")
-    if not target.is_file():
-        raise HTTPException(status_code=404, detail="Not found")
-    return FileResponse(target, media_type=media_type)
-
-
 # ─── Embedded SPA (single-service deploy) ─────────────────────────────
 # When the image bundles frontend/dist as ./static (see Dockerfile), the
 # backend serves the COMPLETE UI itself at /app — same origin as the API,
 # so the SPA's relative /api calls need no CORS config and no env vars.
 # Absent locally (no ./static dir), these routes 404 and change nothing.
+#
+# REGISTRATION ORDER MATTERS (Starlette matches in order): these /app routes
+# MUST come before the single-segment /{asset} landing route below, or
+# "/app" would be swallowed by it and return 404 instead of the SPA.
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 
@@ -530,3 +507,30 @@ async def spa_files(full_path: str):
             "public, max-age=31536000, immutable"
         )
     return response
+
+
+# ─── Public landing assets (single-service deploy) ────────────────────
+# Only files landing/index.html actually references. Anything else 404s.
+# Registered after /health, /docs, /app/* and /api/* so those always win.
+LANDING_DIR = Path(__file__).resolve().parent.parent / "landing"
+_LANDING_FILES = {
+    "hero-3d.css": "text/css",
+    "hero-3d.js": "text/javascript",
+    "importmap.json": "application/importmap+json",
+    "style.css": "text/css",
+}
+
+
+@app.get("/{asset}", include_in_schema=False)
+async def landing_asset(asset: str):
+    media_type = _LANDING_FILES.get(asset)
+    if media_type is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    target = (LANDING_DIR / asset).resolve()
+    try:
+        target.relative_to(LANDING_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(target, media_type=media_type)
