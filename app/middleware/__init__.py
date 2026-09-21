@@ -407,6 +407,7 @@ class ProductionAuthMiddleware(BaseHTTPMiddleware):
             # public landing assets (single-service deploy)
             "/hero-3d.css",
             "/hero-3d.js",
+            "/landing-init.js",
             "/importmap.json",
             "/style.css",
         }

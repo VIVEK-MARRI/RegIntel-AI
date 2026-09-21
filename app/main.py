@@ -516,6 +516,7 @@ LANDING_DIR = Path(__file__).resolve().parent.parent / "landing"
 _LANDING_FILES = {
     "hero-3d.css": "text/css",
     "hero-3d.js": "text/javascript",
+    "landing-init.js": "text/javascript",
     "importmap.json": "application/importmap+json",
     "style.css": "text/css",
 }

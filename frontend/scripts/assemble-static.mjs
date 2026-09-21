@@ -45,7 +45,7 @@ if (existsSync(join(dist, "favicon.svg"))) {
 // 3. Overlay the landing page at the root.
 mustExist(join(landing, "index.html"), "landing/index.html");
 cpSync(join(landing, "index.html"), join(dist, "index.html"));
-for (const asset of ["hero-3d.js", "hero-3d.css", "importmap.json"]) {
+for (const asset of ["hero-3d.js", "hero-3d.css", "importmap.json", "landing-init.js"]) {
     mustExist(join(landing, asset), `landing/${asset}`);
     cpSync(join(landing, asset), join(dist, asset));
 }
