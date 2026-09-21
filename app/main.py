@@ -515,11 +515,29 @@ async def spa_files(full_path: str):
 LANDING_DIR = Path(__file__).resolve().parent.parent / "landing"
 _LANDING_FILES = {
     "hero-3d.css": "text/css",
-    "hero-3d.js": "text/javascript",
     "landing-init.js": "text/javascript",
-    "importmap.json": "application/importmap+json",
     "style.css": "text/css",
+    "hero-poster-idle.webp": "image/webp",
+    "hero-poster-verified.webp": "image/webp",
 }
+_LANDING_DIST = {"hero-3d.min.js": "text/javascript"}
+
+
+@app.get("/dist/{asset}", include_in_schema=False)
+async def landing_dist_asset(asset: str):
+    media_type = _LANDING_DIST.get(asset)
+    if media_type is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    target = (LANDING_DIR / "dist" / asset).resolve()
+    try:
+        target.relative_to((LANDING_DIR / "dist").resolve())
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    response = FileResponse(target, media_type=media_type)
+    response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
 
 
 @app.get("/{asset}", include_in_schema=False)

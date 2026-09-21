@@ -1,13 +1,21 @@
-/* ============ HERO 3D — Evidence Intelligence Core ============
-   Extends the existing RegIntel editorial system (ink / paper /
-   brass tokens defined inline in index.html). This file only ADDS
-   layout for the right-side visual; it never restyles existing
-   hero content, nav, or CTAs.
-   Palette (mirrors index.html tokens):
-   --ink #11141B · --paper #F1ECE0 · --brass #B88840 ·
-   --brass-light #D4B377 · --verify-dark #5FA886
-   Type: Spectral (display) · Inter (body) · IBM Plex Mono (micro-labels)
+/* ============ HERO 3D v2 — Evidence Trace ============
+   Token bridge: every --h3d-* references the page's own tokens
+   (inline :root in index.html) with hex fallbacks. JS reads these
+   via getComputedStyle — no colors live in JS.
    ============================================================ */
+.hero-visual {
+    --h3d-ink: var(--ink, #11141B);
+    --h3d-surface: var(--ink-soft, #1A1F26);
+    --h3d-ivory: var(--paper, #F1ECE0);
+    --h3d-muted: var(--paper-text-veil, #C9C2AE);
+    --h3d-faint: var(--paper-text-faint, #8E8773);
+    --h3d-brass: var(--brass, #B88840);
+    --h3d-brass-light: var(--brass-light, #D4B377);
+    --h3d-verify: var(--verify-dark, #5FA886);
+    --h3d-serif: 'Spectral', Georgia, serif;
+    --h3d-sans: 'Inter', system-ui, sans-serif;
+    --h3d-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
 
 /* ---- two-column hero: existing content left, 3D visual right ---- */
 .hero-grid {
@@ -17,12 +25,12 @@
     align-items: center;
 }
 
-/* ---- the 3D stage (right ~46%) ---- */
 .hero-visual {
     position: relative;
     min-height: 600px;
     height: clamp(480px, 44vw, 640px);
-    /* never touch viewport edges: inset frame inside the column */
+    aspect-ratio: 17 / 20;
+    max-width: 100%;
     margin: 8px 0 8px 8px;
     border: 1px solid rgba(212, 179, 119, 0.14);
     border-radius: 3px;
@@ -30,6 +38,17 @@
         radial-gradient(120% 90% at 62% 42%, rgba(58, 46, 26, 0.28) 0%, rgba(17, 20, 27, 0) 55%),
         linear-gradient(180deg, rgba(26, 31, 38, 0.35) 0%, rgba(17, 20, 27, 0) 100%);
     overflow: hidden;
+}
+
+/* left-edge fade so nothing hard-clips near the headline */
+.hero-visual canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 12%);
 }
 
 /* hairline corner ticks — ledger-plate framing, not decoration */
@@ -56,11 +75,27 @@
 }
 
 .hero-visual canvas {
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+.hero-visual.is-live canvas {
+    opacity: 1;
+}
+
+/* poster-first: idle image under the canvas until first frame */
+.hero-poster {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    display: block;
+    object-fit: cover;
+    z-index: 1;
+    opacity: 1;
+    transition: opacity 0.6s ease;
+}
+.hero-visual.is-live .hero-poster {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* soft vignette so the stage melts into the hero ink */
@@ -83,16 +118,73 @@
     transform: none;
 }
 
-/* ---- phase micro-labels (DOM chips, IBM Plex Mono) ---- */
+/* ---- HTML overlay micro-labels (Section 5) ---- */
+.hero-label-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    overflow: hidden;
+}
+.hero-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--h3d-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(241, 236, 224, 0.6);
+    white-space: nowrap;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+.hero-label.is-gold {
+    color: var(--h3d-brass-light);
+}
+.hero-label.is-verify {
+    color: var(--h3d-verify);
+}
+.hero-label .leader {
+    display: block;
+    width: 26px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+    margin-top: 3px;
+}
+/* confidence row: label + thin bar */
+.hero-conf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.hero-conf .bar {
+    width: 88px;
+    height: 3px;
+    background: rgba(241, 236, 224, 0.16);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.hero-conf .bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--h3d-verify);
+    border-radius: 2px;
+}
+
+/* phase chips + doc tooltip (kept from v1, retokened) */
 .hero-chip {
     position: absolute;
     z-index: 4;
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--h3d-mono);
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #D4B377;
+    color: var(--h3d-brass-light);
     background: rgba(17, 20, 27, 0.72);
     border: 1px solid rgba(184, 136, 64, 0.45);
     border-radius: 2px;
@@ -103,22 +195,20 @@
     transform: translate(-50%, -50%);
 }
 .hero-chip.is-dim {
-    color: #9098A4;
+    color: var(--h3d-faint);
     border-color: rgba(144, 152, 164, 0.35);
 }
 .hero-chip.is-verify {
-    color: #5FA886;
+    color: var(--h3d-verify);
     border-color: rgba(95, 168, 134, 0.5);
 }
-
-/* doc hover tooltip — follows cursor, shows the source section */
 .hero-doc-tip {
     position: absolute;
     z-index: 5;
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--h3d-mono);
     font-size: 10px;
     letter-spacing: 0.1em;
-    color: #F1ECE0;
+    color: var(--h3d-ivory);
     background: rgba(17, 20, 27, 0.85);
     border: 1px solid rgba(184, 136, 64, 0.5);
     border-radius: 2px;
@@ -146,7 +236,8 @@
 .hero-visual.is-fallback .hero-visual-fallback {
     display: flex;
 }
-.hero-visual.is-fallback canvas {
+.hero-visual.is-fallback canvas,
+.hero-visual.is-fallback .hero-poster {
     display: none;
 }
 .fallback-doc {
@@ -176,7 +267,7 @@
     left: 0;
     right: 0;
     text-align: center;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--h3d-mono);
     font-size: 10px;
     letter-spacing: 0.22em;
     color: rgba(212, 179, 119, 0.7);
@@ -191,17 +282,18 @@
     .hero-visual {
         min-height: 0;
         height: 440px;
+        aspect-ratio: auto;
         margin: 0;
     }
 }
 
 @media (max-width: 768px) {
     .hero-visual {
-        height: 360px;
+        height: 320px;
     }
-    .hero-chip {
+    .hero-chip,
+    .hero-label {
         font-size: 9px;
-        padding: 3px 7px 2px;
     }
 }
 
@@ -210,6 +302,9 @@
     .hero-visual {
         opacity: 1;
         transform: none;
+        transition: none;
+    }
+    .hero-visual canvas {
         transition: none;
     }
     .hero-chip,

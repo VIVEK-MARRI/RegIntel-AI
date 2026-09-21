@@ -1,0 +1,16 @@
+{
+  "name": "regintel-ai-tooling",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dev-only tooling: landing 3D hero bundle (esbuild). No runtime code ships from here.",
+  "type": "module",
+  "scripts": {
+    "build:hero": "esbuild landing/hero3d/entry.js --bundle --minify --format=esm --target=es2020 --outfile=landing/dist/hero-3d.min.js --log-level=warning && node scripts/hero-bundle-report.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.20.2",
+    "gsap": "3.12.5",
+    "playwright": "^1.44.0",
+    "three": "0.160.0"
+  }
+}

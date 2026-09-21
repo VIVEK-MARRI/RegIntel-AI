@@ -276,3 +276,14 @@ USER_UPLOAD/
 
 # Postgres Data
 pgdata/
+
+# Dev-only landing hero tooling (esbuild/three/gsap/playwright)
+node_modules/
+landing/_review/
+scripts/dev-*.mjs
+
+
+# Landing hero bundle IS source-controlled (Dockerfile copies landing/ wholesale).
+!landing/dist/
+!landing/dist/hero-3d.min.js
+

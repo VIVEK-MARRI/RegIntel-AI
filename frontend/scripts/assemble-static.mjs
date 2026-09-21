@@ -2,7 +2,10 @@
  * Assemble the Render static-site publish directory:
  *
  *   dist/index.html            ← landing page (../landing/index.html)
- *   dist/hero-3d.js|css        ← landing 3D hero assets
+ *   dist/hero-3d.css           ← landing hero styles
+ *   dist/dist/hero-3d.min.js   ← hero 3D bundle (esbuild, no runtime CDN)
+ *   dist/hero-poster-*.webp    ← static posters (idle + verified)
+ *   dist/landing-init.js       ← landing init + watchdog
  *   dist/favicon.svg           ← shared favicon
  *   dist/app/index.html        ← React SPA (Vite build, base /app/)
  *   dist/app/assets/*          ← SPA chunks (immutable-cached by Render rule)
@@ -45,10 +48,13 @@ if (existsSync(join(dist, "favicon.svg"))) {
 // 3. Overlay the landing page at the root.
 mustExist(join(landing, "index.html"), "landing/index.html");
 cpSync(join(landing, "index.html"), join(dist, "index.html"));
-for (const asset of ["hero-3d.js", "hero-3d.css", "importmap.json", "landing-init.js"]) {
+for (const asset of ["hero-3d.css", "landing-init.js", "hero-poster-idle.webp", "hero-poster-verified.webp"]) {
     mustExist(join(landing, asset), `landing/${asset}`);
     cpSync(join(landing, asset), join(dist, asset));
 }
+mustExist(join(landing, "dist", "hero-3d.min.js"), "landing/dist/hero-3d.min.js");
+mkdirSync(join(dist, "dist"), { recursive: true });
+cpSync(join(landing, "dist", "hero-3d.min.js"), join(dist, "dist", "hero-3d.min.js"));
 
 // 4. Drop Vite-only leftovers that must not shadow routes.
 for (const stale of ["vite.svg"]) {

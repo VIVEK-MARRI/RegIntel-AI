@@ -198,18 +198,17 @@ DEFAULT_SECURITY_HEADERS: Dict[str, str] = {
     # Covers every external origin the product actually references
     # (verified by grepping frontend/ + landing/ for https://):
     # - Google Fonts (React app + landing editorial type)
-    # - jsdelivr (landing 3D hero: GSAP UMD + three.js modules; the
-    #   import map itself is same-origin at /importmap.json, so no
-    #   'unsafe-inline' is needed for scripts)
     # - *.onrender.com (Blueprint split-origin API calls from the static
     #   site to the backend; auth uses Bearer headers, not cookies)
+    # Scripts are strictly same-origin: the hero 3D bundle is built with
+    # esbuild (no runtime CDN), so no 'unsafe-inline' / CDN entries exist.
     "Content-Security-Policy": (
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "connect-src 'self' https://*.onrender.com; "
         "img-src 'self' data:; "
-        "script-src 'self' https://cdn.jsdelivr.net"
+        "script-src 'self'"
     ),
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
 }
@@ -406,14 +405,15 @@ class ProductionAuthMiddleware(BaseHTTPMiddleware):
             "/redoc",
             # public landing assets (single-service deploy)
             "/hero-3d.css",
-            "/hero-3d.js",
             "/landing-init.js",
-            "/importmap.json",
             "/style.css",
+            "/hero-poster-idle.webp",
+            "/hero-poster-verified.webp",
         }
         self.exempt_prefixes = (
             "/openapi.json",
             "/app",  # embedded SPA (static UI served by the backend itself)
+            "/dist/",  # hero 3D bundle + poster assets
             "/api/v1/security/auth/login",
             "/api/v1/security/auth/signup",
             "/api/v1/security/auth/refresh",
