@@ -9,15 +9,21 @@ import { getDocuments } from "@/services/api/documentsApi";
 import { getResearchReports } from "@/services/api/researchApi";
 import { getGovernanceStats } from "@/services/api/governanceApi";
 import { formatRelative } from "@/lib/format";
+import {
+  analyticsKeys,
+  documentsKeys,
+  governanceKeys,
+  researchKeys,
+} from "@/lib/queryKeys";
 import { useNavigate } from "react-router-dom";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const overview = useQuery({ queryKey: ["dashboard", "overview"], queryFn: getAnalyticsOverview });
-  const changes = useQuery({ queryKey: ["dashboard", "changes"], queryFn: getChanges });
-  const docs = useQuery({ queryKey: ["dashboard", "documents"], queryFn: getDocuments });
-  const reports = useQuery({ queryKey: ["dashboard", "reports"], queryFn: getResearchReports });
-  const policies = useQuery({ queryKey: ["dashboard", "governance-stats"], queryFn: getGovernanceStats });
+  const overview = useQuery({ queryKey: analyticsKeys.overview(), queryFn: getAnalyticsOverview });
+  const changes = useQuery({ queryKey: analyticsKeys.changes(), queryFn: getChanges });
+  const docs = useQuery({ queryKey: documentsKeys.list(), queryFn: () => getDocuments() });
+  const reports = useQuery({ queryKey: researchKeys.reports(), queryFn: () => getResearchReports() });
+  const policies = useQuery({ queryKey: governanceKeys.stats(), queryFn: getGovernanceStats });
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -86,13 +92,16 @@ export function DashboardPage() {
             : changes.isError ? <ErrorState error={changes.error} onRetry={() => changes.refetch()} />
             : !Array.isArray(changes.data) || changes.data.length === 0 ? <EmptyState title="No recent changes" description="Regulatory updates will appear here." />
             : <ul className="space-y-2">
-                {changes.data.slice(0, 5).map((c) => (
-                  <li key={c.change_id} className="flex items-center gap-2 text-xs">
-                    <Badge tone={c.change_type === "added" ? "success" : c.change_type === "modified" ? "info" : "danger"} size="sm">{c.change_type}</Badge>
-                    <span className="truncate text-slate-700 dark:text-slate-200">{c.summary}</span>
-                    <span className="ml-auto shrink-0 text-[11px] text-slate-400">{formatRelative(c.detected_at)}</span>
-                  </li>
-                ))}
+                {changes.data.slice(0, 5).map((c) => {
+                  const kind = c.changes?.[0]?.change_type ?? "modified";
+                  return (
+                    <li key={c.diff_id} className="flex items-center gap-2 text-xs">
+                      <Badge tone={kind === "added" ? "success" : kind === "modified" ? "info" : "danger"} size="sm">{kind}</Badge>
+                      <span className="truncate text-slate-700 dark:text-slate-200">{c.summary}</span>
+                      <span className="ml-auto shrink-0 text-[11px] text-slate-400">{formatRelative(c.computed_at)}</span>
+                    </li>
+                  );
+                })}
               </ul>
             }
           </div>
@@ -113,7 +122,7 @@ export function DashboardPage() {
                   <li key={d.id} className="flex items-center gap-2 text-xs">
                     <Badge tone={d.status === "INDEXED" ? "success" : d.status === "FAILED" ? "danger" : "warning"} size="sm">{d.status}</Badge>
                     <span className="truncate text-slate-700 dark:text-slate-200">{d.title}</span>
-                    <span className="ml-auto shrink-0 text-[11px] text-slate-400">{formatRelative(d.created_at)}</span>
+                    <span className="ml-auto shrink-0 text-[11px] text-slate-400">{formatRelative(d.uploaded_at)}</span>
                   </li>
                 ))}
               </ul>
@@ -135,7 +144,7 @@ export function DashboardPage() {
                 {reports.data.slice(0, 5).map((r) => (
                   <li key={r.report_id} className="flex items-center gap-2 text-xs">
                     <span className="truncate font-medium text-slate-900 dark:text-slate-100">{r.summary || r.query}</span>
-                    <span className="ml-auto shrink-0 text-[11px] text-slate-400">{formatRelative(r.created_at)}</span>
+                    <span className="ml-auto shrink-0 text-[11px] text-slate-400">{formatRelative(r.generated_at)}</span>
                   </li>
                 ))}
               </ul>
@@ -156,7 +165,7 @@ export function DashboardPage() {
             : <ul className="space-y-2">
                 <li key="policies" className="flex items-center gap-2 text-xs"><span className="text-slate-500">{policies.data.total_policies ?? 0} policies</span></li>
                 <li key="decisions" className="flex items-center gap-2 text-xs"><span className="text-slate-500">{policies.data.total_decisions ?? 0} decisions recorded</span></li>
-                <li key="active" className="flex items-center gap-2 text-xs"><span className="text-slate-500">{policies.data.active ?? 0} active</span></li>
+                <li key="rules" className="flex items-center gap-2 text-xs"><span className="text-slate-500">{policies.data.total_rules ?? 0} rules</span></li>
               </ul>
             }
           </div>

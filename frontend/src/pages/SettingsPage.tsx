@@ -11,28 +11,14 @@ export function SettingsPage() {
   const [apiKey, setApiKey] = useState("");
   const [density, setDensity] = useState("comfortable");
 
-  // Backend truth first (from /health/ready when signed in), build-time
-  // env only as fallback — never claim models that aren't active.
-  const components = health.status?.components ?? [];
-  const comp = (name: string) => components.find((c) => c.name === name);
-  const llmDetails = (comp("llm_provider")?.details ?? {}) as Record<string, unknown>;
-  const embDetails = (comp("embedding_backend")?.details ?? {}) as Record<string, unknown>;
-  const rerankComp = comp("reranker");
-  const llmProvider =
-    typeof llmDetails.provider === "string"
-      ? llmDetails.provider
-      : import.meta.env.VITE_LLM_PROVIDER || "mock";
-  const llmNote =
-    comp("llm_provider")?.message ??
-    "Set via LLM_PROVIDER env var (openai, gemini, litellm, mock)";
-  const embeddingBackend =
-    typeof embDetails.backend === "string" ? embDetails.backend : "unknown";
+  // Provider display: build-time env only. Live backend component detail
+  // is not part of the health contract (checks is an opaque map).
+  const llmProvider = import.meta.env.VITE_LLM_PROVIDER || "mock";
+  const llmNote = "Set via LLM_PROVIDER env var (openai, gemini, litellm, mock)";
+  const embeddingBackend = "unknown";
   const embeddingNote =
-    comp("embedding_backend")?.message ??
     "BAAI/bge-small-en-v1.5 when the ML stack is installed";
-  const rerankerState = rerankComp
-    ? `${rerankComp.status}${rerankComp.message ? ` — ${rerankComp.message}` : ""}`
-    : (import.meta.env.VITE_RERANKER_ENABLED ?? "true");
+  const rerankerState = import.meta.env.VITE_RERANKER_ENABLED ?? "true";
   const rerankerNote = "BAAI/bge-reranker-base when the ML stack is installed";
 
   return (
@@ -85,8 +71,8 @@ export function SettingsPage() {
         <CardHeader title="System Information" description="Platform version and health" />
         <div className="card-body space-y-2 text-sm">
           <div className="flex justify-between"><span className="text-slate-500">Version</span><span className="font-medium text-slate-900 dark:text-slate-100">{health.status?.version ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-slate-500">Status</span><span className={`font-medium ${health.isHealthy ? "text-emerald-600" : health.isDegraded ? "text-amber-600" : "text-red-600"}`}>{health.status?.status ?? "Unknown"}</span></div>
-          <div className="flex justify-between"><span className="text-slate-500">Uptime</span><span className="font-medium text-slate-900 dark:text-slate-100">{health.status?.uptime_seconds ? `${Math.round(health.status.uptime_seconds / 60)} min` : "—"}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Status</span><span className={`font-medium ${health.isHealthy ? "text-emerald-600" : health.isDegraded ? "text-amber-600" : "text-red-600"}`}>{health.status?.level ?? "Unknown"}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Uptime</span><span className="font-medium text-slate-900 dark:text-slate-100">{health.status?.uptimeSeconds ? `${Math.round(health.status.uptimeSeconds / 60)} min` : "—"}</span></div>
         </div>
       </Card>
 

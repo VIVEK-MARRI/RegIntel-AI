@@ -1,46 +1,36 @@
-export interface HealthComponent {
-  name?: string;
-  status: string;
-  latency_ms?: number;
-  message?: string;
-  details?: Record<string, unknown>;
+import { requestRoot } from "@/lib/api";
+import type { HealthState, LiveReport, ReadyReport } from "@/types/api/health";
+
+/**
+ * Health lives at the ROOT (/health/*), not under /api/v1.
+ * /health/live is public; /health/ready may 401 in production — callers
+ * fall back to /live. Response `checks` is an OBJECT map, never an array.
+ */
+export async function getReadyReport(): Promise<ReadyReport> {
+  return requestRoot<ReadyReport>("/health/ready");
 }
 
-export interface HealthStatus {
-  status: "healthy" | "degraded" | "unhealthy";
-  version?: string;
-  uptime_seconds?: number;
-  // /health/ready returns components as an ARRAY; /health/live has none.
-  components?: HealthComponent[];
+export async function getLiveReport(): Promise<LiveReport> {
+  return requestRoot<LiveReport>("/health/live");
 }
 
-import { getAccessToken } from "@/lib/auth-token";
-
-/** The health endpoint lives at root level (/health/*), not under /api/v1. */
-export async function getHealth(): Promise<HealthStatus> {
-  const base = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-  const headers: Record<string, string> = { Accept: "application/json" };
-  // /health/ready requires a Bearer token in production (it can echo
-  // backend diagnostics). Attach it when the user is signed in.
-  const token = getAccessToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  const res = await fetch(`${base}/health/ready`, { headers });
-  if (res.status === 401) {
-    // Anonymous (or logged-out) callers fall back to the public liveness
-    // probe so the UI still renders instead of erroring out.
-    const live = await fetch(`${base}/health/live`, {
-      headers: { Accept: "application/json" },
-    });
-    if (!live.ok) {
-      throw new Error((await live.text().catch(() => "")) || live.statusText);
+/** Roll the backend reports up to one UI-level state. Never throws. */
+export async function getHealth(): Promise<HealthState> {
+  try {
+    const ready = await getReadyReport();
+    const level =
+      ready.status === "healthy" || ready.status === "ok"
+        ? "healthy"
+        : ready.status === "degraded"
+          ? "degraded"
+          : "unhealthy";
+    return { level };
+  } catch {
+    try {
+      await getLiveReport();
+      return { level: "healthy" };
+    } catch {
+      return { level: "unhealthy" };
     }
-    return { status: "healthy" };
   }
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || res.statusText);
-  }
-  return res.json();
 }

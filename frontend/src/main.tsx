@@ -1,14 +1,25 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { HealthProvider } from "@/providers/HealthProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { ROUTER_BASE } from "@/lib/config";
 import { App } from "@/App";
 import "@/index.css";
+
+// React Query Devtools are development-only: lazy-loaded and never part
+// of the production bundle.
+const Devtools =
+  import.meta.env.DEV
+    ? React.lazy(() =>
+        import("@tanstack/react-query-devtools").then((m) => ({
+          default: m.ReactQueryDevtools,
+        }))
+      )
+    : null;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,11 +43,11 @@ ReactDOM.createRoot(rootEl).render(
         <ToastProvider>
           <HealthProvider>
               <BrowserRouter
+                // Router base ownership lives in lib/config (ROUTER_BASE).
                 // Docker/nginx serves the SPA under /app; Render serves it
-                // at the domain root. Override with VITE_BASENAME=/app for
-                // docker-style deployments (default is already /app to
-                // preserve current behaviour — set "/" for root serving).
-                basename={import.meta.env.VITE_BASENAME ?? "/app"}
+                // at the domain root. Must agree with the build base
+                // (SPA_BASE in vite.config.ts) — see lib/config.ts.
+                basename={ROUTER_BASE}
                 future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
               >
               <AuthProvider>
@@ -46,7 +57,11 @@ ReactDOM.createRoot(rootEl).render(
           </HealthProvider>
         </ToastProvider>
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      {Devtools ? (
+        <Suspense fallback={null}>
+          <Devtools initialIsOpen={false} buttonPosition="bottom-left" />
+        </Suspense>
+      ) : null}
     </QueryClientProvider>
   </React.StrictMode>
 );

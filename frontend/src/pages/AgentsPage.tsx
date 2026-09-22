@@ -11,6 +11,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAgents, executeAgent, getCollaborations, getAgentMessages, getWorkflows, createWorkflow, runWorkflow } from "@/services/api/agentApi";
 import { getAnalyticsHealth } from "@/services/api/analyticsApi";
+import { agentsKeys } from "@/lib/queryKeys";
 import { useToast } from "@/providers/ToastProvider";
 import { formatDurationMs, formatPercent, formatRelative, healthTone } from "@/lib/format";
 
@@ -61,7 +62,7 @@ function OverviewTab() {
   const qc = useQueryClient();
   const toast = useToast();
   const { data: agents, isLoading: aLoading, isError: aError, refetch: aRefetch } = useQuery({
-    queryKey: ["agents", "list"], queryFn: getAgents, refetchInterval: 30_000,
+    queryKey: agentsKeys.list(), queryFn: getAgents, refetchInterval: 30_000,
   });
   const execute = useMutation({
     mutationFn: executeAgent,
@@ -133,7 +134,7 @@ function OverviewTab() {
 
 function HealthTab() {
   const { data: health, isLoading: hLoading, isError: hError, refetch: hRefetch } = useQuery({
-    queryKey: ["agents", "health"], queryFn: getAnalyticsHealth, refetchInterval: 15_000,
+    queryKey: agentsKeys.health(), queryFn: getAnalyticsHealth, refetchInterval: 15_000,
   });
 
   return (
@@ -181,10 +182,10 @@ function WorkflowsTab() {
   const qc = useQueryClient();
   const toast = useToast();
   const { data: workflows, isLoading, isError, refetch } = useQuery({
-    queryKey: ["agents", "workflows"], queryFn: getWorkflows,
+    queryKey: agentsKeys.workflows(), queryFn: getWorkflows,
   });
   const create = useMutation({ mutationFn: createWorkflow, onSuccess: () => qc.invalidateQueries({ queryKey: ["agents", "workflows"] }) });
-  const runWf = useMutation({ mutationFn: runWorkflow });
+  const runWf = useMutation({ mutationFn: (id: string) => runWorkflow(id) });
   const [name, setName] = useState("KYC Renewal Check");
   const [description, setDescription] = useState("Validate KYC renewal across portfolio");
   const [definition, setDefinition] = useState(
@@ -192,12 +193,17 @@ function WorkflowsTab() {
   );
 
   async function handleCreate() {
-    try { const parsed = JSON.parse(definition); await create.mutateAsync({ name, description, steps: parsed.steps }); toast.push({ title: "Workflow created", tone: "success" }); }
+    try {
+      const parsed = JSON.parse(definition);
+      const steps = Array.isArray(parsed.steps) ? parsed.steps : parsed.graph?.steps ?? [];
+      await create.mutateAsync({ name, description, graph: { steps } });
+      toast.push({ title: "Workflow created", tone: "success" });
+    }
     catch (err) { toast.push({ title: "Invalid definition", description: err instanceof Error ? err.message : "JSON parse error", tone: "danger" }); }
   }
 
   async function handleRun(id: string) {
-    try { const r = await runWf.mutateAsync(id); toast.push({ title: "Workflow started", description: `Execution ${r.execution_id}`, tone: "success" }); }
+    try { const r = await runWf.mutateAsync(id); toast.push({ title: "Workflow started", description: `Run ${r.run_id}`, tone: "success" }); }
     catch (err) { toast.push({ title: "Run failed", description: err instanceof Error ? err.message : "Unexpected error", tone: "danger" }); }
   }
 
@@ -214,7 +220,7 @@ function WorkflowsTab() {
                 <li key={w.workflow_id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{w.name}</span>
-                    <Badge tone="neutral" size="sm">{w.steps?.length ?? 0} steps</Badge>
+                    <Badge tone="neutral" size="sm">{w.graph.steps?.length ?? 0} steps</Badge>
                     <div className="ml-auto flex gap-2">
                       <Button size="sm" variant="secondary" onClick={() => handleRun(w.workflow_id)} loading={runWf.isPending}>Run</Button>
                     </div>
@@ -242,10 +248,10 @@ function WorkflowsTab() {
 
 function CollaborationTab() {
   const { data: collabs, isLoading: cLoading, isError: cError, refetch: cRefetch } = useQuery({
-    queryKey: ["agents", "collaborations"], queryFn: getCollaborations,
+    queryKey: agentsKeys.collaborations(), queryFn: getCollaborations,
   });
   const { data: messages, isLoading: mLoading, isError: mError, refetch: mRefetch } = useQuery({
-    queryKey: ["agents", "messages"], queryFn: getAgentMessages, refetchInterval: 5_000,
+    queryKey: agentsKeys.messages(), queryFn: getAgentMessages, refetchInterval: 5_000,
   });
 
   return (
@@ -260,15 +266,12 @@ function CollaborationTab() {
               {collabs.map((c) => (
                 <li key={c.collaboration_id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <Badge tone="brand" size="sm">{(c.participants?.length ?? 0)} agents</Badge>
-                    <Badge tone="success" size="sm">Consensus {formatPercent(c.consensus)}</Badge>
+                    <Badge tone="brand" size="sm">{c.from_agent} → {c.to_agent}</Badge>
+                    <Badge tone="neutral" size="sm">{c.request_kind}</Badge>
                     <span className="ml-auto text-[10px] text-slate-500">{formatRelative(c.created_at)}</span>
                   </div>
-                  <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{c.topic}</p>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{c.result_summary}</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(c.participants ?? []).map((p) => (<Badge key={p} tone="neutral" size="sm">{p}</Badge>))}
-                  </div>
+                  <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{c.evidence_keys.length} evidence keys · {c.result_keys.length} results</p>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{c.duration_ms} ms · {c.shared_context_keys.length} shared keys</p>
                 </li>
               ))}
             </ul>
@@ -289,7 +292,7 @@ function CollaborationTab() {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-slate-900 dark:text-slate-100">{m.from_agent}</span>
                     <span aria-hidden>→</span>
-                    <span className="text-slate-600 dark:text-slate-300">{m.to_agent ?? m.channel}</span>
+                    <span className="text-slate-600 dark:text-slate-300">{m.to_agent}</span>
                     <span className="ml-auto text-[10px] text-slate-400">{formatRelative(m.created_at)}</span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-slate-500">{typeof m.payload === "object" ? JSON.stringify(m.payload).slice(0, 100) : String(m.payload ?? "")}</p>

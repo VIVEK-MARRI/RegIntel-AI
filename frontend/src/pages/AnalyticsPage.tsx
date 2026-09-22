@@ -9,17 +9,18 @@ import { useQuery } from "@tanstack/react-query";
 import { getAnalyticsOverview, getPerformance, getIntelligenceMetrics } from "@/services/api/analyticsApi";
 import { useHealth } from "@/providers/HealthProvider";
 import { formatPercent, formatNumber } from "@/lib/format";
+import { analyticsKeys } from "@/lib/queryKeys";
 
 export function AnalyticsPage() {
   const health = useHealth();
   const { data: overview } = useQuery({
-    queryKey: ["analytics", "overview"], queryFn: getAnalyticsOverview, refetchInterval: 30_000,
+    queryKey: analyticsKeys.overview(), queryFn: getAnalyticsOverview, refetchInterval: 30_000,
   });
   const { data: performance, isLoading: pLoading, isError: pError, refetch: pRefetch } = useQuery({
-    queryKey: ["analytics", "performance"], queryFn: getPerformance, refetchInterval: 30_000,
+    queryKey: analyticsKeys.performance(), queryFn: getPerformance, refetchInterval: 30_000,
   });
   const { data: metrics, isLoading: mLoading, isError: mError, refetch: mRefetch } = useQuery({
-    queryKey: ["analytics", "intelligence"], queryFn: getIntelligenceMetrics, refetchInterval: 30_000,
+    queryKey: analyticsKeys.intelligence(), queryFn: getIntelligenceMetrics, refetchInterval: 30_000,
   });
 
   return (
@@ -43,8 +44,8 @@ export function AnalyticsPage() {
           hint="Documents indexed"
         />
         <Metric label="System Health"
-          value={<span className={health.isHealthy ? "text-emerald-600" : health.isDegraded ? "text-amber-600" : "text-red-600"}>{health.status?.status ?? "Unknown"}</span>}
-          hint={health.isLoading ? "Checking…" : health.isError ? "Unreachable" : `v${health.status?.version ?? "?"}`}
+          value={<span className={health.isHealthy ? "text-emerald-600" : health.isDegraded ? "text-amber-600" : "text-red-600"}>{health.status?.level ?? "Unknown"}</span>}
+          hint={health.isLoading ? "Checking…" : health.isError ? "Unreachable" : "Backend health"}
         />
       </section>
 
@@ -81,8 +82,8 @@ export function AnalyticsPage() {
             : !metrics ? <EmptyState title="No metrics data" />
             : <div className="grid grid-cols-2 gap-4">
                 <Metric label="Total Invocations" value={formatNumber(metrics.total_invocations)} />
-                <Metric label="Succeeded" value={formatNumber(metrics.succeeded)} />
-                <Metric label="Failed" value={formatNumber(metrics.failed)} />
+                <Metric label="Succeeded" value={formatNumber(metrics.total_successful)} />
+                <Metric label="Failed" value={formatNumber(metrics.total_failed)} />
                 <Metric label="Avg Confidence" value={formatPercent(metrics.average_confidence)} />
               </div>
             }

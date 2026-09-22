@@ -1,50 +1,25 @@
-import { api, request } from "@/lib/api";
+import { api } from "@/lib/api";
+import type {
+  LoginRequest,
+  LoginResponse,
+  MeResponse,
+  RefreshResponse,
+  SignupRequest,
+  SignupResponse,
+} from "@/types/api/auth";
 
-export interface LoginRequest {
-  email: string;
-  password: string;
+export async function login(data: LoginRequest): Promise<LoginResponse> {
+  return api.post<LoginResponse>("/security/auth/login", data);
 }
 
-export interface LoginResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  expires_in: number;
-  access_expires_at: string;
-  refresh_expires_at: string;
-  user: {
-    user_id: string;
-    username: string;
-    email: string;
-    full_name: string;
-    roles: string[];
-    rbac_roles: string[];
-  };
+export async function signup(data: SignupRequest): Promise<SignupResponse> {
+  return api.post<SignupResponse>("/security/auth/signup", data);
 }
 
-export interface MeResponse {
-  subject_id: string;
-  roles: string[];
-  scopes: string[];
-  permissions: string[];
+export async function refreshToken(refresh_token: string): Promise<RefreshResponse> {
+  return api.post<RefreshResponse>("/security/auth/refresh", { refresh_token });
 }
 
-export function login(data: LoginRequest): Promise<LoginResponse> {
-  return request<LoginResponse>("/security/auth/login", {
-    method: "POST",
-    body: data,
-  });
-}
-
-export function refreshToken(
-  refresh_token: string
-): Promise<LoginResponse> {
-  return request<LoginResponse>("/security/auth/refresh", {
-    method: "POST",
-    body: { refresh_token },
-  });
-}
-
-export function getMe(): Promise<MeResponse> {
+export async function getMe(): Promise<MeResponse> {
   return api.get<MeResponse>("/security/auth/me");
 }

@@ -1,9 +1,11 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getHealth, type HealthStatus } from "@/services/api/healthApi";
+import { getHealth } from "@/services/api/healthApi";
+import { healthKeys } from "@/lib/queryKeys";
+import type { HealthState } from "@/types/api/health";
 
 interface HealthContextValue {
-  status: HealthStatus | undefined;
+  status: HealthState | undefined;
   isLoading: boolean;
   isError: boolean;
   isHealthy: boolean;
@@ -22,7 +24,7 @@ const HealthContext = createContext<HealthContextValue>({
 
 export function HealthProvider({ children }: { children: ReactNode }) {
   const { data: status, isLoading, isError } = useQuery({
-    queryKey: ["health"],
+    queryKey: healthKeys.ready(),
     queryFn: getHealth,
     refetchInterval: 30_000,
     retry: 2,
@@ -33,8 +35,8 @@ export function HealthProvider({ children }: { children: ReactNode }) {
     status,
     isLoading,
     isError,
-    isHealthy: status?.status === "healthy",
-    isDegraded: status?.status === "degraded",
+    isHealthy: status?.level === "healthy",
+    isDegraded: status?.level === "degraded",
     isUnavailable: isError || (!isLoading && !status),
   };
 

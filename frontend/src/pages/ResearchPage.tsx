@@ -9,13 +9,15 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getResearchReports, runResearch } from "@/services/api/researchApi";
 import { useToast } from "@/providers/ToastProvider";
-import { formatPercent, formatRelative } from "@/lib/format";
-import type { ResearchReport } from "@/types";
+import { formatRelative } from "@/lib/format";
+import { researchKeys } from "@/lib/queryKeys";
+import { toReportView } from "@/adapters/views";
+import type { ResearchReport } from "@/types/api/research";
 
 export function ResearchPage() {
   const { data: reports, isLoading, isError, refetch } = useQuery({
-    queryKey: ["research", "reports"],
-    queryFn: getResearchReports,
+    queryKey: researchKeys.reports(),
+    queryFn: () => getResearchReports(),
   });
   const run = useMutation({
     mutationFn: runResearch,
@@ -29,7 +31,8 @@ export function ResearchPage() {
   async function handleRun() {
     if (!query.trim()) return;
     try {
-      const result = await run.mutateAsync({ query, max_steps: depth });
+      const steps = Math.min(20, Math.max(1, depth || 1));
+      const result = await run.mutateAsync({ query, max_steps: steps });
       setSelected(result);
       toast.push({ title: "Research report ready", description: (result.query || result.summary || "").slice(0, 80), tone: "success" });
     } catch (err) {
@@ -66,16 +69,16 @@ export function ResearchPage() {
               : isError ? <ErrorState onRetry={refetch} />
               : !reports?.length ? <EmptyState title="No reports yet" description="Run a research query above to generate your first report." />
               : <ul className="space-y-2">
-                  {reports.map((r) => (
-                    <li key={r.report_id} className="cursor-pointer rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 hover:shadow-glow dark:border-slate-800 dark:hover:border-brand-500"
-                      onClick={() => setSelected(r)}>
+                  {(reports ?? []).map((r) => ({ raw: r, view: toReportView(r) })).map(({ raw, view: r }) => (
+                    <li key={r.id} className="cursor-pointer rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 hover:shadow-glow dark:border-slate-800 dark:hover:border-brand-500"
+                      onClick={() => setSelected(raw)}>
                       <div className="flex items-center gap-2">
-                        <Badge tone="brand" size="sm">{r.plan?.length ?? 0} steps</Badge>
-                        <Badge tone="info" size="sm">{r.findings?.length ?? 0} findings</Badge>
-                        <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">{formatRelative(r.created_at)}</span>
+                        <Badge tone="brand" size="sm">{r.stepCount} steps</Badge>
+                        <Badge tone="info" size="sm">{r.findingCount} findings</Badge>
+                        <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">{formatRelative(r.generatedMillis)}</span>
                       </div>
                       <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{r.summary || r.query}</p>
-                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Confidence {formatPercent(r.confidence)}</p>
+                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{r.citationsCount} citations · {r.kind}</p>
                     </li>
                   ))}
                 </ul>
@@ -109,38 +112,47 @@ export function ResearchPage() {
 }
 
 function ReportDetail({ report }: { report: ResearchReport }) {
+  const view = toReportView(report);
   return (
     <Card padding="none">
       <CardHeader title="Research report" description={report.query}
-        actions={<Badge tone="success">Confidence {formatPercent(report.confidence)}</Badge>}
+        actions={<Badge tone="success">{report.kind}</Badge>}
       />
       <div className="card-body space-y-5">
-        {report.plan?.length ? (<section>
+        {report.steps?.length ? (<section>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Plan</h4>
           <ol className="mt-2 space-y-1.5">
-            {report.plan.map((step, i) => (
+            {report.steps.map((step, i) => (
               <li key={step.step_id ?? `${i}`} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">{i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-slate-900 dark:text-slate-100">{step.description}</p>
-                  <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">Tools: {step.tools?.join(", ")}</p>
+                  <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{step.step_type}</p>
                 </div>
-                <Badge tone={step.status === "done" ? "success" : step.status === "running" ? "info" : step.status === "failed" ? "danger" : "neutral"} size="sm">{step.status}</Badge>
+                <Badge tone={step.status === "completed" ? "success" : step.status === "running" ? "info" : step.status === "failed" ? "danger" : "neutral"} size="sm">{step.status}</Badge>
               </li>
             ))}
           </ol>
         </section>) : null}
 
-        {report.findings?.length ? (<section>
+        {view.findings?.length ? (<section>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Findings</h4>
           <ul className="mt-2 space-y-2">
-            {report.findings.map((f, i) => (
-              <li key={f.finding_id ?? `${i}`} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <p className="flex-1 truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{f.title}</p>
-                  <Badge tone="brand" size="sm">{formatPercent(f.confidence)}</Badge>
-                </div>
-                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{f.content}</p>
+            {view.findings.map((f, i) => (
+              <li key={`${i}`} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{f}</p>
+              </li>
+            ))}
+          </ul>
+        </section>) : null}
+
+        {report.citations?.length ? (<section>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Citations</h4>
+          <ul className="mt-2 space-y-1.5">
+            {report.citations.map((c) => (
+              <li key={c.citation_id} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
+                <p className="truncate font-medium text-slate-900 dark:text-slate-100">{c.title}</p>
+                <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{c.reference}</p>
               </li>
             ))}
           </ul>

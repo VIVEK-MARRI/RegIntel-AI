@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +11,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getDocuments, uploadDocument, getDocument, getIngestionJobs } from "@/services/api";
 import { useToast } from "@/providers/ToastProvider";
 import { formatRelative, truncate } from "@/lib/format";
+import { documentsKeys } from "@/lib/queryKeys";
+import { toRunView } from "@/adapters/documents";
 
 
 const STATUS_TONE: Record<string, string> = {
@@ -39,13 +41,13 @@ export function DocumentsPage() {
   const [filterSource, setFilterSource] = useState("");
 
   const { data: documents, isLoading: dLoading, isError: dError, refetch: dRefetch } = useQuery({
-    queryKey: ["documents"], queryFn: getDocuments,
+    queryKey: documentsKeys.list(), queryFn: () => getDocuments(),
   });
   const { data: jobs, isLoading: jLoading, isError: jError, refetch: jRefetch } = useQuery({
-    queryKey: ["ingestion", "jobs"], queryFn: getIngestionJobs,
+    queryKey: documentsKeys.ingestionJobs(), queryFn: getIngestionJobs,
   });
   const { data: detail, refetch: refetchDetail } = useQuery({
-    queryKey: ["document", selectedDoc],
+    queryKey: documentsKeys.detail(selectedDoc ?? "none"),
     queryFn: () => getDocument(selectedDoc!),
     enabled: Boolean(selectedDoc),
   });
@@ -105,7 +107,8 @@ export function DocumentsPage() {
 
   const handleDragLeave = useCallback(() => setDragOver(false), []);
 
-  const activeJobs = jobs?.filter((j) => j.status === "running" || j.status === "queued") ?? [];
+  const runViews = useMemo(() => (jobs ?? []).map(toRunView), [jobs]);
+  const activeJobs = runViews.filter((j) => !j.terminal);
   const userUploads = documents?.filter((d) => d.source === "USER_UPLOAD") ?? [];
 
   const filtered = (documents ?? []).filter((d) => {
@@ -140,7 +143,7 @@ export function DocumentsPage() {
           <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
             {dragOver ? "Drop file here" : "Drag & drop a document here, or"}
           </p>
-          <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">PDF, DOCX, TXT, HTML — up to 100 MB</p>
+          <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">PDF, TXT — up to 100 MB</p>
           <input ref={fileRef} type="file" accept={ALLOWED_TYPES} className="hidden" onChange={handleInputChange} />
           <Button variant="primary" size="sm" className="mt-3" onClick={() => fileRef.current?.click()} loading={uploading}>
             Select File
@@ -190,7 +193,6 @@ export function DocumentsPage() {
                       <TH>Source</TH>
                       <TH>Status</TH>
                       <TH>Pages</TH>
-                      <TH>Chunks</TH>
                       <TH>Uploaded</TH>
                     </TR>
                   </THead>
@@ -204,10 +206,9 @@ export function DocumentsPage() {
                         <TD className="font-medium">{truncate(d.title, 50)}</TD>
                         <TD className="text-slate-500 text-[10px]">{d.document_type || (d.file_name?.split(".").pop()?.toUpperCase() ?? "—")}</TD>
                         <TD><Badge tone="neutral" size="sm">{d.source}</Badge></TD>
-                        <TD><Badge tone={statusTone(d.status) as any} size="sm">{d.status}</Badge></TD>
+                        <TD><Badge tone={statusTone(d.status) as "neutral" | "success" | "warning" | "danger" | "info" | "brand"} size="sm">{d.status}</Badge></TD>
                         <TD className="text-slate-500">{d.page_count ?? "—"}</TD>
-                        <TD className="text-slate-500">{d.chunk_count ?? "—"}</TD>
-                        <TD className="text-slate-500 text-[10px]">{formatRelative(d.created_at)}</TD>
+                        <TD className="text-slate-500 text-[10px]">{formatRelative(d.uploaded_at)}</TD>
                       </TR>
                     ))}
                   </TBody>
@@ -225,7 +226,7 @@ export function DocumentsPage() {
                 <button onClick={() => setSelectedDoc(null)} className="text-xs text-slate-400 hover:text-slate-600">&times;</button>
               </div>
               <dl className="mt-4 space-y-2 text-xs">
-                <div className="flex justify-between"><dt className="text-slate-500">Status</dt><dd><Badge tone={statusTone(detail.status) as any} size="sm">{detail.status}</Badge></dd></div>
+                <div className="flex justify-between"><dt className="text-slate-500">Status</dt><dd><Badge tone={statusTone(detail.status) as "neutral" | "success" | "warning" | "danger" | "info" | "brand"} size="sm">{detail.status}</Badge></dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Source</dt><dd className="font-medium">{detail.source}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Type</dt><dd>{detail.document_type || "—"}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Pages</dt><dd>{detail.page_count ?? "—"}</dd></div>
@@ -233,7 +234,7 @@ export function DocumentsPage() {
                 <div className="flex justify-between"><dt className="text-slate-500">Embeddings</dt><dd>{detail.embedding_count ?? "—"}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Indexed</dt><dd>{detail.indexed ? "Yes" : "No"}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Processing</dt><dd>{detail.processing_status}</dd></div>
-                <div className="flex justify-between"><dt className="text-slate-500">Uploaded</dt><dd>{formatRelative(detail.created_at)}</dd></div>
+                <div className="flex justify-between"><dt className="text-slate-500">Uploaded</dt><dd>{formatRelative(detail.uploaded_at)}</dd></div>
               </dl>
               <div className="mt-4 flex gap-2">
                 <Button variant="secondary" size="sm" onClick={() => refetchDetail()}>Refresh</Button>
@@ -246,18 +247,16 @@ export function DocumentsPage() {
             <div className="card-body max-h-64 overflow-y-auto">
               {jLoading ? <Skeleton lines={3} />
               : jError ? <ErrorState onRetry={jRefetch} />
-              : !jobs?.length ? <EmptyState title="No jobs" />
+              : !runViews?.length ? <EmptyState title="No jobs" />
               : <ul className="space-y-1.5">
-                    {jobs.slice(0, 20).map((j, idx) => (
-                    <li key={j.job_id ?? idx} className="rounded-lg border border-slate-200 px-2.5 py-2 dark:border-slate-800">
+                    {runViews.slice(0, 20).map((j, idx) => (
+                    <li key={j.id ?? idx} className="rounded-lg border border-slate-200 px-2.5 py-2 dark:border-slate-800">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">{truncate(j.source || j.document_id || j.job_id, 35)}  // eslint-disable-line</span>
-                        <Badge tone={j.status === "succeeded" ? "success" : j.status === "failed" ? "danger" : "warning"} size="sm">{j.ingestion_status || j.status}</Badge>
+                        <span className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">{truncate(j.documentId || j.id, 35)}</span>
+                        <Badge tone={j.status === "completed" ? "success" : j.failed ? "danger" : "warning"} size="sm">{j.status}</Badge>
                       </div>
-                      {j.chunks_created != null && (
-                        <p className="mt-0.5 text-[10px] text-slate-500">{j.chunks_created} chunks · {j.embeddings_created} embeddings</p>
-                      )}
-                      {j.failure_reason && <p className="mt-0.5 text-[10px] text-red-600">{j.failure_reason}</p>}
+                      <p className="mt-0.5 text-[10px] text-slate-500">{j.chunksCreated} chunks · {j.embeddingsCreated} embeddings</p>
+                      {j.failureReason && <p className="mt-0.5 text-[10px] text-red-600">{j.failureReason}</p>}
                     </li>
                   ))}
                 </ul>

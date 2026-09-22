@@ -1,3 +1,4 @@
+export * from "./authApi";
 export * from "./healthApi";
 export * from "./copilotApi";
 export * from "./adminApi";

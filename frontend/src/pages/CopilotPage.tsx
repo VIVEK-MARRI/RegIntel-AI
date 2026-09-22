@@ -7,9 +7,21 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getCopilotHealth, getSessions, getMessages, queryCopilot } from "@/services/api/copilotApi";
-import type { CopilotMessage, CopilotResponsePayload, CopilotCitation, CopilotAttribution, AgentContributionItem, MemoryContext, ChatSession } from "@/types";
+import {
+  toAssistantMessage,
+  toHistoryMessage,
+  toSessionItem,
+  type SessionListItem,
+  type UIMessage,
+} from "@/adapters/copilot";
+import type {
+  MemoryContext,
+  ReferenceEntry,
+  SourceAttribution,
+} from "@/types/api/copilot";
+import { copilotKeys } from "@/lib/queryKeys";
 import { useNavigate, useParams } from "react-router-dom";
-import { formatDurationMs, formatPercent } from "@/lib/format";
+import { formatDurationMs, formatPercent, formatRelative } from "@/lib/format";
 import { useToast } from "@/providers/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -28,8 +40,8 @@ export function CopilotPage() {
   const toast = useToast();
 
   const { data: sessions, isLoading: sessionsLoading, isError: sessionsError, refetch: refetchSessions } = useQuery({
-    queryKey: ["copilot", "sessions"],
-    queryFn: getSessions,
+    queryKey: copilotKeys.sessions(),
+    queryFn: () => getSessions(),
   });
 
   useQuery({
@@ -39,24 +51,27 @@ export function CopilotPage() {
   });
 
   const { data: messagesData, isLoading: messagesLoading, isError: messagesError, refetch: refetchMessages } = useQuery({
-    queryKey: ["copilot", "messages", conversationId ?? "none"],
+    queryKey: copilotKeys.messages(conversationId ?? "none"),
     queryFn: () => getMessages(conversationId),
     enabled: Boolean(conversationId),
   });
 
   const query = useMutation({
     mutationFn: queryCopilot,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["copilot", "sessions"] }),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: copilotKeys.sessions() });
+      qc.invalidateQueries({ queryKey: copilotKeys.messages(result.conversation_id) });
+    },
   });
 
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<CopilotMessage[]>([]);
+  const [messages, setMessages] = useState<UIMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (messagesData?.items?.length) {
-      setMessages(messagesData.items);
+      setMessages(messagesData.items.map(toHistoryMessage));
     } else if (!conversationId) {
       setMessages([]);
     }
@@ -73,7 +88,7 @@ export function CopilotPage() {
     const q = input.trim();
     if (!q) return;
     setInput("");
-    const userMsg: CopilotMessage = { role: "user", content: q, timestamp: new Date().toISOString() };
+    const userMsg: UIMessage = { role: "user", content: q, timestamp: new Date().toISOString() };
     setMessages((m) => [...m, userMsg]);
     setStreaming(true);
     try {
@@ -81,7 +96,7 @@ export function CopilotPage() {
       if (!conversationId) {
         navigate(`/copilot/${result.conversation_id}`, { replace: true });
       }
-      setMessages((m) => [...m, buildAssistantMessage(result)]);
+      setMessages((m) => [...m, toAssistantMessage(result)]);
     } catch (err) {
       toast.push({ title: "Copilot request failed", description: err instanceof Error ? err.message : "Unexpected error", tone: "danger" });
     } finally {
@@ -92,7 +107,7 @@ export function CopilotPage() {
   return (
     <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
       <SessionList
-        sessions={sessions?.items}
+        sessions={sessions?.items?.map(toSessionItem)}
         isLoading={sessionsLoading}
         error={sessionsError}
         activeId={conversationId}
@@ -145,7 +160,7 @@ export function CopilotPage() {
 }
 
 function SessionList({ sessions, isLoading, error, activeId, onSelect, onNew, onRetry }: {
-  sessions?: ChatSession[]; isLoading: boolean; error: boolean; activeId?: string;
+  sessions?: SessionListItem[]; isLoading: boolean; error: boolean; activeId?: string;
   onSelect: (id: string) => void; onNew: () => void; onRetry: () => void;
 }) {
   return (
@@ -160,16 +175,16 @@ function SessionList({ sessions, isLoading, error, activeId, onSelect, onNew, on
         : !sessions?.length ? <EmptyState title="No conversations yet" description="Start a new chat to begin." />
         : <ul className="space-y-1">
             {sessions.map((s) => (
-              <li key={s.conversation_id}>
-                <button type="button" onClick={() => onSelect(s.conversation_id)}
+              <li key={s.id}>
+                <button type="button" onClick={() => onSelect(s.id)}
                   className={`w-full rounded-lg px-3 py-2 text-left text-xs transition ${
-                    activeId === s.conversation_id
+                    activeId === s.id
                       ? "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
                       : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                   }`}
                 >
                   <p className="truncate font-medium">{s.title || s.preview || "Conversation"}</p>
-                  <p className="truncate text-[10px] opacity-70">{s.updated_at ? new Date(s.updated_at * 1000).toLocaleString() : ""}</p>
+                  <p className="truncate text-[10px] opacity-70">{s.updatedMillis ? formatRelative(s.updatedMillis) : ""}</p>
                 </button>
               </li>
             ))}
@@ -180,7 +195,7 @@ function SessionList({ sessions, isLoading, error, activeId, onSelect, onNew, on
   );
 }
 
-function MessageBubble({ message }: { message: CopilotMessage }) {
+function MessageBubble({ message }: { message: UIMessage }) {
   const isUser = message.role === "user";
   return (
     <li className={`flex items-start gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
@@ -190,36 +205,36 @@ function MessageBubble({ message }: { message: CopilotMessage }) {
           ? "border-brand-200 bg-brand-50 text-slate-900 dark:border-brand-900/40 dark:bg-brand-950/30 dark:text-slate-100"
           : "border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-surface-dark-2 dark:text-slate-100"
       }`}>
-        {message.answer_section ? (
+        {message.answer ? (
           <div className="space-y-3">
             <div>
-              <p className="whitespace-pre-wrap leading-relaxed">{message.answer_section.executive_summary}</p>
+              <p className="whitespace-pre-wrap leading-relaxed">{message.answer.executiveSummary}</p>
             </div>
-            {message.answer_section.detailed_explanation ? (
+            {message.answer.detailedExplanation ? (
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Analysis</p>
-                <p className="whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300">{message.answer_section.detailed_explanation}</p>
+                <p className="whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300">{message.answer.detailedExplanation}</p>
               </div>
             ) : null}
-            {message.answer_section.supporting_evidence?.length ? (
+            {message.answer.evidence?.length ? (
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Evidence ({message.answer_section.supporting_evidence.length})</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Evidence ({message.answer.evidence.length})</p>
                 <ul className="space-y-1">
-                  {message.answer_section.supporting_evidence.map((ev, i) => (
+                  {message.answer.evidence.map((ev, i) => (
                     <li key={ev.chunk_id ?? i} className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] dark:border-slate-800 dark:bg-slate-800/40">
                       <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
                         {ev.source ? `[${ev.source}]` : ""} {ev.section ?? ""}
                       </span>
-                      <p className="mt-0.5 line-clamp-2 italic text-slate-700 dark:text-slate-300">"{ev.excerpt}"</p>
+                      <p className="mt-0.5 line-clamp-2 italic text-slate-700 dark:text-slate-300">"{ev.content}"</p>
                     </li>
                   ))}
                 </ul>
               </div>
             ) : null}
-            {message.answer_section.key_regulatory_references?.length ? (
+            {message.answer.references?.length ? (
               <div className="flex flex-wrap gap-1.5">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">References:</span>
-                {message.answer_section.key_regulatory_references.map((ref, i) => (
+                {message.answer.references.map((ref, i) => (
                   <Badge key={i} tone="neutral" size="sm">{ref}</Badge>
                 ))}
               </div>
@@ -234,7 +249,6 @@ function MessageBubble({ message }: { message: CopilotMessage }) {
             {message.sources?.length ? <SourceList sources={message.sources} /> : null}
             <Indicators confidence={message.confidence_score} faithfulness={message.faithfulness_score}
               hallucinationRisk={message.hallucination_risk_level} hallucinationDetected={message.hallucination_detected} latency={message.latency_ms} />
-            {message.agent_contributions?.length ? <AgentContributionList contributions={message.agent_contributions} /> : null}
             {message.memory_context ? <MemoryContextView ctx={message.memory_context} /> : null}
           </div>
         ) : null}
@@ -255,30 +269,30 @@ function Avatar({ role }: { role: string }) {
   );
 }
 
-function CitationList({ citations }: { citations: CopilotCitation[] }) {
+function CitationList({ citations }: { citations: ReferenceEntry[] }) {
   return (<section>
     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Citations ({citations.length})</p>
     <ul className="mt-1.5 space-y-1.5">
       {citations.slice(0, 4).map((c, i) => (
         <li key={c.citation_id ?? `${i}`} className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-200">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">[{i + 1}] {c.source_label ?? c.document_id ?? c.chunk_id ?? c.citation_id}</span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400">{Math.round((c.confidence ?? 0) * 100)}%</span>
+            <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">[{i + 1}] {c.document_title ?? c.document_id ?? c.chunk_id ?? c.citation_id}</span>
+            {c.page_number != null ? <span className="text-[10px] text-slate-500 dark:text-slate-400">p. {c.page_number}</span> : null}
           </div>
-          <p className="mt-1 line-clamp-2 italic">"{c.text}"</p>
+          <p className="mt-1 line-clamp-2 italic">"{c.excerpt}"</p>
         </li>
       ))}
     </ul>
   </section>);
 }
 
-function SourceList({ sources }: { sources: CopilotAttribution[] }) {
+function SourceList({ sources }: { sources: SourceAttribution[] }) {
   return (<section>
     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sources ({sources.length})</p>
     <ul className="mt-1.5 flex flex-wrap gap-1.5">
       {sources.slice(0, 6).map((s, i) => (
-        <li key={s.source_id ?? `${i}`}>
-          <Badge tone="neutral" size="sm">{s.document_title ?? s.document_id ?? s.source_id}</Badge>
+        <li key={s.attribution_id ?? `${i}`}>
+          <Badge tone="neutral" size="sm">{s.document_title ?? s.document_id} · {Math.round(s.similarity * 100)}%</Badge>
         </li>
       ))}
     </ul>
@@ -296,65 +310,24 @@ function Indicators({ confidence, faithfulness, hallucinationRisk, hallucination
   </section>);
 }
 
-function AgentContributionList({ contributions }: { contributions: AgentContributionItem[] }) {
-  return (<section>
-    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Agent Contributions</p>
-    <ul className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-      {contributions.map((c, i) => (
-        <li key={`${c.agent_name}-${i}`} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-[11px] dark:border-slate-800 dark:bg-surface-dark-3">
-          <span className="flex h-5 w-5 items-center justify-center rounded bg-brand-500 text-[10px] font-bold text-white">{c.agent_name.slice(0, 1).toUpperCase()}</span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-slate-900 dark:text-slate-100">{c.agent_name}</p>
-            <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{c.capability} · {formatDurationMs(c.duration_ms)}</p>
-          </div>
-          <Badge tone={c.status === "succeeded" ? "success" : c.status === "failed" ? "danger" : "warning"} size="sm">{Math.round((c.confidence ?? 0) * 100)}%</Badge>
-        </li>
-      ))}
-    </ul>
-  </section>);
-}
-
-function MemoryContextView({ ctx }: { ctx?: MemoryContext }) {
+function MemoryContextView({ ctx }: { ctx?: MemoryContext | null }) {
   if (!ctx) return null;
-  const total = (ctx.short_term?.length ?? 0) + (ctx.long_term?.length ?? 0);
-  if (total === 0 && (ctx.entities?.length ?? 0) === 0) return null;
+  const shortTerm = ctx.short_term ?? [];
+  const longTerm = ctx.long_term ?? [];
+  const retrieved = ctx.retrieval ?? [];
+  if (shortTerm.length === 0 && longTerm.length === 0 && retrieved.length === 0) return null;
   return (<section>
     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Memory Context</p>
     <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {ctx.short_term?.length ? (<div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] dark:border-slate-800 dark:bg-slate-800/40">
+      {shortTerm.length ? (<div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] dark:border-slate-800 dark:bg-slate-800/40">
         <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Short-term</p>
-        <ul className="mt-1 space-y-1">{ctx.short_term.slice(0, 3).map((m, i) => (<li key={i} className="line-clamp-2 italic">"{m.content}"</li>))}</ul>
+        <ul className="mt-1 space-y-1">{shortTerm.slice(0, 3).map((m, i) => (<li key={i} className="line-clamp-2 italic">"{m.content}"</li>))}</ul>
       </div>) : null}
-      {ctx.long_term?.length ? (<div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] dark:border-slate-800 dark:bg-slate-800/40">
+      {longTerm.length ? (<div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] dark:border-slate-800 dark:bg-slate-800/40">
         <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Long-term</p>
-        <ul className="mt-1 space-y-1">{ctx.long_term.slice(0, 3).map((m, i) => (<li key={i} className="line-clamp-2 italic">"{m.content}"</li>))}</ul>
+        <ul className="mt-1 space-y-1">{longTerm.slice(0, 3).map((m, i) => (<li key={i} className="line-clamp-2 italic">"{m.content}"</li>))}</ul>
       </div>) : null}
     </div>
-    {ctx.entities?.length ? (<div className="mt-2 flex flex-wrap gap-1.5">{ctx.entities.slice(0, 6).map((e, i) => (<Badge key={i} tone="brand" size="sm">{e}</Badge>))}</div>) : null}
+    {retrieved.length ? (<div className="mt-2 flex flex-wrap gap-1.5">{retrieved.slice(0, 6).map((r, i) => (<Badge key={i} tone="brand" size="sm">{r.entry.content.slice(0, 60)} · {Math.round(r.score * 100)}%</Badge>))}</div>) : null}
   </section>);
-}
-
-function buildAssistantMessage(r: CopilotResponsePayload): CopilotMessage {
-  const sections = r.answer && typeof r.answer === "object" ? r.answer : null;
-  const text = sections
-    ? [sections.executive_summary, sections.detailed_explanation].filter(Boolean).join("\n\n")
-    : typeof r.answer === "string"
-      ? r.answer
-      : "";
-  return {
-    role: "assistant",
-    content: text,
-    timestamp: new Date().toISOString(),
-    citations: r.citations ?? [],
-    sources: r.sources ?? [],
-    confidence_score: r.confidence_score,
-    confidence_level: r.confidence_level,
-    faithfulness_score: r.faithfulness_score,
-    hallucination_detected: r.hallucination_detected,
-    hallucination_risk_level: r.hallucination_risk_level,
-    memory_context: r.memory_context,
-    latency_ms: r.latency_ms,
-    agent_contributions: r.agent_contributions ?? [],
-    answer_section: sections ?? undefined,
-  };
 }

@@ -7,13 +7,15 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminOverview, getAdminStats, getUsers, getRoles } from "@/services/api/adminApi";
-import { formatRelative, truncate } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
+import { adminKeys } from "@/lib/queryKeys";
+import { toAdminRoleView, toAdminUserView } from "@/adapters/governance";
 
 export function AdminPage() {
-  const overview = useQuery({ queryKey: ["admin", "overview"], queryFn: getAdminOverview });
-  const stats = useQuery({ queryKey: ["admin", "stats"], queryFn: getAdminStats });
-  const users = useQuery({ queryKey: ["admin", "users"], queryFn: getUsers });
-  const roles = useQuery({ queryKey: ["admin", "roles"], queryFn: getRoles });
+  const overview = useQuery({ queryKey: adminKeys.overview(), queryFn: getAdminOverview });
+  const stats = useQuery({ queryKey: adminKeys.stats(), queryFn: getAdminStats });
+  const users = useQuery({ queryKey: adminKeys.users(), queryFn: getUsers });
+  const roles = useQuery({ queryKey: adminKeys.roles(), queryFn: getRoles });
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">
@@ -29,10 +31,10 @@ export function AdminPage() {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Metric
           label="Users"
-          value={stats.data?.total_users ?? overview.data?.users?.total ?? "—"}
+          value={stats.data?.total_users ?? overview.data?.total_users ?? "—"}
           hint={
-            overview.data?.users
-              ? `${overview.data.users.active} active`
+            stats.data
+              ? `${stats.data.active_users} active`
               : undefined
           }
         />
@@ -41,16 +43,12 @@ export function AdminPage() {
           value={stats.data?.total_roles ?? "—"}
         />
         <Metric
-          label="Policies"
-          value={stats.data?.total_policies ?? "—"}
+          label="Decisions"
+          value={overview.data?.total_decisions ?? "—"}
         />
         <Metric
-          label="System health"
-          value={
-            <span className="capitalize">
-              {stats.data?.system_health ?? "—"}
-            </span>
-          }
+          label="Compliance rate"
+          value={overview.data ? `${Math.round(overview.data.compliance_rate * 100)}%` : "—"}
         />
       </section>
 
@@ -75,21 +73,19 @@ export function AdminPage() {
                 </TR>
               </THead>
               <TBody>
-                {users.data.items.map((u) => (
-                  <TR key={u.user_id}>
+                {(users.data?.items ?? []).map(toAdminUserView).map((u) => (
+                  <TR key={u.id}>
                     <TD>
                       <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        {u.name}
+                        {u.displayName}
                       </p>
                     </TD>
                     <TD>{u.email}</TD>
                     <TD>
                       <div className="flex flex-wrap gap-1">
-                        {(u.roles ?? []).map((r) => (
-                          <Badge key={r} tone="brand" size="sm">
-                            {r}
-                          </Badge>
-                        ))}
+                        <Badge tone="brand" size="sm">
+                          {u.roleCount} roles
+                        </Badge>
                       </div>
                     </TD>
                     <TD>
@@ -105,7 +101,7 @@ export function AdminPage() {
                         {u.status}
                       </Badge>
                     </TD>
-                    <TD>{formatRelative(u.last_login_at)}</TD>
+                    <TD>{formatRelative(u.lastLoginMillis)}</TD>
                   </TR>
                 ))}
               </TBody>
@@ -123,9 +119,9 @@ export function AdminPage() {
             <EmptyState title="No roles" />
           ) : (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {roles.data.items.map((r) => (
+              {(roles.data?.items ?? []).map(toAdminRoleView).map((r) => (
                 <li
-                  key={r.role_id}
+                  key={r.id}
                   className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"
                 >
                   <div className="flex items-center gap-2">
@@ -133,19 +129,12 @@ export function AdminPage() {
                       {r.name}
                     </span>
                     <Badge tone="brand" size="sm">
-                      {r.member_count} members
+                      {r.memberCount} members
                     </Badge>
                   </div>
                   <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                    {truncate(r.description, 100)}
+                    {r.permissionCount} permissions
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {(r.permissions ?? []).slice(0, 4).map((p) => (
-                      <Badge key={p.permission_id ?? p.code} tone="neutral" size="sm">
-                        {p.code ?? p.description}
-                      </Badge>
-                    ))}
-                  </div>
                 </li>
               ))}
             </ul>

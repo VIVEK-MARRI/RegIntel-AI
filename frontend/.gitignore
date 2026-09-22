@@ -13,3 +13,8 @@ tsconfig.node.tsbuildinfo
 # tsc -b emit artifacts
 *.d.ts
 !src/**/*.d.ts
+# tsc-emitted shadows of the authoritative *.config.ts files
+# (postcss.config.js is a real source file and stays tracked)
+/vite.config.js
+/vitest.config.js
+/tailwind.config.js

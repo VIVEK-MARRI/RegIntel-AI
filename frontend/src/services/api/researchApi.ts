@@ -1,14 +1,24 @@
-import { api } from "@/lib/api";
-import type { ResearchReport } from "@/types";
+import { LONG_TIMEOUT_MS, api, encodePathSegment } from "@/lib/api";
+import type {
+  PaginatedResearchReports,
+  ResearchListQuery,
+  ResearchReport,
+  ResearchRequest,
+} from "@/types/api/research";
 
-export async function getResearchReports(): Promise<ResearchReport[]> {
-  return api.get<{ items: ResearchReport[] }>("/research").then(r => r.items);
+export async function getResearchReports(
+  query?: ResearchListQuery
+): Promise<ResearchReport[]> {
+  const res = await api.get<PaginatedResearchReports>("/research", { query });
+  return res.items;
 }
 
 export async function getResearchReport(id: string): Promise<ResearchReport> {
-  return api.get(`/research/${id}`);
+  return api.get<ResearchReport>(`/research/${encodePathSegment(id)}`);
 }
 
-export async function runResearch(payload: { query: string; max_steps?: number }): Promise<ResearchReport> {
-  return api.post("/research/run", payload);
+export async function runResearch(payload: ResearchRequest): Promise<ResearchReport> {
+  return api.post<ResearchReport>("/research/run", payload, {
+    timeoutMs: LONG_TIMEOUT_MS,
+  });
 }

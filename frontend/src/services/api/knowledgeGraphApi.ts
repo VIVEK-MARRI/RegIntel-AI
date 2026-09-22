@@ -1,28 +1,46 @@
-import { api } from "@/lib/api";
-import type { GraphNode, GraphRelationship, KnowledgeGraphStats } from "@/types";
+import { api, encodePathSegment } from "@/lib/api";
+import type {
+  GraphNode,
+  GraphRelationship,
+  GraphStats,
+  ImpactTraversalQuery,
+  ImpactTraversalResult,
+  PaginatedNodes,
+  PaginatedRelationships,
+} from "@/types/api/knowledgeGraph";
 
-export async function getGraphStats(): Promise<KnowledgeGraphStats> {
-  return api.get<KnowledgeGraphStats>("/knowledge-graph/stats");
+export async function getGraphStats(): Promise<GraphStats> {
+  return api.get<GraphStats>("/knowledge-graph/stats");
 }
 
-export async function getGraphNodes(): Promise<GraphNode[]> {
-  return api.get<{ items: GraphNode[] }>("/knowledge-graph/nodes").then((r) => r.items);
+export type GraphNodesQuery = {
+  entity_type?: string;
+  source?: string;
+  name_contains?: string;
+  tag?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export async function getGraphNodes(
+  query?: GraphNodesQuery
+): Promise<GraphNode[]> {
+  const res = await api.get<PaginatedNodes>("/knowledge-graph/nodes", { query });
+  return res.items;
 }
 
 export async function getGraphRelationships(): Promise<GraphRelationship[]> {
-  return api
-    .get<{ items: GraphRelationship[] }>("/knowledge-graph/relationships")
-    .then((r) => r.items ?? []);
+  const res = await api.get<PaginatedRelationships>("/knowledge-graph/relationships");
+  return res.items ?? [];
 }
 
-export interface GraphImpact {
-  start_node_id: string;
-  affected_node_ids: string[];
-  total_paths: number;
-  max_depth_reached: number;
-  steps: unknown[];
-}
-
-export async function getGraphImpact(nodeId: string): Promise<GraphImpact> {
-  return api.post<GraphImpact>(`/knowledge-graph/impact-traversal/${nodeId}`);
+export async function getGraphImpact(
+  nodeId: string,
+  query?: ImpactTraversalQuery
+): Promise<ImpactTraversalResult> {
+  return api.post<ImpactTraversalResult>(
+    `/knowledge-graph/impact-traversal/${encodePathSegment(nodeId)}`,
+    undefined,
+    { query }
+  );
 }

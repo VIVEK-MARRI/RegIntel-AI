@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import { signup } from "@/services/api/authApi";
+import { getErrorMessage } from "@/lib/errors";
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -19,23 +21,11 @@ export function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      const backendBase = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
-        /\/$/,
-        ""
-      );
-      const res = await fetch(`${backendBase}/api/v1/security/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || "signup failed");
-      }
+      await signup({ email, password, full_name: fullName });
       await login(email, password);
       navigate("/", { replace: true });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Signup failed"));
     } finally {
       setLoading(false);
     }

@@ -14,8 +14,10 @@ import { getComplianceAssessments, runCompliance } from "@/services/api/complian
 import { getRiskForecasts, getRiskScenarios, forecastRisk } from "@/services/api/riskApi";
 import { getPolicies, getDecisions, getGovernanceStats } from "@/services/api/governanceApi";
 import { useToast } from "@/providers/ToastProvider";
-import { formatNumber, formatRelative, truncate } from "@/lib/format";
-import type { ComplianceAssessment } from "@/types";
+import { formatNumber, formatRelative } from "@/lib/format";
+import { complianceKeys, governanceKeys, riskKeys } from "@/lib/queryKeys";
+import { toDecisionView, toPolicyView } from "@/adapters/governance";
+import type { RiskAssessment } from "@/types/api/compliance";
 
 export function CompliancePage() {
   const [tab, setTab] = useState<"overview" | "risk" | "governance" | "impact">("overview");
@@ -62,13 +64,13 @@ export function CompliancePage() {
 
 function OverviewTab() {
   const { data: assessments, isLoading, isError, refetch } = useQuery({
-    queryKey: ["compliance", "assessments"], queryFn: getComplianceAssessments,
+    queryKey: complianceKeys.assessments(), queryFn: getComplianceAssessments,
   });
   const run = useMutation({ mutationFn: runCompliance, onSuccess: () => refetch() });
   const toast = useToast();
   const [scope, setScope] = useState("");
   const [policiesStr, setPoliciesStr] = useState("");
-  const [selected, setSelected] = useState<ComplianceAssessment | null>(null);
+  const [selected, setSelected] = useState<RiskAssessment | null>(null);
 
   const avgScore = assessments?.length
     ? Math.round(assessments.reduce((s, a) => s + a.risk_score, 0) / assessments.length * 100)
@@ -80,9 +82,12 @@ function OverviewTab() {
     if (!scope.trim()) return;
     const policies = policiesStr.split(",").map((s) => s.trim()).filter(Boolean);
     try {
-      const result = await run.mutateAsync({ scope, policies: policies.length ? policies : undefined });
+      // Backend RiskAssessmentRequest accepts document_id/diff_id/
+      // impact_report_id/source/context only — scope+policies travel as
+      // opaque context so the call validates (422 otherwise).
+      const result = await run.mutateAsync({ source: "manual", context: { scope, policies } });
       setSelected(result);
-      toast.push({ title: "Assessment complete", description: `${result.scope} — score ${Math.round(result.risk_score * 100)}%`, tone: "success" });
+      toast.push({ title: "Assessment complete", description: `${result.assessment_id} — risk ${Math.round(result.risk_score * 100)}%`, tone: "success" });
     } catch (err) {
       toast.push({ title: "Assessment failed", description: err instanceof Error ? err.message : "Unexpected error", tone: "danger" });
     }
@@ -91,9 +96,9 @@ function OverviewTab() {
   return (
     <div className="space-y-4">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Metric label="Compliance Score" value={avgScore !== null ? `${avgScore}%` : "—"} hint={assessments ? `${assessments.length} assessment(s)` : "Loading…"} />
+        <Metric label="Avg Risk Score" value={avgScore !== null ? `${avgScore}%` : "—"} hint={assessments ? `${assessments.length} assessment(s)` : "Loading…"} />
         <Metric label="Assessments" value={assessments?.length ?? "—"} />
-        <Metric label="Open Gaps" value={assessments?.reduce((s, a) => s + (a.gaps?.length ?? 0), 0) ?? "—"} />
+        <Metric label="Open Gaps" value={assessments?.reduce((s, a) => s + (a.compliance_gaps?.length ?? 0), 0) ?? "—"} />
       </section>
 
       <Card padding="md">
@@ -113,28 +118,27 @@ function OverviewTab() {
 
       {selected ? (
         <Card padding="none">
-          <CardHeader title={selected.scope} actions={<Badge tone={riskTone(selected.risk_level)}>{selected.risk_level}</Badge>} />
+          <CardHeader title={selected.document_id ?? selected.assessment_id} actions={<Badge tone={riskTone(selected.risk_level)}>{selected.risk_level}</Badge>} />
           <div className="card-body space-y-4">
             <section>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Obligations ({(selected.obligations ?? []).length})</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Recommended actions ({(selected.recommended_actions ?? []).length})</h4>
               <ul className="mt-2 space-y-1.5">
-                {(selected.obligations ?? []).map((o) => (
-                  <li key={o.obligation_id} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
+                {(selected.recommended_actions ?? []).map((o) => (
+                  <li key={o.action_id} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
                     <span className="flex-1 font-medium text-slate-900 dark:text-slate-100">{o.title ?? "—"}</span>
-                    <Badge tone={o.severity === "critical" ? "danger" : o.severity === "high" ? "warning" : "info"} size="sm">{o.severity}</Badge>
-                    <Badge tone={o.status === "met" ? "success" : o.status === "breached" ? "danger" : "warning"} size="sm">{o.status}</Badge>
+                    <Badge tone="info" size="sm">{o.action_type}</Badge>
                   </li>
                 ))}
               </ul>
             </section>
-            {(selected.gaps ?? []).length ? (
+            {(selected.compliance_gaps ?? []).length ? (
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Gaps ({(selected.gaps ?? []).length})</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Gaps ({(selected.compliance_gaps ?? []).length})</h4>
                 <ul className="mt-2 space-y-1.5">
-                  {(selected.gaps ?? []).map((g) => (
+                  {(selected.compliance_gaps ?? []).map((g) => (
                     <li key={g.gap_id} className="rounded-lg border border-red-200 bg-red-50/40 px-3 py-2 text-xs dark:border-red-900/40 dark:bg-red-950/20">
                       <p className="font-medium text-red-800 dark:text-red-200">{g.description}</p>
-                      <p className="mt-1 text-red-600 dark:text-red-400">Actions: {(g.recommended_actions ?? []).join(", ") || "—"}</p>
+                      <p className="mt-1 text-red-600 dark:text-red-400">{g.area} · {g.severity}</p>
                     </li>
                   ))}
                 </ul>
@@ -155,12 +159,12 @@ function OverviewTab() {
                 <li key={a.assessment_id} className="cursor-pointer rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 dark:border-slate-800 dark:hover:border-brand-500"
                   onClick={() => setSelected(a)}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.scope}</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.document_id ?? a.assessment_id}</span>
                     <Badge tone={riskTone(a.risk_level)}>{a.risk_level}</Badge>
                     <Badge tone="brand" size="sm">{Math.round(a.risk_score * 100)}%</Badge>
                     <span className="ml-auto text-[10px] text-slate-500">{formatRelative(a.generated_at)}</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">{(a.obligations?.length ?? 0)} obligations · {(a.gaps?.length ?? 0)} gaps</p>
+                  <p className="mt-1 text-xs text-slate-500">{(a.recommended_actions?.length ?? 0)} actions · {(a.compliance_gaps?.length ?? 0)} gaps</p>
                 </li>
               ))}
             </ul>
@@ -173,20 +177,19 @@ function OverviewTab() {
 
 function RiskTab() {
   const { data: forecasts, isLoading: fLoading, isError: fError, refetch: fRefetch } = useQuery({
-    queryKey: ["risk", "forecasts"], queryFn: getRiskForecasts,
+    queryKey: riskKeys.forecasts(), queryFn: getRiskForecasts,
   });
   const { data: scenarios, isLoading: sLoading, isError: sError } = useQuery({
-    queryKey: ["risk", "scenarios"], queryFn: getRiskScenarios,
+    queryKey: riskKeys.scenarios(), queryFn: getRiskScenarios,
   });
   const run = useMutation({ mutationFn: forecastRisk });
   const toast = useToast();
   const [horizon, setHorizon] = useState(30);
-  const [baseline, setBaseline] = useState(60);
 
   async function handleForecast() {
     try {
-      const result = await run.mutateAsync({ horizon_days: horizon, baseline_score: baseline });
-      toast.push({ title: "Forecast generated", description: `${result.horizon_days}-day: ${Math.round(result.projected_score)}/100`, tone: "success" });
+      const result = await run.mutateAsync({ horizon_days: horizon });
+      toast.push({ title: "Forecast generated", description: `${result.horizon_days}-day: ${(result.predicted_risk_score * 100).toFixed(1)}% risk`, tone: "success" });
     } catch (err) {
       toast.push({ title: "Forecast failed", description: err instanceof Error ? err.message : "Unexpected error", tone: "danger" });
     }
@@ -198,19 +201,16 @@ function RiskTab() {
     <div className="space-y-4">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <Metric label="Active Forecasts" value={forecasts?.length ?? "—"} />
-        <Metric label="Avg Projected Score" value={forecasts?.length ? `${Math.round(forecasts.reduce((s, f) => s + f.projected_score, 0) / forecasts.length)}` : "—"} />
+        <Metric label="Avg Predicted Score" value={forecasts?.length ? `${Math.round(forecasts.reduce((s, f) => s + f.predicted_risk_score, 0) / forecasts.length * 100)}` : "—"} />
         <Metric label="Scenarios" value={scenarios?.length ?? "—"} />
         <Metric label="Avg Confidence" value={forecasts?.length ? `${Math.round(forecasts.reduce((s, f) => s + f.confidence, 0) / forecasts.length * 100)}%` : "—"} />
       </section>
 
       <Card padding="md">
         <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Generate Risk Forecast</h3>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[120px_120px_auto]">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[120px_auto]">
           <Field label="Horizon (days)" id="risk-horizon">
             <Input id="risk-horizon" type="number" min={1} max={365} value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} />
-          </Field>
-          <Field label="Baseline score" id="risk-baseline">
-            <Input id="risk-baseline" type="number" min={0} max={100} value={baseline} onChange={(e) => setBaseline(Number(e.target.value))} />
           </Field>
           <div className="flex items-end">
             <Button variant="primary" onClick={handleForecast} loading={run.isPending}>Forecast</Button>
@@ -230,9 +230,9 @@ function RiskTab() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-slate-700 dark:text-slate-200">{f.horizon_days}-day horizon</span>
-                      <span className="text-slate-500">{formatNumber(f.projected_score)} / 100</span>
+                      <span className="text-slate-500">{formatNumber(f.predicted_risk_score * 100)} / 100</span>
                     </div>
-                    <ProgressBar value={f.projected_score} max={100} tone={scoreTone(f.projected_score)} className="mt-1.5" />
+                    <ProgressBar value={f.predicted_risk_score * 100} max={100} tone={scoreTone(f.predicted_risk_score * 100)} className="mt-1.5" />
                   </div>
                   <Badge tone={f.confidence > 0.75 ? "success" : "warning"}>{(f.confidence * 100).toFixed(0)}% conf</Badge>
                 </li>
@@ -271,13 +271,13 @@ function RiskTab() {
 
 function GovernanceTab() {
   const { data: policies, isLoading: pLoading, isError: pError, refetch: pRefetch } = useQuery({
-    queryKey: ["governance", "policies"], queryFn: getPolicies,
+    queryKey: governanceKeys.policies(), queryFn: getPolicies,
   });
   const { data: decisions, isLoading: dLoading, isError: dError, refetch: dRefetch } = useQuery({
-    queryKey: ["governance", "decisions"], queryFn: getDecisions,
+    queryKey: governanceKeys.decisions(), queryFn: getDecisions,
   });
   const { data: stats, isLoading: sLoading, isError: sError, refetch: sRefetch } = useQuery({
-    queryKey: ["governance", "stats"], queryFn: getGovernanceStats,
+    queryKey: governanceKeys.stats(), queryFn: getGovernanceStats,
   });
 
   return (
@@ -287,9 +287,9 @@ function GovernanceTab() {
         : sError ? <ErrorState onRetry={sRefetch} />
         : <>
             <Metric label="Policies" value={stats?.total_policies ?? "—"} />
-            <Metric label="Active" value={stats?.active ?? "—"} hint="Active policies" />
+            <Metric label="Compliant" value={stats?.compliant_decisions ?? "—"} hint="Compliant decisions" />
             <Metric label="Decisions" value={stats?.total_decisions ?? "—"} />
-            <Metric label="Deprecated" value={stats?.deprecated ?? "—"} />
+            <Metric label="Violations" value={stats?.total_violations ?? "—"} />
           </>
         }
       </section>
@@ -303,16 +303,19 @@ function GovernanceTab() {
           : <Table>
               <THead><TR><TH>Name</TH><TH>Scope</TH><TH>Status</TH><TH>Version</TH><TH>Rules</TH><TH>Updated</TH></TR></THead>
               <TBody>
-                {policies.map((p) => (
-                  <TR key={p.policy_id}>
-                    <TD className="font-medium">{p.name}</TD>
-                    <TD>{p.scope ?? "—"}</TD>
-                    <TD><Badge tone={p.status === "active" ? "success" : p.status === "deprecated" ? "danger" : "warning"} size="sm">{p.status}</Badge></TD>
-                    <TD>v{p.version}</TD>
-                    <TD>{(p.rules?.length ?? 0)}</TD>
-                    <TD className="text-[10px]">{formatRelative(p.updated_at)}</TD>
-                  </TR>
-                ))}
+                {(policies ?? []).map((p) => {
+                  const v = toPolicyView(p);
+                  return (
+                    <TR key={p.policy_id}>
+                      <TD className="font-medium">{p.name}</TD>
+                      <TD>{p.scope ?? "—"}</TD>
+                      <TD><Badge tone={v.enabled ? "success" : "warning"} size="sm">{v.statusText}</Badge></TD>
+                      <TD>v{p.version}</TD>
+                      <TD>{(p.rules?.length ?? 0)}</TD>
+                      <TD className="text-[10px]">{formatRelative(p.updated_at)}</TD>
+                    </TR>
+                  );
+                })}
               </TBody>
             </Table>
           }
@@ -328,12 +331,12 @@ function GovernanceTab() {
           : <Table>
               <THead><TR><TH>Title</TH><TH>Decision</TH><TH>Authority</TH><TH>Date</TH></TR></THead>
               <TBody>
-                {decisions.map((d) => (
-                  <TR key={d.decision_id}>
-                    <TD className="font-medium">{d.subject ?? truncate(d.rationale, 60)}</TD>
-                    <TD><Badge tone={d.outcome === "approved" ? "success" : d.outcome === "rejected" ? "danger" : "warning"} size="sm">{d.outcome}</Badge></TD>
-                    <TD>{d.approver ?? "—"}</TD>
-                    <TD className="text-[10px]">{formatRelative(d.created_at)}</TD>
+                {(decisions ?? []).map(toDecisionView).map((d) => (
+                  <TR key={d.id}>
+                    <TD className="font-medium">{d.subject}</TD>
+                    <TD><Badge tone="neutral" size="sm">{d.outcome}</Badge></TD>
+                    <TD>{d.actor ?? "—"}</TD>
+                    <TD className="text-[10px]">{formatRelative(d.timestampMillis)}</TD>
                   </TR>
                 ))}
               </TBody>
@@ -347,10 +350,10 @@ function GovernanceTab() {
 
 function ImpactTab() {
   const { data: assessments } = useQuery({
-    queryKey: ["compliance", "assessments"], queryFn: getComplianceAssessments,
+    queryKey: complianceKeys.assessments(), queryFn: getComplianceAssessments,
   });
   const { data: scenarios } = useQuery({
-    queryKey: ["risk", "scenarios"], queryFn: getRiskScenarios,
+    queryKey: riskKeys.scenarios(), queryFn: getRiskScenarios,
   });
 
   return (

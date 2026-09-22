@@ -9,9 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import * as authApi from "@/services/api/authApi";
-import { setAccessToken } from "@/lib/auth-token";
+import type { AuthUser } from "@/types/api/auth";
+import { getAccessToken, setAccessToken } from "@/lib/auth-token";
+import { setAuthHandler } from "@/lib/api";
 
-type User = authApi.LoginResponse["user"];
+type User = AuthUser;
 
 interface AuthState {
   user: User | null;
@@ -72,44 +74,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const performRefresh = useCallback(async () => {
+  const performRefresh = useCallback(async (): Promise<boolean> => {
     const stored = loadPersistedRefreshToken();
     if (!stored) {
       clearTokens();
-      return;
+      return false;
     }
     try {
       const res = await authApi.refreshToken(stored);
       setAccessToken(res.access_token);
       setRefreshToken(res.refresh_token);
       persistRefreshToken(res.refresh_token);
-      if (res.user) {
-        setUser(res.user);
-        persistUser(res.user);
-      }
-      scheduleRefresh(res.expires_in);
+      scheduleRefreshRef(res.expires_in);
+      return true;
     } catch {
       clearTokens();
+      return false;
     }
   }, [clearTokens]);
-
-  const scheduleRefresh = useCallback(
-    (expiresIn: number) => {
-      if (refreshTimer.current) {
-        clearTimeout(refreshTimer.current);
-      }
-      const ms = Math.max(10000, (expiresIn - 30) * 1000);
-      refreshTimer.current = setTimeout(() => {
-        performRefresh();
-      }, ms);
-    },
-    [performRefresh]
-  );
-
-  // Define performRefresh after scheduleRefresh ref, but before use
-  // Actually we need to restructure to avoid circular refs
-  const performRefreshRef = useRef(performRefresh);
-  performRefreshRef.current = performRefresh;
 
   const scheduleRefreshRef = useCallback(
     (expiresIn: number) => {
@@ -118,11 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const ms = Math.max(10000, (expiresIn - 30) * 1000);
       refreshTimer.current = setTimeout(() => {
-        performRefreshRef.current();
+        void performRefreshRef.current();
       }, ms);
     },
     []
   );
+
+  const performRefreshRef = useRef(performRefresh);
+  performRefreshRef.current = performRefresh;
 
     // Bootstrap on mount
   useEffect(() => {
@@ -150,10 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAccessToken(res.access_token);
           setRefreshToken(res.refresh_token);
           persistRefreshToken(res.refresh_token);
-          if (res.user) {
-            setUser(res.user);
-            persistUser(res.user);
-          }
           scheduleRefreshRef(res.expires_in);
         } catch {
           clearTokens();
@@ -167,6 +148,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // HTTP-client boundary (Stage 02 foundation; Stage 03 owns auth internals):
+  // single-flight 401 → refresh → retry-once is orchestrated by lib/api.ts
+  // through this handler. No token state lives in the client.
+  useEffect(() => {
+    setAuthHandler({
+      getAccessToken: () => getAccessToken(),
+      refreshAccessToken: async () => {
+        const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
+        if (!authEnabled) return true;
+        return performRefreshRef.current();
+      },
+      onAuthFailure: () => clearTokens(),
+    });
+    return () => setAuthHandler(null);
+  }, [clearTokens]);
 
   const login = useCallback(
     async (email: string, password: string) => {

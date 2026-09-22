@@ -7,40 +7,47 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Metric } from "@/components/ui/Metric";
 import { useQuery } from "@tanstack/react-query";
 import { getGraphStats, getGraphNodes, getGraphImpact } from "@/services/api/knowledgeGraphApi";
-import type { GraphNode } from "@/types";
+import { toNodeView, type GraphNodeView } from "@/adapters/knowledgeGraph";
+import { toMillis } from "@/lib/dates";
+import { kgKeys } from "@/lib/queryKeys";
 
 export function KnowledgeGraphPage() {
   const { data: stats, isLoading: sLoading, isError: sError, refetch: sRefetch } = useQuery({
-    queryKey: ["kg", "stats"], queryFn: getGraphStats,
+    queryKey: kgKeys.stats(), queryFn: getGraphStats,
   });
   const { data: nodes, isLoading: nLoading, isError: nError, refetch: nRefetch } = useQuery({
-    queryKey: ["kg", "nodes"], queryFn: getGraphNodes,
+    queryKey: kgKeys.nodes(), queryFn: () => getGraphNodes(),
   });
   const [selectedNode, setSelectedNode] = useState<string | undefined>();
   const { data: impact, isLoading: iLoading, isError: iError, refetch: iRefetch } = useQuery({
-    queryKey: ["kg", "impact", selectedNode ?? "none"],
+    queryKey: kgKeys.impact(selectedNode ?? "none"),
     queryFn: () => getGraphImpact(selectedNode!),
     enabled: Boolean(selectedNode),
   });
   const [search, setSearch] = useState("");
 
   const nodeById = useMemo(() => {
-    const map = new Map<string, GraphNode>();
-    (nodes ?? []).forEach((n) => map.set(n.node_id, n));
+    const map = new Map<string, GraphNodeView>();
+    (nodes ?? []).forEach((n) => {
+      const v = toNodeView(n);
+      map.set(v.id, v);
+    });
     return map;
   }, [nodes]);
 
+  const views = useMemo(() => (nodes ?? []).map(toNodeView), [nodes]);
+
   const types = useMemo(() => {
     const counts = new Map<string, number>();
-    (nodes ?? []).forEach((n) => counts.set(n.type, (counts.get(n.type) ?? 0) + 1));
+    views.forEach((n) => counts.set(n.type, (counts.get(n.type) ?? 0) + 1));
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
-  }, [nodes]);
+  }, [views]);
 
   const filtered = useMemo(() => {
-    if (!search) return nodes ?? [];
+    if (!search) return views;
     const q = search.toLowerCase();
-    return (nodes ?? []).filter((n) => n.label?.toLowerCase().includes(q) || n.type?.toLowerCase().includes(q) || n.node_id?.toLowerCase().includes(q));
-  }, [nodes, search]);
+    return views.filter((n) => n.label?.toLowerCase().includes(q) || n.type?.toLowerCase().includes(q) || n.id?.toLowerCase().includes(q));
+  }, [views, search]);
 
   const errorAny = sError || nError;
 
@@ -68,7 +75,7 @@ export function KnowledgeGraphPage() {
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Metric label="Nodes" value={stats?.total_nodes ?? "—"} hint="Total entities" />
           <Metric label="Relationships" value={stats?.total_relationships ?? "—"} hint="Edges between entities" />
-          <Metric label="Generated at" value={stats ? new Date(stats.generated_at * 1000).toLocaleString() : "—"} hint="Snapshot timestamp" />
+          <Metric label="Generated at" value={stats ? new Date(toMillis(stats.generated_at) ?? 0).toLocaleString() : "—"} hint="Snapshot timestamp" />
         </section>
 
         <Card padding="md">
@@ -92,16 +99,16 @@ export function KnowledgeGraphPage() {
             : !nodes?.length ? <EmptyState title="No nodes yet" />
             : <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {filtered.slice(0, 60).map((n, idx) => (
-                  <li key={n.node_id ?? idx}>
-                    <button type="button" onClick={() => setSelectedNode(n.node_id)}
+                  <li key={n.id ?? idx}>
+                    <button type="button" onClick={() => setSelectedNode(n.id)}
                       className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition ${
-                        selectedNode === n.node_id
+                        selectedNode === n.id
                           ? "border-brand-500 bg-brand-50 dark:bg-brand-950/30"
                           : "border-slate-200 hover:border-brand-300 dark:border-slate-800 dark:hover:border-brand-500"
                       }`}
                     >
                       <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{n.label}</p>
-                      <p className="mt-0.5 truncate text-[10px] text-slate-500">{n.type} · {n.node_id}</p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500">{n.type} · {n.id}</p>
                     </button>
                   </li>
                 ))}

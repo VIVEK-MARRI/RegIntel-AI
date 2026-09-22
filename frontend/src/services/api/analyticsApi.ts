@@ -1,59 +1,70 @@
-import { api } from "@/lib/api";
+import { api, encodePathSegment } from "@/lib/api";
 import type {
   AgentAnalyticsOverview,
   AgentPerformance,
-  ChangeEvent,
   CostEstimate,
-  HealthSummaryResponse,
   IntelligenceAgentMetrics,
   LatencyDistribution,
   LeaderboardEntry,
   MonitoringAlert,
+  PaginatedAlerts,
+  PaginatedDiffs,
+  PaginatedRecommendations,
+  PaginatedReviews,
   Recommendation,
   ReviewTask,
-} from "@/types";
-import type { PaginatedResponse } from "./copilotApi";
+  AnalyticsHealthSummary,
+  DocumentDiff,
+} from "@/types/api/analytics";
 
 export async function getAnalyticsOverview(): Promise<AgentAnalyticsOverview> {
-  return api.get("/agents/analytics/overview");
+  return api.get<AgentAnalyticsOverview>("/agents/analytics/overview");
 }
 
 export async function getPerformance(): Promise<AgentPerformance[]> {
-  return api.get("/agents/analytics/performance");
+  return api.get<AgentPerformance[]>("/agents/analytics/performance");
 }
 
 export async function getLeaderboard(topN = 10): Promise<LeaderboardEntry[]> {
-  return api.get("/agents/analytics/leaderboard", { query: { top_n: topN } });
+  return api.get<LeaderboardEntry[]>("/agents/analytics/leaderboard", {
+    query: { top_n: topN },
+  });
 }
 
-export async function getAnalyticsHealth(): Promise<HealthSummaryResponse> {
-  return api.get("/agents/analytics/health");
+export async function getAnalyticsHealth(): Promise<AnalyticsHealthSummary> {
+  return api.get<AnalyticsHealthSummary>("/agents/analytics/health");
 }
 
 export async function getCost(): Promise<CostEstimate> {
-  return api.get("/agents/analytics/cost");
+  return api.get<CostEstimate>("/agents/analytics/cost");
 }
 
 export async function getLatency(name: string): Promise<LatencyDistribution> {
-  return api.get(`/agents/analytics/performance/${encodeURIComponent(name)}/latency`);
+  return api.get<LatencyDistribution>(
+    `/agents/analytics/performance/${encodePathSegment(name)}/latency`
+  );
 }
 
 export async function getIntelligenceMetrics(): Promise<IntelligenceAgentMetrics> {
-  return api.get("/agents/metrics");
+  return api.get<IntelligenceAgentMetrics>("/agents/metrics");
 }
 
 export async function getAlerts(): Promise<MonitoringAlert[]> {
-  return api.get<PaginatedResponse<MonitoringAlert>>("/alerts").then(r => r.items);
+  const res = await api.get<PaginatedAlerts>("/alerts");
+  return res.items;
 }
 
-export async function getChanges(): Promise<ChangeEvent[]> {
-  return api.get<PaginatedResponse<ChangeEvent>>("/changes").then(r => r.items);
+export async function getChanges(): Promise<DocumentDiff[]> {
+  const res = await api.get<PaginatedDiffs>("/changes");
+  return res.items;
 }
 
 export async function getRecommendations(): Promise<Recommendation[]> {
-  return api.get<PaginatedResponse<Recommendation>>("/recommendations").then(r => r.items);
+  const res = await api.get<PaginatedRecommendations>("/recommendations");
+  return res.items;
 }
 
 export async function getReviewTasks(): Promise<ReviewTask[]> {
-  return api.get<PaginatedResponse<ReviewTask>>("/review/tasks").then(r => r.items);
+  const res = await api.get<PaginatedReviews>("/review/tasks");
+  return res.items;
 }
