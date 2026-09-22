@@ -14,6 +14,7 @@ export * from "./compliance";
 export * from "./copilot";
 export * from "./dashboard";
 export * from "./documents";
+export * from "./feedback";
 export * from "./governance";
 export * from "./knowledgeGraph";
 export * from "./research";

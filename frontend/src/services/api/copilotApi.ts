@@ -8,6 +8,7 @@ import type {
   CopilotResponse,
   PaginatedConversations,
 } from "@/types/api/copilot";
+import type { FeedbackEntry, FeedbackRequest } from "@/types/api/feedback";
 
 export async function getCopilotHealth(): Promise<CopilotHealth> {
   return api.get<CopilotHealth>("/copilot/health");
@@ -37,8 +38,37 @@ export async function getMessages(
   return { items: conv.messages ?? [] };
 }
 
-export async function queryCopilot(payload: CopilotRequest): Promise<CopilotResponse> {
+export interface DeleteConversationResult {
+  conversation_id: string;
+  deleted: boolean;
+  mode: string;
+}
+
+/**
+ * DELETE /conversations/:id. Default is a hard delete; the backend also
+ * supports soft archive (?hard=false), which the UI does not use — deleted
+ * means gone, honestly.
+ */
+export async function deleteConversation(
+  conversationId: string
+): Promise<DeleteConversationResult> {
+  return api.del<DeleteConversationResult>(
+    `/conversations/${encodePathSegment(conversationId)}?hard=true`
+  );
+}
+
+export async function queryCopilot(
+  payload: CopilotRequest,
+  options?: { signal?: AbortSignal }
+): Promise<CopilotResponse> {
   return api.post<CopilotResponse>("/copilot/query", payload, {
     timeoutMs: LONG_TIMEOUT_MS,
+    signal: options?.signal,
   });
+}
+
+export async function submitFeedback(
+  payload: FeedbackRequest
+): Promise<FeedbackEntry> {
+  return api.post<FeedbackEntry>("/copilot/feedback", payload);
 }

@@ -504,7 +504,9 @@ describe("copilot mobile sessions", () => {
     );
     await user.click(screen.getByRole("button", { name: "Conversations" }));
     const dialog = await screen.findByRole("dialog", { name: "Conversations" });
-    await user.click(within(dialog).getByRole("button", { name: /KYC review/ }));
+    await user.click(
+      (await within(dialog).findByText("KYC review")).closest("button")!
+    );
     expect(await screen.findByText("at-conv")).toBeTruthy();
     expect(screen.queryByRole("dialog", { name: "Conversations" })).toBeNull();
   });
