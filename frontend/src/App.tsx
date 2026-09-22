@@ -80,7 +80,9 @@ export function App() {
                   <Route path="/settings" element={<Protect path="/settings"><SettingsPage /></Protect>} />
                   <Route path="/agents" element={<Protect path="/agents"><AgentsPage /></Protect>} />
                   <Route path="/admin" element={<Protect path="/admin"><AdminPage /></Protect>} />
-                  <Route path="*" element={<NotFoundPage />} />
+                  {/* Unknown paths respect auth too: logged-out users go to
+                      login instead of seeing the shell around a 404. */}
+                  <Route path="*" element={<Protect path="*"><NotFoundPage /></Protect>} />
                 </Routes>
               </ProtectedLayout>
             </Suspense>

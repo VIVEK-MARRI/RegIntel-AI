@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/AppShell";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
@@ -9,19 +10,23 @@ import { AuthProvider } from "@/providers/AuthProvider";
 vi.mock("@/services/api/authApi", () => ({
   refreshToken: vi.fn().mockRejectedValue(new Error("no refresh token")),
   login: vi.fn(),
+  getMe: vi.fn().mockRejectedValue(new Error("no session")),
 }));
 
 function renderWithRouter(ui: React.ReactNode) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <ThemeProvider>
-      <MemoryRouter initialEntries={["/"]}>
-        <AuthProvider>
-          <Routes>
-            <Route path="*" element={ui} />
-          </Routes>
-        </AuthProvider>
-      </MemoryRouter>
-    </ThemeProvider>
+    <QueryClientProvider client={qc}>
+      <ThemeProvider>
+        <MemoryRouter initialEntries={["/"]}>
+          <AuthProvider>
+            <Routes>
+              <Route path="*" element={ui} />
+            </Routes>
+          </AuthProvider>
+        </MemoryRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

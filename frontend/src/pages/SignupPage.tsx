@@ -1,31 +1,49 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth, authErrorMessage } from "@/providers/AuthProvider";
 import { signup } from "@/services/api/authApi";
-import { getErrorMessage } from "@/lib/errors";
 
 export function SignupPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading } = useAuth();
-  if (!isLoading && isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+  // Hooks first, unconditionally — the early return below must never
+  // change hook order (Rules-of-Hooks violation fixed).
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim();
+    if (!cleanEmail) {
+      setError("Email is required.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      await signup({ email, password, full_name: fullName });
-      await login(email, password);
+      await signup({
+        email: cleanEmail,
+        password,
+        full_name: cleanName || undefined,
+      });
+      // Establish the session through AuthProvider (single session logic).
+      await login(cleanEmail, password);
       navigate("/", { replace: true });
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Signup failed"));
+      setError(authErrorMessage(err, "signup"));
     } finally {
       setLoading(false);
     }

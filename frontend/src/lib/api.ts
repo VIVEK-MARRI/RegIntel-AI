@@ -1,6 +1,10 @@
 import { API_BASE_URL, API_PREFIX } from "@/lib/config";
 import { ApiClientError } from "@/lib/errors";
 
+// Re-exported so consumers have ONE import point for the canonical model.
+export { ApiClientError };
+export type { ApiErrorCode } from "@/lib/errors";
+
 /**
  * Canonical HTTP client. EVERY service goes through here (including health
  * and auth); there is exactly ONE error model (ApiClientError).

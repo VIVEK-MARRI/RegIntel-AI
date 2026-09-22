@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation, Link, Navigate } from "react-router-dom";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth, getSafeRedirect, authErrorMessage } from "@/providers/AuthProvider";
 
 export function LoginPage() {
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading, authError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -11,7 +11,7 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const from = (location.state as { from?: string })?.from || "/";
+  const from = getSafeRedirect((location.state as { from?: unknown })?.from);
 
   // Already authenticated → redirect
   if (!isLoading && isAuthenticated) {
@@ -20,15 +20,14 @@ export function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     setError("");
     setSubmitting(true);
     try {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Login failed. Please try again.";
-      setError(msg);
+      setError(authErrorMessage(err, "login"));
     } finally {
       setSubmitting(false);
     }
@@ -71,6 +70,13 @@ export function LoginPage() {
             role="alert"
           >
             {error}
+          </div>
+        ) : authError ? (
+          <div
+            className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200"
+            role="status"
+          >
+            {authError}
           </div>
         ) : null}
 
