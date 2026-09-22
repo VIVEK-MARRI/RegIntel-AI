@@ -106,7 +106,18 @@ export function CopilotPage() {
 
   return (
     <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
-      <SessionList
+      <div className="hidden lg:block">
+        <SessionList
+          sessions={sessions?.items?.map(toSessionItem)}
+          isLoading={sessionsLoading}
+          error={sessionsError}
+          activeId={conversationId}
+          onSelect={(id) => navigate(`/copilot/${id}`)}
+          onRetry={refetchSessions}
+          onNew={() => { setMessages([]); navigate("/copilot"); }}
+        />
+      </div>
+      <MobileSessions
         sessions={sessions?.items?.map(toSessionItem)}
         isLoading={sessionsLoading}
         error={sessionsError}
@@ -159,12 +170,93 @@ export function CopilotPage() {
   );
 }
 
-function SessionList({ sessions, isLoading, error, activeId, onSelect, onNew, onRetry }: {
+/**
+ * Mobile session access: the same SessionList (same data, same callbacks)
+ * inside a drawer. No duplicated conversation state.
+ */
+function MobileSessions(props: {
   sessions?: SessionListItem[]; isLoading: boolean; error: boolean; activeId?: string;
   onSelect: (id: string) => void; onNew: () => void; onRetry: () => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open ]);
+
+  const closeAndSelect = (id: string) => {
+    setOpen(false);
+    props.onSelect(id);
+  };
+  const closeAndNew = () => {
+    setOpen(false);
+    props.onNew();
+  };
+
   return (
-    <Card padding="none" className="hidden h-[calc(100vh-7rem)] flex-col lg:flex">
+    <div className="lg:hidden">
+      <Button size="sm" variant="secondary" onClick={() => setOpen(true)} aria-haspopup="dialog">
+        Conversations
+      </Button>
+      {open ? (
+        <div className="fixed inset-0 z-40">
+          <button
+            type="button"
+            aria-label="Close conversations"
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 h-full w-full cursor-default bg-slate-950/50"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Conversations"
+            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-elevated dark:bg-surface-dark-2"
+          >
+            <div className="flex items-center justify-end border-b border-slate-200 p-2 dark:border-slate-800">
+              <button
+                ref={closeRef}
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close conversations"
+                className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 p-2">
+              <SessionList
+                {...props}
+                className="h-full"
+                onSelect={closeAndSelect}
+                onNew={closeAndNew}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SessionList({ sessions, isLoading, error, activeId, onSelect, onNew, onRetry, className }: {
+  sessions?: SessionListItem[]; isLoading: boolean; error: boolean; activeId?: string;
+  onSelect: (id: string) => void; onNew: () => void; onRetry: () => void;
+  className?: string;
+}) {
+  return (
+    <Card padding="none" className={`flex h-[calc(100vh-7rem)] flex-col ${className ?? ""}`}>
       <div className="card-header flex-col items-stretch gap-2">
         <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Conversations</h3>
         <Button size="sm" variant="secondary" onClick={onNew}>+ New chat</Button>

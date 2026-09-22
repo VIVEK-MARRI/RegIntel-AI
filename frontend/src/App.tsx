@@ -1,9 +1,9 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
-import { Sidebar, Topbar } from "@/components/layout/AppShell";
-import { ToastViewport } from "@/components/ui/ToastViewport";
+import { Shell } from "@/components/layout/AppShell";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RequireRole } from "@/components/auth/RequireRole";
+import { ROUTE_ROLES } from "@/components/layout/navigation";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import("@/pages/SignupPage").then((m) => ({ default: m.SignupPage })));
@@ -20,27 +20,10 @@ const AgentsPage = lazy(() => import("@/pages/AgentsPage").then((m) => ({ defaul
 const AdminPage = lazy(() => import("@/pages/AdminPage").then((m) => ({ default: m.AdminPage })));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
 
-function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-full w-full overflow-hidden">
-      <Sidebar collapsed={false} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onToggleSidebar={() => {}} />
-        <main className="flex-1 overflow-y-auto bg-surface-light-2 p-4 sm:p-6 dark:bg-surface-dark">
-          {children}
-        </main>
-      </div>
-      <ToastViewport />
-    </div>
-  );
-}
-
 function Protect({ path, children }: { path: string; children: React.ReactNode }) {
-  const roleProtected: Record<string, string[]> = {
-    "/agents": ["admin", "operator", "analyst"],
-    "/admin": ["admin"],
-  };
-  const roles = Object.entries(roleProtected).find(([prefix]) =>
+  // Role requirements derive from the same navigation config as the
+  // sidebar links, so guards and visibility can never disagree.
+  const roles = Object.entries(ROUTE_ROLES).find(([prefix]) =>
     path === prefix || path.startsWith(prefix + "/")
   )?.[1];
   const content = roles ? <RequireRole roles={roles}>{children}</RequireRole> : children;
@@ -65,7 +48,7 @@ export function App() {
           path="/*"
           element={
             <Suspense fallback={<PageFallback />}>
-              <ProtectedLayout>
+              <Shell>
                 <Routes>
                   <Route path="/" element={<Protect path="/"><DashboardPage /></Protect>} />
                   <Route path="/copilot" element={<Protect path="/copilot"><CopilotPage /></Protect>} />
@@ -84,7 +67,7 @@ export function App() {
                       login instead of seeing the shell around a 404. */}
                   <Route path="*" element={<Protect path="*"><NotFoundPage /></Protect>} />
                 </Routes>
-              </ProtectedLayout>
+              </Shell>
             </Suspense>
           }
         />
