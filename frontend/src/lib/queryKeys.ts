@@ -69,6 +69,17 @@ export const analyticsKeys = {
   changes: () => [...analyticsKeys.all, "changes"] as const,
 };
 
+export const dashboardKeys = {
+  all: ["dashboard"] as const,
+  compliance: () => [...dashboardKeys.all, "compliance"] as const,
+  trends: () => [...dashboardKeys.all, "trends"] as const,
+  impact: () => [...dashboardKeys.all, "impact"] as const,
+  alerts: () => [...dashboardKeys.all, "alerts"] as const,
+  monitoring: () => [...dashboardKeys.all, "monitoring"] as const,
+  system: () => [...dashboardKeys.all, "system"] as const,
+  insights: () => [...dashboardKeys.all, "insights"] as const,
+};
+
 export const agentsKeys = {
   all: ["agents"] as const,
   list: () => [...agentsKeys.all, "list"] as const,

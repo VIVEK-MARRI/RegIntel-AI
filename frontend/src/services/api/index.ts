@@ -1,6 +1,7 @@
 export * from "./authApi";
 export * from "./healthApi";
 export * from "./copilotApi";
+export * from "./dashboardApi";
 export * from "./adminApi";
 export * from "./researchApi";
 export * from "./complianceApi";

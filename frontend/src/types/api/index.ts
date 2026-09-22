@@ -12,6 +12,7 @@ export * from "./analytics";
 export * from "./audit";
 export * from "./compliance";
 export * from "./copilot";
+export * from "./dashboard";
 export * from "./documents";
 export * from "./governance";
 export * from "./knowledgeGraph";

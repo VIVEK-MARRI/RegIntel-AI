@@ -27,9 +27,9 @@ export function Metric({ label, value, hint, delta, className, icon }: MetricPro
         ) : null}
       </div>
       <div className="mt-3 flex items-baseline gap-2">
-        <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+        <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
           {value}
-        </p>
+        </div>
         {delta ? (
           <span
             className={clsx(
