@@ -1,7 +1,11 @@
 import { clsx } from "clsx";
-import type { HTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
 
-export function Table({ className, ...rest }: HTMLAttributes<HTMLTableElement>) {
+export function Table({
+  className,
+  caption,
+  ...rest
+}: HTMLAttributes<HTMLTableElement> & { caption?: ReactNode }) {
   return (
     <div className="overflow-x-auto">
       <table
@@ -11,7 +15,10 @@ export function Table({ className, ...rest }: HTMLAttributes<HTMLTableElement>) 
           className
         )}
         {...rest}
-      />
+      >
+        {caption ? <caption className="sr-only">{caption}</caption> : null}
+        {rest.children}
+      </table>
     </div>
   );
 }
@@ -50,9 +57,10 @@ export function TR({ className, ...rest }: HTMLAttributes<HTMLTableRowElement>) 
   );
 }
 
-export function TH({ className, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
+export function TH({ className, scope = "col", ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
+      scope={scope}
       className={clsx("px-4 py-3 font-semibold", className)}
       {...rest}
     />

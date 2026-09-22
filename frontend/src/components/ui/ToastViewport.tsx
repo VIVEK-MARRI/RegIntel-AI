@@ -36,7 +36,8 @@ export function ToastViewport() {
             "pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-elevated",
             toneStyles[t.tone]
           )}
-          role="status"
+          // Errors assert; everything else informs.
+          role={t.tone === "danger" ? "alert" : "status"}
         >
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">

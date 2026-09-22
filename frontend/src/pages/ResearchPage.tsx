@@ -44,8 +44,8 @@ export function ResearchPage() {
     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
       <div className="space-y-4">
         <Card padding="md">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Research</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Run deep, multi-step regulatory research with a structured plan and grounded findings.</p>
+          <h2 className="page-title">Research</h2>
+          <p className="page-description">Run deep, multi-step regulatory research with a structured plan and grounded findings.</p>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_120px_auto]">
             <Field label="Research question" id="research-query">
               <TextArea id="research-query" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. Compare FEMA vs RBI reporting thresholds for FY26" rows={2} />

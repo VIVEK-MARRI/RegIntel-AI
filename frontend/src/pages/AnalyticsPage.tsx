@@ -26,8 +26,8 @@ export function AnalyticsPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">
       <header>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Analytics</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Retrieval success, citation accuracy, latency, document growth, usage trends, and system health.</p>
+        <h2 className="page-title">Analytics</h2>
+        <p className="page-description">Retrieval success, citation accuracy, latency, document growth, usage trends, and system health.</p>
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -93,3 +93,4 @@ export function AnalyticsPage() {
     </div>
   );
 }
+

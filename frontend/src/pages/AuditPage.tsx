@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Tabs } from "@/components/ui/Tabs";
 import { useQuery } from "@tanstack/react-query";
 import { getAuditRecords, getAuditIntegrity, getAuditEvidence, getAuditReports } from "@/services/api/auditApi";
 import { formatRelative, truncate, formatDate } from "@/lib/format";
@@ -40,8 +41,8 @@ export function AuditPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">
       <header>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Audit</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Tamper-evident audit trail, evidence explorer, and decision lineage.</p>
+        <h2 className="page-title">Audit</h2>
+        <p className="page-description">Tamper-evident audit trail, evidence explorer, and decision lineage.</p>
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -69,18 +70,19 @@ export function AuditPage() {
         </div>
       </Card>
 
-      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
-        {(["records", "reports", "evidence"] as const).map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)}
-            className={`px-4 py-2 text-xs font-medium transition border-b-2 -mb-px ${
-              tab === t
-                ? "border-brand-500 text-brand-700 dark:text-brand-300"
-                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-            }`}
-          >{t.charAt(0).toUpperCase() + t.slice(1)}</button>
-        ))}
-      </div>
+      <Tabs
+        items={[
+          { id: "records", label: "Records" },
+          { id: "reports", label: "Reports" },
+          { id: "evidence", label: "Evidence" },
+        ]}
+        value={tab}
+        onChange={(id) => setTab(id as typeof tab)}
+        label="Audit sections"
+        idPrefix="audit"
+      />
 
+      <div role="tabpanel" id={`audit-panel-${tab}`} aria-labelledby={`audit-tab-${tab}`} tabIndex={0}>
       {tab === "records" ? (
         <Card padding="none">
           <CardHeader title="Records" description="Recent audit records" />
@@ -153,6 +155,8 @@ export function AuditPage() {
           </div>
         </Card>
       )}
+      </div>
     </div>
   );
 }
+

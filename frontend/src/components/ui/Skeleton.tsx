@@ -7,9 +7,12 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className, lines = 1 }: SkeletonProps) {
+  // Decorative placeholders: hidden from assistive tech so loading regions
+  // don't spam live regions. Pages announce state via their own
+  // ErrorState/EmptyState/content roles.
   if (lines > 1) {
     return (
-      <div className="space-y-2" aria-busy>
+      <div className="space-y-2" aria-hidden>
         {Array.from({ length: lines }).map((_, i) => (
           <div
             key={i}
@@ -23,5 +26,5 @@ export function Skeleton({ className, lines = 1 }: SkeletonProps) {
       </div>
     );
   }
-  return <div className={clsx("skeleton h-3 w-full", className)} aria-busy />;
+  return <div className={clsx("skeleton h-3 w-full", className)} aria-hidden />;
 }

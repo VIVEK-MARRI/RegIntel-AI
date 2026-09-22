@@ -39,6 +39,7 @@ export function Metric({ label, value, hint, delta, className, icon }: MetricPro
                 : "text-red-600 dark:text-red-400"
             )}
           >
+            <span className="sr-only">{delta.positive ? "Trending up: " : "Trending down: "}</span>
             {delta.value}
           </span>
         ) : null}

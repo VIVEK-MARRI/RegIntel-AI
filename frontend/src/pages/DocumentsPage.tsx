@@ -120,8 +120,8 @@ export function DocumentsPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">
       <header>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Documents</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Enterprise document upload, ingestion pipeline, and search.</p>
+        <h2 className="page-title">Documents</h2>
+        <p className="page-description">Enterprise document upload, ingestion pipeline, and search.</p>
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -268,3 +268,4 @@ export function DocumentsPage() {
     </div>
   );
 }
+

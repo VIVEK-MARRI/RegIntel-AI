@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth, authErrorMessage } from "@/providers/AuthProvider";
 import { signup } from "@/services/api/authApi";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -51,23 +53,23 @@ export function SignupPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-light-2 dark:bg-surface-dark">
-      <div className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h1 className="mb-2 text-2xl font-bold text-text-light dark:text-text-dark">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-elevated dark:border-slate-700 dark:bg-surface-dark-2">
+        <h1 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           Create Account
         </h1>
-        <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
           Register a new account to get started.
         </p>
 
         {error && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300">
-            {error}
+          <div className="mb-4">
+            <Alert tone="danger">{error}</Alert>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-text-light dark:text-text-dark">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Full Name
             </label>
             <input
@@ -75,12 +77,12 @@ export function SignupPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Your name"
-              className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-text-light placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-text-dark dark:placeholder-gray-500"
+              className="input"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-text-light dark:text-text-dark">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Email
             </label>
             <input
@@ -89,12 +91,12 @@ export function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-text-light placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-text-dark dark:placeholder-gray-500"
+              className="input"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-text-light dark:text-text-dark">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Password
             </label>
             <input
@@ -104,24 +106,25 @@ export function SignupPage() {
               placeholder="At least 6 characters"
               required
               minLength={6}
-              className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-text-light placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-text-dark dark:placeholder-gray-500"
+              className="input"
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            variant="primary"
+            loading={loading}
+            className="w-full"
           >
             {loading ? "Creating account..." : "Create Account"}
-          </button>
+          </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+            className="font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400"
           >
             Sign in
           </Link>
@@ -130,3 +133,5 @@ export function SignupPage() {
     </div>
   );
 }
+
+

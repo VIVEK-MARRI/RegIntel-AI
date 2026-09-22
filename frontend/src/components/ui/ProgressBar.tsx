@@ -29,8 +29,8 @@ export function ProgressBar({
         className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
         role="progressbar"
         aria-valuemin={0}
-        aria-valuemax={max}
-        aria-valuenow={value}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
       >
         <div
           className={clsx("h-full rounded-full transition-all duration-500", toneMap[tone])}

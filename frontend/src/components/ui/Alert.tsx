@@ -29,7 +29,8 @@ export function Alert({ tone = "info", title, children, className, onDismiss }: 
         toneMap[tone],
         className
       )}
-      role="status"
+      // Errors assert; info/success/warning inform.
+      role={tone === "danger" ? "alert" : "status"}
     >
       <div className="min-w-0 flex-1">
         {title ? <p className="text-sm font-semibold">{title}</p> : null}

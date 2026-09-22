@@ -14,6 +14,7 @@ import { getAnalyticsHealth } from "@/services/api/analyticsApi";
 import { agentsKeys } from "@/lib/queryKeys";
 import { useToast } from "@/providers/ToastProvider";
 import { formatDurationMs, formatPercent, formatRelative, healthTone } from "@/lib/format";
+import { Tabs } from "@/components/ui/Tabs";
 
 export function AgentsPage() {
   const [tab, setTab] = useState<"overview" | "health" | "workflows" | "collaboration">("overview");
@@ -28,32 +29,18 @@ export function AgentsPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">
       <header>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">AI Agents</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Multi-agent orchestration, health monitoring, and execution management.</p>
+        <h2 className="page-title">AI Agents</h2>
+        <p className="page-description">Multi-agent orchestration, health monitoring, and execution management.</p>
       </header>
 
-      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700" role="tablist">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-xs font-medium transition border-b-2 -mb-px ${
-              tab === t.id
-                ? "border-brand-500 text-brand-700 dark:text-brand-300"
-                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs items={tabs} value={tab} onChange={(id) => setTab(id as typeof tab)} label="Agent sections" idPrefix="agents" />
 
-      {tab === "overview" && <OverviewTab />}
-      {tab === "health" && <HealthTab />}
-      {tab === "workflows" && <WorkflowsTab />}
-      {tab === "collaboration" && <CollaborationTab />}
+      <div role="tabpanel" id={`agents-panel-${tab}`} aria-labelledby={`agents-tab-${tab}`} tabIndex={0}>
+        {tab === "overview" && <OverviewTab />}
+        {tab === "health" && <HealthTab />}
+        {tab === "workflows" && <WorkflowsTab />}
+        {tab === "collaboration" && <CollaborationTab />}
+      </div>
     </div>
   );
 }

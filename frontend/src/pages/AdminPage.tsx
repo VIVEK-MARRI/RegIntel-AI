@@ -20,10 +20,10 @@ export function AdminPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">
       <header>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h2 className="page-title">
           Admin Console
         </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="page-description">
           Users, roles, and platform overview.
         </p>
       </header>
@@ -144,3 +144,4 @@ export function AdminPage() {
     </div>
   );
 }
+

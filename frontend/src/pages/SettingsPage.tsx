@@ -24,8 +24,8 @@ export function SettingsPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <header>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Provider configuration, storage settings, system information, and feature flags.</p>
+        <h2 className="page-title">Settings</h2>
+        <p className="page-description">Provider configuration, storage settings, system information, and feature flags.</p>
       </header>
 
       <Card padding="none">
@@ -111,3 +111,4 @@ export function SettingsPage() {
     </div>
   );
 }
+
