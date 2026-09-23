@@ -56,6 +56,61 @@ export interface AgentMetadata {
 
 export type PaginatedAgents = PaginatedResponse<AgentMetadata>;
 
+export type AgentListQuery = {
+  capability?: string;
+  text_query?: string;
+  tag?: string;
+  healthy_only?: boolean;
+  page?: number;
+  page_size?: number;
+};
+
+export interface AgentCapabilityInput {
+  kind: CapabilityKind;
+  name: string;
+  description?: string;
+}
+
+export interface AgentRegistrationRequest {
+  name: string;
+  description?: string;
+  version?: string;
+  author?: string;
+  capabilities?: AgentCapabilityInput[];
+  default_max_retries?: number;
+  default_timeout_ms?: number;
+  priority?: number;
+  tags?: string[];
+}
+
+export interface CoordinatorRequest {
+  query: string;
+  desired_capabilities?: CapabilityKind[];
+  max_steps?: number;
+}
+
+export interface CoordinatorPlanStep {
+  step_id: string;
+  capability: string;
+  description: string;
+  target_agent: string;
+  depends_on: string[];
+}
+
+export interface CoordinatorResult {
+  result_id: string;
+  plan_id: string;
+  query: string;
+  selected_agents: string[];
+  step_results: AgentResult[];
+  final_output: Record<string, unknown>;
+  status: TaskStatus | string;
+  duration_ms: number;
+  conflicts_resolved: number;
+  notes: string;
+  metadata: Record<string, unknown>;
+}
+
 export interface AgentHealthCheck {
   agent_id: string;
   healthy: boolean;
@@ -95,35 +150,26 @@ export interface AgentResult {
 }
 
 export interface AgentExecutionStep {
-  step_id: string;
+  step_id?: string;
   agent_name: string;
-  capability: string;
-  description: string;
-  depends_on: string[];
-  input_template: Record<string, unknown>;
-  timeout_ms: number | null;
-  max_retries: number;
+  capability?: string;
+  description?: string;
+  depends_on?: string[];
+  input_template?: Record<string, unknown>;
+  timeout_ms?: number | null;
+  max_retries?: number;
 }
 
 export interface AgentExecutionGraph {
-  graph_id: string;
   steps: AgentExecutionStep[];
-  mode: string;
-  created_at: number;
-  metadata: Record<string, unknown>;
+  mode?: string;
 }
 
-/** POST /agents/workflows body: the FULL definition MINUS server-set fields. */
+/** POST /agents/workflows body: name + graph with steps (extra=forbid). */
 export interface WorkflowDefinitionCreate {
   name: string;
   description?: string;
-  graph: {
-    steps: Array<Partial<AgentExecutionStep> & { agent_name: string }>;
-    mode?: string;
-    graph_id?: string;
-    created_at?: number;
-    metadata?: Record<string, unknown>;
-  };
+  graph: AgentExecutionGraph;
   tags?: string[];
   version?: string;
   metadata?: Record<string, unknown>;
@@ -151,6 +197,18 @@ export interface AgentWorkflow {
   result?: Record<string, unknown> | null;
   error: string;
   metadata: Record<string, unknown>;
+}
+
+/** Backend AgentExecutionStep (orchestration workflow graph node). */
+export interface WorkflowGraphStep {
+  step_id?: string;
+  agent_name: string;
+  capability?: string;
+  description?: string;
+  depends_on?: string[];
+  input_template?: Record<string, unknown>;
+  timeout_ms?: number | null;
+  max_retries?: number;
 }
 
 /** POST /agents/workflows/{id}/run body: ambitious callers pass {query}. */
@@ -181,3 +239,9 @@ export interface AgentBusMessage {
   created_at: number;
   ttl_ms: number;
 }
+
+export type MessagesQuery = {
+  from_agent?: string;
+  to_agent?: string;
+  limit?: number;
+};

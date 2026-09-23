@@ -112,11 +112,14 @@ export const dashboardKeys = {
 
 export const agentsKeys = {
   all: ["agents"] as const,
-  list: () => [...agentsKeys.all, "list"] as const,
-  health: () => [...agentsKeys.all, "health"] as const,
+  list: (params?: { capability?: string; text_query?: string; tag?: string; page?: number; page_size?: number }) =>
+    [...agentsKeys.all, "list", params ?? {}] as const,
+  agent: (name: string) => [...agentsKeys.all, "agent", name] as const,
+  agentHealth: (name: string) => [...agentsKeys.all, "agent-health", name] as const,
   workflows: () => [...agentsKeys.all, "workflows"] as const,
   collaborations: () => [...agentsKeys.all, "collaborations"] as const,
-  messages: () => [...agentsKeys.all, "messages"] as const,
+  messages: (params?: { from_agent?: string; to_agent?: string; limit?: number }) =>
+    [...agentsKeys.all, "messages", params ?? {}] as const,
 };
 
 export const adminKeys = {
