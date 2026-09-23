@@ -10,9 +10,13 @@ export const healthKeys = {
 
 export const documentsKeys = {
   all: ["documents"] as const,
-  list: () => [...documentsKeys.all, "list"] as const,
+  list: (params?: { source?: string; status?: string; skip?: number; limit?: number }) =>
+    [...documentsKeys.all, "list", params ?? {}] as const,
   detail: (id: string) => [...documentsKeys.all, "detail", id] as const,
   ingestionJobs: () => ["ingestion", "jobs"] as const,
+  ingestionRun: (id: string) => ["ingestion", "run", id] as const,
+  chunks: (id: string) => [...documentsKeys.all, "chunks", id] as const,
+  pages: (id: string) => [...documentsKeys.all, "pages", id] as const,
 };
 
 export const copilotKeys = {
