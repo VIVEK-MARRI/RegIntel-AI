@@ -13,6 +13,11 @@
 
 🔗 **Live Demo:** [https://regintel-ai-748n.onrender.com/](https://regintel-ai-748n.onrender.com/)
 
+> **Try it now → [regintel-ai-748n.onrender.com](https://regintel-ai-748n.onrender.com/)**
+> Hosted on Render's free tier: the first load can take ~50 seconds while the
+> service wakes up. Sign in to explore the dashboard, Copilot, research
+> reports, and audit trail against the seeded demo data.
+
 ## Overview
 
 Regulatory teams need to find relevant provisions, understand their implications, assess compliance risk, trace decisions, and keep an auditable trail. RegIntel-AI brings these into one system: a FastAPI backend with hybrid retrieval, deterministic agent coordination, governance workflows, and hash-chained audit — fronted by a React workspace covering research, compliance, audit, agents, and administration.
