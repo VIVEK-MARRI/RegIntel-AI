@@ -55,7 +55,6 @@ export const complianceKeys = {
   assessments: () => [...complianceKeys.all, "assessments"] as const,
   assessmentsFiltered: (params?: { risk_level?: string; category?: string; document_id?: string; page?: number; page_size?: number }) =>
     [...complianceKeys.all, "assessments", "filtered", params ?? {}] as const,
-  assessment: (id: string) => [...complianceKeys.all, "assessment", id] as const,
 };
 
 export const riskKeys = {
@@ -125,7 +124,6 @@ export const agentsKeys = {
 export const adminKeys = {
   all: ["admin"] as const,
   me: () => [...adminKeys.all, "me"] as const,
-  overview: () => [...adminKeys.all, "overview"] as const,
   stats: () => [...adminKeys.all, "stats"] as const,
   users: (params?: { status?: string; role_id?: string; department?: string; text_query?: string; page?: number; page_size?: number }) =>
     [...adminKeys.all, "users", params ?? {}] as const,
@@ -133,8 +131,6 @@ export const adminKeys = {
   roles: (params?: { built_in?: boolean; text_query?: string; page?: number; page_size?: number }) =>
     [...adminKeys.all, "roles", params ?? {}] as const,
   role: (id: string) => [...adminKeys.all, "role", id] as const,
-  rbac: (userId: string, permission: string) =>
-    [...adminKeys.all, "rbac", userId, permission] as const,
   settings: () => [...adminKeys.all, "settings"] as const,
 };
 

@@ -108,7 +108,7 @@ export function DashboardPage() {
         <div>
           <h1 className="page-title">Dashboard</h1>
           <p className="page-description">
-            Live operational state of the regulatory intelligence system.
+            Current operational state of the regulatory intelligence system.
           </p>
         </div>
         <Button
@@ -328,7 +328,7 @@ export function DashboardPage() {
                     </p>
                     <p className="meta-text">{t.name}</p>
                     <p className="meta-text">
-                      {t.direction === "flat" ? "— steady" : `${t.direction} ${typeof t.delta_pct === "number" ? t.delta_pct.toFixed(1) : "�"}%`}
+                      {t.direction === "flat" ? "— steady" : `${t.direction} ${typeof t.delta_pct === "number" ? t.delta_pct.toFixed(1) : "�"}%`}
                     </p>
                   </li>
                 ))}
@@ -459,7 +459,7 @@ function RiskBody({
           {level}
         </Badge>
         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-          {typeof score === "number" && Number.isFinite(score) ? `${(score * 100).toFixed(0)}%` : "—"}
+          {typeof score === "number" && Number.isFinite(score) ? formatNumber(score, 2) : "—"}
         </span>
         <span className="ml-auto text-[11px] text-slate-400">
           {generatedMillis != null ? formatRelative(generatedMillis) : null}

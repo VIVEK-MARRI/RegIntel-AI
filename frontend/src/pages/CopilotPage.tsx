@@ -30,7 +30,7 @@ import type {
 } from "@/types/api/copilot";
 import type { FeedbackType } from "@/types/api/feedback";
 import { copilotKeys } from "@/lib/queryKeys";
-import { formatDurationMs, formatPercent, formatRelative } from "@/lib/format";
+import { formatDurationMs, formatNumber, formatPercent, formatRelative } from "@/lib/format";
 import { useToast } from "@/providers/ToastProvider";
 import { ApiClientError } from "@/lib/errors";
 import { useNavigate, useParams } from "react-router-dom";
@@ -229,6 +229,7 @@ export function CopilotPage() {
 
   return (
     <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <h1 className="sr-only">Copilot</h1>
       <div className="hidden lg:block">
         <SessionList
           sessions={sessions?.items?.map(toSessionItem)}
@@ -719,7 +720,7 @@ function MemoryContextView({ ctx }: { ctx: MemoryContext }) {
         {retrieved.slice(0, 3).map((r, i) => (
           <li key={r.entry?.memory_id ?? i} className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] dark:border-slate-800 dark:bg-slate-800/40">
             <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
-              retrieved · {Math.round((r.score ?? 0) * 100)}%
+              retrieved · score {formatNumber(r.score ?? 0, 2)} (0–1 relevance)
             </span>
             <p className="mt-0.5 line-clamp-2 italic text-slate-700 dark:text-slate-300">"{r.entry?.content ?? ""}"</p>
           </li>

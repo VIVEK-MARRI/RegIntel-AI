@@ -91,7 +91,7 @@ describe("Pages render", () => {
 
   it("CopilotPage", () => {
     renderPage(<CopilotPage />);
-    expect(screen.getByText("Copilot")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Copilot" })).toBeInTheDocument();
   });
 
   it("KnowledgeGraphPage", () => {

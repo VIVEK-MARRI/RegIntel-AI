@@ -1,8 +1,9 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { Shell } from "@/components/layout/AppShell";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RequireRole } from "@/components/auth/RequireRole";
+import { AppErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ROUTE_ROLES } from "@/components/layout/navigation";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })));
@@ -39,6 +40,7 @@ function PageFallback() {
 }
 
 export function App() {
+  const location = useLocation();
   return (
     <Suspense fallback={<PageFallback />}>
       <Routes>
@@ -49,6 +51,8 @@ export function App() {
           element={
             <Suspense fallback={<PageFallback />}>
               <Shell>
+                {/* Render crashes stay inside the shell: navigation survives. */}
+                <AppErrorBoundary resetKey={location.pathname}>
                 <Routes>
                   <Route path="/" element={<Protect path="/"><DashboardPage /></Protect>} />
                   <Route path="/copilot" element={<Protect path="/copilot"><CopilotPage /></Protect>} />
@@ -68,6 +72,7 @@ export function App() {
                       login instead of seeing the shell around a 404. */}
                   <Route path="*" element={<Protect path="*"><NotFoundPage /></Protect>} />
                 </Routes>
+                </AppErrorBoundary>
               </Shell>
             </Suspense>
           }

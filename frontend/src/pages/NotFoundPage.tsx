@@ -13,9 +13,9 @@ export function NotFoundPage() {
           >
             ⌕
           </div>
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
             Page not found
-          </h2>
+          </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             The page you were looking for doesn't exist or has moved.
           </p>
