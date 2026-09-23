@@ -93,7 +93,10 @@ export const analyticsKeys = {
   overview: () => [...analyticsKeys.all, "overview"] as const,
   performance: () => [...analyticsKeys.all, "performance"] as const,
   intelligence: () => [...analyticsKeys.all, "intelligence"] as const,
-  changes: () => [...analyticsKeys.all, "changes"] as const,
+  health: () => [...analyticsKeys.all, "health"] as const,
+  cost: () => [...analyticsKeys.all, "cost"] as const,
+  leaderboard: (topN: number) => [...analyticsKeys.all, "leaderboard", topN] as const,
+  latency: (name: string) => [...analyticsKeys.all, "latency", name] as const,
 };
 
 export const dashboardKeys = {
