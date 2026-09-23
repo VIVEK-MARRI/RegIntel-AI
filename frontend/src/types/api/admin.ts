@@ -72,3 +72,78 @@ export interface AdminRole {
 
 export type PaginatedAdminUsers = PaginatedResponse<AdminUser>;
 export type PaginatedAdminRoles = PaginatedResponse<AdminRole>;
+
+/** Backend: UserCreateRequest. password optional — only sent when non-empty. */
+export interface AdminUserCreate {
+  username: string;
+  email: string;
+  password?: string;
+  full_name?: string;
+  role_ids?: string[];
+  department?: string;
+  status?: AdminUserStatus;
+}
+
+/** Backend: UserUpdateRequest — all fields partial, only sent keys change. */
+export interface AdminUserUpdate {
+  email?: string;
+  full_name?: string;
+  role_ids?: string[];
+  department?: string;
+  status?: AdminUserStatus;
+}
+
+export type AdminUserListQuery = {
+  status?: AdminUserStatus;
+  role_id?: string;
+  department?: string;
+  text_query?: string;
+  page?: number;
+  page_size?: number;
+};
+
+/** Backend: RoleCreateRequest. */
+export interface AdminRoleCreate {
+  name: string;
+  description?: string;
+  permissions?: AdminPermission[];
+  tags?: string[];
+}
+
+export type AdminRoleListQuery = {
+  built_in?: boolean;
+  text_query?: string;
+  page?: number;
+  page_size?: number;
+};
+
+/** Backend: PlatformSetting. value is NEVER rendered when is_secret. */
+export interface PlatformSetting {
+  key: string;
+  value: unknown;
+  description: string;
+  category: string;
+  updated_at: number;
+  updated_by: string;
+  is_secret: boolean;
+  value_type: string;
+}
+
+/** Backend: PlatformSettingUpdateRequest (upsert by key). */
+export interface PlatformSettingUpdate {
+  value: unknown;
+  description?: string;
+  updated_by?: string;
+  category?: string;
+}
+
+/** Backend: RBACCheck verdict for GET /admin/rbac/{user_id}?permission=. */
+export interface RBACCheck {
+  check_id: string;
+  user_id: string;
+  permission_code: string;
+  allowed: boolean;
+  reason: string;
+  matched_roles: string[];
+  timestamp: number;
+}

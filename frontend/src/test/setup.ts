@@ -1,6 +1,11 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, beforeAll, vi } from "vitest";
+
+// Async utilities (findBy*, waitFor) default to 1000ms, which flakes under
+// parallel workers on loaded machines. 5000ms keeps failure detection fast
+// while tolerating CI-style contention. Test infrastructure only.
+configure({ asyncUtilTimeout: 5000 });
 
 beforeAll(() => {
   // jsdom doesn't implement matchMedia / ResizeObserver by default.

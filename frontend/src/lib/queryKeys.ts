@@ -124,8 +124,16 @@ export const agentsKeys = {
 
 export const adminKeys = {
   all: ["admin"] as const,
+  me: () => [...adminKeys.all, "me"] as const,
   overview: () => [...adminKeys.all, "overview"] as const,
   stats: () => [...adminKeys.all, "stats"] as const,
-  users: () => [...adminKeys.all, "users"] as const,
-  roles: () => [...adminKeys.all, "roles"] as const,
+  users: (params?: { status?: string; role_id?: string; department?: string; text_query?: string; page?: number; page_size?: number }) =>
+    [...adminKeys.all, "users", params ?? {}] as const,
+  user: (id: string) => [...adminKeys.all, "user", id] as const,
+  roles: (params?: { built_in?: boolean; text_query?: string; page?: number; page_size?: number }) =>
+    [...adminKeys.all, "roles", params ?? {}] as const,
+  role: (id: string) => [...adminKeys.all, "role", id] as const,
+  rbac: (userId: string, permission: string) =>
+    [...adminKeys.all, "rbac", userId, permission] as const,
+  settings: () => [...adminKeys.all, "settings"] as const,
 };
