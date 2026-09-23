@@ -1,5 +1,6 @@
 import { api, encodePathSegment } from "@/lib/api";
 import type {
+  DependencyAnalysisResult,
   GraphNode,
   GraphRelationship,
   GraphStats,
@@ -29,9 +30,29 @@ export async function getGraphNodes(
   return res.items;
 }
 
-export async function getGraphRelationships(): Promise<GraphRelationship[]> {
-  const res = await api.get<PaginatedRelationships>("/knowledge-graph/relationships");
+export async function getGraphNode(nodeId: string): Promise<GraphNode> {
+  return api.get<GraphNode>(`/knowledge-graph/nodes/${encodePathSegment(nodeId)}`);
+}
+
+export type GraphRelationshipsQuery = {
+  source_id?: string;
+  target_id?: string;
+  rel_type?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export async function getGraphRelationships(
+  query?: GraphRelationshipsQuery
+): Promise<GraphRelationship[]> {
+  const res = await api.get<PaginatedRelationships>("/knowledge-graph/relationships", { query });
   return res.items ?? [];
+}
+
+export async function getRelationship(relId: string): Promise<GraphRelationship> {
+  return api.get<GraphRelationship>(
+    `/knowledge-graph/relationships/${encodePathSegment(relId)}`
+  );
 }
 
 export async function getGraphImpact(
@@ -42,5 +63,16 @@ export async function getGraphImpact(
     `/knowledge-graph/impact-traversal/${encodePathSegment(nodeId)}`,
     undefined,
     { query }
+  );
+}
+
+export async function getDependencyAnalysis(
+  nodeId: string,
+  maxDepth?: number
+): Promise<DependencyAnalysisResult> {
+  return api.post<DependencyAnalysisResult>(
+    `/knowledge-graph/dependency-analysis/${encodePathSegment(nodeId)}`,
+    undefined,
+    { query: maxDepth != null ? { max_depth: maxDepth } : undefined }
   );
 }

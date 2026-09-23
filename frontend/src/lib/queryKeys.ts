@@ -34,8 +34,15 @@ export const researchKeys = {
 export const kgKeys = {
   all: ["kg"] as const,
   stats: () => [...kgKeys.all, "stats"] as const,
-  nodes: () => [...kgKeys.all, "nodes"] as const,
-  impact: (id: string) => [...kgKeys.all, "impact", id] as const,
+  nodes: (params?: { entity_type?: string; source?: string; name_contains?: string; tag?: string; page?: number; page_size?: number }) =>
+    [...kgKeys.all, "nodes", params ?? {}] as const,
+  node: (id: string) => [...kgKeys.all, "node", id] as const,
+  relationships: (params?: { source_id?: string; target_id?: string; rel_type?: string }) =>
+    [...kgKeys.all, "relationships", params ?? {}] as const,
+  impact: (id: string, depth: number, relType?: string) =>
+    [...kgKeys.all, "impact", id, depth, relType ?? ""] as const,
+  dependency: (id: string, depth: number) =>
+    [...kgKeys.all, "dependency", id, depth] as const,
 };
 
 export const complianceKeys = {

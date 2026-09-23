@@ -11,11 +11,11 @@ export interface GraphNodeView {
 
 export function toNodeView(n: GraphNode): GraphNodeView {
   return {
-    id: n.node_id,
-    label: n.name,
-    type: n.entity_type,
-    description: n.description,
-    tags: n.tags,
+    id: typeof n.node_id === "string" ? n.node_id : String(n.node_id ?? ""),
+    label: typeof n.name === "string" && n.name ? n.name : "Untitled entity",
+    type: typeof n.entity_type === "string" ? n.entity_type : "unknown",
+    description: typeof n.description === "string" ? n.description : "",
+    tags: Array.isArray(n.tags) ? n.tags.filter((t): t is string => typeof t === "string") : [],
   };
 }
 

@@ -57,6 +57,7 @@ export function App() {
                   <Route path="/research/:reportId" element={<Protect path="/research"><ResearchPage /></Protect>} />
                   <Route path="/documents" element={<Protect path="/documents"><DocumentsPage /></Protect>} />
                   <Route path="/knowledge-graph" element={<Protect path="/knowledge-graph"><KnowledgeGraphPage /></Protect>} />
+                  <Route path="/knowledge-graph/:nodeId" element={<Protect path="/knowledge-graph"><KnowledgeGraphPage /></Protect>} />
                   <Route path="/compliance" element={<Protect path="/compliance"><CompliancePage /></Protect>} />
                   <Route path="/audit" element={<Protect path="/audit"><AuditPage /></Protect>} />
                   <Route path="/analytics" element={<Protect path="/analytics"><AnalyticsPage /></Protect>} />

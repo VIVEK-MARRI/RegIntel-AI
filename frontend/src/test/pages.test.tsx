@@ -96,7 +96,7 @@ describe("Pages render", () => {
 
   it("KnowledgeGraphPage", () => {
     renderPage(<KnowledgeGraphPage />);
-    expect(screen.getByText(/Entity Types/i)).toBeInTheDocument();
+    expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
   });
 
   it("ResearchPage", () => {

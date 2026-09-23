@@ -64,6 +64,16 @@ export interface ImpactTraversalResult {
   duration_ms: number;
 }
 
+/** Backend: DependencyAnalysisResult (upstream/downstream are full GraphNodes). */
+export interface DependencyAnalysisResult {
+  root_node_id: string;
+  upstream: GraphNode[];
+  downstream: GraphNode[];
+  cycles_detected: number;
+  max_chain_length: number;
+  duration_ms: number;
+}
+
 export type ImpactTraversalQuery = {
   max_depth?: number;
   rel_type?: RelationshipType;
