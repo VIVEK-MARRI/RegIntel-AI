@@ -11,9 +11,8 @@
 [![Docker](https://img.shields.io/badge/docker-2496ed?style=flat-square&logo=docker&logoColor=white)](docker-compose.yml)
 [![CI](https://img.shields.io/github/actions/workflow/status/VIVEK-MARRI/RegIntel-AI/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/VIVEK-MARRI/RegIntel-AI/actions/workflows/ci.yml)
 
-🔗 **Live Demo:** [https://regintel-ai-748n.onrender.com/](https://regintel-ai-748n.onrender.com/)
+[![Live Demo — Open the App](https://img.shields.io/badge/Live_Demo-Open_the_App-22c55e?style=for-the-badge&logo=render&logoColor=white)](https://regintel-ai-748n.onrender.com/)
 
-> **Try it now → [regintel-ai-748n.onrender.com](https://regintel-ai-748n.onrender.com/)**
 > Hosted on Render's free tier: the first load can take ~50 seconds while the
 > service wakes up. Sign in to explore the dashboard, Copilot, research
 > reports, and audit trail against the seeded demo data.
