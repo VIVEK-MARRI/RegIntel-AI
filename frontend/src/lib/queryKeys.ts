@@ -76,10 +76,16 @@ export const governanceKeys = {
 
 export const auditKeys = {
   all: ["audit"] as const,
-  records: () => [...auditKeys.all, "records"] as const,
   integrity: () => [...auditKeys.all, "integrity"] as const,
-  reports: () => [...auditKeys.all, "reports"] as const,
-  evidence: () => [...auditKeys.all, "evidence"] as const,
+  stats: () => [...auditKeys.all, "stats"] as const,
+  records: (params?: { action?: string; severity?: string; actor?: string; subject_type?: string; subject_id?: string; source_module?: string; after?: number; before?: number; text_query?: string; page?: number; page_size?: number }) =>
+    [...auditKeys.all, "records", params ?? {}] as const,
+  record: (id: string) => [...auditKeys.all, "record", id] as const,
+  evidence: (params?: { record_id?: string }) =>
+    [...auditKeys.all, "evidence", params ?? {}] as const,
+  evidenceDetail: (id: string) => [...auditKeys.all, "evidence", "detail", id] as const,
+  reports: (params?: { kind?: string }) =>
+    [...auditKeys.all, "reports", params ?? {}] as const,
 };
 
 export const analyticsKeys = {

@@ -53,6 +53,10 @@ export interface AuditIntegrity {
 export type ReportStatus =
   | "draft" | "generating" | "complete" | "failed" | "archived";
 
+export type ReportKind =
+  | "regulatory_submission" | "internal_audit" | "policy_attestation"
+  | "incident_summary" | "evidence_bundle" | "custom";
+
 export interface ReportSection {
   section_id: string;
   title: string;
@@ -79,6 +83,8 @@ export interface ComplianceReport {
   sections: ReportSection[];
   record_refs: string[];
   evidence_refs: string[];
+  attestation: string;
+  metadata: Record<string, unknown>;
 }
 
 export type EvidenceKind =
@@ -97,4 +103,54 @@ export interface AuditEvidence {
   collected_at: number;
   source_uri?: string | null;
   tags: string[];
+}
+
+/** Backend: AuditStats (GET /audit/stats). */
+export interface AuditStats {
+  total_records: number;
+  by_action: Record<string, number>;
+  by_severity: Record<string, number>;
+  by_actor: Record<string, number>;
+  by_module: Record<string, number>;
+  by_subject_type: Record<string, number>;
+  chain_length: number;
+  last_chain_hash: string;
+  chain_integrity: boolean;
+  last_record_at: number | null;
+  oldest_record_at: number | null;
+}
+
+export type AuditRecordsQuery = {
+  action?: string;
+  severity?: string;
+  actor?: string;
+  subject_type?: string;
+  subject_id?: string;
+  source_module?: string;
+  after?: number;
+  before?: number;
+  text_query?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export type EvidenceQuery = {
+  record_id?: string;
+};
+
+export type ReportListQuery = {
+  kind?: string;
+};
+
+/** Backend: ComplianceReportCreateRequest (POST /audit/reports). */
+export interface ReportCreateRequest {
+  title: string;
+  description?: string;
+  kind?: string;
+  regulator?: string;
+  period_start?: number;
+  period_end?: number;
+  generated_by?: string;
+  section_titles?: string[];
+  metadata?: Record<string, unknown>;
 }
