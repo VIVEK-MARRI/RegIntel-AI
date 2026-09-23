@@ -49,12 +49,18 @@ export const kgKeys = {
 
 export const complianceKeys = {
   all: ["compliance"] as const,
+  stats: () => [...complianceKeys.all, "stats"] as const,
+  trend: (documentId?: string) => [...complianceKeys.all, "trend", documentId ?? ""] as const,
+  // assessments() stays paramless: Dashboard consumes it with a bare queryFn.
   assessments: () => [...complianceKeys.all, "assessments"] as const,
+  assessmentsFiltered: (params?: { risk_level?: string; category?: string; document_id?: string; page?: number; page_size?: number }) =>
+    [...complianceKeys.all, "assessments", "filtered", params ?? {}] as const,
   assessment: (id: string) => [...complianceKeys.all, "assessment", id] as const,
 };
 
 export const riskKeys = {
   all: ["risk"] as const,
+  stats: () => [...riskKeys.all, "stats"] as const,
   forecasts: () => [...riskKeys.all, "forecasts"] as const,
   scenarios: () => [...riskKeys.all, "scenarios"] as const,
 };
@@ -62,7 +68,9 @@ export const riskKeys = {
 export const governanceKeys = {
   all: ["governance"] as const,
   policies: () => [...governanceKeys.all, "policies"] as const,
-  decisions: () => [...governanceKeys.all, "decisions"] as const,
+  approvalPolicies: () => [...governanceKeys.all, "approval-policies"] as const,
+  decisions: (params?: { decision_type?: string; policy_compliant?: boolean }) =>
+    [...governanceKeys.all, "decisions", params ?? {}] as const,
   stats: () => [...governanceKeys.all, "stats"] as const,
 };
 

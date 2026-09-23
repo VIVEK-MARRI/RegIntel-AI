@@ -49,8 +49,8 @@ export interface GovernanceDecision {
   outputs: Record<string, unknown>;
   actor: string;
   timestamp: number;
-  policy_result?: Record<string, unknown> | null;
-  approved_by?: string | null;
+  policy_result?: PolicyCheckResult | Record<string, unknown> | null;
+  approved_by: string[];
   metadata: Record<string, unknown>;
 }
 
@@ -67,4 +67,45 @@ export interface GovernanceStats {
   average_violations_per_decision: number;
   compliance_rate: number;
   last_decision_at: number | null;
+}
+
+/** Backend: PolicyViolation + PolicyCheckResult (POST /decisions/{id}/check). */
+export interface PolicyViolation {
+  violation_id: string;
+  rule_id: string;
+  rule_name: string;
+  policy_id: string;
+  policy_name: string;
+  kind: string;
+  action: string;
+  severity: string;
+  message: string;
+  details: Record<string, unknown>;
+  timestamp: number;
+}
+
+export interface PolicyCheckResult {
+  result_id: string;
+  decision_id: string;
+  policy_compliant: boolean;
+  violations: PolicyViolation[];
+  required_actions: string[];
+  evaluated_policies: string[];
+  evaluated_rules: number;
+  timestamp: number;
+  notes: string;
+}
+
+/** Backend: ApprovalPolicy (GET /governance/approval-policies). */
+export interface ApprovalPolicy {
+  policy_id: string;
+  name: string;
+  description: string;
+  decision_types: string[];
+  min_risk_level?: string | null;
+  required_roles: string[];
+  min_approvers: number;
+  applies_to: string;
+  enabled: boolean;
+  created_at: number;
 }

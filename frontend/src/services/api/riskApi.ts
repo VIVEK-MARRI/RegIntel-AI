@@ -2,9 +2,14 @@ import { LONG_TIMEOUT_MS, api, encodePathSegment } from "@/lib/api";
 import type {
   ForecastRequest,
   ForecastScenario,
+  ForecastStats,
   RiskForecast,
   RiskTrend,
 } from "@/types/api/risk";
+
+export async function getForecastStats(): Promise<ForecastStats> {
+  return api.get<ForecastStats>("/forecasting/stats");
+}
 
 export async function getRiskForecasts(): Promise<RiskForecast[]> {
   // GET /forecasting/forecasts returns a BARE ARRAY.

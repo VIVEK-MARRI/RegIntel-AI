@@ -21,7 +21,8 @@ export function toPolicyView(p: GovernancePolicy): PolicyView {
     name: p.name,
     version: p.version,
     enabled: p.enabled,
-    statusText: p.enabled ? "active" : "disabled",
+    // Backend semantics are exactly `enabled: bool` — no active/draft/archived.
+    statusText: p.enabled ? "Enabled" : "Disabled",
     updatedMillis: toMillis(p.updated_at),
   };
 }

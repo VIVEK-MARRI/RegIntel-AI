@@ -20,6 +20,20 @@ export interface ForecastRequest {
   history?: HistoryPoint[];
 }
 
+/** Backend: ForecastPoint — one projected point. confidence echoes the request. */
+export interface ForecastPoint {
+  timestamp: number;
+  predicted_score: number;
+  lower_bound: number;
+  upper_bound: number;
+  confidence: number;
+}
+
+export interface ForecastTimeSeries {
+  name: string;
+  points: ForecastPoint[];
+}
+
 export interface RiskForecast {
   forecast_id: string;
   horizon_days: number;
@@ -29,8 +43,8 @@ export interface RiskForecast {
   method: string;
   generated_at: number;
   document_id?: string | null;
-  points: unknown[];
-  series?: Record<string, unknown> | null;
+  points: ForecastPoint[];
+  series?: ForecastTimeSeries | null;
   drift_detected: boolean;
 }
 
@@ -45,4 +59,13 @@ export interface RiskTrend {
   document_id: string;
   predicted_score: number;
   direction: string;
+}
+
+/** Backend: ForecastStats (GET /forecasting/stats). */
+export interface ForecastStats {
+  total_forecasts: number;
+  average_horizon_days: number;
+  drift_detected: number;
+  drift_rate: number;
+  last_forecast_at: number | null;
 }
