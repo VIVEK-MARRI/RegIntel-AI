@@ -27,7 +27,9 @@ export const copilotKeys = {
 
 export const researchKeys = {
   all: ["research"] as const,
-  reports: () => [...researchKeys.all, "reports"] as const,
+  stats: () => [...researchKeys.all, "stats"] as const,
+  reports: (params?: { kind?: string; page?: number; page_size?: number }) =>
+    [...researchKeys.all, "reports", params ?? {}] as const,
   report: (id: string) => [...researchKeys.all, "report", id] as const,
 };
 

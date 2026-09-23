@@ -61,6 +61,17 @@ export interface ResearchReport {
 
 export type PaginatedResearchReports = PaginatedResponse<ResearchReport>;
 
+/** Backend: ResearchStats (GET /research/stats). last_report_at is epoch SECONDS or null. */
+export interface ResearchStats {
+  total_reports: number;
+  plans_generated: number;
+  steps_total: number;
+  average_steps_per_plan: number;
+  average_duration_ms: number;
+  by_kind: Record<string, number>;
+  last_report_at: number | null;
+}
+
 export interface ResearchRequest {
   query: string;
   kind?: ResearchKind;

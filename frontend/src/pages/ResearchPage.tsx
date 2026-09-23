@@ -1,168 +1,580 @@
-import { useState } from "react";
-import { Card, CardHeader } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/Badge";
-import { Field, Input, TextArea } from "@/components/ui/Field";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { ErrorState } from "@/components/ui/ErrorState";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { getResearchReports, runResearch } from "@/services/api/researchApi";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Field, Input, Select, TextArea } from "@/components/ui/Field";
+import { Metric } from "@/components/ui/Metric";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/providers/ToastProvider";
 import { formatRelative } from "@/lib/format";
 import { researchKeys } from "@/lib/queryKeys";
-import { toReportView } from "@/adapters/views";
-import type { ResearchReport } from "@/types/api/research";
+import {
+  getResearchReport,
+  getResearchReports,
+  getResearchStats,
+  runResearch,
+} from "@/services/api/researchApi";
+import type {
+  ResearchCitation,
+  ResearchKind,
+  ResearchReport,
+  ResearchStep,
+} from "@/types/api/research";
+
+/**
+ * Research workspace: structured regulatory investigation reports.
+ *
+ * Backend reality (app/api/v1/research.py + app/schemas/research.py):
+ * - POST /research/run is SYNCHRONOUS: it blocks until the full report is
+ *   ready and returns it. There is no job queue, no task-status endpoint,
+ *   no streaming, no cancellation, and no retry endpoint.
+ * - Reports persist server-side: GET /research (generated_at desc, paged,
+ *   optional kind filter) and GET /research/{report_id} (404 when unknown).
+ * - Reports carry steps[] (per-step status), key_findings[] (STRINGS),
+ *   timeline[]/comparisons[] (kind-specific dicts), citations[] — and NO
+ *   confidence, NO report-level status, NO progress percent. None is shown.
+ */
+
+const KINDS: ResearchKind[] = ["general", "multi_hop", "cross_document", "timeline", "comparative"];
+const KIND_LABELS: Record<ResearchKind, string> = {
+  general: "General",
+  multi_hop: "Multi-hop",
+  cross_document: "Cross-document",
+  timeline: "Timeline",
+  comparative: "Comparative",
+};
+
+const PAGE_SIZE = 20;
+const DEFAULT_MAX_STEPS = 8;
+
+type StepTone = "neutral" | "success" | "warning" | "danger" | "info" | "brand";
+function stepTone(s: string): StepTone {
+  switch (s) {
+    case "completed": return "success";
+    case "running": return "info";
+    case "failed": return "danger";
+    default: return "neutral";
+  }
+}
+
+/** Runtime guards: backend arrays are trusted but never assumed. */
+function arr<T>(v: unknown): T[] {
+  return Array.isArray(v) ? (v as T[]) : [];
+}
+function str(v: unknown): string | null {
+  return typeof v === "string" && v ? v : null;
+}
+function num(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/** Backend duration_ms → "4.2s" / "380ms"; null when absent so nothing is invented. */
+function fmtDuration(ms: unknown): string | null {
+  const n = num(ms);
+  if (n === null || n <= 0) return null;
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`;
+}
 
 export function ResearchPage() {
-  const { data: reports, isLoading, isError, refetch } = useQuery({
-    queryKey: researchKeys.reports(),
-    queryFn: () => getResearchReports(),
+  const { reportId } = useParams();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const toast = useToast();
+
+  const [question, setQuestion] = useState("");
+  const [kind, setKind] = useState<ResearchKind>("general");
+  const [maxSteps, setMaxSteps] = useState(DEFAULT_MAX_STEPS);
+  const [listKind, setListKind] = useState("");
+  const [page, setPage] = useState(0);
+
+  // Deep link owns the selection: no local selected-report state exists,
+  // so an unknown id can never silently render a different report.
+  useEffect(() => {
+    if (reportId) {
+      window.scrollTo({ top: 0 });
+    }
+  }, [reportId]);
+
+  const stats = useQuery({ queryKey: researchKeys.stats(), queryFn: getResearchStats });
+
+  const listQuery = useMemo(
+    () => ({
+      kind: (listKind || undefined) as ResearchKind | undefined,
+      page: page + 1,
+      page_size: PAGE_SIZE,
+    }),
+    [listKind, page]
+  );
+  const reports = useQuery({
+    queryKey: researchKeys.reports(listQuery),
+    queryFn: () => getResearchReports(listQuery),
   });
+
   const run = useMutation({
     mutationFn: runResearch,
-    onSuccess: () => refetch(),
+    onSuccess: (report) => {
+      // Seed the detail cache with the authoritative response, refresh the
+      // list prefix, then navigate to the REAL report route.
+      qc.setQueryData(researchKeys.report(report.report_id), report);
+      void qc.invalidateQueries({ queryKey: [...researchKeys.all, "reports"] });
+      setQuestion("");
+      toast.push({
+        title: "Research report ready",
+        description: (report.query || "").slice(0, 100),
+        tone: "success",
+      });
+      navigate(`/research/${report.report_id}`);
+    },
   });
-  const toast = useToast();
-  const [query, setQuery] = useState("");
-  const [depth, setDepth] = useState(2);
-  const [selected, setSelected] = useState<ResearchReport | null>(null);
 
-  async function handleRun() {
-    if (!query.trim()) return;
-    try {
-      const steps = Math.min(20, Math.max(1, depth || 1));
-      const result = await run.mutateAsync({ query, max_steps: steps });
-      setSelected(result);
-      toast.push({ title: "Research report ready", description: (result.query || result.summary || "").slice(0, 80), tone: "success" });
-    } catch (err) {
-      toast.push({ title: "Research failed", description: err instanceof Error ? err.message : "Unexpected error", tone: "danger" });
-    }
-  }
+  const questionValid = question.trim().length >= 3;
+  const shortPage = (reports.data?.length ?? PAGE_SIZE) < PAGE_SIZE;
+
+  const runAgain = (q: string) => {
+    setQuestion(q);
+    navigate("/research");
+    // Focus stays predictable after the route change.
+    window.setTimeout(() => document.getElementById("research-question")?.focus(), 50);
+  };
 
   return (
-    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="space-y-4">
-        <Card padding="md">
-          <h2 className="page-title">Research</h2>
-          <p className="page-description">Run deep, multi-step regulatory research with a structured plan and grounded findings.</p>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_120px_auto]">
-            <Field label="Research question" id="research-query">
-              <TextArea id="research-query" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. Compare FEMA vs RBI reporting thresholds for FY26" rows={2} />
-            </Field>
-            <Field label="Depth" id="research-depth">
-              <Input id="research-depth" type="number" min={1} max={5} value={depth} onChange={(e) => setDepth(Number(e.target.value))} />
-            </Field>
-            <div className="flex items-end">
-              <Button variant="primary" onClick={handleRun} loading={run.isPending} disabled={!query.trim()}>Run research</Button>
-            </div>
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 lg:px-6">
+      <header>
+        <h1 className="page-title">Research</h1>
+        <p className="page-description">
+          Investigate regulatory questions and produce structured, evidence-backed reports.
+        </p>
+      </header>
+
+      {/* overview — aggregates from /stats only */}
+      <section aria-label="Overview" className="mb-6 mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {stats.isPending ? (
+          <>
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </>
+        ) : stats.isError ? (
+          <div className="sm:col-span-3">
+            <ErrorState
+              title="Research statistics unavailable"
+              error={stats.error}
+              onRetry={() => {
+                void stats.refetch();
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            <Metric
+              label="Stored reports"
+              value={stats.data.total_reports.toLocaleString()}
+              hint="Newest first in the list below"
+            />
+            <Metric
+              label="Steps executed"
+              value={stats.data.steps_total.toLocaleString()}
+              hint={`Across ${stats.data.plans_generated.toLocaleString()} plan(s)`}
+            />
+            <Metric
+              label="Last report"
+              value={stats.data.last_report_at ? formatRelative(stats.data.last_report_at) : "—"}
+              hint="Most recent generation time"
+            />
+          </>
+        )}
+      </section>
+
+      {/* request — only controls the backend request schema actually supports */}
+      <Card padding="md" className="mb-4">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">New research</h2>
+        <p className="meta-text mb-3 mt-0.5">
+          Runs synchronously: the request stays open until the report is ready. Larger step
+          budgets take longer.
+        </p>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_180px_140px_auto]">
+          <Field label="Research question" id="research-question" hint="At least 3 characters">
+            <TextArea
+              id="research-question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="e.g. How did KYC periodic updation rules change in 2024?"
+              rows={2}
+            />
+          </Field>
+          <Field label="Kind" id="research-kind">
+            <Select
+              id="research-kind"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as ResearchKind)}
+            >
+              {KINDS.map((k) => (
+                <option key={k} value={k}>{KIND_LABELS[k]}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Max steps" id="research-steps" hint="1–20">
+            <Input
+              id="research-steps"
+              type="number"
+              min={1}
+              max={20}
+              value={maxSteps}
+              onChange={(e) =>
+                setMaxSteps(Math.min(20, Math.max(1, Number(e.target.value) || DEFAULT_MAX_STEPS)))
+              }
+            />
+          </Field>
+          <div className="flex items-end">
+            <Button
+              variant="primary"
+              loading={run.isPending}
+              disabled={!questionValid || run.isPending}
+              onClick={() => {
+                if (!questionValid || run.isPending) return;
+                run.mutate({ query: question.trim(), kind, max_steps: maxSteps });
+              }}
+            >
+              Run research
+            </Button>
+          </div>
+        </div>
+        {run.isPending && (
+          <div className="mt-3 rounded-xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-900/40 dark:bg-brand-950/20" role="status">
+            <p className="text-sm font-medium text-brand-900 dark:text-brand-100">Research is running…</p>
+            <p className="mt-1 text-xs text-brand-800/80 dark:text-brand-200/80">
+              The workflow plans the question, runs retrieval, and generates the report in one
+              request. Please wait — navigating away is safe, the report is stored when done.
+            </p>
+          </div>
+        )}
+        {run.isError && (
+          <div className="mt-3">
+            <ErrorState
+              title="Research run failed"
+              error={run.error}
+              onRetry={() => {
+                if (!questionValid || run.isPending) return;
+                run.mutate({ query: question.trim(), kind, max_steps: maxSteps });
+              }}
+            />
+          </div>
+        )}
+      </Card>
+
+      {reportId ? (
+        <ReportDetail
+          reportId={reportId}
+          onBack={() => navigate("/research")}
+          onRunAgain={runAgain}
+        />
+      ) : (
+        <Card padding="none">
+          <CardHeader
+            title="Reports"
+            description="Stored research reports, newest first"
+            actions={
+              <select
+                aria-label="Filter reports by kind"
+                value={listKind}
+                onChange={(e) => {
+                  setListKind(e.target.value);
+                  setPage(0);
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-surface-dark-2 dark:text-slate-200"
+              >
+                <option value="">All kinds</option>
+                {KINDS.map((k) => (
+                  <option key={k} value={k}>{KIND_LABELS[k]}</option>
+                ))}
+              </select>
+            }
+          />
+          <div className="card-body" aria-live="polite">
+            {reports.isPending ? (
+              <Skeleton lines={4} />
+            ) : reports.isError ? (
+              <ErrorState
+                title="Reports unavailable"
+                error={reports.error}
+                onRetry={() => {
+                  void reports.refetch();
+                }}
+              />
+            ) : (reports.data ?? []).length === 0 ? (
+              <EmptyState
+                title="No reports yet"
+                description={
+                  listKind
+                    ? "No stored reports of this kind. Try another kind or run a new research task."
+                    : "Run a research question above to generate your first report."
+                }
+              />
+            ) : (
+              <>
+                <ul className="space-y-2">
+                  {(reports.data ?? []).map((r) => {
+                    const steps = arr(r.steps);
+                    const findings = arr<string>(r.key_findings);
+                    const citations = arr(r.citations);
+                    return (
+                      <li key={r.report_id}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/research/${r.report_id}`)}
+                          className="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-brand-300 hover:shadow-glow dark:border-slate-800 dark:hover:border-brand-500"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge tone="brand" size="sm">{r.kind}</Badge>
+                            <span className="meta-text ml-auto">
+                              {r.generated_at ? formatRelative(r.generated_at) : "time unknown"}
+                            </span>
+                          </div>
+                          <p className="mt-2 truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                            {r.query || "Untitled research"}
+                          </p>
+                          <p className="meta-text mt-1">
+                            {steps.length} step(s) · {findings.length} finding(s) · {citations.length} citation(s)
+                          </p>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="meta-text">Page {page + 1} · {(reports.data ?? []).length} shown</span>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                      Prev
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={shortPage} onClick={() => setPage((p) => p + 1)}>
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </Card>
-
-        {run.isPending ? <Card padding="md"><Skeleton lines={4} /></Card> : null}
-
-        {selected ? <ReportDetail report={selected} />
-        : <Card padding="none">
-            <CardHeader title="Recent reports" description="Stored research artefacts" />
-            <div className="card-body">
-              {isLoading ? <Skeleton lines={4} />
-              : isError ? <ErrorState onRetry={refetch} />
-              : !reports?.length ? <EmptyState title="No reports yet" description="Run a research query above to generate your first report." />
-              : <ul className="space-y-2">
-                  {(reports ?? []).map((r) => ({ raw: r, view: toReportView(r) })).map(({ raw, view: r }) => (
-                    <li key={r.id} className="cursor-pointer rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 hover:shadow-glow dark:border-slate-800 dark:hover:border-brand-500"
-                      onClick={() => setSelected(raw)}>
-                      <div className="flex items-center gap-2">
-                        <Badge tone="brand" size="sm">{r.stepCount} steps</Badge>
-                        <Badge tone="info" size="sm">{r.findingCount} findings</Badge>
-                        <span className="ml-auto text-[10px] text-slate-500 dark:text-slate-400">{formatRelative(r.generatedMillis)}</span>
-                      </div>
-                      <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{r.summary || r.query}</p>
-                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{r.citationsCount} citations · {r.kind}</p>
-                    </li>
-                  ))}
-                </ul>
-              }
-            </div>
-          </Card>
-        }
-      </div>
-
-      <aside className="space-y-4">
-        <Card padding="md">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Workflow</h3>
-          <ol className="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
-            <li>1. Decompose the question into a research plan.</li>
-            <li>2. Search regulatory corpora and knowledge graph.</li>
-            <li>3. Synthesise grounded findings with citations.</li>
-            <li>4. Generate a summary, confidence, and action list.</li>
-          </ol>
-        </Card>
-        <Card padding="md">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Best practices</h3>
-          <ul className="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
-            <li>• Be specific about the regulatory scope.</li>
-            <li>• Use depth ≥ 3 for cross-jurisdictional questions.</li>
-            <li>• Always review the citations before publishing.</li>
-          </ul>
-        </Card>
-      </aside>
+      )}
     </div>
   );
 }
 
-function ReportDetail({ report }: { report: ResearchReport }) {
-  const view = toReportView(report);
+function ReportDetail({
+  reportId,
+  onBack,
+  onRunAgain,
+}: {
+  reportId: string;
+  onBack: () => void;
+  onRunAgain: (question: string) => void;
+}) {
+  const detail = useQuery({
+    queryKey: researchKeys.report(reportId),
+    queryFn: () => getResearchReport(reportId),
+  });
+
+  if (detail.isPending) {
+    return (
+      <Card padding="md" aria-label="Report loading">
+        <Skeleton className="h-7 w-2/3" />
+        <div className="mt-3">
+          <Skeleton lines={4} />
+        </div>
+      </Card>
+    );
+  }
+
+  if (detail.isError) {
+    return (
+      <Card padding="md">
+        <ErrorState
+          title="Report unavailable"
+          error={detail.error}
+          onRetry={() => {
+            void detail.refetch();
+          }}
+          action={
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              Back to reports
+            </Button>
+          }
+        />
+      </Card>
+    );
+  }
+
+  const r: ResearchReport = detail.data;
+  const steps = arr<ResearchStep>(r.steps);
+  const findings = arr<string>(r.key_findings).filter((f) => typeof f === "string");
+  const citations = arr<ResearchCitation>(r.citations);
+  const timeline = arr<Record<string, unknown>>(r.timeline);
+  const comparisons = arr<Record<string, unknown>>(r.comparisons);
+  const duration = fmtDuration(r.duration_ms);
+
   return (
-    <Card padding="none">
-      <CardHeader title="Research report" description={report.query}
-        actions={<Badge tone="success">{report.kind}</Badge>}
-      />
-      <div className="card-body space-y-5">
-        {report.steps?.length ? (<section>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Plan</h4>
-          <ol className="mt-2 space-y-1.5">
-            {report.steps.map((step, i) => (
-              <li key={step.step_id ?? `${i}`} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">{i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-slate-900 dark:text-slate-100">{step.description}</p>
-                  <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{step.step_type}</p>
-                </div>
-                <Badge tone={step.status === "completed" ? "success" : step.status === "running" ? "info" : step.status === "failed" ? "danger" : "neutral"} size="sm">{step.status}</Badge>
-              </li>
-            ))}
-          </ol>
-        </section>) : null}
-
-        {view.findings?.length ? (<section>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Findings</h4>
-          <ul className="mt-2 space-y-2">
-            {view.findings.map((f, i) => (
-              <li key={`${i}`} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{f}</p>
-              </li>
-            ))}
-          </ul>
-        </section>) : null}
-
-        {report.citations?.length ? (<section>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Citations</h4>
-          <ul className="mt-2 space-y-1.5">
-            {report.citations.map((c) => (
-              <li key={c.citation_id} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
-                <p className="truncate font-medium text-slate-900 dark:text-slate-100">{c.title}</p>
-                <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{c.reference}</p>
-              </li>
-            ))}
-          </ul>
-        </section>) : null}
-
-        {report.summary ? (<section>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Summary</h4>
-          <p className="mt-2 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-800/40 dark:text-slate-200">{report.summary}</p>
-        </section>) : null}
+    <article aria-labelledby="report-title">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          Back to reports
+        </Button>
+        <Button variant="secondary" size="sm" onClick={() => onRunAgain(r.query)}>
+          Run again with this question
+        </Button>
       </div>
-    </Card>
+
+      <Card padding="none">
+        <div className="card-body">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="brand" size="sm">{r.kind}</Badge>
+            {duration && <span className="meta-text">Completed in {duration}</span>}
+            <span className="meta-text ml-auto">{r.generated_at ? formatRelative(r.generated_at) : "time unknown"}</span>
+          </div>
+          <h2 id="report-title" className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
+            {r.query || "Untitled research"}
+          </h2>
+          <p className="meta-text mt-1">Report ID <span className="font-mono">{r.report_id}</span></p>
+
+          {str(r.summary) && (
+            <section aria-label="Summary" className="mt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Summary</h3>
+              <p className="mt-2 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 dark:bg-slate-800/40 dark:text-slate-200">
+                {r.summary}
+              </p>
+            </section>
+          )}
+
+          <section aria-label="Steps" className="mt-5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Steps ({steps.length})</h3>
+            {steps.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No steps recorded for this report.</p>
+            ) : (
+              <ol className="mt-2 space-y-1.5">
+                {steps.map((s, i) => {
+                  const d = fmtDuration(s.duration_ms);
+                  return (
+                    <li
+                      key={str(s.step_id) ?? `step-${i}`}
+                      className="flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+                    >
+                      <span aria-hidden className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-slate-900 dark:text-slate-100">
+                          {str(s.description) ?? "Unnamed step"}
+                        </p>
+                        <p className="meta-text mt-0.5">
+                          {str(s.step_type) ?? "step"}
+                          {d ? ` · took ${d}` : ""}
+                        </p>
+                        {s.status === "failed" && str(s.error) && (
+                          <p className="mt-1 text-xs text-red-700 dark:text-red-300">{s.error}</p>
+                        )}
+                      </div>
+                      <Badge tone={stepTone(str(s.status) ?? "")} size="sm">
+                        {str(s.status) ?? "unknown"}
+                      </Badge>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
+
+          <section aria-label="Key findings" className="mt-5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Key findings ({findings.length})</h3>
+            {findings.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                This report contains no findings — distinct from a failed run (steps above show what executed).
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {findings.map((f, i) => (
+                  <li key={i} className="rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700 dark:border-slate-800 dark:text-slate-200">
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {timeline.length > 0 && (
+            <section aria-label="Timeline" className="mt-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Timeline ({timeline.length})</h3>
+              <ul className="mt-2 space-y-1.5">
+                {timeline.map((t, i) => (
+                  <li key={i} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{str(t.title) ?? "Untitled event"}</p>
+                    <p className="meta-text mt-0.5">
+                      {[str(t.date) ?? (num(t.date) ? formatRelative(t.date as number) : null), str(t.id) ?? (num(t.id) ? String(t.id) : null)]
+                        .filter(Boolean)
+                        .join(" · ") || "no date recorded"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {comparisons.length > 0 && (
+            <section aria-label="Comparisons" className="mt-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Comparisons ({comparisons.length})</h3>
+              <ul className="mt-2 space-y-1.5">
+                {comparisons.map((c, i) => (
+                  <li key={i} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{str(c.step) ?? "Comparison"}</p>
+                    {num(c.items_compared) !== null && (
+                      <p className="meta-text mt-0.5">{c.items_compared as number} item(s) compared</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section aria-label="Citations" className="mt-5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sources & citations ({citations.length})</h3>
+            {citations.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                No citations in this report. Findings above stand on their own text — no sources are implied.
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-1.5">
+                {citations.map((c, i) => (
+                  <li key={str(c.citation_id) ?? `cit-${i}`} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge size="sm">{str(c.source) ?? "unknown source"}</Badge>
+                      {str(c.url) && (
+                        <a
+                          href={c.url as string}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open reference: ${str(c.title) ?? "source"}`}
+                          className="ml-auto text-brand-700 hover:underline dark:text-brand-300"
+                        >
+                          Open reference
+                        </a>
+                      )}
+                    </div>
+                    <p className="mt-1 truncate font-medium text-slate-900 dark:text-slate-100">
+                      {str(c.title) ?? "Untitled source"}
+                    </p>
+                    {str(c.reference) && (
+                      <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{c.reference}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </Card>
+    </article>
   );
 }

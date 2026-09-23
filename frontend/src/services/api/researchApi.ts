@@ -4,7 +4,12 @@ import type {
   ResearchListQuery,
   ResearchReport,
   ResearchRequest,
+  ResearchStats,
 } from "@/types/api/research";
+
+export async function getResearchStats(): Promise<ResearchStats> {
+  return api.get<ResearchStats>("/research/stats");
+}
 
 export async function getResearchReports(
   query?: ResearchListQuery
