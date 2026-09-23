@@ -137,3 +137,8 @@ export const adminKeys = {
     [...adminKeys.all, "rbac", userId, permission] as const,
   settings: () => [...adminKeys.all, "settings"] as const,
 };
+
+export const settingsKeys = {
+  all: ["settings"] as const,
+  roleGrants: () => [...settingsKeys.all, "role-grants"] as const,
+};
