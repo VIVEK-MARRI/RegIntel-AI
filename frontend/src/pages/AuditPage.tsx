@@ -15,6 +15,7 @@ import { useToast } from "@/providers/ToastProvider";
 import { formatDate, formatRelative } from "@/lib/format";
 import { toMillis } from "@/lib/dates";
 import { auditKeys } from "@/lib/queryKeys";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 import {
   generateAuditReport,
   getAuditEvidence,
@@ -884,6 +885,12 @@ function ReportsTab({
       setPeriodStart("");
       setPeriodEnd("");
       setSectionTitles("");
+      if (isPostHogEnabled) {
+        posthog.capture("audit_report_generated", {
+          report_kind: report.kind,
+          sections_count: arr(report.sections).length,
+        });
+      }
       toast.push({ title: "Report generated", description: report.title.slice(0, 100), tone: "success" });
     },
   });

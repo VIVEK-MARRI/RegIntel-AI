@@ -1,5 +1,6 @@
 import { API_BASE_URL, API_PREFIX } from "@/lib/config";
 import { ApiClientError } from "@/lib/errors";
+import { logApiRequestFailed } from "@/lib/posthogLogger";
 
 // Re-exported so consumers have ONE import point for the canonical model.
 export { ApiClientError };
@@ -267,6 +268,14 @@ export async function request<T = unknown>(
 
     if (!res.ok) throw toHttpError(res.status, parsed, res.statusText);
     return parsed as T;
+  } catch (error) {
+    logApiRequestFailed({
+      method,
+      requestScope: _root ? "root" : "api",
+      status: error instanceof ApiClientError ? error.status : 0,
+      errorCode: error instanceof ApiClientError ? error.code : "unknown",
+    });
+    throw error;
   } finally {
     if (timeoutId !== undefined) clearTimeout(timeoutId);
     userSignal?.removeEventListener("abort", onUserAbort);

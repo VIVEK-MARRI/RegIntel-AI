@@ -7,6 +7,8 @@ import { HealthProvider } from "@/providers/HealthProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ROUTER_BASE } from "@/lib/config";
+import "@/lib/posthog";
+import { logApplicationStarted } from "@/lib/posthogLogger";
 import { App } from "@/App";
 import "@/index.css";
 
@@ -35,6 +37,8 @@ const rootEl = document.getElementById("root");
 if (!rootEl) {
   throw new Error("Root element #root not found");
 }
+
+logApplicationStarted();
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>

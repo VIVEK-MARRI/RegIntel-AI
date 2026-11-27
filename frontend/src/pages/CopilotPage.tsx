@@ -33,6 +33,7 @@ import { copilotKeys } from "@/lib/queryKeys";
 import { formatDurationMs, formatNumber, formatPercent, formatRelative } from "@/lib/format";
 import { useToast } from "@/providers/ToastProvider";
 import { ApiClientError } from "@/lib/errors";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 import { useNavigate, useParams } from "react-router-dom";
 
 const SUGGESTED = [
@@ -151,6 +152,12 @@ export function CopilotPage() {
         navigate(`/copilot/${result.conversation_id}`, { replace: true });
       }
       setFresh((list) => [...list, toAssistantMessage(result)]);
+      if (isPostHogEnabled) {
+        posthog.capture("copilot_query_completed", {
+          copilot_mode: requestMode,
+          is_new_conversation: !conversationId,
+        });
+      }
       setSend({ phase: "idle" });
       void qc.invalidateQueries({ queryKey: copilotKeys.sessions() });
       // NOTE: messages are deliberately NOT invalidated here — the backend
@@ -198,6 +205,11 @@ export function CopilotPage() {
         feedback_type: vote,
       });
       setVotes((v) => ({ ...v, [message.requestId as string]: vote }));
+      if (isPostHogEnabled) {
+        posthog.capture("copilot_feedback_submitted", {
+          feedback_type: vote,
+        });
+      }
     } catch (err) {
       toast.push({
         title: "Feedback not recorded",

@@ -43,6 +43,7 @@ import type { AuthUser } from "@/types/api/auth";
 import { getAccessToken, setAccessToken } from "@/lib/auth-token";
 import { ApiClientError, getErrorMessage } from "@/lib/errors";
 import { setAuthHandler } from "@/lib/api";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 
 export type AuthStatus = "unknown" | "authenticated" | "unauthenticated";
 
@@ -286,8 +287,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accessExpiresAt = useRef<number | null>(null);
   const rotateInflight = useRef<Promise<boolean> | null>(null);
+  const identifiedUserId = useRef<string | null>(null);
   /** Generation: bumped on logout/login; stale async callbacks check it. */
   const generation = useRef(0);
+
+  const resetPostHogIdentity = useCallback(() => {
+    if (!isPostHogEnabled || !identifiedUserId.current) return;
+    posthog.reset();
+    identifiedUserId.current = null;
+  }, []);
+
+  const identifyPostHogUser = useCallback((nextUser: AuthUser) => {
+    if (!isPostHogEnabled || identifiedUserId.current === nextUser.user_id) return;
+
+    // A direct account change must not retain the prior person's analytics state.
+    resetPostHogIdentity();
+    posthog.identify(nextUser.user_id, {
+      email: nextUser.email,
+      name: nextUser.full_name || undefined,
+      roles: normalizeRoles([...nextUser.roles, ...nextUser.rbac_roles]),
+    });
+    identifiedUserId.current = nextUser.user_id;
+  }, [resetPostHogIdentity]);
 
   const clearTimer = useCallback(() => {
     if (refreshTimer.current) {
@@ -329,10 +350,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDemoMode(false);
       setAuthError(null);
       setStatus("authenticated");
+      identifyPostHogUser(nextUser);
       scheduleRefreshRef.current(expiresIn);
       return gen;
     },
-    []
+    [identifyPostHogUser]
   );
 
   /**
@@ -456,6 +478,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAccessToken("demo");
       setDemoMode(true);
       setStatus("authenticated");
+      identifyPostHogUser(demo);
       return;
     }
     if (!bootstrapInflight) {
@@ -491,6 +514,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onAuthFailure: () => {
         generation.current++;
         clearTimer();
+        resetPostHogIdentity();
         clearTokens();
         setStatus("unauthenticated");
         setAuthError("Your session has expired. Please sign in again.");
@@ -501,7 +525,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthHandler(null);
       clearTimer();
     };
-  }, [clearTimer, clearTokens, queryClient]);
+  }, [clearTimer, clearTokens, queryClient, resetPostHogIdentity]);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -528,6 +552,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     generation.current++;
     bootstrapInflight = null;
     clearTimer();
+    resetPostHogIdentity();
     clearTokens();
     setDemoMode(false);
     setAuthError(null);
@@ -538,7 +563,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void queryClient.cancelQueries().catch(() => undefined).finally(() => {
       queryClient.clear();
     });
-  }, [clearTimer, clearTokens, demoMode, queryClient]);
+  }, [clearTimer, clearTokens, demoMode, queryClient, resetPostHogIdentity]);
 
   const hasRole = useCallback(
     (...roles: string[]) => {

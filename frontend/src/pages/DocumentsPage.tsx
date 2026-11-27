@@ -24,6 +24,7 @@ import { toMillis } from "@/lib/dates";
 import { documentsKeys, dashboardKeys } from "@/lib/queryKeys";
 import { toRunView } from "@/adapters/documents";
 import { ApiClientError } from "@/lib/errors";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 import type {
   DocumentDetail,
   DocumentPage as DocumentPageType,
@@ -201,6 +202,13 @@ export function DocumentsPage() {
         tone: "success",
       });
       setSelectedDoc(result.document_id);
+      if (isPostHogEnabled) {
+        posthog.capture("document_upload_accepted", {
+          file_type: ext.slice(1),
+          file_size_mb: Math.ceil(file.size / (1024 * 1024)),
+          ingestion_status: result.status,
+        });
+      }
       // Scoped invalidation: every documents query (all list filter/page
       // variants, detail, inspectors) + ingestion jobs + dashboard summary.
       // No full-cache clear — unrelated domains are untouched.

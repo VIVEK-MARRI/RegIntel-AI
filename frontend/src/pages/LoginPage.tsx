@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation, Link, Navigate } from "react-router-dom";
 import { useAuth, getSafeRedirect, authErrorMessage } from "@/providers/AuthProvider";
 import { Alert } from "@/components/ui/Alert";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 
 export function LoginPage() {
   const { login, isAuthenticated, isLoading, authError } = useAuth();
@@ -26,6 +27,9 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
+      if (isPostHogEnabled) {
+        posthog.capture("auth_login_completed");
+      }
       navigate(from, { replace: true });
     } catch (err: unknown) {
       setError(authErrorMessage(err, "login"));

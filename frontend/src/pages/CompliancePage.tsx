@@ -19,6 +19,7 @@ import {
   governanceKeys,
   riskKeys,
 } from "@/lib/queryKeys";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 import {
   getComplianceAssessmentsFiltered,
   getComplianceStats,
@@ -292,6 +293,14 @@ function AssessmentTab() {
       // refreshes it without touching other domains.
       void qc.invalidateQueries({ queryKey: [...complianceKeys.all, "assessments"] });
       void qc.invalidateQueries({ queryKey: complianceKeys.stats() });
+      if (isPostHogEnabled) {
+        posthog.capture("compliance_assessment_completed", {
+          assessment_source: result.source,
+          risk_level: result.risk_level,
+          is_document_scoped: Boolean(result.document_id),
+          gaps_count: arr(result.compliance_gaps).length,
+        });
+      }
       toast.push({
         title: "Assessment complete",
         description: `${result.assessment_id} — ${result.risk_level} (${fmtScore(result.risk_score)})`,
@@ -696,6 +705,14 @@ function ForecastTab() {
       void qc.invalidateQueries({ queryKey: riskKeys.forecasts() });
       void qc.invalidateQueries({ queryKey: riskKeys.scenarios() });
       void qc.invalidateQueries({ queryKey: riskKeys.stats() });
+      if (isPostHogEnabled) {
+        posthog.capture("risk_forecast_completed", {
+          horizon_days: result.horizon_days,
+          risk_level: result.predicted_risk_level,
+          is_document_scoped: Boolean(result.document_id),
+          drift_detected: result.drift_detected,
+        });
+      }
       toast.push({
         title: "Forecast ready",
         description: `${result.horizon_days}-day horizon — ${result.predicted_risk_level} (${fmtScore(result.predicted_risk_score)})`,
@@ -927,9 +944,14 @@ function PoliciesTab() {
 
   const toggle = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => updatePolicy(id, { enabled }),
-    onSuccess: () => {
+    onSuccess: (_, { enabled }) => {
       void qc.invalidateQueries({ queryKey: governanceKeys.policies() });
       void qc.invalidateQueries({ queryKey: governanceKeys.stats() });
+      if (isPostHogEnabled) {
+        posthog.capture("policy_status_changed", {
+          policy_enabled: enabled,
+        });
+      }
     },
   });
 

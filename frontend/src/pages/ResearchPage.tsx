@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/providers/ToastProvider";
 import { formatRelative } from "@/lib/format";
 import { researchKeys } from "@/lib/queryKeys";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 import {
   getResearchReport,
   getResearchReports,
@@ -121,6 +122,13 @@ export function ResearchPage() {
       // list prefix, then navigate to the REAL report route.
       qc.setQueryData(researchKeys.report(report.report_id), report);
       void qc.invalidateQueries({ queryKey: [...researchKeys.all, "reports"] });
+      if (isPostHogEnabled) {
+        posthog.capture("research_report_generated", {
+          research_kind: report.kind,
+          steps_count: arr(report.steps).length,
+          citations_count: arr(report.citations).length,
+        });
+      }
       setQuestion("");
       toast.push({
         title: "Research report ready",

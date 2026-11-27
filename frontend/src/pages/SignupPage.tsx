@@ -4,6 +4,7 @@ import { useAuth, authErrorMessage } from "@/providers/AuthProvider";
 import { signup } from "@/services/api/authApi";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -43,6 +44,9 @@ export function SignupPage() {
       });
       // Establish the session through AuthProvider (single session logic).
       await login(cleanEmail, password);
+      if (isPostHogEnabled) {
+        posthog.capture("auth_signup_completed");
+      }
       navigate("/", { replace: true });
     } catch (err: unknown) {
       setError(authErrorMessage(err, "signup"));

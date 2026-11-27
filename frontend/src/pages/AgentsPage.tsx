@@ -11,6 +11,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { useToast } from "@/providers/ToastProvider";
 import { formatDurationMs, formatNumber, formatRelative, truncate } from "@/lib/format";
 import { agentsKeys } from "@/lib/queryKeys";
+import posthog, { isPostHogEnabled } from "@/lib/posthog";
 import {
   coordinate,
   createWorkflow,
@@ -222,6 +223,12 @@ function AgentsTab() {
     mutationFn: executeAgent,
     onSuccess: (r) => {
       setExecResult(r);
+      if (isPostHogEnabled) {
+        posthog.capture("agent_execution_completed", {
+          execution_status: r.status,
+          attempts: r.attempts,
+        });
+      }
       toast.push({
         title: r.status === "succeeded" ? "Agent execution complete" : `Agent execution ${r.status}`,
         description: `${r.agent_name} · ${formatDurationMs(r.duration_ms)}`,
@@ -237,6 +244,11 @@ function AgentsTab() {
       setRegDesc("");
       setRegCapName("");
       setSelectedName(a.name);
+      if (isPostHogEnabled) {
+        posthog.capture("agent_registered", {
+          capabilities_count: arr(a.capabilities).length,
+        });
+      }
       toast.push({ title: "Agent registered", description: a.name, tone: "success" });
     },
   });
@@ -246,6 +258,9 @@ function AgentsTab() {
       void qc.invalidateQueries({ queryKey: [...agentsKeys.all, "list"] });
       setConfirmRemove(null);
       if (selectedName === name) setSelectedName(null);
+      if (isPostHogEnabled) {
+        posthog.capture("agent_unregistered");
+      }
       toast.push({ title: "Agent removed", description: name, tone: "success" });
     },
   });
@@ -657,6 +672,13 @@ function CoordinatorTab() {
     mutationFn: coordinate,
     onSuccess: (r) => {
       setResult(r);
+      if (isPostHogEnabled) {
+        posthog.capture("agent_coordination_completed", {
+          coordination_status: r.status,
+          steps_count: arr(r.step_results).length,
+          selected_agents_count: arr(r.selected_agents).length,
+        });
+      }
       toast.push({
         title: r.status === "succeeded" ? "Coordination complete" : `Coordination ${r.status}`,
         description: `${r.step_results?.length ?? 0} step(s) · ${formatDurationMs(r.duration_ms)}`,
@@ -837,6 +859,12 @@ function WorkflowsTab() {
       setName("");
       setDescription("");
       setSteps([newStepDraft()]);
+      if (isPostHogEnabled) {
+        posthog.capture("workflow_created", {
+          execution_mode: w.graph?.mode ?? "unknown",
+          steps_count: arr<WorkflowGraphStep>(w.graph?.steps).length,
+        });
+      }
       toast.push({ title: "Workflow created", description: w.name, tone: "success" });
     },
   });
@@ -846,6 +874,11 @@ function WorkflowsTab() {
     onSuccess: (r) => {
       setRunResult(r);
       setRunningId(null);
+      if (isPostHogEnabled) {
+        posthog.capture("workflow_run_completed", {
+          workflow_status: r.status,
+        });
+      }
       toast.push({
         title: r.status === "succeeded" ? "Workflow run complete" : `Workflow run ${r.status}`,
         description: `${r.workflow_name} · ${formatDurationMs(r.duration_ms)}`,

@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_AUTH_ENABLED?: string;
   readonly VITE_BASENAME?: string;
   readonly VITE_LLM_PROVIDER?: string;
+  readonly VITE_POSTHOG_HOST?: string;
+  readonly VITE_POSTHOG_KEY?: string;
   readonly VITE_RERANKER_ENABLED?: string;
 }
 
